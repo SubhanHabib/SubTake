@@ -10,6 +10,7 @@ All native screens import app controls from `ui/controls.slint`. That file only 
 | Checkboxes | `ui/components/checkbox.slint` | Checked, unchecked, indeterminate and disabled states; pointer, Space and accessibility activation. |
 | Switches | `ui/components/toggle.slint` | Controlled checked state, disabled/focus treatment and a change callback. |
 | Radio buttons | `ui/components/radio.slint` | Single-choice indicator using shared button interaction; owning group supplies checked state. |
+| Preview viewport | `ui/components/preview-viewport.slint` | View-only pinch magnification, anchored image coordinates, scroll panning and Fit reset. |
 | Timeline scrubber | `ui/components/timeline-scrubber.slint` | Pointed grey cap, continuous line, shaded six-dot grip and drag target. |
 | Filled numeric controls | `ui/components/scrub-field.slint` | Filled slider plus editable number; drag commits on release and text on Enter. |
 | Sliders | `ui/components/slider.slint` | Drag preview, release commit, keyboard arrows, bounds and disabled state. |

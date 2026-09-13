@@ -1,7 +1,7 @@
 {
-  "recorded_at": "2026-09-13T14:07:20.044072+00:00",
+  "recorded_at": "2026-09-13T14:17:27.537590+00:00",
   "status": "passed",
-  "main_binary_sha256": "ec2557b51aff4a68180e2b40468cef50facf1a108371935362a1360398f6b68c",
+  "main_binary_sha256": "1dc2a73ba4585b848241763d53ea0a02cc531624169940bb51319c64961a192b",
   "checks": [
     "filmstrip pointer down seeks immediately",
     "filmstrip pointer move scrubs before release",
@@ -25,5 +25,15 @@
     "cancel then restart",
     "outside-timeline pinch ignored"
   ],
-  "pinch_limitations": "Physical trackpad input not exercised; Windows/Linux trackpad parity not verified."
+  "pinch_limitations": "Physical trackpad input not exercised; Windows/Linux trackpad parity not verified.",
+  "preview_checks": [
+    "pinch changes view from Fit to 8x",
+    "normalized image point stays anchored",
+    "scroll pans zoomed image",
+    "Fit resets zoom and pan",
+    "timeline zoom and playhead isolated",
+    "2x snapshot inspected",
+    "packaged minimum-size crop editor passed"
+  ],
+  "preview_scope": "View-only magnification; native-event injection tested, physical trackpad acceptance remains manual."
 }

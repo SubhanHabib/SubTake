@@ -29,6 +29,16 @@ fn pinch(ui: &EditorWindow, x: f32, y: f32, delta: f32, phase: i_slint_core::inp
 fn main() -> Result<(), slint::PlatformError> {
     let ui = EditorWindow::new()?;
     ui.set_has_video(true);
+    ui.on_translate(|text, _| text);
+    if std::env::var_os("SUBTAKE_PREVIEW_GESTURE_SNAPSHOT").is_some() {
+        ui.set_preview(
+            slint::Image::load_from_path(
+                &std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("legacy-electron/public/wallpapers/mountaintrees.jpg"),
+            )
+            .unwrap(),
+        );
+    }
     ui.set_duration(12.);
     ui.set_track_labels(slint::ModelRc::new(slint::VecModel::from(vec![
         "Zoom".into(),
@@ -49,6 +59,9 @@ fn main() -> Result<(), slint::PlatformError> {
     let selections = Rc::new(Cell::new(0));
     let count = selections.clone();
     ui.on_select_region(move |_, _, _| count.set(count.get() + 1));
+    let preview_point = Rc::new(Cell::new((-1.0f32, -1.0f32)));
+    let point = preview_point.clone();
+    ui.on_preview_click(move |x, y| point.set((x, y)));
     ui.show()?;
     ui.window().set_size(slint::LogicalSize::new(1360., 880.));
     let weak = ui.as_weak();
@@ -94,14 +107,59 @@ fn main() -> Result<(), slint::PlatformError> {
             );
             event(&ui, 2, 1500., 597.);
             use i_slint_core::input::TouchPhase::{Cancelled, Ended, Moved, Started};
-            pinch(&ui, 400., 200., 0., Started);
-            pinch(&ui, 400., 200., 1., Moved);
-            pinch(&ui, 400., 200., 0., Ended);
-            assert_eq!(
-                ui.get_timeline_zoom(),
-                1.,
-                "gesture outside timeline changed zoom"
+            event(&ui, 0, 500., 250.);
+            event(&ui, 2, 500., 250.);
+            let before = preview_point.get();
+            assert!(before.0 > 0. && before.1 > 0., "preview click missed image");
+            pinch(&ui, 500., 250., 0., Started);
+            pinch(&ui, 500., 250., 1., Moved);
+            pinch(&ui, 500., 250., 0., Ended);
+            assert_eq!(ui.get_preview_zoom(), 2., "preview pinch did not magnify");
+            assert_eq!(ui.get_timeline_zoom(), 1., "preview pinch changed timeline");
+            event(&ui, 0, 500., 250.);
+            event(&ui, 2, 500., 250.);
+            let after = preview_point.get();
+            assert!(
+                (before.0 - after.0).abs() < 0.01 && (before.1 - after.1).abs() < 0.01,
+                "preview lost image anchor: {before:?} -> {after:?}"
             );
+            if let Some(path) = std::env::var_os("SUBTAKE_PREVIEW_GESTURE_SNAPSHOT") {
+                let snapshot = ui.window().take_snapshot().unwrap();
+                image::save_buffer(
+                    path,
+                    snapshot.as_bytes(),
+                    snapshot.width(),
+                    snapshot.height(),
+                    image::ColorType::Rgba8,
+                )
+                .unwrap();
+            }
+            ui.window()
+                .dispatch_event(slint::platform::WindowEvent::PointerScrolled {
+                    position: slint::LogicalPosition::new(500., 250.),
+                    delta_x: -50.,
+                    delta_y: -30.,
+                });
+            event(&ui, 0, 500., 250.);
+            event(&ui, 2, 500., 250.);
+            assert!(
+                preview_point.get().0 > after.0 + 0.01,
+                "scroll did not pan zoomed preview"
+            );
+            pinch(&ui, 500., 250., 0., Started);
+            pinch(&ui, 500., 250., 100., Moved);
+            assert_eq!(ui.get_preview_zoom(), 8.);
+            pinch(&ui, 500., 250., 0., Cancelled);
+            ui.invoke_reset_preview();
+            assert_eq!(ui.get_preview_zoom(), 1.);
+            event(&ui, 0, 500., 250.);
+            event(&ui, 2, 500., 250.);
+            assert!(
+                (preview_point.get().0 - before.0).abs() < 0.01,
+                "Fit failed to reset pan"
+            );
+            assert_eq!(ui.get_playhead(), 12., "preview gesture changed playhead");
+            assert!(!ui.get_dirty(), "preview gesture dirtied the project");
             ui.set_playhead(6.);
             pinch(&ui, 718., 650., 0., Started);
             pinch(&ui, 718., 650., 1., Moved);
@@ -128,7 +186,7 @@ fn main() -> Result<(), slint::PlatformError> {
             assert_eq!(ui.get_timeline_offset(), 0.);
             pinch(&ui, 718., 650., 0., Ended);
             println!(
-                "TIMELINE_INTERACTION_PASSED: scrub, pinch anchor, bounds, cancellation, outside scope"
+                "TIMELINE_INTERACTION_PASSED: timeline and preview pinch, anchor, pan, Fit, bounds, isolation, scrubbing"
             );
             slint::quit_event_loop().unwrap();
         });

@@ -3,7 +3,7 @@ import { Palette } from "std-widgets.slint";
 export struct Region { id: string, kind: string, label: string, start: float, end: float, row: int, tint: color, selected: bool }
 export struct Field { key: string, label: string, value: string, kind: int, minimum: float, maximum: float, choices: [string], values: [string], choice: int }
 export struct Wallpaper { key: string, title: string, source: image }
-import { TimelineScrubber, ScrubField, Theme, ToolButton, IconButton, RailButton, Toggle, FineSlider, ValueInput, Dropdown, RecordButton, Panel, Divider, ChoiceTile, ScrollArea, ProgressBar, Label, FieldRow, SegmentedControl } from "controls.slint";
+import { PreviewViewport, TimelineScrubber, ScrubField, Theme, ToolButton, IconButton, RailButton, Toggle, FineSlider, ValueInput, Dropdown, RecordButton, Panel, Divider, ChoiceTile, ScrollArea, ProgressBar, Label, FieldRow, SegmentedControl } from "controls.slint";
 import { SettingCard, MotionChoices, CursorChoices, PositionChoices } from "choices.slint";
 export component EditorWindow inherits Window {
     title:root.document-title + (root.dirty ? root.translate(" •",root.language) : root.translate("",root.language)) + root.translate(" — SubTake",root.language);
@@ -49,6 +49,8 @@ export component EditorWindow inherits Window {
     callback canvas-edit(float,float,bool);
     in property <image> thumbnails;
     in property <image> waveform;
+    in-out property <float> preview-zoom:1;
+    public function reset-preview() {preview-viewport.reset();}
     in property <float> preview-aspect: 1.777778;
     in property <float> duration: 1;
     in property <float> playhead: 0;
@@ -150,12 +152,14 @@ export component EditorWindow inherits Window {
                         Dropdown {label:"Aspect ratio";width:96px;size:compact;model:["Native","16:9","9:16","1:1","4:3","3:2"];current-index <=> root.aspect-index;selected(value)=>{root.field-change("aspectRatio",["native","16:9","9:16","1:1","4:3","3:2"][self.current-index]);}}
                         Rectangle {width:1px;height:14px;background:Theme.border;}
                         ToolButton {icon:@image-url("../assets/icons/Crop-regular.svg");text:root.translate("Crop",root.language);variant:ghost;active:root.panel=="Crop";enabled:root.has-video;clicked=>{root.action("visual-crop");}}
+                        ToolButton {has-icon:false;text:root.preview-zoom>1.001 ? "Fit · "+round(root.preview-zoom*100)+"%" : "Fit";label:"Reset preview to fit";variant:ghost;clicked=>{root.reset-preview();}}
                     }
                     Rectangle {vertical-stretch:1;background:Theme.bg;clip:true;
                         for row in ceil(self.height/20px): Rectangle {y:row*20px;height:2px;
                             for column in ceil(self.width/20px): Rectangle {x:column*20px;width:1.5px;height:1.5px;border-radius:1px;background:Theme.canvas-dot;}
                         }
-                        image-area := Rectangle {clip:true;width:min(parent.width - 8px,(parent.height - 8px)*root.preview-aspect);height:self.width/root.preview-aspect;x:(parent.width - self.width)/2;y:(parent.height - self.height)/2;background:transparent;border-radius:20px;
+                        preview-viewport := PreviewViewport {enabled:root.has-video;aspect:root.preview-aspect;zoom <=> root.preview-zoom;
+                        image-area := Rectangle {x:0px;y:0px;clip:true;width:preview-viewport.image-width;height:preview-viewport.image-height;background:transparent;border-radius:20px;
                             Image {visible:root.has-video;source:root.preview;image-fit:contain;width:parent.width;height:parent.height;}
                             TouchArea {clicked=>{root.preview-click(self.mouse-x/self.width,self.mouse-y/self.height);}}
                             if root.edit-visible && !root.playing: Rectangle {x:root.edit-x*parent.width;y:root.edit-y*parent.height;width:root.edit-width*parent.width;height:root.edit-height*parent.height;background:transparent;border-color:#6294ff;border-width:1.5px;
@@ -164,6 +168,7 @@ export component EditorWindow inherits Window {
                                     TouchArea {private property <length> origin-x;private property <length> origin-y;pointer-event(e)=>{if e.kind==PointerEventKind.down {self.origin-x=self.mouse-x;self.origin-y=self.mouse-y;}if e.kind==PointerEventKind.up {root.canvas-edit((self.mouse-x - self.origin-x)/image-area.width,(self.mouse-y - self.origin-y)/image-area.height,true);}}}
                                 }
                             }
+                        }
                         }
                         if !root.has-video: VerticalLayout {alignment:center;spacing:14px;
                             HorizontalLayout {alignment:center;height:42px;Image {height:42px;width:42px;source:@image-url("../assets/icons/FilmStrip-regular.svg");colorize:#72727c;}}

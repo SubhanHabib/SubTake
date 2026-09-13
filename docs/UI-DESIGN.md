@@ -27,3 +27,9 @@ The ruler and filmstrip seek on pointer down, continue scrubbing while held, and
 Pinch over the timeline to zoom between 1x and 100x. The time under the pointer at gesture start stays anchored while the visible range changes; the range clamps at either end of the source. Pinching outside the timeline does not change it. Slint 1.17.1 routes native macOS trackpad pinch events through `ScaleRotateGestureHandler`; the shared handler also follows Slint platform gesture support. Windows/Linux trackpad parity has not been tested. Gesture cancellation keeps the last applied view and allows the next gesture to begin normally. Pinching only changes the viewport, not project content or the playhead time.
 
 The native timeline regression example injects the same core pinch events emitted by the winit backend. Its test-only dependency on `i-slint-core` is pinned to the installed Slint version. These automated checks do not substitute for a physical trackpad test.
+
+## Preview magnification
+
+Pinching over the preview magnifies the workspace view from Fit (1x) to 8x. The image position under the gesture remains anchored, subject to image-edge bounds. Two-finger scrolling pans the magnified view, and the Fit control resets scale and position. `PreviewViewport` owns this behavior; image and edit-overlay children share the same scaled coordinate system. Opening a project or changing preview aspect resets the view. These transient UI properties are separate from project effects, crop settings, playhead time and exported framing.
+
+Native gesture regression checks cover preview anchoring and normalized click coordinates, scroll panning, bounds, Fit and isolation from the timeline. Physical trackpad input remains a manual acceptance check.

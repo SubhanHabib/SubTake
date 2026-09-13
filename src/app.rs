@@ -1899,6 +1899,7 @@ impl App {
                         s.source = Some(source);
                         s.info = Some(info);
                         s.source_time = 0.;
+                        ui.invoke_reset_preview();
                         ui.set_timeline_zoom(1.);
                         ui.set_timeline_offset(0.);
                         s.selected = None;
