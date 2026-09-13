@@ -1,0 +1,23 @@
+// Shared timeline playhead: pointed cap, continuous rule and six-dot grip.
+export component TimelineScrubber inherits Rectangle {
+    in property <length> grip-y:64px;
+    callback scrubbed(length);
+    width:26px;
+    Rectangle {x:12px;y:26px;width:2px;height:max(0px,parent.height - 26px);background:#898989;}
+    // Rounded cap with a small downward point.
+    Rectangle {x:6px;y:0px;width:14px;height:17px;border-radius:6px;background:#999999;
+        drop-shadow-blur:8px;drop-shadow-offset-y:3px;drop-shadow-color:#00000012;
+    }
+    Path {x:8px;y:12px;width:10px;height:10px;commands:"M 0 0 L 10 0 L 5 8 Z";fill:#999999;}
+    Rectangle {x:0px;y:root.grip-y;width:26px;height:62px;border-radius:13px;
+        background:@linear-gradient(180deg,#999999 0%,#626262 100%);
+        border-width:1px;border-color:#ffffff35;
+        drop-shadow-blur:12px;drop-shadow-offset-y:5px;drop-shadow-color:#00000028;
+        for row in 3: Rectangle {x:8px;y:22px+row*7px;width:3px;height:3px;border-radius:1.5px;background:#ffffff;}
+        for row in 3: Rectangle {x:15px;y:22px+row*7px;width:3px;height:3px;border-radius:1.5px;background:#ffffff;}
+    }
+    TouchArea {mouse-cursor:ew-resize;private property <length> grab;
+        pointer-event(e)=>{if e.kind==PointerEventKind.down && e.button==PointerEventButton.left {self.grab=self.mouse-x;}}
+        moved=>{if self.pressed {root.scrubbed(self.mouse-x - self.grab);}}
+    }
+}

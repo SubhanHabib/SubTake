@@ -20,4 +20,4 @@ The initial macOS window handle is only requested after the event loop starts. S
 
 ## Timeline scrubbing
 
-The ruler and filmstrip seek on pointer down, continue scrubbing while held, and commit the release position, clamped to the visible time range. The lower playhead has a 16px hit target above the effect regions, so dragging it does not select an underlying effect. `cargo run --offline --locked --example timeline_interaction` exercises those pointer paths and the right boundary.
+The ruler and filmstrip seek on pointer down, continue scrubbing while held, and commit the release position, clamped to the visible time range. The playhead is a single overlay with a 26px hit target above the effect regions, so dragging it does not select an underlying effect. Its reusable `TimelineScrubber` component follows the supplied narrow reference: a pointed grey cap, continuous 2px rule, shaded rounded grip and six white dots. It stays continuous across the filmstrip and visible lanes when the track content scrolls. `cargo run --offline --locked --example timeline_interaction` exercises those pointer paths and the right boundary.

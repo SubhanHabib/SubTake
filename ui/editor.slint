@@ -3,7 +3,7 @@ import { Palette } from "std-widgets.slint";
 export struct Region { id: string, kind: string, label: string, start: float, end: float, row: int, tint: color, selected: bool }
 export struct Field { key: string, label: string, value: string, kind: int, minimum: float, maximum: float, choices: [string], values: [string], choice: int }
 export struct Wallpaper { key: string, title: string, source: image }
-import { ScrubField, Theme, ToolButton, IconButton, RailButton, Toggle, FineSlider, ValueInput, Dropdown, RecordButton, Panel, Divider, ChoiceTile, ScrollArea, ProgressBar, Label, FieldRow, SegmentedControl } from "controls.slint";
+import { TimelineScrubber, ScrubField, Theme, ToolButton, IconButton, RailButton, Toggle, FineSlider, ValueInput, Dropdown, RecordButton, Panel, Divider, ChoiceTile, ScrollArea, ProgressBar, Label, FieldRow, SegmentedControl } from "controls.slint";
 import { SettingCard, MotionChoices, CursorChoices, PositionChoices } from "choices.slint";
 export component EditorWindow inherits Window {
     title:root.document-title + (root.dirty ? root.translate(" •",root.language) : root.translate("",root.language)) + root.translate(" — SubTake",root.language);
@@ -311,9 +311,7 @@ export component EditorWindow inherits Window {
                                     Label {x:12px;y:3px;width:parent.width - 24px;height:18px;text:root.document-title;color:Theme.muted;font-size:Theme.font-small;overflow:elide;}
                                     Image {x:-root.timeline-offset/root.timeline-visible*parent.width;y:24px;width:parent.width*root.timeline-zoom;height:44px;source:root.thumbnails;image-fit:fill;}
                                 }
-                                Rectangle {x:(root.playhead - root.timeline-offset)/root.timeline-visible*parent.width;y:16px;width:1.5px;height:parent.height - 16px;background:Theme.playhead;
-                                    Rectangle {x:-4px;y:0px;width:9px;height:12px;border-radius:4px;background:Theme.playhead;}
-                                }
+
                                 TouchArea {mouse-cursor:ew-resize;
                                     pointer-event(e)=>{if e.kind==PointerEventKind.down && e.button==PointerEventButton.left {root.seek(root.timeline-offset+clamp(self.mouse-x/self.width,0,1)*root.timeline-visible);}if e.kind==PointerEventKind.up && e.button==PointerEventButton.left {root.seek(root.timeline-offset+clamp(self.mouse-x/self.width,0,1)*root.timeline-visible);}}
                                     moved=>{if self.pressed {root.seek(root.timeline-offset+clamp(self.mouse-x/self.width,0,1)*root.timeline-visible);}}
@@ -340,17 +338,17 @@ export component EditorWindow inherits Window {
                                         TouchArea {mouse-cursor:ew-resize;private property <length> origin;pointer-event(e)=>{if e.kind==PointerEventKind.down {self.origin=self.mouse-x;root.select-region(region.kind,region.id,e.modifiers.shift);}if e.kind==PointerEventKind.up {root.move-region(region.kind,region.id,(self.mouse-x - self.origin)/tracks.width*root.timeline-visible,1);}}}
                                     }
                                 }
-                                track-playhead:=Rectangle {x:(root.playhead - root.timeline-offset)/root.timeline-visible*parent.width;width:1.5px;height:parent.height;background:Theme.playhead;
-                                    TouchArea {x:-7px;width:16px;height:parent.height;mouse-cursor:ew-resize;
-                                        pointer-event(e)=>{if e.kind==PointerEventKind.down && e.button==PointerEventButton.left {root.seek(root.timeline-offset+clamp((track-playhead.x+self.x+self.mouse-x)/tracks.width,0,1)*root.timeline-visible);}}
-                                        moved=>{if self.pressed {root.seek(root.timeline-offset+clamp((track-playhead.x+self.x+self.mouse-x)/tracks.width,0,1)*root.timeline-visible);}}
-                                    }
-                                    Rectangle {x:-4px;width:9px;height:12px;border-radius:4px;background:Theme.playhead;}
-                                }
+
                             }
                         }
                         }
                         FineSlider {height:12px;minimum:0;maximum:max(0.001,root.duration - root.timeline-visible);value:root.timeline-offset;changed(value)=>{root.timeline-offset=value;}released(value)=>{root.timeline-offset=value;}label:root.translate("Timeline position",root.language);}
+                    }
+                    TimelineScrubber {
+                        x:98px+(root.playhead - root.timeline-offset)/root.timeline-visible*(parent.width - 120px) - self.width/2;
+                        y:48px;height:parent.height - 72px;
+                        visible:root.playhead>=root.timeline-offset && root.playhead<=root.timeline-offset+root.timeline-visible;
+                        scrubbed(delta)=>{root.seek(clamp(root.playhead+delta/(parent.width - 120px)*root.timeline-visible,0,root.duration));}
                     }
                 }
             }
