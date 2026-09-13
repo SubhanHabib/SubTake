@@ -363,7 +363,7 @@ export component EditorWindow inherits Window {
                             }
                         }
                         }
-                        FineSlider {minimum:0;maximum:max(0.001,root.duration - root.timeline-visible);value:root.timeline-offset;changed(value)=>{root.timeline-offset=value;}released(value)=>{root.timeline-offset=value;}label:root.translate("Timeline position",root.language);}
+                        FineSlider {progress-style:true;minimum:0;maximum:max(0.001,root.duration - root.timeline-visible);value:root.timeline-offset;changed(value)=>{root.timeline-offset=value;}released(value)=>{root.timeline-offset=value;}label:root.translate("Timeline position",root.language);}
                     }
                     TimelineScrubber {
                         x:98px+(root.playhead - root.timeline-offset)/root.timeline-visible*(parent.width - 120px) - self.width/2;

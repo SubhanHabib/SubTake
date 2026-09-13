@@ -1,7 +1,12 @@
 import { Theme } from "../theme.slint";
-export component ProgressBar inherits Rectangle {
+// Shared visual track for passive progress and interactive timeline position.
+export component ProgressTrack inherits Rectangle {
     in property <float> progress;
-    height:4px;vertical-stretch:0;border-radius:2px;background:Theme.border;
-    Rectangle {x:0px;width:parent.width*clamp(root.progress,0,1);height:parent.height;border-radius:parent.border-radius;background:Theme.blue;}
-    accessible-role:progress-indicator;accessible-value:root.progress;accessible-value-minimum:0;accessible-value-maximum:1;
+    height:10px;vertical-stretch:0;border-radius:self.height/2;
+    background:Theme.dark ? #00000060 : #00000030;
+    clip:true;
+    Rectangle {x:0px;width:parent.width*clamp(root.progress,0,1);height:parent.height;border-radius:parent.height/2;background:@linear-gradient(90deg, #ffffff88 0%, #ffffffbb 50%, #ffffff88 100%);}
+}
+export component ProgressBar inherits ProgressTrack {
+    accessible-role:progress-indicator;accessible-value:clamp(root.progress,0,1);accessible-value-minimum:0;accessible-value-maximum:1;
 }
