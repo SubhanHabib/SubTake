@@ -16,6 +16,16 @@ fn event(ui: &EditorWindow, kind: u8, x: f32, y: f32) {
         },
     });
 }
+fn pinch(ui: &EditorWindow, x: f32, y: f32, delta: f32, phase: i_slint_core::input::TouchPhase) {
+    // This is the event Slint's winit backend emits for a native Mac pinch.
+    i_slint_core::window::WindowInner::from_pub(ui.window()).process_mouse_input(
+        i_slint_core::input::MouseEvent::PinchGesture {
+            position: i_slint_core::lengths::LogicalPoint::new(x, y),
+            delta,
+            phase,
+        },
+    );
+}
 fn main() -> Result<(), slint::PlatformError> {
     let ui = EditorWindow::new()?;
     ui.set_has_video(true);
@@ -83,7 +93,43 @@ fn main() -> Result<(), slint::PlatformError> {
                 "scrub did not clamp to duration"
             );
             event(&ui, 2, 1500., 597.);
-            println!("TIMELINE_INTERACTION_PASSED");
+            use i_slint_core::input::TouchPhase::{Cancelled, Ended, Moved, Started};
+            pinch(&ui, 400., 200., 0., Started);
+            pinch(&ui, 400., 200., 1., Moved);
+            pinch(&ui, 400., 200., 0., Ended);
+            assert_eq!(
+                ui.get_timeline_zoom(),
+                1.,
+                "gesture outside timeline changed zoom"
+            );
+            ui.set_playhead(6.);
+            pinch(&ui, 718., 650., 0., Started);
+            pinch(&ui, 718., 650., 1., Moved);
+            assert!((ui.get_timeline_zoom() - 2.).abs() < 0.01);
+            assert!(
+                (ui.get_timeline_offset() - 3.).abs() < 0.01,
+                "pinch lost the pointer anchor"
+            );
+            pinch(&ui, 718., 650., 0., Ended);
+            pinch(&ui, 718., 650., 0., Started);
+            pinch(&ui, 718., 650., 0.5, Moved);
+            assert!(
+                (ui.get_timeline_zoom() - 3.).abs() < 0.01,
+                "next gesture did not start from current zoom"
+            );
+            pinch(&ui, 718., 650., 0., Cancelled);
+            pinch(&ui, 718., 650., 0., Started);
+            pinch(&ui, 718., 650., 500., Moved);
+            assert_eq!(ui.get_timeline_zoom(), 100.);
+            pinch(&ui, 718., 650., 0., Ended);
+            pinch(&ui, 718., 650., 0., Started);
+            pinch(&ui, 718., 650., -0.99999, Moved);
+            assert_eq!(ui.get_timeline_zoom(), 1.);
+            assert_eq!(ui.get_timeline_offset(), 0.);
+            pinch(&ui, 718., 650., 0., Ended);
+            println!(
+                "TIMELINE_INTERACTION_PASSED: scrub, pinch anchor, bounds, cancellation, outside scope"
+            );
             slint::quit_event_loop().unwrap();
         });
     });

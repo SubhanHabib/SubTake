@@ -1,7 +1,7 @@
 {
-  "recorded_at": "2026-09-13T09:40:41.022358+00:00",
+  "recorded_at": "2026-09-13T14:07:20.044072+00:00",
   "status": "passed",
-  "main_binary_sha256": "7e6defccaca833e252d127c3c0fdd20add8c39102accbb31aaf642a972bc3445",
+  "main_binary_sha256": "ec2557b51aff4a68180e2b40468cef50facf1a108371935362a1360398f6b68c",
   "checks": [
     "filmstrip pointer down seeks immediately",
     "filmstrip pointer move scrubs before release",
@@ -15,5 +15,15 @@
     "reference pointed cap and six-dot shaded grip",
     "continuous line across filmstrip and tracks",
     "1360x880 and 980x680 native snapshots"
-  ]
+  ],
+  "pinch_checks": [
+    "native backend-equivalent events routed through timeline handler",
+    "pinch over scrubber anchors time under pointer",
+    "sequential gestures start from current zoom",
+    "zoom clamped to 1x through 100x",
+    "viewport offset clamps at source boundaries",
+    "cancel then restart",
+    "outside-timeline pinch ignored"
+  ],
+  "pinch_limitations": "Physical trackpad input not exercised; Windows/Linux trackpad parity not verified."
 }

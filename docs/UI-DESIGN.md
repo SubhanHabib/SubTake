@@ -21,3 +21,9 @@ The initial macOS window handle is only requested after the event loop starts. S
 ## Timeline scrubbing
 
 The ruler and filmstrip seek on pointer down, continue scrubbing while held, and commit the release position, clamped to the visible time range. The playhead is a single overlay with a 26px hit target above the effect regions, so dragging it does not select an underlying effect. Its reusable `TimelineScrubber` component follows the supplied narrow reference: a pointed grey cap, continuous 2px rule, shaded rounded grip and six white dots. It stays continuous across the filmstrip and visible lanes when the track content scrolls. `cargo run --offline --locked --example timeline_interaction` exercises those pointer paths and the right boundary.
+
+## Timeline pinch zoom
+
+Pinch over the timeline to zoom between 1x and 100x. The time under the pointer at gesture start stays anchored while the visible range changes; the range clamps at either end of the source. Pinching outside the timeline does not change it. Slint 1.17.1 routes native macOS trackpad pinch events through `ScaleRotateGestureHandler`; the shared handler also follows Slint platform gesture support. Windows/Linux trackpad parity has not been tested. Gesture cancellation keeps the last applied view and allows the next gesture to begin normally. Pinching only changes the viewport, not project content or the playhead time.
+
+The native timeline regression example injects the same core pinch events emitted by the winit backend. Its test-only dependency on `i-slint-core` is pinned to the installed Slint version. These automated checks do not substitute for a physical trackpad test.

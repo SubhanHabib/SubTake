@@ -5189,6 +5189,7 @@ dependencies = [
  "crossbeam-channel",
  "directories",
  "global-hotkey",
+ "i-slint-core",
  "image",
  "objc2 0.6.4",
  "objc2-metal 0.3.2",

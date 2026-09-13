@@ -284,6 +284,20 @@ export component EditorWindow inherits Window {
             }
             if root.has-video: Rectangle {min-height:200px;preferred-height:320px;max-height:320px;vertical-stretch:0;background:Theme.bg;
                 Panel {x:12px;width:parent.width - 24px;height:parent.height;
+                    ScaleRotateGestureHandler {
+                        enabled:root.has-video;
+                        private property <float> initial-zoom;
+                        private property <float> anchor-fraction;
+                        private property <float> anchor-time;
+                        started=>{
+                            self.initial-zoom=root.timeline-zoom;
+                            self.anchor-fraction=clamp((self.center.x - 98px)/(self.width - 120px),0,1);
+                            self.anchor-time=root.timeline-offset+self.anchor-fraction*root.timeline-visible;
+                        }
+                        updated=>{
+                            root.timeline-zoom=clamp(self.initial-zoom*self.scale,1,100);
+                            root.timeline-offset=clamp(self.anchor-time - self.anchor-fraction*root.timeline-visible,0,max(0,root.duration - root.timeline-visible));
+                        }
                     VerticalLayout {padding:12px;spacing:8px;
                         HorizontalLayout {height:32px;spacing:4px;
                             IconButton {icon:@image-url("../assets/icons/MagnifyingGlassPlus-regular.svg");label:root.translate("Add zoom",root.language);variant:ghost;enabled:root.has-video;clicked=>{root.action("add-zoom");}}
@@ -349,6 +363,7 @@ export component EditorWindow inherits Window {
                         y:48px;height:parent.height - 72px;
                         visible:root.playhead>=root.timeline-offset && root.playhead<=root.timeline-offset+root.timeline-visible;
                         scrubbed(delta)=>{root.seek(clamp(root.playhead+delta/(parent.width - 120px)*root.timeline-visible,0,root.duration));}
+                    }
                     }
                 }
             }

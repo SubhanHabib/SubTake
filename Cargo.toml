@@ -41,3 +41,7 @@ slint-build = "=1.17.1"
 [profile.release]
 lto = "thin"
 codegen-units = 1
+
+[dev-dependencies]
+# Inject the same gesture events as winit in native UI regression tests.
+i-slint-core = { version = "=1.17.1", default-features = false }
