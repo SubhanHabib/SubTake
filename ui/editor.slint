@@ -322,7 +322,7 @@ export component EditorWindow inherits Window {
                             Rectangle {horizontal-stretch:1;}
                             IconButton {icon:@image-url("../assets/icons/Magnet-regular.svg");label:root.translate("Snap",root.language);variant:ghost;active:root.snap;clicked=>{root.snap=!root.snap;}}
                             IconButton {icon:@image-url("../assets/icons/ArrowsOutSimple-regular.svg");label:root.translate("Fit timeline",root.language);variant:ghost;clicked=>{root.timeline-zoom=1;root.timeline-offset=0;}}
-                            FineSlider {width:100px;minimum:1;maximum:100;label:root.translate("Timeline zoom",root.language);value:root.timeline-zoom;changed(value)=>{root.timeline-zoom=value;}released(value)=>{root.timeline-zoom=value;}}
+                            ScrubField {width:160px;minimum:1;maximum:100;label:root.translate("Zoom",root.language);value:root.timeline-zoom;committed(value)=>{if value.is-float() {root.timeline-zoom=clamp(value.to-float(),1,100);}}}
                         }
                         Rectangle {min-height:64px;preferred-height:92px;max-height:92px;clip:true;
                             Label {x:8px;y:48px;height:20px;text:root.translate("Source",root.language);color:Theme.muted;font-size:9px;}
