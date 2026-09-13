@@ -31,12 +31,14 @@ export global Theme {
     out property <length> font-heading: 14px;
     out property <string> font-family: "Helvetica Neue";
     out property <length> radius-small: 8px;
-    out property <length> radius-control: 18px;
+    out property <length> radius-control: 16px;
     out property <length> radius-card: 16px;
     out property <length> radius-panel: 20px;
     out property <length> border-width: 1px;
     out property <length> focus-width: 2px;
     out property <length> control-height: 40px;
+    out property <length> slider-fill-inset: 1px;
+    out property <length> slider-fill-radius: radius-control - slider-fill-inset;
     // Compatibility size names all use the same comfortable control height.
     out property <length> control-small: control-height;
     out property <length> control-compact: control-height;

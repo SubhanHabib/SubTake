@@ -61,4 +61,6 @@ Buttons, dropdown triggers, inputs and slider labels share `Theme.control-paddin
 
 `ProgressTrack` in `ui/components/progress.slint` owns the reference-style 10px pill track, translucent dark background and soft white gradient fill. `ProgressBar` adds progress accessibility semantics; `FineSlider.progress-style` reuses that visual inside its existing 40px pointer/keyboard control. The timeline position slider uses this variant; zoom and numeric sliders retain their existing styles. This uses translucency, not live backdrop blur.
 
-Filled sliders use a white active surface (translucent white in dark mode), a grey vertical end marker, and a leading icon before their label. Numeric values use a separate inset rounded input. Shared control radius is 18px; endpoint-icon zoom sliders retain the same fill styling and 12px icon padding.
+Filled sliders use a white active surface (translucent white in dark mode), a grey vertical end marker, and a leading icon before their label. Numeric values use a separate inset rounded input. Shared control radius is 16px; endpoint-icon zoom sliders retain the same fill styling and 12px icon padding.
+
+Control geometry is defined by `Theme.control-height` (40px) and `Theme.radius-control` (16px), including buttons previously marked round and slider numeric inputs. The filled slider overlay uses `Theme.slider-fill-inset` (1px) on all edges and `Theme.slider-fill-radius` (outer radius minus inset = 15px); its height is derived as 40 - 2 = 38px.

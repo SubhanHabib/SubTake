@@ -14,7 +14,7 @@ export component ButtonSurface inherits Rectangle {
     callback clicked;
     height:Theme.control-height;
     vertical-stretch: 0;
-    border-radius: root.round ? self.height/2 : Theme.radius-control;
+    border-radius: Theme.radius-control;
     background: root.variant==ButtonVariant.primary ? (touch.has-hover ? Theme.accent-hover : Theme.blue) : root.variant==ButtonVariant.danger || root.variant==ButtonVariant.record ? Theme.danger.with-alpha(touch.has-hover ? 0.22 : 0.1) : root.active ? Theme.selection : touch.pressed || touch.has-hover ? Theme.hover : root.variant==ButtonVariant.ghost || root.variant==ButtonVariant.outline ? transparent : Theme.surface;
     border-width: key.has-focus ? Theme.focus-width : root.variant!=ButtonVariant.outline ? 0px : Theme.border-width;
     border-color: key.has-focus ? Theme.blue : root.variant==ButtonVariant.danger || root.variant==ButtonVariant.record ? Theme.danger.with-alpha(0.4) : root.active ? Theme.blue.with-alpha(0.5) : Theme.border;

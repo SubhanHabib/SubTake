@@ -12,5 +12,5 @@ export component ScrubField inherits Rectangle {
     callback committed(string);
     height:Theme.control-height;
     FineSlider {width:parent.width;filled:true;enabled:root.enabled;label:root.label;label-icon:root.icon;minimum:root.minimum;maximum:root.maximum;value:root.value;released(value)=>{root.committed(value);}}
-    ValueInput {x:parent.width - 76px;y:5px;width:70px;height:parent.height - 10px;border-radius:10px;background:self.has-focus ? Theme.input : Theme.dark ? #ffffff12 : #e7e7e5;border-width:self.has-focus ? Theme.focus-width : 0px;enabled:root.enabled;text:round(root.value*100)/100;label:root.label;accepted=>{root.committed(self.text);}}
+    ValueInput {x:parent.width - 76px;y:0px;width:70px;height:Theme.control-height;border-radius:Theme.radius-control;background:self.has-focus ? Theme.input : Theme.dark ? #ffffff12 : #e7e7e5;border-width:self.has-focus ? Theme.focus-width : 0px;enabled:root.enabled;text:round(root.value*100)/100;label:root.label;accepted=>{root.committed(self.text);}}
 }
