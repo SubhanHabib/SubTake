@@ -46,6 +46,7 @@ export global Theme {
     out property <length> gap-small: 4px;
     out property <length> gap: 8px;
     out property <length> gap-large: 12px;
-    out property <length> input-padding: 7px;
+    out property <length> control-padding: (control-height - icon-size)/2;
+    out property <length> input-padding: control-padding;
 }
 export enum ControlSize { small, compact, regular, large }

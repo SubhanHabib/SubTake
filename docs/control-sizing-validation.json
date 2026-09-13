@@ -1,8 +1,8 @@
 {
-  "recorded_at": "2026-09-13T14:30:42.225820+00:00",
+  "recorded_at": "2026-09-13T14:44:52.293469+00:00",
   "status": "passed",
   "control_height": 40,
-  "main_binary_sha256": "6a5ddd3ac11acff98473b5f28e3f7a07ff69c6419854cbc59efb4a9370ce156c",
+  "main_binary_sha256": "a628debf5f121f421e71de4cf97bbb78260b0725f4220fd12e344bb68a055fe2",
   "editor_cases": 11,
   "overlay_cases": 6,
   "checks": [
@@ -10,7 +10,16 @@
     "shared control keyboard/pointer interactions",
     "timeline and preview gestures",
     "normal and minimum editor screenshots",
-    "expanded recorder More layout reviewed"
+    "expanded recorder More layout reviewed",
+    "balanced shared padding",
+    "enlarged slider and switch gallery and overlay screenshots reviewed"
   ],
-  "source": "Theme.control-height in ui/theme.slint"
+  "source": "Theme.control-height in ui/theme.slint",
+  "horizontal_padding": 12,
+  "toggle_track": [
+    52,
+    30
+  ],
+  "toggle_thumb": 24,
+  "plain_slider_thumb": 16
 }

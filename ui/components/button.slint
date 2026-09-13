@@ -33,11 +33,11 @@ export component ToolButton inherits ButtonSurface {
     in property <bool> has-icon: true;
     in property <length> glyph-size:Theme.icon-size;
     in property <color> icon-color: root.variant==ButtonVariant.primary ? Theme.on-accent : root.variant==ButtonVariant.danger || root.variant==ButtonVariant.record ? Theme.danger : root.active ? Theme.accent-text : Theme.text;
-    min-width: root.text=="" ? root.height : min(240px,caption.preferred-width + (root.has-icon ? 42px : 16px));
+    min-width: root.text=="" ? root.height : min(240px,caption.preferred-width + 2*Theme.control-padding + (root.has-icon ? root.glyph-size + Theme.gap : 0px));
     horizontal-stretch: 0;
     Tooltip {text:@markdown("\{root.label}");}
-    if root.has-icon: Image {x:root.text=="" ? (root.width - root.glyph-size)/2 : 10px;y:(root.height - root.glyph-size)/2;width:root.glyph-size;height:root.glyph-size;source:root.icon;colorize:root.icon-color;image-fit:contain;}
-    caption := Text {visible:root.text!="";x:root.has-icon ? 32px : 8px;y:0px;width:root.width - self.x - 8px;height:root.height;text:root.text;font-size:Theme.font-control;font-weight:500;color:root.variant==ButtonVariant.primary ? Theme.on-accent : root.variant==ButtonVariant.danger ? Theme.danger : Theme.text;vertical-alignment:center;horizontal-alignment:center;overflow:elide;}
+    if root.has-icon: Image {x:root.text=="" ? (root.width - root.glyph-size)/2 : Theme.control-padding;y:(root.height - root.glyph-size)/2;width:root.glyph-size;height:root.glyph-size;source:root.icon;colorize:root.icon-color;image-fit:contain;}
+    caption := Text {visible:root.text!="";x:Theme.control-padding + (root.has-icon ? root.glyph-size + Theme.gap : 0px);y:0px;width:root.width - self.x - Theme.control-padding;height:root.height;text:root.text;font-size:Theme.font-control;font-weight:500;color:root.variant==ButtonVariant.primary ? Theme.on-accent : root.variant==ButtonVariant.danger ? Theme.danger : Theme.text;vertical-alignment:center;horizontal-alignment:center;overflow:elide;}
 }
 export component IconButton inherits ToolButton { width:root.height; }
 export component RecordButton inherits IconButton {

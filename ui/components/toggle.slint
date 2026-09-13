@@ -4,13 +4,15 @@ export component Toggle inherits Rectangle {
     in property <bool> enabled:true;
     in property <string> label;
     callback toggled(bool);
-    width:30px;height:18px;border-radius:9px;
+    width:52px;height:Theme.control-height;border-radius:Theme.radius-control;
     opacity:root.enabled ? 1 : Theme.disabled-opacity;
-    background:root.checked ? Theme.blue : Theme.unchecked;
+    background:transparent;
     border-width:focus.has-focus ? 2px : 0px;border-color:Theme.blue;
     accessible-enabled:root.enabled;accessible-role:checkbox;accessible-label:root.label;accessible-checked:root.checked;
     accessible-action-default=>{if root.enabled {root.toggled(!root.checked);}}
-    Rectangle {x:root.checked ? 14px : 2px;y:2px;width:14px;height:14px;border-radius:7px;background:Theme.toggle-thumb;animate x {duration:100ms;}}
+    Rectangle {y:(parent.height - 30px)/2;width:parent.width;height:30px;border-radius:15px;background:root.checked ? Theme.blue : Theme.unchecked;
+        Rectangle {x:root.checked ? parent.width - 27px : 3px;y:3px;width:24px;height:24px;border-radius:12px;background:Theme.toggle-thumb;animate x {duration:100ms;}}
+    }
     TouchArea {enabled:root.enabled;mouse-cursor:pointer;clicked=>{focus.focus();root.toggled(!root.checked);}}
     focus:=FocusScope {enabled:root.enabled;width:0px;height:0px;key-pressed(e)=>{if e.text==" " {root.toggled(!root.checked);return accept;}return reject;}}
     forward-focus:focus;

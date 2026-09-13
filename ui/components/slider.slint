@@ -10,18 +10,19 @@ export component FineSlider inherits Rectangle {
     callback changed(float);
     private property <bool> dragging:false;
     private property <float> draft;
-    height:Theme.control-height;min-width:40px;
-    border-radius:Theme.radius-control;background:root.filled ? Theme.surface : transparent;opacity:root.enabled ? 1 : Theme.disabled-opacity;
+    height:Theme.control-height;min-width:64px;
+    border-radius:Theme.radius-control;background:Theme.surface;opacity:root.enabled ? 1 : Theme.disabled-opacity;
+    private property <length> track-inset:root.filled ? 0px : Theme.control-padding + 8px;
     private property <float> fraction:clamp(((root.dragging ? root.draft : root.value) - root.minimum)/max(0.0001,root.maximum - root.minimum),0,1);
     if root.filled: Rectangle {x:0px;width:max(12px,parent.width*root.fraction);height:parent.height;border-radius:Theme.radius-control;background:Theme.dark ? #ffffff14 : #dededb;}
-    if root.filled: Text {x:12px;width:parent.width - 76px;height:parent.height;text:root.label;color:Theme.text;font-size:Theme.font-control;vertical-alignment:center;overflow:elide;}
-    if !root.filled: Rectangle {y:(parent.height - 3px)/2;height:3px;border-radius:2px;background:Theme.border;
+    if root.filled: Text {x:Theme.control-padding;width:parent.width - 88px;height:parent.height;text:root.label;color:Theme.text;font-size:Theme.font-control;vertical-alignment:center;overflow:elide;}
+    if !root.filled: Rectangle {x:root.track-inset;width:parent.width - 2*root.track-inset;y:(parent.height - 4px)/2;height:4px;border-radius:2px;background:Theme.border;
         Rectangle {x:0px;width:parent.width*root.fraction;height:parent.height;border-radius:2px;background:Theme.muted;}
     }
-    if !root.filled: Rectangle {x:root.fraction*(parent.width - 10px);y:(parent.height - 10px)/2;width:10px;height:10px;border-radius:5px;background:Theme.text;border-width:focus.has-focus ? 2px : 0px;border-color:Theme.blue;}
+    if !root.filled: Rectangle {x:root.track-inset + root.fraction*(parent.width - 2*root.track-inset) - 8px;y:(parent.height - 16px)/2;width:16px;height:16px;border-radius:8px;background:Theme.text;border-width:focus.has-focus ? 2px : 0px;border-color:Theme.blue;}
     TouchArea {enabled:root.enabled;mouse-cursor:pointer;
-        pointer-event(e)=>{if e.kind==PointerEventKind.down {focus.focus();root.draft=root.minimum+clamp(self.mouse-x/self.width,0,1)*(root.maximum - root.minimum);root.dragging=true;root.changed(root.draft);}if e.kind==PointerEventKind.up && root.dragging {root.dragging=false;root.released(root.draft);}}
-        moved=>{if self.pressed {root.draft=root.minimum+clamp(self.mouse-x/self.width,0,1)*(root.maximum - root.minimum);root.changed(root.draft);}}
+        pointer-event(e)=>{if e.kind==PointerEventKind.down {focus.focus();root.draft=root.minimum+clamp((self.mouse-x - root.track-inset)/max(1px,self.width - 2*root.track-inset),0,1)*(root.maximum - root.minimum);root.dragging=true;root.changed(root.draft);}if e.kind==PointerEventKind.up && root.dragging {root.dragging=false;root.released(root.draft);}}
+        moved=>{if self.pressed {root.draft=root.minimum+clamp((self.mouse-x - root.track-inset)/max(1px,self.width - 2*root.track-inset),0,1)*(root.maximum - root.minimum);root.changed(root.draft);}}
     }
     focus:=FocusScope {enabled:root.enabled;width:0px;height:0px;key-pressed(e)=>{if e.text==Key.LeftArrow || e.text==Key.RightArrow {root.released(clamp(root.value+(e.text==Key.LeftArrow ? -1 : 1)*(root.maximum - root.minimum)/100,root.minimum,root.maximum));return accept;}return reject;}}
     border-width:root.filled && focus.has-focus ? Theme.focus-width : 0px;border-color:Theme.blue;
