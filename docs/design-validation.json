@@ -1,0 +1,17 @@
+{
+  "recorded_at": "2026-09-13T09:18:02.596958+00:00",
+  "main_binary_sha256": "5e6b3d3b6f4880f8f48ef17452a4c803c4760774dbcc3b15b012e65c324f545d",
+  "rust_tests_passed": 47,
+  "rust_tests_ignored": 1,
+  "editor_cases": 11,
+  "recorder_layout_cases": 6,
+  "primitives": "passed including filled slider pointer and keyboard",
+  "visual_review": [
+    "live Mac window with isolated landscape project",
+    "normal editor and 980x680 minimum layout",
+    "light and dark primitive galleries",
+    "recorder sources panel"
+  ],
+  "live_snapshot": "test-output/design-review/live-editor.png",
+  "scope": "Visual redesign and native UI interactions on this Mac. Screen capture, export parity, Windows and Linux were not revalidated in this change."
+}

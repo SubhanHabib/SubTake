@@ -1,0 +1,52 @@
+body {
+	background: #111318;
+	color: #eee;
+	font-family: system-ui;
+}
+main {
+	padding: 16px;
+	max-width: 1060px;
+	margin: auto;
+}
+h1 {
+	font-size: 18px;
+	margin: 0 0 10px;
+}
+nav {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 12px;
+	flex-wrap: wrap;
+}
+button {
+	background: #263141;
+	color: white;
+	border: 1px solid #657084;
+	border-radius: 5px;
+	padding: 6px 9px;
+	font-size: 12px;
+}
+.preview {
+	width: 960px;
+	height: 540px;
+	max-width: 100%;
+	margin: auto;
+	position: relative;
+}
+input[type="range"] {
+	width: 100%;
+	margin: 12px 0;
+}
+.strip {
+	display: flex;
+	gap: 3px;
+}
+.strip img {
+	width: calc(12.5% - 3px);
+	height: 52px;
+	object-fit: cover;
+}
+p {
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}

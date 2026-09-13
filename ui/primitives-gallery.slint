@@ -1,0 +1,59 @@
+import { Palette } from "std-widgets.slint";
+import { ScrubField, Theme, ToolButton, IconButton, RecordButton, Toggle, Checkbox, RadioButton, Dropdown, ValueInput, FineSlider, ProgressBar, Panel, Label, ChoiceTile, SegmentedControl, Divider } from "controls.slint";
+export component PrimitiveGallery inherits Window {
+    title:"SubTake - UI primitives";width:820px;height:640px;background:Theme.bg;
+    default-font-family:Theme.font-family;
+    in-out property <bool> dark:true;
+    in-out property <int> clicks:0;
+    in-out property <int> selections:0;
+    in-out property <int> commits:0;
+    in-out property <int> selected:1;
+    in-out property <bool> checked:false;
+    in-out property <bool> switched:false;
+    in-out property <int> radio:0;
+    in-out property <float> amount:0.35;
+    in-out property <string> input-text:"Editable value";
+    in property <[string]> options:["First option","Second option","Third option","Fourth option","Fifth option","Sixth option","Seventh option","Eighth option","Ninth option","Tenth option","Eleventh option","Twelfth option"];
+    out property <string> selection-text:dropdown.current-value;
+    out property <bool> dropdown-open:dropdown.expanded;
+    init=>{Palette.color-scheme=root.dark ? ColorScheme.dark : ColorScheme.light;}
+    changed dark=>{Palette.color-scheme=root.dark ? ColorScheme.dark : ColorScheme.light;}
+    Label {x:24px;y:18px;role:heading;text:"SubTake components";}
+    ToolButton {x:654px;y:14px;width:140px;has-icon:false;text:root.dark ? "Light theme" : "Dark theme";clicked=>{root.dark=!root.dark;}}
+    Label {x:24px;y:53px;text:"Shared implementations, states and tokens";role:muted;}
+    Label {x:24px;y:90px;text:"Buttons";role:heading;}
+    HorizontalLayout {x:24px;y:120px;width:772px;height:40px;spacing:8px;
+        ToolButton {text:"Primary";has-icon:false;variant:primary;clicked=>{root.clicks+=1;}}
+        ToolButton {text:"Secondary";has-icon:false;clicked=>{root.clicks+=1;}}
+        ToolButton {text:"Ghost";has-icon:false;variant:ghost;clicked=>{root.clicks+=1;}}
+        ToolButton {text:"Outline";has-icon:false;variant:outline;clicked=>{root.clicks+=1;}}
+        ToolButton {text:"Delete";has-icon:false;variant:danger;clicked=>{root.clicks+=1;}}
+        ToolButton {text:"Disabled";has-icon:false;enabled:false;clicked=>{root.clicks+=100;}}
+        IconButton {icon:@image-url("../assets/icons/Plus-regular.svg");label:"Add";round:true;clicked=>{root.clicks+=1;}}
+        RecordButton {clicked=>{root.clicks+=1;}}
+    }
+    Divider {x:24px;y:174px;width:772px;}
+    Label {x:24px;y:194px;text:"Inputs and dropdowns";role:heading;}
+    ValueInput {x:24px;y:225px;width:230px;label:"Editable input";text <=> root.input-text;accepted=>{root.commits+=1;}}
+    ValueInput {x:280px;y:225px;width:230px;label:"Disabled input";text:"Disabled";enabled:false;}
+    ValueInput {x:536px;y:225px;width:260px;label:"Invalid input";text:"Invalid value";invalid:true;}
+    dropdown:=Dropdown {x:24px;y:270px;width:230px;label:"Example dropdown";model:root.options;current-index <=> root.selected;selected(value)=>{root.selections+=1;}}
+    Dropdown {x:280px;y:270px;width:230px;label:"Empty dropdown";model:[];placeholder:"No devices found";}
+    Dropdown {x:536px;y:270px;width:260px;label:"Disabled dropdown";model:["Unavailable"];enabled:false;}
+    Label {x:24px;y:323px;text:"Selection controls";role:heading;}
+    Checkbox {x:24px;y:352px;width:190px;text:"Checkbox";checked <=> root.checked;}
+    Checkbox {x:225px;y:352px;width:180px;text:"Mixed selection";indeterminate:true;}
+    Checkbox {x:410px;y:352px;width:155px;text:"Disabled";enabled:false;checked:true;}
+    Toggle {x:594px;y:358px;label:"Toggle";checked:root.switched;toggled(value)=>{root.switched=value;}}
+    Toggle {x:662px;y:358px;label:"Disabled toggle";checked:true;enabled:false;}
+    RadioButton {x:24px;y:396px;width:100px;text:"Option A";checked:root.radio==0;clicked=>{root.radio=0;}}
+    RadioButton {x:145px;y:396px;width:110px;text:"Option B";checked:root.radio==1;clicked=>{root.radio=1;}}
+    SegmentedControl {x:280px;y:396px;width:260px;model:["Small","Medium","Large"];current-index:1;}
+    FineSlider {x:24px;y:453px;width:300px;label:"Amount";value:root.amount;changed(value)=>{root.amount=value;}released(value)=>{root.amount=value;}}
+    FineSlider {x:360px;y:453px;width:190px;label:"Disabled slider";value:0.65;enabled:false;}
+    ProgressBar {x:586px;y:462px;width:210px;progress:root.amount;}
+    Panel {x:24px;y:506px;width:240px;height:88px;Label {x:12px;y:12px;text:"Panel";role:heading;}Label {x:12px;y:40px;text:"Shared border, radius and surface";role:muted;}}
+    ChoiceTile {x:280px;y:506px;width:230px;height:88px;active:true;label:"Selected card";Label {x:12px;y:12px;text:"Selected card";role:heading;}}
+    ScrubField {x:536px;y:526px;width:260px;label:"Filled slider";value:root.amount;committed(value)=>{root.amount=value.to-float();}}
+    Label {x:24px;y:610px;text:"All screens import the same primitives from ui/controls.slint";role:muted;}
+}

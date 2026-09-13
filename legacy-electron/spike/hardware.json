@@ -1,0 +1,9 @@
+{
+  "chip": "Apple M5 Pro",
+  "ramGiB": 48,
+  "os": "macOS 27.0 (26A5421a)",
+  "architecture": "arm64",
+  "power": "AC, charging; Low Power Mode off",
+  "batteryAtReadPercent": 90,
+  "conditions": "Developer machine in use; not a controlled battery/thermal experiment"
+}

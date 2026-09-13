@@ -1,0 +1,18 @@
+[
+  {
+    "run": "electron-2026-09-12T13-22-40.276Z",
+    "samples": 119,
+    "seconds": 600,
+    "rssMiB": 1027.21875,
+    "psCpu": 18.9,
+    "unattributedWebKitCount": 7
+  },
+  {
+    "run": "tauri-2026-09-12T13-32-46.866Z",
+    "samples": 119,
+    "seconds": 601.771,
+    "rssMiB": 223.03125,
+    "psCpu": 5.8,
+    "unattributedWebKitCount": 10
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "title": "A more visual SubTake",
+  "message": "Choose your appearance, cursor, and webcam position at a glance.",
+  "scenes": [
+    {"id":"appearance","title":"Choose your appearance","purpose":"Show the Light, Dark, and System choices alongside grouped automatic-zoom settings.","asset_id":"asset-1","start":0,"duration":4,"caption":"Your appearance. Your motion.","narration":"Choose an appearance and a motion preset that fit your video.","zoom":{"depth":2,"cx":0.17,"cy":0.32}},
+    {"id":"cursor","title":"Pick a cursor visually","purpose":"Show the actual Tahoe, macOS, Windows, Dot, and Minimal thumbnail choices.","asset_id":"asset-2","start":0,"duration":4,"caption":"See the cursor before choosing it.","narration":"Find the cursor style you want from visual thumbnails.","zoom":{"depth":2,"cx":0.17,"cy":0.49}},
+    {"id":"webcam","title":"Position your webcam","purpose":"Show the nine-position grid and the Custom position control visible in the screenshot.","asset_id":"asset-3","start":0,"duration":4,"caption":"Place your webcam with a visual grid.","narration":"Choose a webcam position from the grid, or fine-tune a custom position.","zoom":{"depth":2,"cx":0.18,"cy":0.4}}
+  ]
+}

@@ -1,0 +1,12 @@
+import { Theme } from "../theme.slint";
+import { ButtonSurface } from "button.slint";
+export component RadioButton inherits ButtonSurface {
+    in property <string> text;
+    in property <bool> checked;
+    label:root.text;variant:ghost;min-width:caption.preferred-width+26px;
+    Rectangle {x:0px;y:(parent.height - 18px)/2;width:18px;height:18px;border-radius:9px;background:Theme.input;border-width:Theme.border-width;border-color:root.checked ? Theme.blue : Theme.border;
+        if root.checked: Rectangle {x:4px;y:4px;width:10px;height:10px;border-radius:5px;background:Theme.blue;}
+    }
+    caption:=Text {x:26px;width:parent.width - 26px;height:parent.height;text:root.text;color:Theme.text;font-size:Theme.font-control;vertical-alignment:center;overflow:elide;}
+    accessible-role:radio-button;accessible-checked:root.checked;
+}

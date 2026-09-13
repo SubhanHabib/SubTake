@@ -1,0 +1,7 @@
+import { Theme } from "../theme.slint";
+export component ProgressBar inherits Rectangle {
+    in property <float> progress;
+    height:4px;vertical-stretch:0;border-radius:2px;background:Theme.border;
+    Rectangle {x:0px;width:parent.width*clamp(root.progress,0,1);height:parent.height;border-radius:parent.border-radius;background:Theme.blue;}
+    accessible-role:progress-indicator;accessible-value:root.progress;accessible-value-minimum:0;accessible-value-maximum:1;
+}

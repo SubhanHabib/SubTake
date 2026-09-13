@@ -1,0 +1,12 @@
+import { Theme } from "../theme.slint";
+import { IconButton } from "button.slint";
+export component RailButton inherits Rectangle {
+    in property <image> icon;
+    in property <string> text;
+    in property <bool> active;
+    callback clicked;
+    height:48px;width:52px;
+    IconButton {x:8px;y:0px;width:34px;height:34px;round:true;variant:ghost;active:root.active;icon:root.icon;label:root.text;clicked=>{root.clicked();}}
+    Text {y:35px;width:parent.width;height:12px;text:root.text;font-size:Theme.font-small;color:root.active ? Theme.accent-text : Theme.muted;horizontal-alignment:center;overflow:elide;}
+
+}

@@ -1,0 +1,80 @@
+{
+  "recorded_at": "2026-09-12T22:52:27.758404+00:00",
+  "binary_sha256": "c8e9e8c93371aa9da8213c53eb6b6d6c626307717b5de8f6c4124232dc3fedac",
+  "cases": [
+    {
+      "mode": "idle",
+      "status": "passed",
+      "log": "test-output/launcher/idle.log"
+    },
+    {
+      "mode": "sources",
+      "status": "passed",
+      "log": "test-output/launcher/sources.log"
+    },
+    {
+      "mode": "audio",
+      "status": "passed",
+      "log": "test-output/launcher/audio.log"
+    },
+    {
+      "mode": "camera",
+      "status": "passed",
+      "log": "test-output/launcher/camera.log"
+    },
+    {
+      "mode": "countdown",
+      "status": "passed",
+      "log": "test-output/launcher/countdown.log"
+    },
+    {
+      "mode": "more",
+      "status": "passed",
+      "log": "test-output/launcher/more.log"
+    },
+    {
+      "mode": "capture",
+      "status": "passed",
+      "log": "test-output/launcher/capture.log"
+    }
+  ],
+  "user_preferences_unchanged": true,
+  "capture": {
+    "camera": false,
+    "media": {
+      "audio_tracks": 0,
+      "duration": 3.415,
+      "fps": 56.53229723166586,
+      "height": 904,
+      "width": 1440
+    },
+    "microphone": false,
+    "scope": "menu-bar launch, hide/Open, source control, countdown cancellation, screen-only capture of selected SubTake window, pause/resume/stop, final editor handoff",
+    "source": "/Users/subs/Personal/SubTake/native-app/test-output/launcher/Recording-1789253540-944f6891.mp4",
+    "status": "passed",
+    "system_audio": false,
+    "occlusion_checks": [
+      {
+        "time": 0.25,
+        "blue_fraction": 0.900125,
+        "red_fraction": 0.0
+      },
+      {
+        "time": 0.75,
+        "blue_fraction": 0.9003125,
+        "red_fraction": 0.0
+      },
+      {
+        "time": 1.5,
+        "blue_fraction": 0.900375,
+        "red_fraction": 0.0
+      },
+      {
+        "time": 2.5,
+        "blue_fraction": 0.9000625,
+        "red_fraction": 0.0
+      }
+    ],
+    "helper_sha256": "3b1a80524f8df3c7b2f5c2fc1a7c2b4d9ae89333936b637dc7c1f29537ca1c4c"
+  }
+}

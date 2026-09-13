@@ -1,0 +1,100 @@
+[
+  {
+    "suspended": false,
+    "elapsedSeconds": 30.109,
+    "percentOfOneCore": 20.326148327742533,
+    "processes": [
+      {
+        "pid": 23527,
+        "ppid": 88965,
+        "seconds": 0.19,
+        "name": "node",
+        "deltaCpuSeconds": 0
+      },
+      {
+        "pid": 23533,
+        "ppid": 23527,
+        "seconds": 0.4,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+        "deltaCpuSeconds": 0.010000000000000009
+      },
+      {
+        "pid": 23537,
+        "ppid": 23533,
+        "seconds": 12.71,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/Frameworks/Electron Helper.app/Contents/MacOS/Electron Helper",
+        "deltaCpuSeconds": 3.620000000000001
+      },
+      {
+        "pid": 23538,
+        "ppid": 23533,
+        "seconds": 0.13,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/Frameworks/Electron Helper.app/Contents/MacOS/Electron Helper",
+        "deltaCpuSeconds": 0.010000000000000009
+      },
+      {
+        "pid": 23540,
+        "ppid": 23533,
+        "seconds": 8.61,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/Frameworks/Electron Helper (Renderer).app/Contents/MacOS/Electron Helper (Renderer)",
+        "deltaCpuSeconds": 2.4699999999999998
+      },
+      {
+        "pid": 23541,
+        "ppid": 23533,
+        "seconds": 0.12,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/Frameworks/Electron Helper.app/Contents/MacOS/Electron Helper",
+        "deltaCpuSeconds": 0.009999999999999995
+      }
+    ]
+  },
+  {
+    "suspended": true,
+    "elapsedSeconds": 30.114,
+    "percentOfOneCore": 5.113900511390056,
+    "processes": [
+      {
+        "pid": 23527,
+        "ppid": 88965,
+        "seconds": 0.21,
+        "name": "node",
+        "deltaCpuSeconds": 0.01999999999999999
+      },
+      {
+        "pid": 23533,
+        "ppid": 23527,
+        "seconds": 0.41,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+        "deltaCpuSeconds": 0.009999999999999953
+      },
+      {
+        "pid": 23537,
+        "ppid": 23533,
+        "seconds": 13.33,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/Frameworks/Electron Helper.app/Contents/MacOS/Electron Helper",
+        "deltaCpuSeconds": 0.5500000000000007
+      },
+      {
+        "pid": 23538,
+        "ppid": 23533,
+        "seconds": 0.13,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/Frameworks/Electron Helper.app/Contents/MacOS/Electron Helper",
+        "deltaCpuSeconds": 0
+      },
+      {
+        "pid": 23540,
+        "ppid": 23533,
+        "seconds": 9.66,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/Frameworks/Electron Helper (Renderer).app/Contents/MacOS/Electron Helper (Renderer)",
+        "deltaCpuSeconds": 0.9600000000000009
+      },
+      {
+        "pid": 23541,
+        "ppid": 23533,
+        "seconds": 0.12,
+        "name": "/Users/subs/Personal/SubTake/node_modules/electron/dist/Electron.app/Contents/Frameworks/Electron Helper.app/Contents/MacOS/Electron Helper",
+        "deltaCpuSeconds": 0
+      }
+    ]
+  }
+]

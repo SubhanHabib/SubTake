@@ -1,0 +1,9 @@
+Create a short, silent feature walkthrough of SubTake's visual editing controls.
+Audience: someone deciding whether SubTake feels easy to use.
+Message: choose the look visually, without searching through dense controls.
+Use only the supplied screenshots from the tested SubTake UI. They show Settings,
+cursor thumbnails, and webcam position presets. They are still screenshots, not
+recorded interactions: do not claim that the video demonstrates clicks or recording.
+Show Settings first, cursor choices second, and webcam positioning last.
+Use a concise caption per scene. Save optional narration as script text only.
+This is a storyboard/agent integration spike, not a marketing release.

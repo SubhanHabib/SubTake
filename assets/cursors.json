@@ -1,0 +1,170 @@
+{
+  "macos": {
+    "arrow": {
+      "path": "src/assets/cursors/macos/pointer-1__34-24.svg",
+      "x": 0.34,
+      "y": 0.24,
+      "preserveCanvas": false
+    },
+    "text": {
+      "path": "src/assets/cursors/macos/ibeamstroke-1__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": false
+    },
+    "pointer": {
+      "path": "src/assets/cursors/macos/pointinghand-1__39-26.svg",
+      "x": 0.39,
+      "y": 0.26,
+      "preserveCanvas": false
+    },
+    "crosshair": {
+      "path": "src/assets/cursors/macos/crosshair-1__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": false
+    },
+    "open-hand": {
+      "path": "src/assets/cursors/macos/openhand-1__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": false
+    },
+    "closed-hand": {
+      "path": "src/assets/cursors/macos/closedhand-1__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": false
+    },
+    "resize-ew": {
+      "path": "src/assets/cursors/macos/resizeeastwest-1__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": false
+    },
+    "resize-ns": {
+      "path": "src/assets/cursors/macos/resizenorthsouth-1__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": false
+    },
+    "not-allowed": {
+      "path": "src/assets/cursors/macos/notallowed-1__23-0.svg",
+      "x": 0.23,
+      "y": 0.0,
+      "preserveCanvas": false
+    }
+  },
+  "tahoe": {
+    "arrow": {
+      "path": "src/assets/cursors/tahoe/pointer-1__14-6.svg",
+      "x": 0.14,
+      "y": 0.06,
+      "preserveCanvas": false
+    },
+    "text": {
+      "path": "src/assets/cursors/tahoe/ibeam-1__50-44.svg",
+      "x": 0.5,
+      "y": 0.44,
+      "preserveCanvas": false
+    },
+    "pointer": {
+      "path": "src/assets/cursors/tahoe/pointinghand-1__40-10.svg",
+      "x": 0.4,
+      "y": 0.1,
+      "preserveCanvas": false
+    },
+    "crosshair": {
+      "path": "src/assets/cursors/tahoe/crosshair-1__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": false
+    },
+    "open-hand": {
+      "path": "src/assets/cursors/tahoe/openhand-1__55-57.svg",
+      "x": 0.55,
+      "y": 0.57,
+      "preserveCanvas": false
+    },
+    "closed-hand": {
+      "path": "src/assets/cursors/tahoe/closedhand-1__50-46.svg",
+      "x": 0.5,
+      "y": 0.46,
+      "preserveCanvas": false
+    },
+    "resize-ew": {
+      "path": "src/assets/cursors/tahoe/resizeeastwest-1__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": false
+    },
+    "resize-ns": {
+      "path": "src/assets/cursors/tahoe/resizenorthsouth-1__50-49.svg",
+      "x": 0.5,
+      "y": 0.49,
+      "preserveCanvas": false
+    },
+    "not-allowed": {
+      "path": "src/assets/cursors/tahoe/notallowed-1__23-0.svg",
+      "x": 0.23,
+      "y": 0.0,
+      "preserveCanvas": false
+    }
+  },
+  "windows11": {
+    "arrow": {
+      "path": "src/assets/cursors/windows11/arrow__31-22.svg",
+      "x": 0.0,
+      "y": 0.0,
+      "preserveCanvas": true
+    },
+    "text": {
+      "path": "src/assets/cursors/windows11/text__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": true
+    },
+    "pointer": {
+      "path": "src/assets/cursors/windows11/pointer__54-35.svg",
+      "x": 0.1875,
+      "y": 0.0,
+      "preserveCanvas": true
+    },
+    "crosshair": {
+      "path": "src/assets/cursors/windows11/cross__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": true
+    },
+    "open-hand": {
+      "path": "src/assets/cursors/windows11/grab__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": true
+    },
+    "closed-hand": {
+      "path": "src/assets/cursors/windows11/grabbing__50-50.svg",
+      "x": 0.5,
+      "y": 0.5,
+      "preserveCanvas": true
+    },
+    "resize-ew": {
+      "path": "src/assets/cursors/windows11/resize-horizontal__51-49.svg",
+      "x": 0.34375,
+      "y": 0.125,
+      "preserveCanvas": true
+    },
+    "resize-ns": {
+      "path": "src/assets/cursors/windows11/resize-vertical__48-50.svg",
+      "x": 0.125,
+      "y": 0.34375,
+      "preserveCanvas": true
+    },
+    "not-allowed": {
+      "path": "src/assets/cursors/windows11/block__50-50.svg",
+      "x": 0.25,
+      "y": 0.25,
+      "preserveCanvas": true
+    }
+  }
+}

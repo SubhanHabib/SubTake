@@ -1,0 +1,109 @@
+{
+  "recorded_at": "2026-09-13T09:16:24.710696+00:00",
+  "binary_sha256": "5e6b3d3b6f4880f8f48ef17452a4c803c4760774dbcc3b15b012e65c324f545d",
+  "cases": [
+    {
+      "panel": "Frame",
+      "size": "1360x880",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-final.log",
+      "snapshot": "test-output/editor-final.png"
+    },
+    {
+      "panel": "Frame",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-minimum-final.log",
+      "snapshot": "test-output/editor-minimum-final.png"
+    },
+    {
+      "panel": "Cursor",
+      "size": "980x680",
+      "language": "fr",
+      "status": "passed",
+      "log": "test-output/ui-french-final.log",
+      "snapshot": "test-output/editor-french-final.png"
+    },
+    {
+      "panel": "Crop",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-crop-final.log",
+      "snapshot": "test-output/editor-crop-final.png"
+    },
+    {
+      "panel": "Wallpapers",
+      "size": "1360x880",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-background-final.log",
+      "snapshot": "test-output/editor-background-final.png"
+    },
+    {
+      "panel": "Export",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-export-final.log",
+      "snapshot": "test-output/editor-export-final.png"
+    },
+    {
+      "panel": "Presets",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-presets-final.log",
+      "snapshot": "test-output/editor-presets-final.png"
+    },
+    {
+      "panel": "Captions",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-captions-final.log",
+      "snapshot": "test-output/editor-captions-final.png"
+    },
+    {
+      "panel": "Preferences",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-settings-final.log",
+      "snapshot": "test-output/editor-settings-final.png"
+    },
+    {
+      "panel": "Recording",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-recording-final.log",
+      "snapshot": "test-output/editor-recording-final.png"
+    },
+    {
+      "panel": "Recording",
+      "size": "1360x880",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/ui-empty-final.log",
+      "snapshot": "test-output/editor-empty-final.png"
+    }
+  ],
+  "user_preferences_unchanged": true,
+  "checks": [
+    "native pointer events open the intended rail panel",
+    "recording discovery clears busy on success, failure, empty result and cancellation",
+    "refresh preserves selected source",
+    "Record opens configuration without starting capture",
+    "empty recording layout",
+    "editing and caption/history commands",
+    "selector preserves nondefault stored value",
+    "linked and independent padding with undo",
+    "crop preview and undo",
+    "folder search",
+    "wallpaper thumbnail readiness",
+    "snapshot of the selected panel"
+  ]
+}

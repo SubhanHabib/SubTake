@@ -1,0 +1,37 @@
+{
+  "recorded_at": "2026-09-13T09:16:48.834946+00:00",
+  "binary_sha256": "5e6b3d3b6f4880f8f48ef17452a4c803c4760774dbcc3b15b012e65c324f545d",
+  "cases": [
+    {
+      "mode": "idle",
+      "status": "passed",
+      "log": "test-output/launcher/idle.log"
+    },
+    {
+      "mode": "sources",
+      "status": "passed",
+      "log": "test-output/launcher/sources.log"
+    },
+    {
+      "mode": "audio",
+      "status": "passed",
+      "log": "test-output/launcher/audio.log"
+    },
+    {
+      "mode": "camera",
+      "status": "passed",
+      "log": "test-output/launcher/camera.log"
+    },
+    {
+      "mode": "countdown",
+      "status": "passed",
+      "log": "test-output/launcher/countdown.log"
+    },
+    {
+      "mode": "more",
+      "status": "passed",
+      "log": "test-output/launcher/more.log"
+    }
+  ],
+  "user_preferences_unchanged": true
+}

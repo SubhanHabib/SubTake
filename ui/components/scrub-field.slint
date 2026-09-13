@@ -1,0 +1,15 @@
+import { Theme } from "../theme.slint";
+import { FineSlider } from "slider.slint";
+import { ValueInput } from "input.slint";
+// Filled slider with an editable number. Drag commits on release; typing on Enter.
+export component ScrubField inherits Rectangle {
+    in property <string> label;
+    in property <float> value;
+    in property <float> minimum:0;
+    in property <float> maximum:1;
+    in property <bool> enabled:true;
+    callback committed(string);
+    height:40px;
+    FineSlider {width:parent.width;filled:true;enabled:root.enabled;label:root.label;minimum:root.minimum;maximum:root.maximum;value:root.value;released(value)=>{root.committed(value);}}
+    ValueInput {x:parent.width - 58px;y:7px;width:52px;height:26px;background:transparent;border-width:self.has-focus ? Theme.focus-width : 0px;enabled:root.enabled;text:round(root.value*100)/100;label:root.label;accepted=>{root.committed(self.text);}}
+}

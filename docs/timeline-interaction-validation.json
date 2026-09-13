@@ -1,0 +1,14 @@
+{
+  "recorded_at": "2026-09-13T09:35:02.556215+00:00",
+  "status": "passed",
+  "main_binary_sha256": "3d57f2088c52c55656516c86dbbcac3d9fa6be11125cf9c709772423af59d775",
+  "checks": [
+    "filmstrip pointer down seeks immediately",
+    "filmstrip pointer move scrubs before release",
+    "release commits final position",
+    "playhead drag over effect does not select effect",
+    "ruler drag clamps beyond right edge"
+  ],
+  "command": "cargo run --offline --locked --example timeline_interaction",
+  "scope": "Native Slint pointer events on macOS; existing unsaved editor kept running"
+}

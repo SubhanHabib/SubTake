@@ -1,0 +1,46 @@
+import { Theme, ControlSize } from "../theme.slint";
+export enum ButtonVariant { secondary, primary, ghost, outline, danger, record }
+// The common pointer, keyboard, disabled and focus contract for buttons and tiles.
+export component ButtonSurface inherits Rectangle {
+    in property <string> label;
+    in property <bool> enabled: true;
+    in property <bool> active: false;
+    in property <ButtonVariant> variant: secondary;
+    in property <ControlSize> size: regular;
+    in property <bool> round: false;
+    out property <bool> has-hover: touch.has-hover;
+    out property <bool> has-focus: key.has-focus;
+    out property <bool> pressed: touch.pressed;
+    callback clicked;
+    height: root.size==ControlSize.small ? Theme.control-small : root.size==ControlSize.compact ? Theme.control-compact : root.size==ControlSize.large ? Theme.control-large : Theme.control-regular;
+    vertical-stretch: 0;
+    border-radius: root.round ? self.height/2 : Theme.radius-control;
+    background: root.variant==ButtonVariant.primary ? (touch.has-hover ? Theme.accent-hover : Theme.blue) : root.variant==ButtonVariant.danger || root.variant==ButtonVariant.record ? Theme.danger.with-alpha(touch.has-hover ? 0.22 : 0.1) : root.active ? Theme.selection : touch.pressed || touch.has-hover ? Theme.hover : root.variant==ButtonVariant.ghost || root.variant==ButtonVariant.outline ? transparent : Theme.surface;
+    border-width: key.has-focus ? Theme.focus-width : root.variant!=ButtonVariant.outline ? 0px : Theme.border-width;
+    border-color: key.has-focus ? Theme.blue : root.variant==ButtonVariant.danger || root.variant==ButtonVariant.record ? Theme.danger.with-alpha(0.4) : root.active ? Theme.blue.with-alpha(0.5) : Theme.border;
+    opacity: root.enabled ? 1 : Theme.disabled-opacity;
+    accessible-role: button; accessible-label: root.label; accessible-enabled: root.enabled;
+    accessible-action-default => { if root.enabled {root.clicked();} }
+    forward-focus: key;
+    @children
+    touch := TouchArea {enabled:root.enabled;mouse-cursor:pointer;clicked=>{key.focus();root.clicked();}}
+    key := FocusScope {width:0px;height:0px;enabled:root.enabled;key-pressed(e)=>{if e.text==" " || e.text==Key.Return {root.clicked();return accept;}return reject;}}
+}
+export component ToolButton inherits ButtonSurface {
+    in property <string> text;
+    label: root.text;
+    in property <image> icon;
+    in property <bool> has-icon: true;
+    in property <length> glyph-size:Theme.icon-size;
+    in property <color> icon-color: root.variant==ButtonVariant.primary ? Theme.on-accent : root.variant==ButtonVariant.danger || root.variant==ButtonVariant.record ? Theme.danger : root.active ? Theme.accent-text : Theme.text;
+    min-width: root.text=="" ? root.height : min(240px,caption.preferred-width + (root.has-icon ? 42px : 16px));
+    horizontal-stretch: 0;
+    Tooltip {text:@markdown("\{root.label}");}
+    if root.has-icon: Image {x:root.text=="" ? (root.width - root.glyph-size)/2 : 10px;y:(root.height - root.glyph-size)/2;width:root.glyph-size;height:root.glyph-size;source:root.icon;colorize:root.icon-color;image-fit:contain;}
+    caption := Text {visible:root.text!="";x:root.has-icon ? 32px : 8px;y:0px;width:root.width - self.x - 8px;height:root.height;text:root.text;font-size:Theme.font-control;font-weight:500;color:root.variant==ButtonVariant.primary ? Theme.on-accent : root.variant==ButtonVariant.danger ? Theme.danger : Theme.text;vertical-alignment:center;horizontal-alignment:center;overflow:elide;}
+}
+export component IconButton inherits ToolButton { width:root.height; }
+export component RecordButton inherits IconButton {
+    label:"Record";variant:record;size:large;glyph-size:20px;
+    icon:@image-url("../../assets/icons/Record-fill.svg");
+}

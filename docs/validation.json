@@ -1,0 +1,810 @@
+{
+  "recorded_at": "2026-09-13T08:58:13.630563+00:00",
+  "reference_commit": "7512ef1518657edc2caae595136821d27a47167d",
+  "host": {
+    "model": "Apple M5 Pro",
+    "memory_bytes": 51539607552,
+    "macos": "27.0",
+    "macos_build": "26A5421a",
+    "architecture": "arm64"
+  },
+  "tests": {
+    "passed": 47,
+    "failed": 0,
+    "reference_cases": {
+      "geometries": 24,
+      "springs": 5,
+      "zooms": 106,
+      "captions": 288,
+      "dimensions": 192,
+      "transcriptions": 5,
+      "autozooms": 10,
+      "segments": 270,
+      "sentenceEnds": 12,
+      "captionEdits": 12
+    }
+  },
+  "ui_redesign": {
+    "recorded_at": "2026-09-13T08:55:44.461902+00:00",
+    "binary_sha256": "e49e1c194334f7d3a1a177b3e6215c1def61fa534c66d6f2969c3b5df3e27b0d",
+    "cases": [
+      {
+        "panel": "Frame",
+        "size": "1360x880",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-final.log",
+        "snapshot": "test-output/editor-final.png"
+      },
+      {
+        "panel": "Frame",
+        "size": "980x680",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-minimum-final.log",
+        "snapshot": "test-output/editor-minimum-final.png"
+      },
+      {
+        "panel": "Cursor",
+        "size": "980x680",
+        "language": "fr",
+        "status": "passed",
+        "log": "test-output/ui-french-final.log",
+        "snapshot": "test-output/editor-french-final.png"
+      },
+      {
+        "panel": "Crop",
+        "size": "980x680",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-crop-final.log",
+        "snapshot": "test-output/editor-crop-final.png"
+      },
+      {
+        "panel": "Wallpapers",
+        "size": "1360x880",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-background-final.log",
+        "snapshot": "test-output/editor-background-final.png"
+      },
+      {
+        "panel": "Export",
+        "size": "980x680",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-export-final.log",
+        "snapshot": "test-output/editor-export-final.png"
+      },
+      {
+        "panel": "Presets",
+        "size": "980x680",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-presets-final.log",
+        "snapshot": "test-output/editor-presets-final.png"
+      },
+      {
+        "panel": "Captions",
+        "size": "980x680",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-captions-final.log",
+        "snapshot": "test-output/editor-captions-final.png"
+      },
+      {
+        "panel": "Preferences",
+        "size": "980x680",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-settings-final.log",
+        "snapshot": "test-output/editor-settings-final.png"
+      },
+      {
+        "panel": "Recording",
+        "size": "980x680",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-recording-final.log",
+        "snapshot": "test-output/editor-recording-final.png"
+      },
+      {
+        "panel": "Recording",
+        "size": "1360x880",
+        "language": "en",
+        "status": "passed",
+        "log": "test-output/ui-empty-final.log",
+        "snapshot": "test-output/editor-empty-final.png"
+      }
+    ],
+    "user_preferences_unchanged": true,
+    "checks": [
+      "native pointer events open the intended rail panel",
+      "recording discovery clears busy on success, failure, empty result and cancellation",
+      "refresh preserves selected source",
+      "Record opens configuration without starting capture",
+      "empty recording layout",
+      "editing and caption/history commands",
+      "selector preserves nondefault stored value",
+      "linked and independent padding with undo",
+      "crop preview and undo",
+      "folder search",
+      "wallpaper thumbnail readiness",
+      "snapshot of the selected panel"
+    ]
+  },
+  "ui_primitives": {
+    "recorded_at": "2026-09-13T08:57:28.393697+00:00",
+    "status": "passed",
+    "gallery_binary_sha256": "a8a39dab4de632c446ad03130564196820bc67276cfa91a89d1473c01c6fd1db",
+    "checks": [
+      "button pointer and keyboard activation",
+      "disabled button does not activate",
+      "checkbox pointer and Space",
+      "toggle and disabled toggle",
+      "radio selection",
+      "input commit",
+      "dropdown keyboard and pointer selection",
+      "dropdown Escape does not commit highlight",
+      "dropdown empty and disabled states",
+      "long dropdown End-key selection",
+      "slider pointer update",
+      "light and dark gallery snapshots",
+      "no raw controls or inline generic buttons in screens"
+    ],
+    "snapshots": [
+      "test-output/primitives/dark.png",
+      "test-output/primitives/light.png",
+      "test-output/primitives/dropdown.png"
+    ],
+    "platform": "macOS; other platforms and full assistive-technology acceptance not validated"
+  },
+  "ui_smoke": {
+    "ui-final.log": true,
+    "ui-minimum-final.log": true,
+    "ui-french-final.log": true,
+    "ui-crop-final.log": true
+  },
+  "media_smoke": {
+    "video_frames": "90",
+    "video_duration": "3.000000",
+    "audio_duration": "3.000000",
+    "gif_frames": "30",
+    "resolution": [
+      640,
+      360
+    ],
+    "source": "generated test pattern and sine tones",
+    "parity_with_electron": "math fixtures verified; pixel parity not established",
+    "audio_amplitudes_before_music": {
+      "440": 0.05107989789106782,
+      "660": 0.03827280461319423,
+      "880": 4.5629820697450445e-06
+    },
+    "audio_amplitudes_with_music": {
+      "440": 0.050897683513466074,
+      "660": 0.0383253137367495,
+      "880": 0.025428826052424296
+    },
+    "features": [
+      "trim",
+      "speed",
+      "camera spring",
+      "cursor SVG families",
+      "video background",
+      "webcam",
+      "blur annotation",
+      "captions",
+      "system/mic sidecars",
+      "additional audio",
+      "SRT/VTT sidecars"
+    ]
+  },
+  "videotoolbox": {
+    "encoder": "h264_videotoolbox",
+    "video_codec": "h264",
+    "video_frames": 90,
+    "video_duration": 3.0,
+    "audio_duration": 3.0,
+    "status": "passed"
+  },
+  "audio_device_smoke": {
+    "status": "passed",
+    "signal": "silence",
+    "checks": [
+      "real default output device",
+      "audio-master clock progression",
+      "bounded cancellation without jumping to end"
+    ]
+  },
+  "transcription": {
+    "source": "generated speech, microphone sidecar, no embedded audio",
+    "model": "Whisper Small",
+    "cues": [
+      {
+        "endMs": 1179.0,
+        "id": "caption-1",
+        "startMs": 0.0,
+        "text": "Welcome to Subtake."
+      },
+      {
+        "endMs": 6580.0,
+        "id": "caption-2",
+        "startMs": 1179.0,
+        "text": "This native editor records your screen, adds captions, and exports your finished video."
+      }
+    ]
+  },
+  "benchmarks": {
+    "benchmark-native-540p.json": {
+      "backend": "Metal",
+      "electron_comparison": false,
+      "first_frame_ms": 138.582792,
+      "frames": 90,
+      "output": [
+        960,
+        540
+      ],
+      "pipeline": "decode + native composition + RGBA readback; excludes UI presentation and audio",
+      "seek_p50_ms": 16.18275,
+      "seek_p95_ms": 25.660041000000003,
+      "sequential_fps": 288.76196664873925,
+      "sequential_p50_ms": 2.3280000000000003,
+      "sequential_p95_ms": 7.713125000000001,
+      "source": {
+        "audio_tracks": 1,
+        "duration": 4.0,
+        "fps": 30.0,
+        "height": 360,
+        "width": 640
+      }
+    },
+    "benchmark-native-1080p.json": {
+      "backend": "Metal",
+      "electron_comparison": false,
+      "first_frame_ms": 146.96029199999998,
+      "frames": 90,
+      "output": [
+        1920,
+        1080
+      ],
+      "pipeline": "decode + native composition + RGBA readback; excludes UI presentation and audio",
+      "seek_p50_ms": 13.468459000000001,
+      "seek_p95_ms": 29.463584,
+      "sequential_fps": 261.7058805581889,
+      "sequential_p50_ms": 3.240542,
+      "sequential_p95_ms": 6.670167,
+      "source": {
+        "audio_tracks": 1,
+        "duration": 4.0,
+        "fps": 30.0,
+        "height": 360,
+        "width": 640
+      }
+    },
+    "benchmark-native-4k-source.json": {
+      "backend": "Metal",
+      "electron_comparison": false,
+      "first_frame_ms": 81.743042,
+      "frames": 90,
+      "output": [
+        960,
+        540
+      ],
+      "pipeline": "decode + native composition + RGBA readback; excludes UI presentation and audio",
+      "seek_p50_ms": 251.17070800000002,
+      "seek_p95_ms": 368.267,
+      "sequential_fps": 154.80153298114408,
+      "sequential_p50_ms": 5.282916999999999,
+      "sequential_p95_ms": 12.089416,
+      "source": {
+        "audio_tracks": 0,
+        "duration": 5.0,
+        "fps": 30.0,
+        "height": 2160,
+        "width": 3840
+      }
+    }
+  },
+  "prior_subprocess_benchmark": {
+    "backend": "Metal",
+    "electron_comparison": false,
+    "first_frame_ms": 674.898583,
+    "frames": 90,
+    "output": [
+      960,
+      540
+    ],
+    "pipeline": "decode + native composition + RGBA readback; excludes UI presentation and audio",
+    "seek_p50_ms": 486.6435,
+    "seek_p95_ms": 638.634375,
+    "sequential_fps": 79.71625820135084,
+    "sequential_p50_ms": 9.084958,
+    "sequential_p95_ms": 21.023333,
+    "source": {
+      "audio_tracks": 1,
+      "duration": 4.0,
+      "fps": 30.0,
+      "height": 360,
+      "width": 640
+    }
+  },
+  "package": {
+    "main_sha256": "e49e1c194334f7d3a1a177b3e6215c1def61fa534c66d6f2969c3b5df3e27b0d",
+    "disk_usage": "123M",
+    "signature": "ad-hoc, deep/strict verification passed",
+    "bundled_binaries_and_libraries_checked": 28,
+    "external_homebrew_dependencies": []
+  },
+  "source_sha256": {
+    "Cargo.lock": "a50eafaba0f6863b5b556b6183b63ee84db8a9f62b7b7d6fc7a6780189882c41",
+    "Cargo.toml": "4944aa8427f708f85e4280247c837fb70cd6f4acf8625389baedf7e0fe390f03",
+    "assets/icons/ArrowClockwise-fill.svg": "02124eb598264aee5cee0f37b19940c2328e82ed197e25ccc9ec09e2ced5dd40",
+    "assets/icons/ArrowClockwise-regular.svg": "f8860a86607c6ba12696b65b3e245aa4d16f5dfb5c1ccbadb4ea9d2e22d8e364",
+    "assets/icons/ArrowCounterClockwise-fill.svg": "918121520777fa016991688f3ba520edcfa1fb3e864c4f92f61ea2800e87a09b",
+    "assets/icons/ArrowCounterClockwise-regular.svg": "7ccf24e770c9fcc8f5a7eca95556a63d35e488094c465edcef8bb127d20504ed",
+    "assets/icons/ArrowUpRight-fill.svg": "35de3a7e458ae7d5cb12d09a59b1bb52691c587d2251527ab592e0d0119a7764",
+    "assets/icons/ArrowUpRight-regular.svg": "285c4f75849d086a15c66cb783f68bd69cd33b7e7052f31c702c1b3dbc63eab8",
+    "assets/icons/ArrowsOutSimple-fill.svg": "73b792e43afe0773f11de2be2a804819566115348754c0d54f453b59e6dd0877",
+    "assets/icons/ArrowsOutSimple-regular.svg": "0a1e0dfbe5a63be5d70ec595cf1859b52ebfb45ddc631a87030782cf28929da0",
+    "assets/icons/Camera-fill.svg": "b30969b89422effc6f7dd2d7c502683f3adb7d67e76a2ace815a7da17cedc0cd",
+    "assets/icons/Camera-regular.svg": "6c10d936ede06836fd85d95149e842ab2fdd8c982dc827eb2a0f02dadcd78909",
+    "assets/icons/CaretDown-fill.svg": "523be5229bbba871e56554eeef996d3560520e928e9d5ff0036679632cc42828",
+    "assets/icons/CaretDown-regular.svg": "00447083ca9c63ef19dd454923e10f92011b722a824a46de4bdef78567e369ff",
+    "assets/icons/CaretLeft-fill.svg": "e8b585434666c7799eb1f723762b72b59d5ba032feca5d7960e1016b9e8f7069",
+    "assets/icons/CaretLeft-regular.svg": "d28e18e8c29c0233fe1f43b12201c56ff64696f6586201d7f79142f476efd9bb",
+    "assets/icons/Check-fill.svg": "2c17be5f7fec9f72b05bd6a294d8cb458753a6aed47c4c96d61fa407bfaea585",
+    "assets/icons/Check-regular.svg": "83a8b8257125b0e8352dc2c433207bee989ec9e5a61df9153e56666472c3ae28",
+    "assets/icons/ClosedCaptioning-fill.svg": "c6c8bf9ac5e1b8ded529c462450258f9cc1d7c6ebc0d0964d8d921b4a07878d3",
+    "assets/icons/ClosedCaptioning-regular.svg": "b11d5492b1fbe72e189079d52e64ac9f96388402930eb66daea23324905e2b1f",
+    "assets/icons/Crop-fill.svg": "453f0c7576b1b73f04c230f8d5b787ff8d3e55ffdc3a4346841fc6ce6927c7c4",
+    "assets/icons/Crop-regular.svg": "5f481d1460f49b9cde55f812af57fee807910e21b9ed7f799493ad7208c18848",
+    "assets/icons/Cursor-fill.svg": "c7c009b5705e837d956132c8e1bd6d9c1679fc8b5e322f485b67eaeb94b4ea1e",
+    "assets/icons/Cursor-regular.svg": "12af202fa6b042da0cf925afa6f484bc5c9635e1cfd5946661742b50eb632edf",
+    "assets/icons/DotsSixVertical-fill.svg": "d44fd90845a37f6ecabaf66db672e8c03c64bff91961db41de8416088929d46e",
+    "assets/icons/DotsSixVertical-regular.svg": "82d0115f835ac979ae9f9e6af0174c4b06a1d3bdf7f13fb3897322d250b33806",
+    "assets/icons/DotsThree-fill.svg": "f6b8e17f549e3e32ed89b6b4461b570126406101e7eaa95fabdfa4f778d96dc2",
+    "assets/icons/DotsThree-regular.svg": "a065dec35280d1e1adca7b52a9cfcf2162739dfd41be037396db02605f0a387e",
+    "assets/icons/Drop-fill.svg": "4d87c8caaa0634ed79f79e72786669b87bc7001391e019b73695a0666f177788",
+    "assets/icons/Drop-regular.svg": "637a6e0442fdac062463d8a5432ba47e8bf655f52b155d1037e33ed62db61bce",
+    "assets/icons/Export-fill.svg": "c4c11ebd7d43c9c27e4f403b86ab0e5575431143405cf59e9c0583238f30bab4",
+    "assets/icons/Export-regular.svg": "aec95e7f361fcdaf6c8eca477855b427f6cef43ce79db1d857ea064de0e37be8",
+    "assets/icons/EyeSlash-fill.svg": "8111b5a1bd4574dc64aecc0aa3e65f46dfbc6ce9c04361a70301112ffd6aa1a2",
+    "assets/icons/EyeSlash-regular.svg": "17fce2f6e9affad8216a86873046d49f89c541bd48a8f6268d9bf02323d19f2a",
+    "assets/icons/FilmStrip-fill.svg": "471f42df91401356260d2be312da6cb9bde6b9190263d799910287c24c6ddb9d",
+    "assets/icons/FilmStrip-regular.svg": "6ed8024eb3209e63cef601ce17e8064d859966e27302eb23e8956e94ffbc705c",
+    "assets/icons/FloppyDisk-fill.svg": "35509ffc30f0366a86f28f46092628be4da45a3f9ae277182af31125bb64065f",
+    "assets/icons/FloppyDisk-regular.svg": "0aa5500766454592e99c25ba85dea4fe4615520cce29a69c2a1fb5e0b7a618c0",
+    "assets/icons/FolderOpen-fill.svg": "a504d5510c0edbd5dde25b3a2988b756c0bb9506c71c178e77e6ff492af8cbbe",
+    "assets/icons/FolderOpen-regular.svg": "50fa2832ecb3a90cb98c649aeea705a8849c469bf256e1823dfe50065103bcc9",
+    "assets/icons/Gear-fill.svg": "8a12878d3b793409a84779c32d184028a9e3230d651beb112789420dffb0809e",
+    "assets/icons/Gear-regular.svg": "5784f520df8921777748379faea752f10a909bacbebbc082d25cf3fa64d9b475",
+    "assets/icons/Image-fill.svg": "cedd4ff982249ccee4d4f246d7382bbc1d8605ddf910591cec07384a0c9749d5",
+    "assets/icons/Image-regular.svg": "87d6814a11f1efd890438be2301e42d9d74007ecd30d7f8f83382c787657f46a",
+    "assets/icons/LICENSE": "6918b72504641180600cbbd4a86b0dfa9dfccf788775694325b71b9a029f6eb4",
+    "assets/icons/LinkSimple-fill.svg": "da592190976e266a8249efc69f6515daccd6eed7f31137b437e472b643e414cc",
+    "assets/icons/LinkSimple-regular.svg": "bdd38c7806c0aec0fb1aac81d6ce358090ed8e2b1fe69eb2b0fea8e33e0f2aa0",
+    "assets/icons/MagicWand-fill.svg": "20d464cedb04556f0f8a6fad2d4a5e88b2e7663c1ad23ddb33c30ab82555201d",
+    "assets/icons/MagicWand-regular.svg": "2d8a5163d8bdc6b2b90e5998be013ed9fef2477a5c892208034b7fefd0e01461",
+    "assets/icons/Magnet-fill.svg": "03e356cf7a0211eeb16463844806d5b08a76ebcd801343113e7f86d11bd0976d",
+    "assets/icons/Magnet-regular.svg": "751e8b00515846802808ac85eae77d4e21bcdb3a5abdbfe4e66bd99d7c30e3e3",
+    "assets/icons/MagnifyingGlassMinus-fill.svg": "97dad6f74706bca2ff5bfb582d56667ccf170de82f3d58f8628f9f43d7da2022",
+    "assets/icons/MagnifyingGlassMinus-regular.svg": "cbb4195a6920899c6207912cdf7131340352619ad84a48bfcb05b0e836939ade",
+    "assets/icons/MagnifyingGlassPlus-fill.svg": "f3b0fc8eca159c435aded716e31ce96865aa285b6ef99dd54c45c7d988e6738e",
+    "assets/icons/MagnifyingGlassPlus-regular.svg": "79d26a79034a3402f13a7cb6d8d52ccb34419e3ba7e393db2a83099351eaeef5",
+    "assets/icons/Microphone-fill.svg": "b08792e6dfe7543ee2937c7165c640edc9987851f858c085dddfa3776fd9836d",
+    "assets/icons/Microphone-regular.svg": "a7f81bbee5b0e7f150853515033b77492be6bfdc496c68eae8ae935c2a2eeddc",
+    "assets/icons/MicrophoneSlash-fill.svg": "6efbadf6bb8770d202647633890e306565aebea9b9151d8c62eba582b778f948",
+    "assets/icons/MicrophoneSlash-regular.svg": "f14c16b9fb53dad8346c6b39a9b6bea8407e09aa5bda2a19e846d1ea9ad9d770",
+    "assets/icons/Monitor-fill.svg": "da64c19bc1b971e5bcfacc928495e5c7b0cc27ef6d9a65c5fea4b94b861cc526",
+    "assets/icons/Monitor-regular.svg": "5331b9c3633fc8cfcba3dc2f9f3e80b90188e74c54283b55bafb47a949020167",
+    "assets/icons/MusicNotes-fill.svg": "4e41bc3e12065476998a54e416a92a793d1fea3a5fdb3998ff966f68bef9b60b",
+    "assets/icons/MusicNotes-regular.svg": "a891bc73c7f0bb54be3742fa3b097f6e6952ee8dba862f2edb6ba159d8887b77",
+    "assets/icons/Pause-fill.svg": "390f5b15f21a8cc959495fd9e838fce1ddd66fa717b580d4b71973de40565088",
+    "assets/icons/Pause-regular.svg": "6198290446eb33615e34e902932d6d0ea065db03d44f0ca03e8f423f1cfac27f",
+    "assets/icons/Play-fill.svg": "2ab859af2a1f03efb8b8b84d6a7a75e221972c4da26b905adce0d544bcb69ab9",
+    "assets/icons/Play-regular.svg": "921d2f0f031364bb33ced300727aecf77e86b2c8a1c89828fbdc1200ffa11ae5",
+    "assets/icons/Plus-fill.svg": "4859795d53cc6699a327e0c7a0a2c30a245ae50457fc49f7cd3e01d94b39348c",
+    "assets/icons/Plus-regular.svg": "2ae3b9cd8a1e1e82563fffc5002f49a331e858890ab747885ef2bd97460b0864",
+    "assets/icons/Question-fill.svg": "7722d076a83801ecaa0b205152c556d12c046114897f499676f3b6e671778fa9",
+    "assets/icons/Question-regular.svg": "d0bca3ef66612284d41236fccda7f2755a12afc2f8e891b023e17f4201c22cb5",
+    "assets/icons/Record-fill.svg": "aa38e5688218ad32da1019fd2cce6f386884e3d24a52de5e229f7580009c9153",
+    "assets/icons/Record-regular.svg": "37e982c3b1f2f6ad2594260c0aedeec3514a3fdeb364351ce59d993e2b13f39f",
+    "assets/icons/Scissors-fill.svg": "418868b23e1ebbd011f99a69f747d2bc2deef87792d0f2b5325acdcae6c2d592",
+    "assets/icons/Scissors-regular.svg": "f62484d8777707c34b45fe3c762166a99a7665ccb2549effeb5723a4986af32c",
+    "assets/icons/Selection-fill.svg": "e024f07d48534089f0fcec3eac20ee1c2914e53fa17ffd85ed86d54433482953",
+    "assets/icons/Selection-regular.svg": "e0539228b1402a276eb22f8930cb69c5188486e36cfd9a7aac79e6c998a3ff35",
+    "assets/icons/SkipBack-fill.svg": "dc607e1f5b0388adf34bc364450781d9235ca5c7e56eec642560d4a56b132da3",
+    "assets/icons/SkipBack-regular.svg": "851ad3fb14009b67eda0af09ac8808f44c274d93f553222635761d462cdbc1e4",
+    "assets/icons/SkipForward-fill.svg": "161febc3f5d9ee01964d9208a73e766f10922b793234ad9ddb76099d1c7411a4",
+    "assets/icons/SkipForward-regular.svg": "43dcf8830248e2e842c874044d4b9e3f58d0a2fb95ba211cb1a4bb38656ac141",
+    "assets/icons/SlidersHorizontal-fill.svg": "c70efaa992e93f57018bfef36bffc8e4bbe9f13a7b8284b872c8e9ecdd78db4d",
+    "assets/icons/SlidersHorizontal-regular.svg": "afc3a8329aa45b5d73572be0da4c23f7de5f5a2897bde7e00a5771a68d631eb1",
+    "assets/icons/Sparkle-fill.svg": "e180ee513ff7439353b18b0decdd7ddb45c618c129bacccd046ec13059078e9f",
+    "assets/icons/Sparkle-regular.svg": "84cbac65f82473b892b80c04e576a33b6b9f579ecea77c988c4163d0647da92e",
+    "assets/icons/SpeakerHigh-fill.svg": "687933ff81ca1894b57dc6db4f037191bf4c89fe4ec80e415bfd42be0efe0a26",
+    "assets/icons/SpeakerHigh-regular.svg": "e1f9d1512194f3a325185d65f11f5024c5f39f9acb98ada65038db022000da10",
+    "assets/icons/Stack-fill.svg": "d834c420f2b9bbf52ae9689a062d5ae38210b32d766cda12932d873e0212b7c6",
+    "assets/icons/Stack-regular.svg": "27a2e716603c507ba52f9bb1ef79ff211e8ecc1d0157cd8a5bfa9f449a6b8629",
+    "assets/icons/Stop-fill.svg": "dc820a6e3c4748b2a4459bfd8af83d06e84a9d54c7bf3732214537ae55ce4364",
+    "assets/icons/Stop-regular.svg": "c682c606247f365ca703f5120d3cd258e3d6fc236df6022f77a18ade64acba4b",
+    "assets/icons/TextT-fill.svg": "d631127a8f0ff9862d65ddeee94ec319fa071ddfc145bd9c355408b38187daee",
+    "assets/icons/TextT-regular.svg": "6bb34fdbb05d517301325b7ed2beb68aefb017d9314a6261b0cb667b419a680e",
+    "assets/icons/Timer-fill.svg": "6cba94a5d8da379e585823bf222f63ad98ad7e4383fa02dd335d86063c90299a",
+    "assets/icons/Timer-regular.svg": "7a2cb11a46ef1e8e7a6589183dd1cd5440f407cc229a9d0b95fe7529da77b877",
+    "assets/icons/VideoCamera-fill.svg": "2cf67a042dffb48734faa4356a3abe4d5d125b7d260d3ae554d00d0b72d5a720",
+    "assets/icons/VideoCamera-regular.svg": "cba849c46e53568b689c64e70728e429217c4833f7066de9b6d8981045426c25",
+    "assets/icons/VideoCameraSlash-fill.svg": "99fe4d1ef984bad4a732aa7540136cbee0ff78bec1cb2086d9ba6b6081d67f4f",
+    "assets/icons/VideoCameraSlash-regular.svg": "37de88d24eacb39bf69e02a2b3d1d6ea02237f1e76d49157e76967444370696f",
+    "assets/icons/X-fill.svg": "5757fa69246b7e4ccbaf401915ae2ddff6fbf8efbd97ce6c6919671cb0c3ae10",
+    "assets/icons/X-regular.svg": "6163512ae9f6ccaa366a3967f381c91dee8a16fa4ed53999a3c17ed927c3863f",
+    "assets/localization.json": "b6242c0db416f70b170543ce062a34202f17a4517d078c093269fb8cd36988f8",
+    "assets/wallpaper-thumbnails/bluerays.jpeg": "00333a5eaf595bcce24e23e46f906986887e1aca971e0ea421d0adfed2357b18",
+    "assets/wallpaper-thumbnails/cherrypop.jpg": "3812da12c7c94593c0360195e888a9f446109cbc5b6714129c9b2eab7a5a45aa",
+    "assets/wallpaper-thumbnails/cityscape.jpg": "7bd316f942f3ec91474e6a76bdb6be3c30c182dff028591e5a52c8d5b50850bc",
+    "assets/wallpaper-thumbnails/energy-17.jpg": "9fb1d842860b31d855f012c849bb314215c68d7912947a3d24ad809b0cda6484",
+    "assets/wallpaper-thumbnails/energy-19.jpg": "0ac9c41b64b42a3f43dbfbc00b5aee42df02b4846a5f6fc13b146cbc9d4953f4",
+    "assets/wallpaper-thumbnails/farmvalley.jpg": "9d37356e2d692b126534b83e8348216e28803979770d2917154e784b85fcab96",
+    "assets/wallpaper-thumbnails/glassmorphism-3.jpg": "dbecd547ee9e738879df674da40fbb4361c7bcd53e2eaf02b1e31a7485e9f5d2",
+    "assets/wallpaper-thumbnails/glassmorphism-4.jpg": "7877ed7613646caecfc585d1219209065b95a03bb90beae0c899a5ad200d56e8",
+    "assets/wallpaper-thumbnails/ipad-17-dark.jpg": "a26c4d9c18c0043807532494805691bf3c6325aa6a7699e1673387a147cd0a9b",
+    "assets/wallpaper-thumbnails/ipad-17-light.jpg": "bd180dd026567cfd65ecd49def71cd71d610e2c26d3af1d749aea731e0fa1e93",
+    "assets/wallpaper-thumbnails/iridescent-9.jpg": "5f0fb5dfb6b82d5f71b8960e0a853c95255944a362b93fb8028d61b91eef5a98",
+    "assets/wallpaper-thumbnails/lemonade.jpeg": "2c6ef74d5fa5e70d0b6fe8d98863dc582d1e95866ba18e6510a0694ed560aef2",
+    "assets/wallpaper-thumbnails/levels.jpg": "943c90ab1e996810f9eac7e952d347a68ba462ff19de0cf0999264ecdd04924d",
+    "assets/wallpaper-thumbnails/luisdelrio.jpg": "3cb68bb4a120a0a310edfb66bd334e55ebb3d65d01b7ffc2486aa6d890235967",
+    "assets/wallpaper-thumbnails/midnight-8.jpg": "5addb32740934b3eb7a9642d7a012a085cf38829a4b94d62a0ff430103fd00f8",
+    "assets/wallpaper-thumbnails/mountaintrees.jpg": "6ce2066d534e51e11fe057930c79d8efe3403a3bf31ab5efe27b4bf397ce65fc",
+    "assets/wallpaper-thumbnails/sequoia-blue-orange.jpg": "9b634c4098d51ae265e3cab593704ee4f14c914a94cfb648f1c5ce8e5b01a17e",
+    "assets/wallpaper-thumbnails/sequoia-blue.jpg": "fc0092d4afb4b42fe1bbaccad3feb5252a61b64252f702a2e5159531a9bd9c12",
+    "assets/wallpaper-thumbnails/sonoma-clouds.jpg": "79803f1323ba3a3ca617c7a4790a9d130c01226a8b38e74c1011d83d35d76e70",
+    "assets/wallpaper-thumbnails/sonoma-dark.jpg": "3a757a4ca9c981bc08c8e75db13f3f342b45511f98d2217b92a28358e58db2b4",
+    "assets/wallpaper-thumbnails/sonoma-evening.jpg": "945f83e602cfbd00ba27bc3660d5f48368f9c43455db802170f9fb1488387d1f",
+    "assets/wallpaper-thumbnails/sonoma-horizon.jpg": "1230ef5cbb5274746dd64d7f14eecff8dd63e27b777da21cacbca67d6093177d",
+    "assets/wallpaper-thumbnails/sonoma-light.jpg": "eb97f2bffeed8c10acf5dcf479ac70a1d6cc723095b8410624e271d421332a73",
+    "assets/wallpaper-thumbnails/tahoe-dark.jpg": "a8f6bd411f454b908e1d068c7196a9455b7b469f591e3247859620a2ad02b4bf",
+    "assets/wallpaper-thumbnails/tahoe-light.jpg": "7f22ecc89397fa8163ac172c38aa07c9f347ace798a7e52bc7d991ebd813d23c",
+    "assets/wallpaper-thumbnails/ventura-dark.jpg": "94cf57ab2db0790a6251a13f68ff4893b16046a60a56de099ef4153073a34967",
+    "assets/wallpaper-thumbnails/ventura.jpg": "cc5c0cf1f712709a08027cbbc155fdf2b633f6d37f22bf2cdb96ab0a6ca4a7e3",
+    "assets/wallpaper-thumbnails/wallpaper1.jpg": "242d944d00f5a3aaf86790a94f3a8f21d60e26ac88d711bb73a51ff68602c51a",
+    "assets/wallpaper-thumbnails/wallpaper10.jpg": "d33a83023173756755de6fd199d760e349bc4c30f40e67b97a60c4f31407fb08",
+    "assets/wallpaper-thumbnails/wallpaper11.jpg": "262ac3e43bb4f1dce89deec644bd04ec193f1d733adbc50f03c098d7e388dd59",
+    "assets/wallpaper-thumbnails/wallpaper12.jpg": "3209f6bdee2811a3240f914f853e5e9c6e909225c0513e43fe8aa5ce9742ee32",
+    "assets/wallpaper-thumbnails/wallpaper13.jpg": "e4a635b44d662863e4c150cbfc6c4738939bc8d04c92c952e118a3ab9bd565e9",
+    "assets/wallpaper-thumbnails/wallpaper15.jpg": "5537bfab1f859ad330df3deb06aae85dba3ed5a968da0511dddf17e331b52d01",
+    "assets/wallpaper-thumbnails/wallpaper2.jpg": "e94196b8a179214e27adaf9dc7338bbbfd46107ee0c74a0de9eaf5d304f9eeb5",
+    "assets/wallpaper-thumbnails/wallpaper3.jpg": "d57d4b01ffa1b38fd71a17cf775da4d97ba53407cd715396a818099e00431feb",
+    "assets/wallpaper-thumbnails/wallpaper4.jpg": "417637cead05bf04af06f59c5401c5a500b89b925e3607f4c8cd90f46ca339a6",
+    "assets/wallpaper-thumbnails/wallpaper7.jpg": "3b71339c3b16d090c55d8fbd5ad1734558facee1e701bf49c967a62d39b217c4",
+    "assets/wallpaper-thumbnails/wallpaper9.jpg": "3f83b998037aa0af74bd6997b7fa96692b09dbbd3ba42036cf29c47754b2eccb",
+    "build.rs": "9cc891b6b8dab364366c20faeaef388ea5139167ab0ddfac4fedead9b6879e06",
+    "examples/primitives.rs": "108a62a142580bbe67caa2a56add956aa15d0629d34bf323bf616753b157e03c",
+    "scripts/ScreenCaptureKitRecorder.swift": "b3b024dec18fd9252915127e67504907d854b198293c668b549b3339c1e03c47",
+    "scripts/autozoom-smoke.py": "56cd4b312964f952c12d9ccab8d6bd22dced143dca71c1f61477e1da0351fd28",
+    "scripts/build-mac.py": "83355d5806d1fb97651dd663ccb2841ddf170ef519a868f9bfa95dbbad25997d",
+    "scripts/capture-fixture.swift": "000fc8fdb703f63e5b70e466a1ccd3bfac93742eae7e7cd9c7bb41c11a5ebdbe",
+    "scripts/check-ui-primitives.py": "32be6871430b9cfe92937f270124cfa202b6a00890a05be7c52fd3201dbcdf21",
+    "scripts/companion.swift": "e5de50267834cb2b11ac7fd57a7fc973d80d884032bfa58ea531cf16ce93c7e4",
+    "scripts/decoder.c": "22ddb48ed3ea727b555d9463356e583e174a61bfdadcc2a802e343da1e2c0ae7",
+    "scripts/file-events.m": "66c81f871eec84838126cfc2737b9b672848882b58dd667f7c7df93ae34712fe",
+    "scripts/launcher-smoke.py": "49742f46be5a6d9bcedc08019c00655b30b9ff9d5f1f0bc3b92086a9ef113bf3",
+    "scripts/localization.py": "1ac2514168a6feecf98dcf377ea0f4f0050883a79a47bfdd759719fca9d2659f",
+    "scripts/platform.swift": "636a94113a0dfe9135f0a910cf15fcdbf90beacebc6b1f329866d409237b0615",
+    "scripts/reference-fixtures.mjs": "ec613de49535b3b0c88cd4bd6c624497608515e3a4f249733a566902a3583d44",
+    "scripts/smoke.py": "28d4c91277475775d6d1bf56f21e18325d9eab36db01886c72e90473cccbd22e",
+    "scripts/ui-icons.mjs": "5671379039d7aa0c028ec96486dd52eebc6b8bc593f3188d3448b387471db613",
+    "scripts/ui-smoke.py": "97b037aa29494a2cb1e4224ce7ce7a16b3c29fc74b85a240611dead58d2ecabe",
+    "scripts/ui-thumbnails.py": "49c88db7d8194f2cf034856fe2121c16538cfa4b667ff6307429e71fbf0a3a57",
+    "scripts/validation-report.py": "81a6813006696f3e1554e54ec31d7736b7dabe3d1efb6d7a436716f05ffe073a",
+    "src/app.rs": "307fa85c91ba5b121347d9e38432f9739f17f8cb9e4bf813776aeea9a415a771",
+    "src/autozoom.rs": "74f8ea7bd91f46bb2f6a996cdf2609f5974eb6bca61897e2eac5ed5657c55569",
+    "src/caption_editing.rs": "11122f2d504a6f8016ae734326988a5c0cef63f7412eaacb75df9a655f3b2c8b",
+    "src/captions.rs": "fbcb3d55b3696042c83b64a10c70be76751f94bdb21461f5e2fa334212214145",
+    "src/editing.rs": "bb10e338865fcb8b4da7da48d990d2de090f3a4ff354906e32c49c1b6bd886d5",
+    "src/effects.rs": "292a885bbe1b51827eb35a96439bfa6d7b14ed0114ac9cf4d794aa7e574557b8",
+    "src/export.rs": "f4d799e6c0f020f6fbccb05402568c9b34b6d7e181c79dd1faa8273d30a0e289",
+    "src/file_group.rs": "05389623bd9ced6dc8ec4b44cffc873acb3f328dec209cf4bebcc12b3c82932b",
+    "src/geometry.rs": "b6234f9b7400bf2f926a492271ecf6791ea64478ee477cc900a4b8fee434d293",
+    "src/inspector.rs": "bfe32a0e6d64110911ff04abd5c0cad9042fd7a2e42bccfa3eba36f685ef7af1",
+    "src/lib.rs": "f7d107fe3b6eff0269d503e727ec24222a6d858df93ba3cbb1a4c10a23e53001",
+    "src/library.rs": "76124b32b60a7b2acc5aaa22d15a0fef68fc6e81e2d974093624228125dae6cf",
+    "src/localization.rs": "481d8f433cc8fe0cdc010f8751cbcfbc7efffbf3d34963ea07f06e1ecfc48000",
+    "src/main.rs": "9f870a86192092b1285c11a5efd79f49601437f45aab52ff0b39fd20a7a1f700",
+    "src/media.rs": "26afe80f52529dea5590d1a05011c96dc72f7a14c65117a223fbd3f1e70d45d3",
+    "src/models.rs": "73e0dd15acd11a2f3ec5c100e5471dc3d6e30df34d8afaf47bcfb0c358f542b1",
+    "src/motion.rs": "247b38c84517ce3ad74cfca080a4e0872dd6ccd857222d0597d9b83df89a7d9e",
+    "src/native_decoder.rs": "15dbb10c29ff693770defeedfe4bf64985e1f2b661c948939da3293b0fce13b2",
+    "src/platform.rs": "fa0db4f16391727c5ee62e58bd709a4c2ea3b6b545fb17cfe5d5851acf625d72",
+    "src/preferences.rs": "621c011f003f429a89b37c93480fb155bfb2cabc522078135a29f249ef267699",
+    "src/presets.rs": "61bd798c8a216345d7448b878fd08491720dd4c5c7843f835ac985ab114512bb",
+    "src/project.rs": "31eac58de79347172b3687a45d707e70a0db4acf21cc36c2420df35ab31ee3b1",
+    "src/recovery.rs": "eca68433782f77d6c9ec3f6a7c10d20fb80edfa2cfe2bda343bb5eea3230d557",
+    "src/render.rs": "c072aa7a461aa7b64a49caebdd087f9ed6ba4520bb871fbc409a519ce03df539",
+    "src/segmentation.rs": "1ad3fef1ba438d1698191d8bbec28d0268b1ed4a21676177b27d32eb47d0e013",
+    "src/shortcuts.rs": "5b24b90b2abb7afcc4057fa04f846cdacabc0ff26ea4dae8ccc3e73e83649b43",
+    "src/subtitles.rs": "4cdde2e80ac075230031df48b57331e7aa11b0ab64e1b307eb4f06a86da9dfdf",
+    "src/timeline.rs": "d47bc4124fcef71ad2b631eabe71f14bfec2e73138c641fdf191554d74eb2a19",
+    "src/transcription.rs": "c394cecaa8340e5aeb3f771d0ac80bd3156c4c95b8d50e0d4484ace54dc25fe4",
+    "ui/choices.slint": "16c21aade7e5d349f862dbf4176c1aada3b9ed88832ba99f1e7dce8e8c0ec6d6",
+    "ui/components/button.slint": "32f4b2b9a208585358e3b9d93a37a704f6f8d958c7bfddc258f1785e53048925",
+    "ui/components/checkbox.slint": "e3df4f945acc286288f340ad025feee5d956f35338eb4635c3b5da4442e36cdb",
+    "ui/components/choice-tile.slint": "1dd4aef349ef315ed6a0c77126688e871be9fa7bcdddc205f25450e74ba7670b",
+    "ui/components/dropdown.slint": "4bc60c1bebf3bd9efa72ccd12de42df801e6ceb7cab29b7c2cb3db273a0a2d12",
+    "ui/components/field-row.slint": "e652bd0fded83708a8f23cc77c288fd59b4545a2fde79ec975416fc8134bd731",
+    "ui/components/input.slint": "b5fe68a819a52ae809e99711983dcef212a00c3c5aacd235e6b566762a004c1e",
+    "ui/components/label.slint": "bb60e6499c6eafe0bcd918cd11951148e741bbab999b05147ac9c298fc7e12e5",
+    "ui/components/panel.slint": "fa7a778f66dbacf8a9dd4d2b5895e705d3e08d45fdcce253cf858b91966bfa16",
+    "ui/components/progress.slint": "27cd166341d6e8b0fa20ad4668fdf2d7b89a5735cf70d23c85be70ad3356e005",
+    "ui/components/radio.slint": "fedb003bb72f57bda9b4ec8b51c3fc1b08be869ed0f6a2b4c8d75911a4888e9e",
+    "ui/components/rail-button.slint": "9dc5444cfba3b877974bc58fce5029385a37bf2be9a77dca5c4d8ca24e4b03af",
+    "ui/components/scroll-area.slint": "b7155c59fd40fe82d555b5cbdd7d3ffc7062c2bb8a682de515d53f38ce159985",
+    "ui/components/segmented-control.slint": "e627e58cf02cf0f803961d3554b82ecac656585b120c97edf26d3b1f9d50541d",
+    "ui/components/slider.slint": "0635ae3686aa92f1a54e7d299c7ab2d49e6bb18d441afa633e7daeaaf5173b24",
+    "ui/components/toggle.slint": "1cd0b14228dace4fb294c6553684554feae5afceefd928340ea3802b5c0608ec",
+    "ui/controls.slint": "75603b3fc60671df5c7aaeb947a50483d3d5bec316b10ee939fef1c06bf81610",
+    "ui/editor.slint": "16977d163cdf30dd876251a5a8cf6d4b7364b1fd583ac32c5869bacad90e877c",
+    "ui/primitives-gallery.slint": "4807ca131e76df918616b95540dbb181cc4b9e09da242fe8a211565914ddf9ae",
+    "ui/theme.slint": "980be1a014525ee3750c3ffd1a8c6f9284e38781fd31cd906bf9628b0ed13e77"
+  },
+  "screen_capture_helper": {
+    "source": "SubTake empty editor window only",
+    "microphone": false,
+    "camera": false,
+    "system_audio": false,
+    "events": [
+      "Recording started",
+      "Recording paused",
+      "Recording resumed",
+      "Recording stopped. Output path: /Users/subs/Personal/SubTake/native-app/test-output/window-capture-ui-fixes.mp4"
+    ],
+    "video": {
+      "index": 0,
+      "codec_name": "h264",
+      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+      "profile": "High",
+      "codec_type": "video",
+      "codec_tag_string": "avc1",
+      "codec_tag": "0x31637661",
+      "mime_codec_string": "avc1.640032",
+      "width": 2720,
+      "height": 1824,
+      "coded_width": 2720,
+      "coded_height": 1824,
+      "has_b_frames": 2,
+      "pix_fmt": "yuv420p",
+      "level": 50,
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "color_primaries": "bt709",
+      "chroma_location": "left",
+      "field_order": "progressive",
+      "is_avc": "true",
+      "nal_length_size": "4",
+      "id": "0x1",
+      "r_frame_rate": "50/1",
+      "avg_frame_rate": "45600/913",
+      "time_base": "1/600",
+      "start_pts": 0,
+      "start_time": "0.000000",
+      "duration_ts": 1816,
+      "duration": "3.026667",
+      "bit_rate": "2584208",
+      "bits_per_raw_sample": "8",
+      "nb_frames": "152",
+      "extradata_size": 35,
+      "disposition": {
+        "default": 1,
+        "dub": 0,
+        "original": 0,
+        "comment": 0,
+        "lyrics": 0,
+        "karaoke": 0,
+        "forced": 0,
+        "hearing_impaired": 0,
+        "visual_impaired": 0,
+        "clean_effects": 0,
+        "attached_pic": 0,
+        "timed_thumbnails": 0,
+        "non_diegetic": 0,
+        "captions": 0,
+        "descriptions": 0,
+        "metadata": 0,
+        "dependent": 0,
+        "still_image": 0,
+        "multilayer": 0
+      },
+      "tags": {
+        "creation_time": "2026-09-12T21:21:30.000000Z",
+        "language": "und",
+        "handler_name": "Core Media Video"
+      }
+    },
+    "output": "/Users/subs/Personal/SubTake/native-app/test-output/window-capture-ui-fixes.mp4",
+    "scope": "Packaged ScreenCaptureKit helper start, pause, resume, stop; app UI start/save dialog not exercised"
+  },
+  "recorder_lifecycle": {
+    "recorded_at": "2026-09-13T08:56:07.087704+00:00",
+    "binary_sha256": "e49e1c194334f7d3a1a177b3e6215c1def61fa534c66d6f2969c3b5df3e27b0d",
+    "cases": [
+      {
+        "mode": "idle",
+        "status": "passed",
+        "log": "test-output/launcher/idle.log"
+      },
+      {
+        "mode": "sources",
+        "status": "passed",
+        "log": "test-output/launcher/sources.log"
+      },
+      {
+        "mode": "audio",
+        "status": "passed",
+        "log": "test-output/launcher/audio.log"
+      },
+      {
+        "mode": "camera",
+        "status": "passed",
+        "log": "test-output/launcher/camera.log"
+      },
+      {
+        "mode": "countdown",
+        "status": "passed",
+        "log": "test-output/launcher/countdown.log"
+      },
+      {
+        "mode": "more",
+        "status": "passed",
+        "log": "test-output/launcher/more.log"
+      }
+    ],
+    "user_preferences_unchanged": true
+  },
+  "previous_capture_lifecycle": {
+    "recorded_at": "2026-09-12T22:52:27.758404+00:00",
+    "binary_sha256": "c8e9e8c93371aa9da8213c53eb6b6d6c626307717b5de8f6c4124232dc3fedac",
+    "cases": [
+      {
+        "mode": "idle",
+        "status": "passed",
+        "log": "test-output/launcher/idle.log"
+      },
+      {
+        "mode": "sources",
+        "status": "passed",
+        "log": "test-output/launcher/sources.log"
+      },
+      {
+        "mode": "audio",
+        "status": "passed",
+        "log": "test-output/launcher/audio.log"
+      },
+      {
+        "mode": "camera",
+        "status": "passed",
+        "log": "test-output/launcher/camera.log"
+      },
+      {
+        "mode": "countdown",
+        "status": "passed",
+        "log": "test-output/launcher/countdown.log"
+      },
+      {
+        "mode": "more",
+        "status": "passed",
+        "log": "test-output/launcher/more.log"
+      },
+      {
+        "mode": "capture",
+        "status": "passed",
+        "log": "test-output/launcher/capture.log"
+      }
+    ],
+    "user_preferences_unchanged": true,
+    "capture": {
+      "camera": false,
+      "media": {
+        "audio_tracks": 0,
+        "duration": 3.415,
+        "fps": 56.53229723166586,
+        "height": 904,
+        "width": 1440
+      },
+      "microphone": false,
+      "scope": "menu-bar launch, hide/Open, source control, countdown cancellation, screen-only capture of selected SubTake window, pause/resume/stop, final editor handoff",
+      "source": "/Users/subs/Personal/SubTake/native-app/test-output/launcher/Recording-1789253540-944f6891.mp4",
+      "status": "passed",
+      "system_audio": false,
+      "occlusion_checks": [
+        {
+          "time": 0.25,
+          "blue_fraction": 0.900125,
+          "red_fraction": 0.0
+        },
+        {
+          "time": 0.75,
+          "blue_fraction": 0.9003125,
+          "red_fraction": 0.0
+        },
+        {
+          "time": 1.5,
+          "blue_fraction": 0.900375,
+          "red_fraction": 0.0
+        },
+        {
+          "time": 2.5,
+          "blue_fraction": 0.9000625,
+          "red_fraction": 0.0
+        }
+      ],
+      "helper_sha256": "3b1a80524f8df3c7b2f5c2fc1a7c2b4d9ae89333936b637dc7c1f29537ca1c4c"
+    }
+  },
+  "not_validated": [
+    "real microphone/camera/system-audio recording integration",
+    "long-session A/V drift and playback device changes",
+    "full visual parity against Electron",
+    "macOS 14, stable macOS, Intel Mac",
+    "Windows or Linux build/runtime",
+    "Developer ID signing, notarization, public distribution/updater"
+  ],
+  "idle_process_sample": {
+    "state": "generated fixture open and paused; no recording/export/transcription",
+    "pid": 59786,
+    "samples": [
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      },
+      {
+        "cpu_percent": 0.0,
+        "rss_mib": 143.96875,
+        "processes": 1
+      }
+    ],
+    "mean_cpu_percent": 0.0,
+    "max_rss_mib": 143.96875,
+    "measurement": "ps process-family resident memory and CPU snapshots; excludes driver/GPU memory and is not a power measurement"
+  }
+}

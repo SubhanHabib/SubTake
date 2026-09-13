@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-show-hud"
+description = "Allow the spike editor to toggle its HUD"
+commands.allow = ["show_hud"]

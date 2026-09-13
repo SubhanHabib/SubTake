@@ -1,0 +1,8 @@
+import { Theme } from "../theme.slint";
+import { Label } from "label.slint";
+export component FieldRow inherits HorizontalLayout {
+    in property <string> label;
+    height:28px;spacing:Theme.gap-large;
+    Label {text:root.label;horizontal-stretch:1;wrap:word-wrap;}
+    @children
+}

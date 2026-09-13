@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-09-13T09:15:43.075925+00:00",
+  "status": "passed",
+  "gallery_binary_sha256": "007c06ff740126c889025a14b24987dac3a58196075d10023ec5fcea189e48d4",
+  "checks": [
+    "button pointer and keyboard activation",
+    "disabled button does not activate",
+    "checkbox pointer and Space",
+    "toggle and disabled toggle",
+    "radio selection",
+    "input commit",
+    "dropdown keyboard and pointer selection",
+    "dropdown Escape does not commit highlight",
+    "dropdown empty and disabled states",
+    "long dropdown End-key selection and Home-key scroll reset",
+    "slider pointer update",
+    "light and dark gallery snapshots",
+    "no raw controls or inline generic buttons in screens",
+    "filled numeric slider pointer and keyboard commit"
+  ],
+  "snapshots": [
+    "test-output/primitives/dark.png",
+    "test-output/primitives/light.png",
+    "test-output/primitives/dropdown.png"
+  ],
+  "platform": "macOS; other platforms and full assistive-technology acceptance not validated"
+}

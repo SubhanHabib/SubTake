@@ -1,0 +1,9 @@
+node_modules/
+dist/
+work/
+results/
+src-tauri/target/
+src-tauri/gen/
+artifacts/hyperframes/.hyperframes/
+artifacts/hyperframes/node_modules/
+artifacts/hyperframes/snapshots/
