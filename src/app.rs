@@ -3461,7 +3461,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         let smoke_ui = ui.as_weak();
         Timer::single_shot(Duration::from_secs(3), move || {
             if let Some(ui) = smoke_ui.upgrade() {
-                for (y, panel) in [(134.0, "Cursor"), (184.0, "Webcam"), (84.0, "Frame")] {
+                for (y, panel) in [(146.0, "Cursor"), (204.0, "Webcam"), (88.0, "Frame")] {
                     let position = slint::LogicalPosition::new(38., y);
                     ui.window()
                         .dispatch_event(slint::platform::WindowEvent::PointerPressed {

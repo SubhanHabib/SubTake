@@ -1,0 +1,16 @@
+{
+  "recorded_at": "2026-09-13T14:30:42.225820+00:00",
+  "status": "passed",
+  "control_height": 40,
+  "main_binary_sha256": "6a5ddd3ac11acff98473b5f28e3f7a07ff69c6419854cbc59efb4a9370ce156c",
+  "editor_cases": 11,
+  "overlay_cases": 6,
+  "checks": [
+    "equal rendered button/dropdown/slider heights",
+    "shared control keyboard/pointer interactions",
+    "timeline and preview gestures",
+    "normal and minimum editor screenshots",
+    "expanded recorder More layout reviewed"
+  ],
+  "source": "Theme.control-height in ui/theme.slint"
+}

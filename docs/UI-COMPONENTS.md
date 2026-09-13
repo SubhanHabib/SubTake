@@ -52,3 +52,7 @@ The winit 0.30 API documents different platform support: its general blur API is
 Our pinned Slint 1.17.1 does not expose a general CSS-style backdrop-filter on arbitrary components. Blurring content inside our own window therefore requires additional renderer/compositing work; a blurred drop shadow is not backdrop blur. Centralising panels and controls gives that work one integration point later, but does not implement it by itself.
 
 References: [Slint Rectangle](https://docs.slint.dev/latest/docs/slint/reference/elements/rectangle/), [Slint Window](https://docs.slint.dev/latest/docs/slint/reference/window/window/), [winit blur](https://docs.rs/winit/latest/winit/window/struct.Window.html#method.set_blur), [AppKit visual effects](https://developer.apple.com/documentation/appkit/nsvisualeffectview).
+
+## Comfortable control sizing
+
+`Theme.control-height` is the single 40px height for buttons, icon buttons, dropdown triggers/menu rows, text inputs, filled numeric sliders and plain sliders. The old small/compact/regular/large names are compatibility aliases to that same value. Control widths still follow their content and layout; icon buttons are 40px squares. Compound numeric inputs fill the slider height. Larger choice cards retain their content-driven dimensions. The gallery asserts equal rendered heights, and the boundary checker rejects smaller per-screen height overrides.

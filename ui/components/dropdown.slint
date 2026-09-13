@@ -12,7 +12,7 @@ export component Dropdown inherits Rectangle {
     out property <bool> expanded:false;
     private property <int> highlighted:0;
     callback selected(string);
-    height:root.size==ControlSize.small ? Theme.control-small : root.size==ControlSize.compact ? Theme.control-compact : root.size==ControlSize.large ? Theme.control-large : Theme.control-regular;
+    height:Theme.control-height;
     min-width:60px;vertical-stretch:0;
     background:Theme.surface;border-radius:Theme.radius-control;border-width:key.has-focus || root.expanded ? Theme.focus-width : Theme.border-width;border-color:key.has-focus || root.expanded ? Theme.blue : Theme.border;
     opacity:root.enabled && root.model.length>0 ? 1 : Theme.disabled-opacity;

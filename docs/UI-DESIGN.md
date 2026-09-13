@@ -2,7 +2,7 @@
 
 The September 13 refresh follows the two light video-editor reference screenshots supplied by the user: neutral surfaces, rounded controls, a dotted preview canvas, a right-hand inspector, filled numeric sliders, soft timeline colors and a larger labelled filmstrip. This is a Slint implementation; no web view was added. Existing SubTake actions and project keys remain connected to the native editing core.
 
-The header is 56px tall with centered project title, project/save/history controls, recording, presets and a lime Export action. The left rail uses circular icon controls with captions. The inspector is 280px wide and scrolls independently. The timeline has a 200px minimum and 320px preferred/maximum height so its bottom controls stay inside a 980x680 window. Effect lanes scroll, and trim handles retain full-height hit targets around their smaller visible grips. The rounded source strip and neutral playhead share the same time mapping as the tracks.
+The header is 56px tall with centered project title, project/save/history controls, recording, presets and a lime Export action. The left rail uses circular icon controls with captions. The inspector is 280px wide and scrolls independently. The timeline has a 240px minimum and 320px preferred/maximum height so its bottom controls stay inside a 980x680 window. Effect lanes scroll, and trim handles retain full-height hit targets around their smaller visible grips. The rounded source strip and neutral playhead share the same time mapping as the tracks.
 
 `ui/theme.slint` owns light/dark colors and sizing. `ui/components/scrub-field.slint` combines the filled slider with an editable value; dragging commits on release and typed values commit on Enter. Buttons, dropdowns, toggles, checkboxes and other primitives remain in `ui/components/` and are exported through `ui/controls.slint`. Phosphor icon geometry is unchanged. The full component map and gallery workflow are in `UI-COMPONENTS.md`.
 
@@ -33,3 +33,7 @@ The native timeline regression example injects the same core pinch events emitte
 Pinching over the preview magnifies the workspace view from Fit (1x) to 8x. The image position under the gesture remains anchored, subject to image-edge bounds. Two-finger scrolling pans the magnified view, and the Fit control resets scale and position. `PreviewViewport` owns this behavior; image and edit-overlay children share the same scaled coordinate system. Opening a project or changing preview aspect resets the view. These transient UI properties are separate from project effects, crop settings, playhead time and exported framing.
 
 Native gesture regression checks cover preview anchoring and normalized click coordinates, scroll panning, bounds, Fit and isolation from the timeline. Physical trackpad input remains a manual acceptance check.
+
+## Uniform control height
+
+Buttons, dropdowns and sliders share the filled slider's 40px height in the editor and recorder. Header, inspector and toolbar rows accommodate that height; the rail scrolls in short windows. Recorder option panels are 264px tall inside a 386px expanded window, while the collapsed bar remains 106px tall. The timeline filmstrip can shrink on small windows so its controls remain visible.

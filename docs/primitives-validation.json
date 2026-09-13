@@ -1,7 +1,7 @@
 {
-  "recorded_at": "2026-09-13T09:15:43.075925+00:00",
+  "recorded_at": "2026-09-13T14:30:11.136995+00:00",
   "status": "passed",
-  "gallery_binary_sha256": "007c06ff740126c889025a14b24987dac3a58196075d10023ec5fcea189e48d4",
+  "gallery_binary_sha256": "c711c904d884239b0361e07f1ccb0811bd2bc0a682be59b90bb07046377686ef",
   "checks": [
     "button pointer and keyboard activation",
     "disabled button does not activate",
@@ -16,7 +16,8 @@
     "slider pointer update",
     "light and dark gallery snapshots",
     "no raw controls or inline generic buttons in screens",
-    "filled numeric slider pointer and keyboard commit"
+    "filled numeric slider pointer and keyboard commit",
+    "buttons, dropdowns, plain sliders and filled sliders all measure 40 logical pixels high"
   ],
   "snapshots": [
     "test-output/primitives/dark.png",

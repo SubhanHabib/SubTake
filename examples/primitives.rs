@@ -39,6 +39,10 @@ fn main() -> Result<(), slint::PlatformError> {
         let weak = ui.as_weak();
         Timer::single_shot(Duration::from_millis(700), move || {
             let ui = weak.unwrap();
+            assert_eq!(ui.get_button_height(), 40.);
+            assert_eq!(ui.get_dropdown_height(), ui.get_button_height());
+            assert_eq!(ui.get_slider_height(), ui.get_button_height());
+            assert_eq!(ui.get_filled_height(), ui.get_button_height());
             // Public interactions rather than setters exercise actual focus and hit targets.
             click(&ui, 60., 135.);
             assert_eq!(ui.get_clicks(), 1);

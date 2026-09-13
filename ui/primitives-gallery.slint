@@ -3,6 +3,10 @@ import { ScrubField, Theme, ToolButton, IconButton, RecordButton, Toggle, Checkb
 export component PrimitiveGallery inherits Window {
     title:"SubTake - UI primitives";width:820px;height:640px;background:Theme.bg;
     default-font-family:Theme.font-family;
+    out property <length> button-height:sample-button.height;
+    out property <length> dropdown-height:dropdown.height;
+    out property <length> slider-height:sample-slider.height;
+    out property <length> filled-height:sample-filled.height;
     in-out property <bool> dark:true;
     in-out property <int> clicks:0;
     in-out property <int> selections:0;
@@ -23,7 +27,7 @@ export component PrimitiveGallery inherits Window {
     Label {x:24px;y:53px;text:"Shared implementations, states and tokens";role:muted;}
     Label {x:24px;y:90px;text:"Buttons";role:heading;}
     HorizontalLayout {x:24px;y:120px;width:772px;height:40px;spacing:8px;
-        ToolButton {text:"Primary";has-icon:false;variant:primary;clicked=>{root.clicks+=1;}}
+        sample-button:=ToolButton {text:"Primary";has-icon:false;variant:primary;clicked=>{root.clicks+=1;}}
         ToolButton {text:"Secondary";has-icon:false;clicked=>{root.clicks+=1;}}
         ToolButton {text:"Ghost";has-icon:false;variant:ghost;clicked=>{root.clicks+=1;}}
         ToolButton {text:"Outline";has-icon:false;variant:outline;clicked=>{root.clicks+=1;}}
@@ -49,11 +53,11 @@ export component PrimitiveGallery inherits Window {
     RadioButton {x:24px;y:396px;width:100px;text:"Option A";checked:root.radio==0;clicked=>{root.radio=0;}}
     RadioButton {x:145px;y:396px;width:110px;text:"Option B";checked:root.radio==1;clicked=>{root.radio=1;}}
     SegmentedControl {x:280px;y:396px;width:260px;model:["Small","Medium","Large"];current-index:1;}
-    FineSlider {x:24px;y:453px;width:300px;label:"Amount";value:root.amount;changed(value)=>{root.amount=value;}released(value)=>{root.amount=value;}}
+    sample-slider:=FineSlider {x:24px;y:453px;width:300px;label:"Amount";value:root.amount;changed(value)=>{root.amount=value;}released(value)=>{root.amount=value;}}
     FineSlider {x:360px;y:453px;width:190px;label:"Disabled slider";value:0.65;enabled:false;}
     ProgressBar {x:586px;y:462px;width:210px;progress:root.amount;}
     Panel {x:24px;y:506px;width:240px;height:88px;Label {x:12px;y:12px;text:"Panel";role:heading;}Label {x:12px;y:40px;text:"Shared border, radius and surface";role:muted;}}
     ChoiceTile {x:280px;y:506px;width:230px;height:88px;active:true;label:"Selected card";Label {x:12px;y:12px;text:"Selected card";role:heading;}}
-    ScrubField {x:536px;y:526px;width:260px;label:"Filled slider";value:root.amount;committed(value)=>{root.amount=value.to-float();}}
+    sample-filled:=ScrubField {x:536px;y:526px;width:260px;label:"Filled slider";value:root.amount;committed(value)=>{root.amount=value.to-float();}}
     Label {x:24px;y:610px;text:"All screens import the same primitives from ui/controls.slint";role:muted;}
 }

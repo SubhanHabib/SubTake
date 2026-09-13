@@ -12,7 +12,7 @@ export component ButtonSurface inherits Rectangle {
     out property <bool> has-focus: key.has-focus;
     out property <bool> pressed: touch.pressed;
     callback clicked;
-    height: root.size==ControlSize.small ? Theme.control-small : root.size==ControlSize.compact ? Theme.control-compact : root.size==ControlSize.large ? Theme.control-large : Theme.control-regular;
+    height:Theme.control-height;
     vertical-stretch: 0;
     border-radius: root.round ? self.height/2 : Theme.radius-control;
     background: root.variant==ButtonVariant.primary ? (touch.has-hover ? Theme.accent-hover : Theme.blue) : root.variant==ButtonVariant.danger || root.variant==ButtonVariant.record ? Theme.danger.with-alpha(touch.has-hover ? 0.22 : 0.1) : root.active ? Theme.selection : touch.pressed || touch.has-hover ? Theme.hover : root.variant==ButtonVariant.ghost || root.variant==ButtonVariant.outline ? transparent : Theme.surface;

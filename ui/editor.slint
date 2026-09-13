@@ -136,8 +136,9 @@ export component EditorWindow inherits Window {
                     }
                 }
             }
-            HorizontalLayout {padding:12px;spacing:12px;vertical-stretch:1;
-                VerticalLayout {width:52px;spacing:2px;
+            HorizontalLayout {padding:12px;spacing:12px;vertical-stretch:1;min-height:340px;
+                rail-scroll := ScrollArea {width:52px;viewport-width:52px;viewport-height:max(self.visible-height,386px);
+                VerticalLayout {width:52px;height:max(rail-scroll.visible-height,386px);spacing:2px;
                     RailButton {text:root.translate("Scene",root.language);icon:self.active ? @image-url("../assets/icons/Sparkle-fill.svg") : @image-url("../assets/icons/Sparkle-regular.svg");active:root.panel=="Frame" || root.panel=="Wallpapers" || root.panel=="Crop" || root.panel=="Presets";clicked=>{root.show-panel("Frame");}}
                     RailButton {text:root.translate("Cursor",root.language);icon:self.active ? @image-url("../assets/icons/Cursor-fill.svg") : @image-url("../assets/icons/Cursor-regular.svg");active:root.panel=="Cursor";clicked=>{root.show-panel("Cursor");}}
                     RailButton {text:root.translate("Webcam",root.language);icon:self.active ? @image-url("../assets/icons/Camera-fill.svg") : @image-url("../assets/icons/Camera-regular.svg");active:root.panel=="Webcam";clicked=>{root.show-panel("Webcam");}}
@@ -145,10 +146,11 @@ export component EditorWindow inherits Window {
                     RailButton {text:root.translate("Audio",root.language);icon:self.active ? @image-url("../assets/icons/SpeakerHigh-fill.svg") : @image-url("../assets/icons/SpeakerHigh-regular.svg");active:root.panel=="Audio";clicked=>{root.show-panel("Audio");}}
                     Rectangle {vertical-stretch:1;}
                     RailButton {text:root.translate("Settings",root.language);icon:self.active ? @image-url("../assets/icons/Gear-fill.svg") : @image-url("../assets/icons/Gear-regular.svg");active:root.panel=="Preferences" || root.panel=="Shortcuts";clicked=>{root.show-panel("Preferences");}}
-                    HorizontalLayout {height:30px;alignment:center;IconButton {width:36px;icon:@image-url("../assets/icons/Question-regular.svg");label:root.translate("Keyboard shortcuts",root.language);variant:ghost;clicked=>{root.action("shortcut-reference");}}}
+                    HorizontalLayout {height:Theme.control-height;alignment:center;IconButton {icon:@image-url("../assets/icons/Question-regular.svg");label:root.translate("Keyboard shortcuts",root.language);variant:ghost;clicked=>{root.action("shortcut-reference");}}}
+                }
                 }
                 VerticalLayout {spacing:6px;horizontal-stretch:1;
-                    if root.has-video: HorizontalLayout {height:30px;alignment:center;spacing:8px;
+                    if root.has-video: HorizontalLayout {height:Theme.control-height;alignment:center;spacing:8px;
                         Dropdown {label:"Aspect ratio";width:96px;size:compact;model:["Native","16:9","9:16","1:1","4:3","3:2"];current-index <=> root.aspect-index;selected(value)=>{root.field-change("aspectRatio",["native","16:9","9:16","1:1","4:3","3:2"][self.current-index]);}}
                         Rectangle {width:1px;height:14px;background:Theme.border;}
                         ToolButton {icon:@image-url("../assets/icons/Crop-regular.svg");text:root.translate("Crop",root.language);variant:ghost;active:root.panel=="Crop";enabled:root.has-video;clicked=>{root.action("visual-crop");}}
@@ -181,21 +183,21 @@ export component EditorWindow inherits Window {
                         Label {x:6px;height:parent.height;width:180px;text:root.time-label;color:Theme.muted;font-size:Theme.font-small;vertical-alignment:center;}
                         HorizontalLayout {alignment:center;spacing:8px;
                             IconButton {icon:@image-url("../assets/icons/SkipBack-fill.svg");label:root.translate("Previous frame",root.language);variant:ghost;enabled:root.has-video;clicked=>{root.action("previous-frame");}}
-                            IconButton {width:34px;size:regular;icon:root.playing ? @image-url("../assets/icons/Pause-fill.svg") : @image-url("../assets/icons/Play-fill.svg");label:root.playing ? root.translate("Pause",root.language) : root.translate("Play",root.language);round:true;enabled:root.has-video;clicked=>{root.action("play");}}
+                            IconButton {size:regular;icon:root.playing ? @image-url("../assets/icons/Pause-fill.svg") : @image-url("../assets/icons/Play-fill.svg");label:root.playing ? root.translate("Pause",root.language) : root.translate("Play",root.language);round:true;enabled:root.has-video;clicked=>{root.action("play");}}
                             IconButton {icon:@image-url("../assets/icons/SkipForward-fill.svg");label:root.translate("Next frame",root.language);variant:ghost;enabled:root.has-video;clicked=>{root.action("next-frame");}}
                         }
-                        IconButton {x:parent.width - 36px;icon:@image-url("../assets/icons/SpeakerHigh-regular.svg");label:root.translate("Audio",root.language);variant:ghost;clicked=>{root.show-panel("Audio");}}
+                        IconButton {x:parent.width - Theme.control-height;icon:@image-url("../assets/icons/SpeakerHigh-regular.svg");label:root.translate("Audio",root.language);variant:ghost;clicked=>{root.show-panel("Audio");}}
                     }
                 }
                 Panel {width:280px;background:Theme.panel.with-alpha(0.92);
                     VerticalLayout {padding:14px;spacing:12px;
-                        HorizontalLayout {height:24px;spacing:6px;
-                            if root.panel=="Shortcuts": IconButton {width:24px;size:small;icon:@image-url("../assets/icons/CaretLeft-regular.svg");label:"Settings";variant:ghost;clicked=>{root.show-panel("Preferences");}}
-                            if root.panel=="Crop" || root.panel=="Wallpapers" || root.panel=="Presets": IconButton {width:24px;size:small;icon:@image-url("../assets/icons/CaretLeft-regular.svg");label:root.translate("Scene",root.language);variant:ghost;clicked=>{root.show-panel("Frame");}}
+                        HorizontalLayout {height:Theme.control-height;spacing:6px;
+                            if root.panel=="Shortcuts": IconButton {size:small;icon:@image-url("../assets/icons/CaretLeft-regular.svg");label:"Settings";variant:ghost;clicked=>{root.show-panel("Preferences");}}
+                            if root.panel=="Crop" || root.panel=="Wallpapers" || root.panel=="Presets": IconButton {size:small;icon:@image-url("../assets/icons/CaretLeft-regular.svg");label:root.translate("Scene",root.language);variant:ghost;clicked=>{root.show-panel("Frame");}}
                             Label {text:root.translate(root.panel-title(root.panel),root.language);color:Theme.text;font-size:Theme.font-heading;font-weight:600;vertical-alignment:center;horizontal-stretch:1;}
                             if root.panel=="Frame": IconButton {size:small;icon:@image-url("../assets/icons/Image-regular.svg");label:root.translate("Background",root.language);variant:ghost;clicked=>{root.action("wallpapers");}}
                         }
-                        if root.panel=="Frame" || root.panel=="Wallpapers": HorizontalLayout {height:30px;spacing:6px;
+                        if root.panel=="Frame" || root.panel=="Wallpapers": HorizontalLayout {height:Theme.control-height;spacing:6px;
                             ToolButton {size:compact;has-icon:false;text:root.translate("Scene",root.language);active:root.panel=="Frame";horizontal-stretch:1;clicked=>{root.show-panel("Frame");}}
                             ToolButton {size:compact;has-icon:false;text:root.translate("Background",root.language);active:root.panel=="Wallpapers";horizontal-stretch:1;clicked=>{root.action("wallpapers");}}
                         }
@@ -205,11 +207,11 @@ export component EditorWindow inherits Window {
                                     Label {text:root.translate("Capture source",root.language);color:Theme.muted;font-size:Theme.font-control;}
                                     Dropdown {label:"Capture source";enabled:!root.busy && root.source-names.length>0;model:root.source-names;current-index <=> root.source-index;}
                                     ToolButton {has-icon:false;text:root.sources-loading ? "Finding sources…" : root.translate("Refresh displays and windows",root.language);enabled:!root.busy;clicked=>{root.action("sources");}}
-                                    HorizontalLayout {height:28px;Label {text:root.translate("Camera",root.language);color:Theme.text;vertical-alignment:center;}Toggle {label:"Camera";checked:root.capture-camera;toggled(value)=>{root.capture-camera=value;}}}
+                                    HorizontalLayout {height:Theme.control-height;Label {text:root.translate("Camera",root.language);color:Theme.text;vertical-alignment:center;}Toggle {label:"Camera";checked:root.capture-camera;toggled(value)=>{root.capture-camera=value;}}}
                                     if root.capture-camera: Dropdown {label:"Camera";model:root.camera-names;current-index <=> root.camera-index;}
-                                    HorizontalLayout {height:28px;Label {text:root.translate("Microphone",root.language);color:Theme.text;vertical-alignment:center;}Toggle {label:"Microphone";checked:root.capture-mic;toggled(value)=>{root.capture-mic=value;}}}
+                                    HorizontalLayout {height:Theme.control-height;Label {text:root.translate("Microphone",root.language);color:Theme.text;vertical-alignment:center;}Toggle {label:"Microphone";checked:root.capture-mic;toggled(value)=>{root.capture-mic=value;}}}
                                     if root.capture-mic: Dropdown {label:"Microphone";model:root.microphone-names;current-index <=> root.microphone-index;}
-                                    HorizontalLayout {height:28px;Label {text:root.translate("System audio",root.language);color:Theme.text;vertical-alignment:center;}Toggle {label:"System audio";checked:root.capture-system;toggled(value)=>{root.capture-system=value;}}}
+                                    HorizontalLayout {height:Theme.control-height;Label {text:root.translate("System audio",root.language);color:Theme.text;vertical-alignment:center;}Toggle {label:"System audio";checked:root.capture-system;toggled(value)=>{root.capture-system=value;}}}
                                 }
                                 if root.panel=="Recent": ToolButton {icon:@image-url("../assets/icons/Sparkle-regular.svg");text:"Create video · spike";variant:primary;clicked=>{root.action("storyboard-spike");}}
                                 if root.panel=="Recent": ToolButton {icon:@image-url("../assets/icons/Plus-regular.svg");text:root.translate("Import video or project",root.language);clicked=>{root.action("open");}}
@@ -254,7 +256,7 @@ export component EditorWindow inherits Window {
                                     MotionChoices {selected:root.motion-choice;enabled:root.has-video;picked(value)=>{root.action("motion-"+value);}}
                                 }
                                 for field in root.fields: VerticalLayout {spacing:5px;vertical-stretch:0;
-                                    if field.kind==5: HorizontalLayout {height:28px;spacing:8px;
+                                    if field.kind==5: HorizontalLayout {height:Theme.control-height;spacing:8px;
                                         Label {text:root.translate(field.label,root.language);color:Theme.muted;font-size:Theme.font-small;font-weight:600;vertical-alignment:center;}
                                         Divider {horizontal-stretch:1;}
                                     }
@@ -274,7 +276,7 @@ export component EditorWindow inherits Window {
                             }
                         }
                         if root.panel=="Preferences": ToolButton {has-icon:false;text:"Customize keyboard shortcuts…";clicked=>{root.show-panel("Shortcuts");}}
-                        if root.panel=="Recording": VerticalLayout {height:94px;spacing:8px;vertical-stretch:0;
+                        if root.panel=="Recording": VerticalLayout {height:104px;spacing:8px;vertical-stretch:0;
                             Label {height:56px;vertical-alignment:center;text:root.recording-hint;wrap:word-wrap;color:Theme.muted;font-size:Theme.font-control;}
                             ToolButton {icon:@image-url("../assets/icons/Record-regular.svg");text:root.recording ? "Stop recording" : "Start recording";variant:primary;horizontal-stretch:1;enabled:!root.busy && (root.recording || root.source-names.length>0);clicked=>{root.action(root.recording ? "stop-recording" : "start-recording");}}
                         }
@@ -287,7 +289,7 @@ export component EditorWindow inherits Window {
                     }
                 }
             }
-            if root.has-video: Rectangle {min-height:200px;preferred-height:320px;max-height:320px;vertical-stretch:0;background:Theme.bg;
+            if root.has-video: Rectangle {min-height:240px;preferred-height:320px;max-height:320px;vertical-stretch:0;background:Theme.bg;
                 Panel {x:12px;width:parent.width - 24px;height:parent.height;
                     ScaleRotateGestureHandler {
                         enabled:root.has-video;
@@ -304,12 +306,12 @@ export component EditorWindow inherits Window {
                             root.timeline-offset=clamp(self.anchor-time - self.anchor-fraction*root.timeline-visible,0,max(0,root.duration - root.timeline-visible));
                         }
                     VerticalLayout {padding:12px;spacing:8px;
-                        HorizontalLayout {height:32px;spacing:4px;
+                        HorizontalLayout {height:Theme.control-height;spacing:4px;
                             IconButton {icon:@image-url("../assets/icons/MagnifyingGlassPlus-regular.svg");label:root.translate("Add zoom",root.language);variant:ghost;enabled:root.has-video;clicked=>{root.action("add-zoom");}}
                             ToolButton {icon:@image-url("../assets/icons/MagicWand-regular.svg");text:root.translate("Suggest zooms",root.language);variant:ghost;enabled:root.has-video;clicked=>{root.action("auto-zoom");}}
                             IconButton {icon:@image-url("../assets/icons/Scissors-regular.svg");label:root.translate("Split clip",root.language);variant:ghost;enabled:root.has-video;clicked=>{root.action("split-clip");}}
                             ToolButton {icon:@image-url("../assets/icons/Plus-regular.svg");text:"Add";clicked=>{add-menu.show();}
-                                add-menu := PopupWindow {width:210px;y:-310px;
+                                add-menu := PopupWindow {width:210px;y:-410px;
                                     Panel {variant:popup;
                                         VerticalLayout {padding:8px;spacing:3px;
                                             for item in [{label:"Text",action:"add-text"},{label:"Image",action:"add-image"},{label:"Arrow",action:"add-figure"},{label:"Blur",action:"add-blur"},{label:"Audio",action:"add-audio"},{label:"Caption",action:"add-caption"},{label:"Trim",action:"add-trim"},{label:"Speed",action:"add-speed"},{label:"Marker",action:"add-marker"}]: ToolButton {has-icon:false;text:item.label;horizontal-stretch:1;variant:ghost;clicked=>{root.action(item.action);add-menu.close();}}
@@ -322,13 +324,13 @@ export component EditorWindow inherits Window {
                             IconButton {icon:@image-url("../assets/icons/ArrowsOutSimple-regular.svg");label:root.translate("Fit timeline",root.language);variant:ghost;clicked=>{root.timeline-zoom=1;root.timeline-offset=0;}}
                             FineSlider {width:100px;minimum:1;maximum:100;label:root.translate("Timeline zoom",root.language);value:root.timeline-zoom;changed(value)=>{root.timeline-zoom=value;}released(value)=>{root.timeline-zoom=value;}}
                         }
-                        Rectangle {height:92px;clip:true;
+                        Rectangle {min-height:64px;preferred-height:92px;max-height:92px;clip:true;
                             Label {x:8px;y:48px;height:20px;text:root.translate("Source",root.language);color:Theme.muted;font-size:9px;}
                             Rectangle {x:86px;width:parent.width - 96px;height:parent.height;clip:true;
                                 for i in 8: Label {x:i/8*parent.width;y:0px;text:round((root.timeline-offset+root.timeline-visible*i/8)*10)/10+"s";color:Theme.muted;font-size:Theme.font-small;}
-                                Rectangle {y:24px;height:68px;border-radius:12px;background:Theme.track;clip:true;
+                                Rectangle {y:24px;height:parent.height - 24px;border-radius:12px;background:Theme.track;clip:true;
                                     Label {x:12px;y:3px;width:parent.width - 24px;height:18px;text:root.document-title;color:Theme.muted;font-size:Theme.font-small;overflow:elide;}
-                                    Image {x:-root.timeline-offset/root.timeline-visible*parent.width;y:24px;width:parent.width*root.timeline-zoom;height:44px;source:root.thumbnails;image-fit:fill;}
+                                    Image {x:-root.timeline-offset/root.timeline-visible*parent.width;y:24px;width:parent.width*root.timeline-zoom;height:parent.height - 24px;source:root.thumbnails;image-fit:fill;}
                                 }
 
                                 TouchArea {mouse-cursor:ew-resize;
@@ -361,18 +363,18 @@ export component EditorWindow inherits Window {
                             }
                         }
                         }
-                        FineSlider {height:12px;minimum:0;maximum:max(0.001,root.duration - root.timeline-visible);value:root.timeline-offset;changed(value)=>{root.timeline-offset=value;}released(value)=>{root.timeline-offset=value;}label:root.translate("Timeline position",root.language);}
+                        FineSlider {minimum:0;maximum:max(0.001,root.duration - root.timeline-visible);value:root.timeline-offset;changed(value)=>{root.timeline-offset=value;}released(value)=>{root.timeline-offset=value;}label:root.translate("Timeline position",root.language);}
                     }
                     TimelineScrubber {
                         x:98px+(root.playhead - root.timeline-offset)/root.timeline-visible*(parent.width - 120px) - self.width/2;
-                        y:48px;height:parent.height - 72px;
+                        y:56px;height:parent.height - 108px;
                         visible:root.playhead>=root.timeline-offset && root.playhead<=root.timeline-offset+root.timeline-visible;
                         scrubbed(delta)=>{root.seek(clamp(root.playhead+delta/(parent.width - 120px)*root.timeline-visible,0,root.duration));}
                     }
                     }
                 }
             }
-            Rectangle {height:root.busy ? 44px : 24px;
+            Rectangle {height:root.busy ? 52px : 24px;
                 VerticalLayout {padding-left:20px;padding-right:20px;spacing:2px;
                     HorizontalLayout {Label {text:root.status;color:#85858f;font-size:Theme.font-small;overflow:elide;vertical-alignment:center;horizontal-stretch:1;}if root.busy: ToolButton {size:small;has-icon:false;text:root.translate("Cancel",root.language);clicked=>{root.action("cancel");}}}
                     if root.busy: ProgressBar {progress:root.progress;}
@@ -394,7 +396,7 @@ export component AppTray inherits SystemTrayIcon {
 }
 export component RecordingLauncher inherits Window {
     title: "SubTake recorder";
-    width:660px;height:root.panel=="" ? 106px : 346px;
+    width:660px;height:root.panel=="" ? 106px : 386px;
     no-frame:true;always-on-top:true;background:transparent;
     default-font-family:Theme.font-family;default-font-size:Theme.font-body;
     in-out property <string> panel;
@@ -422,11 +424,11 @@ export component RecordingLauncher inherits Window {
     function toggle-panel(name:string) {root.panel=root.panel==name ? "" : name;root.panel-change(root.panel);}
     function begin-recording() {if root.source-names.length==0 {root.toggle-panel("sources");root.action("sources");}else {root.action("start-recording");}}
     init => {Palette.color-scheme=ColorScheme.dark;}
-    if root.panel!="": Panel {variant:overlay;x:10px;y:8px;width:parent.width - 20px;height:224px;
+    if root.panel!="": Panel {variant:overlay;x:10px;y:8px;width:parent.width - 20px;height:264px;
         VerticalLayout {padding:16px;spacing:10px;
-            HorizontalLayout {height:22px;
+            HorizontalLayout {height:Theme.control-height;
                 Label {text:root.panel=="sources" ? "Screens and windows" : root.panel=="audio" ? "Microphone & system audio" : root.panel=="camera" ? "Webcam" : root.panel=="countdown" ? "Countdown delay" : "More";color:Theme.text;font-weight:600;vertical-alignment:center;horizontal-stretch:1;}
-                IconButton {size:small;width:22px;icon:@image-url("../assets/icons/X-regular.svg");label:"Close options";variant:ghost;clicked=>{root.toggle-panel(root.panel);}}
+                IconButton {size:small;icon:@image-url("../assets/icons/X-regular.svg");label:"Close options";variant:ghost;clicked=>{root.toggle-panel(root.panel);}}
             }
             if root.panel=="sources": VerticalLayout {spacing:10px;alignment:start;
                 Dropdown {label:"Capture source";enabled:!root.busy;model:root.source-names;current-index <=> root.source-index;selected(value)=>{root.option("source",self.current-index);}}
@@ -434,12 +436,12 @@ export component RecordingLauncher inherits Window {
                 ToolButton {icon:@image-url("../assets/icons/ArrowClockwise-regular.svg");text:"Refresh displays and windows";enabled:!root.busy;clicked=>{root.action("sources");}}
             }
             if root.panel=="audio": VerticalLayout {spacing:8px;alignment:start;
-                HorizontalLayout {height:26px;Label {text:"Microphone";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.microphone;label:"Microphone";toggled(value)=>{root.option("microphone",value ? "true" : "false");}}}
+                HorizontalLayout {height:Theme.control-height;Label {text:"Microphone";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.microphone;label:"Microphone";toggled(value)=>{root.option("microphone",value ? "true" : "false");}}}
                 Dropdown {label:"Microphone";enabled:!root.busy && root.microphone;model:root.microphone-names;current-index <=> root.microphone-index;selected(value)=>{root.option("microphone-device",self.current-index);}}
-                HorizontalLayout {height:30px;Label {text:"System audio";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.system-audio;label:"System audio";toggled(value)=>{root.option("system-audio",value ? "true" : "false");}}}
+                HorizontalLayout {height:Theme.control-height;Label {text:"System audio";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.system-audio;label:"System audio";toggled(value)=>{root.option("system-audio",value ? "true" : "false");}}}
             }
             if root.panel=="camera": VerticalLayout {spacing:10px;alignment:start;
-                HorizontalLayout {height:26px;Label {text:"Webcam overlay";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.camera;label:"Webcam overlay";toggled(value)=>{root.option("camera",value ? "true" : "false");}}}
+                HorizontalLayout {height:Theme.control-height;Label {text:"Webcam overlay";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.camera;label:"Webcam overlay";toggled(value)=>{root.option("camera",value ? "true" : "false");}}}
                 Dropdown {label:"Camera";enabled:!root.busy && root.camera;model:root.camera-names;current-index <=> root.camera-index;selected(value)=>{root.option("camera-device",self.current-index);}}
                 Label {text:"Your camera is recorded separately and added to the project.";color:Theme.muted;wrap:word-wrap;height:34px;}
             }
@@ -449,27 +451,27 @@ export component RecordingLauncher inherits Window {
             }
             if root.panel=="more": VerticalLayout {spacing:10px;alignment:start;
                 ToolButton {size:regular;icon:@image-url("../assets/icons/Sparkle-regular.svg");text:"Create video · spike";clicked=>{root.action("storyboard-spike");}}
-                HorizontalLayout {spacing:8px;height:32px;
+                HorizontalLayout {spacing:8px;height:Theme.control-height;
                     ToolButton {icon:@image-url("../assets/icons/FolderOpen-regular.svg");text:"Open video or project";clicked=>{root.action("open");}}
                     ToolButton {icon:@image-url("../assets/icons/Stack-regular.svg");text:"Projects";clicked=>{root.action("projects");}}
                     ToolButton {icon:@image-url("../assets/icons/FilmStrip-regular.svg");text:"Back to editor";enabled:root.has-project;clicked=>{root.action("show-editor");}}
                 }
                 Label {text:"Recordings path";color:Theme.muted;height:18px;}
-                HorizontalLayout {height:30px;spacing:10px;Label {text:root.directory;color:Theme.text;overflow:elide;vertical-alignment:center;horizontal-stretch:1;}ToolButton {has-icon:false;text:"Choose folder…";clicked=>{root.action("recording-folder");}}}
+                HorizontalLayout {height:Theme.control-height;spacing:10px;Label {text:root.directory;color:Theme.text;overflow:elide;vertical-alignment:center;horizontal-stretch:1;}ToolButton {has-icon:false;text:"Choose folder…";clicked=>{root.action("recording-folder");}}}
             }
         }
     }
-    Panel {variant:overlay;x:6px;y:root.panel=="" ? 6px : 246px;width:parent.width - 12px;height:64px;
+    Panel {variant:overlay;x:6px;y:root.panel=="" ? 6px : 286px;width:parent.width - 12px;height:64px;
         HorizontalLayout {padding:12px;spacing:8px;
             Rectangle {width:20px;height:40px;Image {x:2px;y:12px;width:16px;height:16px;source:@image-url("../assets/icons/DotsSixVertical-regular.svg");colorize:Theme.muted;}TouchArea {mouse-cursor:move;pointer-event(e)=>{if e.kind==PointerEventKind.down {root.action("drag-launcher");}}}}
             if !root.recording && !root.busy: HorizontalLayout {spacing:8px;
                 ToolButton {size:large;width:224px;icon:@image-url("../assets/icons/Monitor-regular.svg");text:root.source-names.length>0 ? root.source-names[root.source-index] : "Choose a source";label:"Screens and windows";active:root.panel=="sources";clicked=>{root.toggle-panel("sources");}}
                 Rectangle {width:1px;Rectangle {y:7px;height:26px;width:1px;background:Theme.border;}}
-                IconButton {width:40px;size:large;icon:root.microphone ? @image-url("../assets/icons/Microphone-regular.svg") : @image-url("../assets/icons/MicrophoneSlash-regular.svg");label:"Microphone & system audio";active:root.microphone || root.system-audio;variant:ghost;clicked=>{root.toggle-panel("audio");}}
-                IconButton {width:40px;size:large;icon:root.camera ? @image-url("../assets/icons/VideoCamera-regular.svg") : @image-url("../assets/icons/VideoCameraSlash-regular.svg");label:"Webcam";active:root.camera;variant:ghost;clicked=>{root.toggle-panel("camera");}}
-                IconButton {width:40px;size:large;icon:@image-url("../assets/icons/Timer-regular.svg");label:"Countdown delay";active:root.countdown>0;variant:ghost;clicked=>{root.toggle-panel("countdown");}}
+                IconButton {size:large;icon:root.microphone ? @image-url("../assets/icons/Microphone-regular.svg") : @image-url("../assets/icons/MicrophoneSlash-regular.svg");label:"Microphone & system audio";active:root.microphone || root.system-audio;variant:ghost;clicked=>{root.toggle-panel("audio");}}
+                IconButton {size:large;icon:root.camera ? @image-url("../assets/icons/VideoCamera-regular.svg") : @image-url("../assets/icons/VideoCameraSlash-regular.svg");label:"Webcam";active:root.camera;variant:ghost;clicked=>{root.toggle-panel("camera");}}
+                IconButton {size:large;icon:@image-url("../assets/icons/Timer-regular.svg");label:"Countdown delay";active:root.countdown>0;variant:ghost;clicked=>{root.toggle-panel("countdown");}}
                 RecordButton {clicked=>{root.begin-recording();}}
-                IconButton {width:36px;size:large;icon:@image-url("../assets/icons/DotsThree-regular.svg");label:"More options";variant:ghost;clicked=>{root.toggle-panel("more");}}
+                IconButton {size:large;icon:@image-url("../assets/icons/DotsThree-regular.svg");label:"More options";variant:ghost;clicked=>{root.toggle-panel("more");}}
             }
             if root.recording || root.busy: HorizontalLayout {spacing:10px;
                 Rectangle {width:8px;Rectangle {y:16px;width:8px;height:8px;border-radius:4px;background:root.paused ? #e8b251 : #f43f5e;}}
@@ -478,7 +480,7 @@ export component RecordingLauncher inherits Window {
                 if root.recording: ToolButton {size:large;icon:@image-url("../assets/icons/Stop-fill.svg");text:"Stop";icon-color:#f43f5e;enabled:!root.busy;clicked=>{root.action("stop-recording");}}
                 if root.cancellable: ToolButton {size:large;has-icon:false;text:"Cancel";clicked=>{root.action("cancel");}}
             }
-            IconButton {width:32px;size:large;icon:@image-url("../assets/icons/EyeSlash-regular.svg");label:"Hide overlay — reopen from the menu bar";variant:ghost;clicked=>{root.action("hide-launcher");}}
+            IconButton {size:large;icon:@image-url("../assets/icons/EyeSlash-regular.svg");label:"Hide overlay — reopen from the menu bar";variant:ghost;clicked=>{root.action("hide-launcher");}}
         }
     }
     Panel {variant:overlay;x:16px;y:root.height - 30px;width:root.width - 32px;height:28px;Label {x:8px;y:2px;width:parent.width - 16px;height:24px;text:root.recording ? "Stop recording to open your video in the editor" : root.status;color:#aab3c7;font-size:Theme.font-small;wrap:word-wrap;horizontal-alignment:center;vertical-alignment:center;overflow:elide;}}
