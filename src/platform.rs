@@ -565,3 +565,25 @@ unsafe extern "C" {
     fn subtake_set_editor_active(active: bool);
     fn subtake_position_launcher(view: *mut std::ffi::c_void);
 }
+
+/// Native material masked to the two visible recorder cards; margins/text stay clear.
+pub fn update_recorder_glass(window: &slint::Window, bar: f32, options: f32, height: f32, expanded: bool) {
+    #[cfg(target_os = "macos")]
+    {
+        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+        if let Ok(handle) = window.window_handle().window_handle() {
+            if let RawWindowHandle::AppKit(handle) = handle.as_raw() {
+                unsafe {
+                    subtake_update_recorder_glass(handle.ns_view.as_ptr(), bar as f64,
+                        options as f64, height as f64, expanded);
+                }
+            }
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, bar, options, height, expanded);
+}
+#[cfg(target_os = "macos")]
+unsafe extern "C" {
+    fn subtake_update_recorder_glass(view: *mut std::ffi::c_void, bar: f64, options: f64, height: f64, expanded: bool);
+}

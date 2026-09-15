@@ -64,3 +64,15 @@ Buttons, dropdown triggers, inputs and slider labels share `Theme.control-paddin
 Filled sliders use a white active surface (translucent white in dark mode), a grey vertical end marker, and a leading icon before their label. Numeric values use a separate inset rounded input. Shared control radius is 16px; endpoint-icon zoom sliders retain the same fill styling and 12px icon padding.
 
 Control geometry is defined by `Theme.control-height` (40px) and `Theme.radius-control` (16px), including buttons previously marked round and slider numeric inputs. The filled slider overlay uses `Theme.slider-fill-inset` (1px) on all edges and `Theme.slider-fill-radius` (outer radius minus inset = 15px); its height is derived as 40 - 2 = 38px.
+
+Recorder frosting now uses a macOS `NSVisualEffectView` with the Popover material,
+BehindWindow blending and Active state. Its mask is the union of the 64px-high
+recorder bar and the current options card, both with 24px corners. It is inserted
+as a sibling behind winit's content view; that view's identity and event handling
+are preserved. The outer window has no background blur or native shadow. Slint
+supplies the translucent tint and individual card shadows. Mask generation is
+cached until card geometry changes. The system controls the material blur radius.
+
+Native regression: `clang -fobjc-arc -framework AppKit -framework QuartzCore scripts/recorder-glass-test.m -o /tmp/subtake-recorder-glass-test && /tmp/subtake-recorder-glass-test`.
+The launcher smoke suite also requires the native material installation marker,
+so successful Slint layout snapshots alone cannot pass a missing-material build.

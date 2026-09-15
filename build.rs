@@ -47,8 +47,10 @@ fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
         println!("cargo:rustc-link-arg=-Wl,-headerpad_max_install_names");
         println!("cargo:rerun-if-changed=scripts/file-events.m");
+        println!("cargo:rerun-if-changed=scripts/recorder-glass.m");
         cc::Build::new()
             .file("scripts/file-events.m")
+            .file("scripts/recorder-glass.m")
             .flag("-fobjc-arc")
             .flag("-mmacosx-version-min=14.0")
             .compile("subtake_file_events");

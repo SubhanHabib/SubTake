@@ -243,6 +243,8 @@ impl App {
             })
             .unwrap_or(0);
         launcher.set_elapsed(format!("{:02}:{:02}", seconds / 60, seconds % 60).into());
+        platform::update_recorder_glass(launcher.window(), launcher.get_bar_width(),
+            launcher.get_options_width(), launcher.get_options_height(), !launcher.get_panel().is_empty());
     }
     fn recording_directory(&self) -> Result<PathBuf> {
         if let Some(directory) = &self.preferences.recording_directory {

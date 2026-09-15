@@ -19,6 +19,7 @@ for mode in ['idle','sources','audio','camera','countdown','more']+(['capture'] 
     log=out/f'{mode}.log'
     with log.open('w') as file:subprocess.run([str(app)],env=env,stdout=file,stderr=subprocess.STDOUT,check=True,timeout=65)
     assert 'LAUNCHER_SMOKE_PASSED' in log.read_text(),log
+    assert 'RECORDER_NATIVE_GLASS_INSTALLED' in log.read_text(), 'Native recorder material missing: '+str(log)
     cases.append(dict(mode=mode,status='passed',log=str(log.relative_to(root))))
     print(mode,'passed',flush=True)
 assert before==(prefs.read_bytes() if prefs.exists() else None),'User preferences changed during launcher checks'
