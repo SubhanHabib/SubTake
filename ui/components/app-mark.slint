@@ -1,0 +1,7 @@
+import { Theme } from "../theme.slint";
+// The approved app artwork, shared by recorder and editor branding.
+export component AppMark inherits Rectangle {
+    width:40px;height:Theme.control-height;
+    Image {x:6px;y:(parent.height - 28px)/2;width:28px;height:28px;source:@image-url("../../assets/branding/app-icon.png");image-fit:contain;}
+    accessible-role:image;accessible-label:"SubTake";
+}

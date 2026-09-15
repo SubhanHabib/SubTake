@@ -1,3 +1,4 @@
+import { AppMark } from "components/app-mark.slint";
 export { PrimitiveGallery } from "primitives-gallery.slint";
 import { Palette } from "std-widgets.slint";
 export struct Region { id: string, kind: string, label: string, start: float, end: float, row: int, tint: color, selected: bool }
@@ -119,6 +120,7 @@ export component EditorWindow inherits Window {
             Rectangle {height:56px;background:Theme.header;
                 Rectangle {y:parent.height - 1px;height:1px;background:Theme.border;}
                 HorizontalLayout {padding-left:root.mac-titlebar ? 88px : 16px;padding-right:16px;padding-top:6px;padding-bottom:6px;spacing:6px;
+                    AppMark {}
                     IconButton {icon:@image-url("../assets/icons/FolderOpen-regular.svg");label:root.translate("Open projects",root.language);variant:ghost;clicked=>{root.show-panel("Recent");}}
                     IconButton {icon:@image-url("../assets/icons/FloppyDisk-regular.svg");label:root.translate("Save",root.language);variant:ghost;enabled:root.has-video;clicked=>{root.action("save");}}
                     Rectangle {width:1px;Rectangle {y:(parent.height - 18px)/2;width:1px;height:18px;background:Theme.border;}}
@@ -471,6 +473,7 @@ export component RecordingLauncher inherits Window {
         HorizontalLayout {padding:12px;spacing:8px;
             Rectangle {width:20px;height:40px;Image {x:2px;y:12px;width:16px;height:16px;source:@image-url("../assets/icons/DotsSixVertical-regular.svg");colorize:Theme.muted;}TouchArea {mouse-cursor:move;pointer-event(e)=>{if e.kind==PointerEventKind.down {root.action("drag-launcher");}}}}
             if !root.recording && !root.busy: HorizontalLayout {spacing:8px;
+                AppMark {}
                 ToolButton {size:large;width:224px;icon:@image-url("../assets/icons/Monitor-regular.svg");text:root.source-names.length>0 ? root.source-names[root.source-index] : "Choose a source";label:"Screens and windows";active:root.panel=="sources";clicked=>{root.toggle-panel("sources");}}
                 Rectangle {width:1px;Rectangle {y:7px;height:26px;width:1px;background:Theme.border;}}
                 IconButton {size:large;icon:root.microphone ? @image-url("../assets/icons/Microphone-regular.svg") : @image-url("../assets/icons/MicrophoneSlash-regular.svg");label:"Microphone & system audio";active:root.microphone || root.system-audio;variant:ghost;clicked=>{root.toggle-panel("audio");}}
