@@ -3115,7 +3115,10 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         slint::BackendSelector::new()
             .with_winit_event_loop_builder(events)
             .with_winit_window_attributes_hook(move |attributes| {
-                let attributes = attributes.with_transparent(true).with_blur(true);
+                // Frameless recorder windows include empty margins and status text.
+                // Window-wide blur would frost that entire layout envelope.
+                let blur_editor = attributes.decorations;
+                let attributes = attributes.with_transparent(true).with_blur(blur_editor);
                 if attributes.decorations && attributes.title != "SubTake recording" {
                     attributes
                         .with_titlebar_transparent(true)
