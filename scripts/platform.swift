@@ -5,7 +5,13 @@ import AVFoundation
 
 let _ = NSApplication.shared
 let command = CommandLine.arguments.dropFirst().first ?? "sources"
-if command == "sources" {
+if command == "sources" || command == "sources-passive" {
+    // Opening the overlay must never request access. Only an explicit source
+    // selection may enter ScreenCaptureKit before permission has been granted.
+    if command == "sources-passive" && !CGPreflightScreenCaptureAccess() {
+        fputs("Screen capture access is unavailable for this build. Choose a source to request access.\n", stderr)
+        exit(1)
+    }
     Task {
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)

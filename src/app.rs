@@ -333,7 +333,7 @@ impl App {
             })
         });
         if self.sources.is_empty() && !ui.get_busy() && !ui.get_recording() {
-            self.action(ui, "sources")?;
+            self.action(ui, "sources-passive")?;
         }
         Ok(())
     }
@@ -2729,7 +2729,7 @@ impl App {
                     });
                 });
             }
-            "sources" => {
+            "sources" | "sources-passive" => {
                 self.action(ui, "devices")?;
                 ui.set_busy(true);
                 ui.set_sources_loading(true);
@@ -2737,8 +2737,9 @@ impl App {
                 ui.set_status("Finding displays and windows…".into());
                 self.job_cancel = Arc::new(AtomicBool::new(false));
                 let cancel = self.job_cancel.clone();
+                let request_access = action == "sources";
                 std::thread::spawn(move || {
-                    let result = platform::sources_cancellable(&cancel);
+                    let result = platform::sources_cancellable(&cancel, request_access);
                     post(move |s, ui| {
                         if !Arc::ptr_eq(&s.job_cancel, &cancel) {
                             return;

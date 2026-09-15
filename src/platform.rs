@@ -36,13 +36,13 @@ pub fn helper(name: &str) -> Result<PathBuf> {
         .with_context(|| format!("Native helper is missing: {name}"))
 }
 pub fn sources() -> Result<Vec<Value>> {
-    sources_cancellable(&std::sync::atomic::AtomicBool::new(false))
+    sources_cancellable(&std::sync::atomic::AtomicBool::new(false), true)
 }
-pub fn sources_cancellable(cancel: &std::sync::atomic::AtomicBool) -> Result<Vec<Value>> {
+pub fn sources_cancellable(cancel: &std::sync::atomic::AtomicBool, request_access: bool) -> Result<Vec<Value>> {
     #[cfg(target_os = "macos")]
     {
         let bytes = crate::media::capture_output_cancellable(
-            Command::new(helper("subtake-platform")?).arg("sources"),
+            Command::new(helper("subtake-platform")?).arg(if request_access { "sources" } else { "sources-passive" }),
             Duration::from_secs(75),
             8 * 1024 * 1024,
             cancel,
