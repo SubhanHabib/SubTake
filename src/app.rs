@@ -33,6 +33,14 @@ fn with_app(f: impl FnOnce(&mut App, &EditorWindow)) {
         }
     });
 }
+// Native modal dialogs pump timers while their caller still holds App's borrow.
+// Background refreshes may skip a tick; user actions must not be silently dropped.
+fn when_idle<T>(state: &RefCell<T>, refresh: impl FnOnce(&T)) {
+    if let Ok(state) = state.try_borrow() {
+        refresh(&state);
+    }
+}
+
 fn post(f: impl FnOnce(&mut App, &EditorWindow) + Send + 'static) {
     let _ = slint::invoke_from_event_loop(move || with_app(f));
 }
@@ -3824,12 +3832,19 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     let preview_size_timer = Timer::default();
     let mut last_preview_size = (0u32, 0u32);
     preview_size_timer.start(TimerMode::Repeated, Duration::from_millis(150), move || {
-        with_app(|s, ui| {
-            let size = ((ui.get_preview_pixel_width() * ui.window().scale_factor()).ceil() as u32,
-                (ui.get_preview_aspect() * 10000.) as u32);
-            if size != last_preview_size {
-                last_preview_size = size;
-                s.request();
+        STATE.with(|slot| {
+            let context = slot.borrow().clone();
+            if let Some((state, weak)) = context {
+                if let Some(ui) = weak.upgrade() {
+                    when_idle(&state, |s| {
+                        let size = ((ui.get_preview_pixel_width() * ui.window().scale_factor()).ceil() as u32,
+                            (ui.get_preview_aspect() * 10000.) as u32);
+                        if size != last_preview_size {
+                            last_preview_size = size;
+                            s.request();
+                        }
+                    });
+                }
             }
         });
     });
@@ -4153,4 +4168,22 @@ fn normalize_crop(crop: &mut Value) {
     let width = n(crop, "width", 1.).clamp(0.01, 1. - x);
     let height = n(crop, "height", 1.).clamp(0.01, 1. - y);
     *crop = json!({"x":x,"y":y,"width":width,"height":height});
+}
+
+#[cfg(test)]
+mod preview_refresh_tests {
+    use super::when_idle;
+    use std::cell::{Cell, RefCell};
+
+    #[test]
+    fn modal_borrow_skips_refresh_then_retries_without_losing_pending_size() {
+        let state = RefCell::new(());
+        let refreshed = Cell::new(false);
+        let modal_action = state.borrow_mut();
+        when_idle(&state, |_| refreshed.set(true));
+        assert!(!refreshed.get());
+        drop(modal_action);
+        when_idle(&state, |_| refreshed.set(true));
+        assert!(refreshed.get());
+    }
 }
