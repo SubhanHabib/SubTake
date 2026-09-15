@@ -1875,9 +1875,13 @@ impl App {
                         let artwork_source = source.clone();
                         let artwork_info = info.clone();
                         ui.set_thumbnails(slint::Image::default());
+                        ui.set_frosted_thumbnails(slint::Image::default());
                         ui.set_waveform(slint::Image::default());
                         std::thread::spawn(move || {
                             let result = media::timeline_artwork(&artwork_source, &artwork_info);
+                            // Blur the real filmstrip once on the artwork worker, never capture the desktop.
+                            let frosted = result.as_ref().ok().and_then(|(path, _)| image::open(path).ok())
+                                .map(|image| image.blur(10.).to_rgba8());
                             post(move |s, ui| {
                                 if s.source.as_ref() != Some(&artwork_source) {
                                     return;
@@ -1886,6 +1890,11 @@ impl App {
                                     Ok((thumbs, wave)) => {
                                         if let Ok(image) = slint::Image::load_from_path(&thumbs) {
                                             ui.set_thumbnails(image);
+                                            if let Some(ref pixels) = frosted {
+                                                ui.set_frosted_thumbnails(slint::Image::from_rgba8(
+                                                    slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
+                                                        pixels.as_raw(), pixels.width(), pixels.height())));
+                                            }
                                         }
                                         if let Some(wave) = wave {
                                             if let Ok(image) = slint::Image::load_from_path(&wave) {
@@ -3106,6 +3115,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         slint::BackendSelector::new()
             .with_winit_event_loop_builder(events)
             .with_winit_window_attributes_hook(move |attributes| {
+                let attributes = attributes.with_transparent(true).with_blur(true);
                 if attributes.decorations && attributes.title != "SubTake recording" {
                     attributes
                         .with_titlebar_transparent(true)

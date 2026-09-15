@@ -48,6 +48,7 @@ export component EditorWindow inherits Window {
     in property <float> edit-scale: 1;
     callback canvas-edit(float,float,bool);
     in property <image> thumbnails;
+    in property <image> frosted-thumbnails;
     in property <image> waveform;
     in-out property <float> preview-zoom:1;
     out property <float> preview-pixel-width:preview-viewport.image-width / 1px;
@@ -157,7 +158,7 @@ export component EditorWindow inherits Window {
                         ToolButton {icon:@image-url("../assets/icons/Crop-regular.svg");text:root.translate("Crop",root.language);variant:ghost;active:root.panel=="Crop";enabled:root.has-video;clicked=>{root.action("visual-crop");}}
                         ToolButton {has-icon:false;text:root.preview-zoom>1.001 ? "Fit · "+round(root.preview-zoom*100)+"%" : "Fit";label:"Reset preview to fit";variant:ghost;clicked=>{root.reset-preview();}}
                     }
-                    Rectangle {vertical-stretch:1;background:Theme.bg;clip:true;
+                    Rectangle {vertical-stretch:1;background:transparent;clip:true;
                         for row in ceil(self.height/20px): Rectangle {y:row*20px;height:2px;
                             for column in ceil(self.width/20px): Rectangle {x:column*20px;width:1.5px;height:1.5px;border-radius:1px;background:Theme.canvas-dot;}
                         }
@@ -190,7 +191,7 @@ export component EditorWindow inherits Window {
                         IconButton {x:parent.width - Theme.control-height;icon:@image-url("../assets/icons/SpeakerHigh-regular.svg");label:root.translate("Audio",root.language);variant:ghost;clicked=>{root.show-panel("Audio");}}
                     }
                 }
-                Panel {width:280px;background:Theme.panel.with-alpha(0.92);
+                Panel {width:280px;background:Theme.panel;
                     VerticalLayout {padding:14px;spacing:12px;
                         HorizontalLayout {height:Theme.control-height;spacing:6px;
                             if root.panel=="Shortcuts": IconButton {size:small;icon:@image-url("../assets/icons/CaretLeft-regular.svg");label:"Settings";variant:ghost;clicked=>{root.show-panel("Preferences");}}
@@ -290,7 +291,7 @@ export component EditorWindow inherits Window {
                     }
                 }
             }
-            if root.has-video: Rectangle {min-height:240px;preferred-height:320px;max-height:320px;vertical-stretch:0;background:Theme.bg;
+            if root.has-video: Rectangle {min-height:240px;preferred-height:320px;max-height:320px;vertical-stretch:0;background:transparent;
                 Panel {x:12px;width:parent.width - 24px;height:parent.height;
                     ScaleRotateGestureHandler {
                         enabled:root.has-video;
@@ -367,6 +368,10 @@ export component EditorWindow inherits Window {
                         FineSlider {progress-style:true;minimum:0;maximum:max(0.001,root.duration - root.timeline-visible);value:root.timeline-offset;changed(value)=>{root.timeline-offset=value;}released(value)=>{root.timeline-offset=value;}label:root.translate("Timeline position",root.language);}
                     }
                     TimelineScrubber {
+                        backdrop:root.frosted-thumbnails;
+                        backdrop-width:(parent.width - 120px)*root.timeline-zoom;
+                        backdrop-offset:root.playhead/root.duration*self.backdrop-width;
+
                         x:98px+(root.playhead - root.timeline-offset)/root.timeline-visible*(parent.width - 120px) - self.width/2;
                         y:56px;height:parent.height - 108px;
                         visible:root.playhead>=root.timeline-offset && root.playhead<=root.timeline-offset+root.timeline-visible;

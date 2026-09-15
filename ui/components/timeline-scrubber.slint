@@ -1,6 +1,9 @@
 // Shared timeline playhead: pointed cap, continuous rule and six-dot grip.
 export component TimelineScrubber inherits Rectangle {
     in property <length> grip-y:64px;
+    in property <image> backdrop;
+    in property <length> backdrop-width:0px;
+    in property <length> backdrop-offset:0px;
     callback scrubbed(length);
     width:26px;
     Rectangle {x:12px;y:26px;width:2px;height:max(0px,parent.height - 26px);background:#898989;}
@@ -10,7 +13,11 @@ export component TimelineScrubber inherits Rectangle {
     }
     Path {x:8px;y:12px;width:10px;height:10px;commands:"M 0 0 L 10 0 L 5 8 Z";fill:#999999;}
     Rectangle {x:0px;y:root.grip-y;width:26px;height:62px;border-radius:13px;
-        background:@linear-gradient(180deg,#999999 0%,#626262 100%);
+        background:#33333355;
+        Rectangle {border-radius:13px;clip:true;
+            Image {x:parent.width/2-root.backdrop-offset;width:root.backdrop-width;height:parent.height;source:root.backdrop;image-fit:fill;}
+            Rectangle {border-radius:13px;background:#33333388;}
+        }
         border-width:1px;border-color:#ffffff35;
         drop-shadow-blur:12px;drop-shadow-offset-y:5px;drop-shadow-color:#00000028;
         for row in 3: Rectangle {x:8px;y:22px+row*7px;width:3px;height:3px;border-radius:1.5px;background:#ffffff;}
