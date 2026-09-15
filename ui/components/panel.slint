@@ -4,7 +4,7 @@ export component Panel inherits Rectangle {
     in property <SurfaceVariant> variant:panel;
     border-radius:root.variant==SurfaceVariant.card || root.variant==SurfaceVariant.popup ? Theme.radius-card : Theme.radius-panel;
     border-width:Theme.border-width;border-color:Theme.border;
-    background:root.variant==SurfaceVariant.card ? Theme.surface : root.variant==SurfaceVariant.overlay ? Theme.overlay : Theme.panel;
+    background:root.variant==SurfaceVariant.popup ? Theme.popup : root.variant==SurfaceVariant.card ? Theme.surface : root.variant==SurfaceVariant.overlay ? Theme.overlay : Theme.panel;
     @children
 }
 export component Divider inherits Rectangle {

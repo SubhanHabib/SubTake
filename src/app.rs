@@ -258,6 +258,7 @@ impl App {
         Ok(subtake_native::preferences::Preferences::directory()?.join("recordings"))
     }
     fn show_launcher(&mut self, ui: &EditorWindow) -> Result<()> {
+        let first_show = self.launcher.is_none();
         if self.launcher.is_none() {
             let launcher = RecordingLauncher::new()?;
             launcher.on_action(|action| {
@@ -295,11 +296,19 @@ impl App {
                     }
                 })
             });
-            launcher.on_panel_change(|_| {
-                Timer::single_shot(Duration::from_millis(40), || {
+            let panel_launcher = launcher.as_weak();
+            launcher.on_panel_change(move |_| {
+                let Some(launcher) = panel_launcher.upgrade() else { return; };
+                let position = launcher.window().position();
+                let size = launcher.window().size();
+                let bottom = position.y + size.height as i32;
+                let center = position.x + size.width as i32 / 2;
+                Timer::single_shot(Duration::from_millis(40), move || {
                     with_app(|s, _| {
                         if let Some(launcher) = &s.launcher {
-                            let _ = platform::position_launcher(launcher.window());
+                            let size = launcher.window().size();
+                            launcher.window().set_position(slint::PhysicalPosition::new(
+                                center - size.width as i32 / 2, bottom - size.height as i32));
                         }
                     })
                 });
@@ -323,6 +332,7 @@ impl App {
         });
         // A launch-time Slint window has no native handle until the event loop starts.
         // Positioning must not prevent source discovery or opening the recorder.
+        if first_show {
         Timer::single_shot(Duration::from_millis(100), || {
             with_app(|s, _| {
                 if let Some(launcher) = &s.launcher {
@@ -332,6 +342,7 @@ impl App {
                 }
             })
         });
+        }
         if self.sources.is_empty() && !ui.get_busy() && !ui.get_recording() {
             self.action(ui, "sources-passive")?;
         }
@@ -2838,11 +2849,6 @@ impl App {
                                     tray.set_recording(true);
                                 }
                                 s.capture_started = Some(std::time::Instant::now());
-                                if let Some(launcher) = &s.launcher {
-                                    if launcher.window().is_visible() {
-                                        let _ = platform::position_launcher(launcher.window());
-                                    }
-                                }
                                 s.recording_watch.start(
                                     TimerMode::Repeated,
                                     Duration::from_millis(250),
@@ -3956,6 +3962,11 @@ fn launcher_smoke_step(step: u8) {
                 );
                 // Exercise the source control with real native pointer events.
                 let launcher = s.launcher.as_ref().unwrap();
+                launcher.window().set_position(slint::PhysicalPosition::new(210, 160));
+                let anchor_position = launcher.window().position();
+                let anchor_size = launcher.window().size();
+                let anchor_bottom = anchor_position.y + anchor_size.height as i32;
+                let anchor_center = anchor_position.x + anchor_size.width as i32 / 2;
                 for event in [
                     slint::platform::WindowEvent::PointerPressed {
                         position: slint::LogicalPosition::new(140., 38.),
@@ -3978,7 +3989,18 @@ fn launcher_smoke_step(step: u8) {
                         launcher.set_panel(mode.into());
                     }
                     s.sync_launcher(ui);
-                    Timer::single_shot(Duration::from_millis(600), || launcher_smoke_step(10));
+                    Timer::single_shot(Duration::from_millis(600), move || {
+                        with_app(|s, _| {
+                            let launcher = s.launcher.as_ref().unwrap();
+                            let position = launcher.window().position();
+                            let size = launcher.window().size();
+                            assert!((position.y + size.height as i32 - anchor_bottom).abs() <= 1,
+                                "Opening a recorder menu moved the bar vertically");
+                            assert!((position.x + size.width as i32 / 2 - anchor_center).abs() <= 1,
+                                "Opening a recorder menu moved the bar horizontally");
+                        });
+                        launcher_smoke_step(10);
+                    });
                     return Ok(());
                 }
                 ui.set_capture_mic(false);

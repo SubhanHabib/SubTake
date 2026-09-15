@@ -15,9 +15,9 @@ int main(void) {
         NSView *slint = window.contentView;
         subtake_update_recorder_glass((__bridge void *)slint,612,420,264,false);
         assert(window.contentView == slint);
-        assert(slint.superview.subviews.count == 2);
-        assert(slint.superview.subviews.lastObject == slint);
-        SubTakeRecorderGlass *glass = (id)slint.superview.subviews.firstObject;
+        assert(slint.subviews.count == 1);
+        assert(slint.subviews.firstObject.superview == slint);
+        SubTakeRecorderGlass *glass = (id)slint.subviews.firstObject;
         assert([glass isKindOfClass:NSVisualEffectView.class]);
         assert(glass.blendingMode == NSVisualEffectBlendingModeBehindWindow);
         assert(glass.state == NSVisualEffectStateActive);
@@ -28,7 +28,7 @@ int main(void) {
         [window setContentSize:NSMakeSize(644,378)];
         subtake_update_recorder_glass((__bridge void *)slint,612,420,264,true);
         assert(window.contentView == slint);
-        assert(slint.superview.subviews.count == 2); // no duplicate backgrounds
+        assert(slint.subviews.count == 1); // no duplicate backgrounds
         assert(alphaAt(glass.maskImage,322,100) > .99); // options
         assert(alphaAt(glass.maskImage,50,100) < .01); // outside narrow options
         assert(alphaAt(glass.maskImage,322,275) < .01); // between cards

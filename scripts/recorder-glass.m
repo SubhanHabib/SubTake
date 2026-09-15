@@ -41,16 +41,17 @@ void subtake_update_recorder_glass(void *pointer, double barWidth, double option
     if (!window) return;
     SubTakeRecorderGlass *glass = objc_getAssociatedObject(slintView, &glassKey);
     if (!glass) {
-        // Put the effect behind Slint's Metal view, not over its buttons/text.
-        NSView *parent = slintView.superview;
+        // Host the material in the content hierarchy, not behind the window frame.
+        NSView *parent = slintView;
         if (!parent) return;
-        glass = [[SubTakeRecorderGlass alloc] initWithFrame:slintView.frame];
+        glass = [[SubTakeRecorderGlass alloc] initWithFrame:slintView.bounds];
         glass.material = NSVisualEffectMaterialPopover;
         glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
         glass.state = NSVisualEffectStateActive;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
         // winit casts window.contentView to its own class: preserve that identity.
-        [parent addSubview:glass positioned:NSWindowBelow relativeTo:slintView];
+        glass.wantsLayer = YES;
+        [parent addSubview:glass positioned:NSWindowBelow relativeTo:nil];
         objc_setAssociatedObject(slintView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         window.opaque = NO;
         window.backgroundColor = NSColor.clearColor;
@@ -58,7 +59,7 @@ void subtake_update_recorder_glass(void *pointer, double barWidth, double option
         window.hasShadow = NO; // Slint draws the shadows for each card, not the envelope.
 
     }
-    glass.frame = slintView.frame;
+    glass.frame = slintView.bounds;
     if (glass.barWidth == barWidth && glass.optionsWidth == optionsWidth &&
         glass.optionsHeight == optionsHeight && glass.expanded == expanded &&
         NSEqualSizes(glass.maskImage.size, glass.bounds.size)) return;
