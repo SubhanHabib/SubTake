@@ -313,6 +313,12 @@ impl App {
         }
         let launcher = self.launcher.as_ref().unwrap();
         launcher.show()?;
+        use slint::winit_030::WinitWindowAccessor;
+        launcher.window().with_winit_window(|window| {
+            // Clear blur on the actual window after Slint applies its properties.
+            window.set_blur(false);
+            window.set_transparent(true);
+        });
         // A launch-time Slint window has no native handle until the event loop starts.
         // Positioning must not prevent source discovery or opening the recorder.
         Timer::single_shot(Duration::from_millis(100), || {
@@ -3117,7 +3123,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             .with_winit_window_attributes_hook(move |attributes| {
                 // Frameless recorder windows include empty margins and status text.
                 // Window-wide blur would frost that entire layout envelope.
-                let blur_editor = attributes.decorations;
+                let blur_editor = attributes.decorations && attributes.title != "SubTake recorder";
                 let attributes = attributes.with_transparent(true).with_blur(blur_editor);
                 if attributes.decorations && attributes.title != "SubTake recording" {
                     attributes
