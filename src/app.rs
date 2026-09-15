@@ -349,6 +349,15 @@ impl App {
             self.editor_shown = true;
         }
         ui.show()?;
+        // Cold-start show may precede the native window. Activate editor glass
+        // from the running event loop, using its specific handle and no App borrow.
+        let editor = ui.as_weak();
+        Timer::single_shot(Duration::from_millis(100), move || {
+            if let Some(ui) = editor.upgrade() {
+                use slint::winit_030::WinitWindowAccessor;
+                ui.window().with_winit_window(|window| window.set_blur(true));
+            }
+        });
         use slint::winit_030::WinitWindowAccessor;
         ui.window().with_winit_window(|window| {
             window.set_minimized(false);
@@ -3121,10 +3130,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         slint::BackendSelector::new()
             .with_winit_event_loop_builder(events)
             .with_winit_window_attributes_hook(move |attributes| {
-                // Frameless recorder windows include empty margins and status text.
-                // Window-wide blur would frost that entire layout envelope.
-                let blur_editor = attributes.decorations && attributes.title != "SubTake recorder";
-                let attributes = attributes.with_transparent(true).with_blur(blur_editor);
+                // This hook runs before Slint supplies title/no-frame properties.
+                // Never infer window identity here: the recorder must start clear.
+                let attributes = attributes.with_transparent(true).with_blur(false);
                 if attributes.decorations && attributes.title != "SubTake recording" {
                     attributes
                         .with_titlebar_transparent(true)
