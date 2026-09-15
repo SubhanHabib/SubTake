@@ -50,6 +50,7 @@ export component EditorWindow inherits Window {
     in property <image> thumbnails;
     in property <image> waveform;
     in-out property <float> preview-zoom:1;
+    out property <float> preview-pixel-width:preview-viewport.image-width / 1px;
     public function reset-preview() {preview-viewport.reset();}
     in property <float> preview-aspect: 1.777778;
     in property <float> duration: 1;

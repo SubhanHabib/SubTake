@@ -537,8 +537,14 @@ impl App {
             } else {
                 aspect_ratio(&h.project, info)
             };
-            let width = 960;
-            let height = ((width as f64 / aspect).round() as u32).clamp(100, 1920);
+            let physical_width = STATE.with(|slot| {
+                slot.borrow().as_ref().and_then(|(_, ui)| ui.upgrade()).map(|ui| {
+                    ui.get_preview_pixel_width() as f64 * ui.window().scale_factor() as f64
+                }).unwrap_or(info.width as f64)
+            });
+            // Match display pixels, retaining only the renderer's allocation safety bound.
+            let width = physical_width.ceil().max(2.).min(8192.).min(8192. * aspect) as u32;
+            let height = (width as f64 / aspect).round().max(2.) as u32;
             self.preview.request(FrameRequest {
                 project: h.project.clone(),
                 path: source.clone(),
@@ -3814,6 +3820,19 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         report(&ui, result);
         state.borrow().sync_launcher(&ui);
     }
+    // Refresh paused previews after window resizing, monitor scale changes or pinch zoom.
+    let preview_size_timer = Timer::default();
+    let mut last_preview_size = (0u32, 0u32);
+    preview_size_timer.start(TimerMode::Repeated, Duration::from_millis(150), move || {
+        with_app(|s, ui| {
+            let size = ((ui.get_preview_pixel_width() * ui.window().scale_factor()).ceil() as u32,
+                (ui.get_preview_aspect() * 10000.) as u32);
+            if size != last_preview_size {
+                last_preview_size = size;
+                s.request();
+            }
+        });
+    });
     if std::env::var_os("SUBTAKE_LAUNCHER_SMOKE").is_some() {
         Timer::single_shot(Duration::from_secs(3), || launcher_smoke_step(0));
     }
