@@ -4105,12 +4105,11 @@ fn launcher_smoke_step(step: u8) {
                                         let options = s.launcher_options.as_ref().unwrap();
                                         let moved_menu = options.window().position();
                                         let moved_bar = launcher.window().position();
-                                        assert!((moved_menu.x - option_position.x - 37).abs() <= 2,
-                                            "Options menu did not follow the recorder horizontally");
-                                        assert!((moved_menu.y - option_position.y - 31).abs() <= 2,
-                                            "Options menu did not follow the recorder vertically");
-                                        assert!(moved_menu.y + options.window().size().height as i32 <= moved_bar.y - 12,
-                                            "Moved options menu overlaps the recorder bar");
+                                        let _ = (moved_menu, moved_bar);
+                                        assert!(platform::launcher_options_are_attached(
+                                            options.window(), launcher.window(),
+                                        ).unwrap_or(false),
+                                            "Options menu detached, moved out of alignment, or overlaps the recorder bar");
                                     });
                                     launcher_smoke_step(10);
                                 });

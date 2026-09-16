@@ -565,9 +565,9 @@ pub fn position_launcher(window: &slint::Window) -> Result<()> {
     }
     Ok(())
 }
-/// Position the independent options window above the fixed recorder bar.  The
-/// two windows deliberately never share a Slint render tree, so opening a menu
-/// cannot change the bar's geometry or redraw its transparent envelope.
+/// Position the custom options surface above the fixed recorder bar. The two
+/// Slint render trees remain separate, while AppKit makes the options window a
+/// native child of the overlay host for movement and ordering.
 pub fn position_launcher_options(options: &slint::Window, launcher: &slint::Window) -> Result<()> {
     configure_recording_hud(options, false)?;
     #[cfg(target_os = "macos")]
@@ -586,6 +586,39 @@ pub fn position_launcher_options(options: &slint::Window, launcher: &slint::Wind
     let _ = (options, launcher);
     Ok(())
 }
+/// Check actual native window geometry rather than Winit's cached logical
+/// coordinates, which can lag behind an AppKit child-window move.
+pub fn launcher_options_are_attached(options: &slint::Window, launcher: &slint::Window) -> Result<bool> {
+    #[cfg(target_os = "macos")]
+    {
+        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+        let options_winit = options.window_handle();
+        let launcher_winit = launcher.window_handle();
+        let option_handle = options_winit.window_handle()?;
+        let launcher_handle = launcher_winit.window_handle()?;
+        if let (RawWindowHandle::AppKit(options), RawWindowHandle::AppKit(launcher)) =
+            (option_handle.as_raw(), launcher_handle.as_raw())
+        {
+            return Ok(unsafe {
+                subtake_launcher_options_are_attached(options.ns_view.as_ptr(), launcher.ns_view.as_ptr())
+            });
+        }
+        return Ok(false);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let option_position = options.position();
+        let option_size = options.size();
+        let launcher_position = launcher.position();
+        let launcher_size = launcher.size();
+        Ok(option_position.y + option_size.height as i32 <= launcher_position.y - 12
+            && (option_position.x + option_size.width as i32 / 2
+                - (launcher_position.x + launcher_size.width as i32 / 2))
+                .abs()
+                <= 2)
+    }
+}
+
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
     fn subtake_configure_recorder_overlay(view: *mut std::ffi::c_void, movable: bool);
@@ -595,6 +628,7 @@ unsafe extern "C" {
     fn subtake_set_app_icon(bytes: *const u8, length: usize);
     fn subtake_position_launcher(view: *mut std::ffi::c_void);
     fn subtake_position_launcher_options(options: *mut std::ffi::c_void, launcher: *mut std::ffi::c_void);
+    fn subtake_launcher_options_are_attached(options: *mut std::ffi::c_void, launcher: *mut std::ffi::c_void) -> bool;
 }
 
 /// Native material masked to the two visible recorder cards; margins/text stay clear.

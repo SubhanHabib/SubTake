@@ -138,9 +138,18 @@ void subtake_position_launcher_options(void *rawOptionsView, void *rawLauncherVi
     NSWindow *launcher = launcherView.window;
     if (!options || !launcher) return;
 
-    // Winit owns both windows, so child-window ownership is unsupported. Listen
-    // to the bar's native move notification instead; this keeps the menu locked
-    // above the bar without changing either Slint render tree.
+    // Slint renders the custom SubTake menu into its own Winit window. AppKit
+    // makes that window a true child of the native overlay host: it stays above
+    // the bar and moves with the bar, without re-rendering either Slint tree.
+    subtake_place_options_above_launcher(options, launcher);
+    if (options.parentWindow != launcher) {
+        if (options.parentWindow) [options.parentWindow removeChildWindow:options];
+        [launcher addChildWindow:options ordered:NSWindowAbove];
+    }
+
+    // Winit can move its backing NSWindow directly, bypassing child-window
+    // coordinate propagation. Keep one native observer as a narrow fallback
+    // for that path; normal AppKit drags are handled by the child relationship.
     subtake_follow_options = options;
     if (subtake_follow_launcher != launcher) {
         if (subtake_follow_observer) {
@@ -155,6 +164,19 @@ void subtake_position_launcher_options(void *rawOptionsView, void *rawLauncherVi
             subtake_place_options_above_launcher(subtake_follow_options, subtake_follow_launcher);
         }];
     }
-    subtake_place_options_above_launcher(options, launcher);
     [options orderFront:nil];
+}
+
+bool subtake_launcher_options_are_attached(void *rawOptionsView, void *rawLauncherView) {
+    NSView *optionsView = (__bridge NSView *)rawOptionsView;
+    NSView *launcherView = (__bridge NSView *)rawLauncherView;
+    NSWindow *options = optionsView.window;
+    NSWindow *launcher = launcherView.window;
+    if (!options || !launcher || options.parentWindow != launcher || !options.isVisible) return false;
+
+    NSRect bar = launcher.frame;
+    NSRect menu = options.frame;
+    CGFloat expectedX = NSMidX(bar) - menu.size.width / 2;
+    CGFloat expectedY = NSMaxY(bar) + 14;
+    return fabs(menu.origin.x - expectedX) <= 2 && fabs(menu.origin.y - expectedY) <= 2;
 }
