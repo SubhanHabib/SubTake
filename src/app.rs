@@ -50,6 +50,21 @@ fn report(ui: &EditorWindow, result: Result<()>) {
     }
 }
 
+// Winit creates the AppKit host asynchronously on a cold accessory launch.
+// Retry native panel configuration briefly instead of showing a generic window
+// first or emitting a spurious handle error.
+fn position_launcher_when_ready(attempt: u8) {
+    Timer::single_shot(Duration::from_millis(20), move || {
+        with_app(|s, _| {
+            if let Some(launcher) = &s.launcher {
+                if platform::position_launcher(launcher.window()).is_err() && attempt < 9 {
+                    position_launcher_when_ready(attempt + 1);
+                }
+            }
+        });
+    });
+}
+
 struct FrameRequest {
     project: Project,
     path: PathBuf,
@@ -310,18 +325,19 @@ impl App {
             return Ok(());
         }
         options.show()?;
+        platform::update_options_glass(options.window());
         use slint::winit_030::WinitWindowAccessor;
         options.window().with_winit_window(|window| {
             window.set_blur(false);
             window.set_transparent(true);
         });
-        // The menu is positioned and parented synchronously.  A deferred retry
+        // The menu is positioned synchronously. A deferred retry
         // only covers the first-show case where Winit has not exposed its AppKit
         // view until the next event-loop tick.
         if platform::position_launcher_options(options.window(), launcher.window()).is_err() {
             let options = options.as_weak();
             let launcher = launcher.as_weak();
-            Timer::single_shot(Duration::from_millis(1), move || {
+            Timer::single_shot(Duration::from_millis(20), move || {
                 if let (Some(options), Some(launcher)) = (options.upgrade(), launcher.upgrade()) {
                     if let Err(error) = platform::position_launcher_options(options.window(), launcher.window()) {
                         eprintln!("Recorder options position: {error:#}");
@@ -389,19 +405,11 @@ impl App {
         });
         // A launch-time Slint window has no native handle until the event loop starts.
         // Positioning must not prevent source discovery or opening the recorder.
-        // Configure native panel behavior immediately when Winit has already
-        // created its AppKit host. The one-tick retry covers a cold launch.
+        // Configure immediately when possible; the bounded retry handles a
+        // cold launch before Winit has exposed the backing NSView.
         let _ = platform::configure_recording_hud(launcher.window(), true);
         if first_show {
-            Timer::single_shot(Duration::from_millis(20), || {
-                with_app(|s, _| {
-                    if let Some(launcher) = &s.launcher {
-                        if let Err(error) = platform::position_launcher(launcher.window()) {
-                            eprintln!("Recorder position: {error:#}");
-                        }
-                    }
-                })
-            });
+            position_launcher_when_ready(0);
         }
         if self.sources.is_empty() && !ui.get_busy() && !ui.get_recording() {
             self.action(ui, "sources-passive")?;
@@ -4089,6 +4097,24 @@ fn launcher_smoke_step(step: u8) {
                                 let option_size = options.window().size();
                                 assert!(option_position.y + option_size.height as i32 <= position.y - 12,
                                     "Options window overlaps the fixed recorder bar");
+                                // A native move notification must carry the independent menu.
+                                launcher.window().set_position(slint::PhysicalPosition::new(position.x + 37, position.y + 31));
+                                Timer::single_shot(Duration::from_millis(80), move || {
+                                    with_app(|s, _| {
+                                        let launcher = s.launcher.as_ref().unwrap();
+                                        let options = s.launcher_options.as_ref().unwrap();
+                                        let moved_menu = options.window().position();
+                                        let moved_bar = launcher.window().position();
+                                        assert!((moved_menu.x - option_position.x - 37).abs() <= 2,
+                                            "Options menu did not follow the recorder horizontally");
+                                        assert!((moved_menu.y - option_position.y - 31).abs() <= 2,
+                                            "Options menu did not follow the recorder vertically");
+                                        assert!(moved_menu.y + options.window().size().height as i32 <= moved_bar.y - 12,
+                                            "Moved options menu overlaps the recorder bar");
+                                    });
+                                    launcher_smoke_step(10);
+                                });
+                                return;
                             }
                         });
                         launcher_smoke_step(10);

@@ -118,20 +118,43 @@ void subtake_position_launcher(void *rawView) {
     NSRect frame = window.frame;
     [window setFrameOrigin:NSMakePoint(NSMidX(screen) - frame.size.width / 2, NSMinY(screen) + 28)];
 }
+static NSWindow *subtake_follow_launcher = nil;
+static NSWindow *subtake_follow_options = nil;
+static id subtake_follow_observer = nil;
+
+static void subtake_place_options_above_launcher(NSWindow *options, NSWindow *launcher) {
+    if (!options || !launcher || !options.isVisible) return;
+    NSRect bar = launcher.frame;
+    NSRect menu = options.frame;
+    NSPoint origin = NSMakePoint(NSMidX(bar) - menu.size.width / 2,
+                                 NSMaxY(bar) + 14);
+    [options setFrameOrigin:origin];
+}
+
 void subtake_position_launcher_options(void *rawOptionsView, void *rawLauncherView) {
     NSView *optionsView = (__bridge NSView *)rawOptionsView;
     NSView *launcherView = (__bridge NSView *)rawLauncherView;
     NSWindow *options = optionsView.window;
     NSWindow *launcher = launcherView.window;
     if (!options || !launcher) return;
-    NSRect bar = launcher.frame;
-    NSRect menu = options.frame;
-    // AppKit coordinates begin at the bottom.  A 14 point gap keeps the two
-    // independently composited surfaces visually and functionally separate.
-    // Winit owns both NSWindows and expects them to retain independent frame
-    // coordinates. Position immediately before ordering the menu front.
-    NSPoint origin = NSMakePoint(NSMidX(bar) - menu.size.width / 2,
-                                 NSMaxY(bar) + 14);
-    [options setFrameOrigin:origin];
+
+    // Winit owns both windows, so child-window ownership is unsupported. Listen
+    // to the bar's native move notification instead; this keeps the menu locked
+    // above the bar without changing either Slint render tree.
+    subtake_follow_options = options;
+    if (subtake_follow_launcher != launcher) {
+        if (subtake_follow_observer) {
+            [[NSNotificationCenter defaultCenter] removeObserver:subtake_follow_observer];
+        }
+        subtake_follow_launcher = launcher;
+        subtake_follow_observer = [[NSNotificationCenter defaultCenter]
+            addObserverForName:NSWindowDidMoveNotification object:launcher
+                          queue:NSOperationQueue.mainQueue
+                     usingBlock:^(NSNotification *note) {
+            (void)note;
+            subtake_place_options_above_launcher(subtake_follow_options, subtake_follow_launcher);
+        }];
+    }
+    subtake_place_options_above_launcher(options, launcher);
     [options orderFront:nil];
 }

@@ -8,6 +8,7 @@
 @property CGFloat optionsWidth;
 @property CGFloat optionsHeight;
 @property BOOL expanded;
+@property BOOL fullSurface;
 - (void)updateMask;
 @end
 @implementation SubTakeRecorderGlass
@@ -15,17 +16,21 @@
 - (void)setFrameSize:(NSSize)size { [super setFrameSize:size]; [self updateMask]; }
 - (void)updateMask {
     CGFloat width = self.bounds.size.width, height = self.bounds.size.height;
-    if (width <= 0 || height <= 0 || self.barWidth <= 0) return;
+    if (width <= 0 || height <= 0 || (!self.fullSurface && self.barWidth <= 0)) return;
     NSImage *mask = [[NSImage alloc] initWithSize:self.bounds.size];
     [mask lockFocus];
     [[NSColor whiteColor] setFill];
-    CGFloat barY = self.expanded ? self.optionsHeight + 14 : 8;
-    NSRect bar = NSMakeRect((width-self.barWidth)/2, height-barY-64, self.barWidth, 64);
-    [[NSBezierPath bezierPathWithRoundedRect:bar xRadius:24 yRadius:24] fill];
-    if (self.expanded) {
-        NSRect options = NSMakeRect((width-self.optionsWidth)/2, height-8-self.optionsHeight,
-                                   self.optionsWidth, self.optionsHeight);
-        [[NSBezierPath bezierPathWithRoundedRect:options xRadius:24 yRadius:24] fill];
+    if (self.fullSurface) {
+        [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:24 yRadius:24] fill];
+    } else {
+        CGFloat barY = self.expanded ? self.optionsHeight + 14 : 8;
+        NSRect bar = NSMakeRect((width-self.barWidth)/2, height-barY-64, self.barWidth, 64);
+        [[NSBezierPath bezierPathWithRoundedRect:bar xRadius:24 yRadius:24] fill];
+        if (self.expanded) {
+            NSRect options = NSMakeRect((width-self.optionsWidth)/2, height-8-self.optionsHeight,
+                                       self.optionsWidth, self.optionsHeight);
+            [[NSBezierPath bezierPathWithRoundedRect:options xRadius:24 yRadius:24] fill];
+        }
     }
     [mask unlockFocus];
     self.maskImage = mask;
@@ -67,5 +72,31 @@ void subtake_update_recorder_glass(void *pointer, double barWidth, double option
     glass.optionsWidth = optionsWidth;
     glass.optionsHeight = optionsHeight;
     glass.expanded = expanded;
+    [glass updateMask];
+}
+
+
+void subtake_update_options_glass(void *pointer) {
+    NSCAssert([NSThread isMainThread], @"Options material must run on the UI thread");
+    NSView *slintView = (__bridge NSView *)pointer;
+    NSWindow *window = slintView.window;
+    if (!window) return;
+    SubTakeRecorderGlass *glass = objc_getAssociatedObject(slintView, &glassKey);
+    if (!glass) {
+        NSView *parent = slintView.superview;
+        if (!parent) return;
+        glass = [[SubTakeRecorderGlass alloc] initWithFrame:slintView.frame];
+        glass.material = NSVisualEffectMaterialPopover;
+        glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+        glass.state = NSVisualEffectStateActive;
+        glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+        [parent addSubview:glass positioned:NSWindowBelow relativeTo:slintView];
+        objc_setAssociatedObject(slintView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        window.opaque = NO;
+        window.backgroundColor = NSColor.clearColor;
+        window.hasShadow = NO;
+    }
+    glass.frame = slintView.frame;
+    glass.fullSurface = YES;
     [glass updateMask];
 }

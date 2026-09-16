@@ -614,7 +614,24 @@ pub fn update_recorder_glass(window: &slint::Window, bar: f32, options: f32, hei
     #[cfg(not(target_os = "macos"))]
     let _ = (window, bar, options, height, expanded);
 }
+
+/// Apply the same native frosted material to an independent recorder options window.
+pub fn update_options_glass(window: &slint::Window) {
+    #[cfg(target_os = "macos")]
+    {
+        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+        if let Ok(host) = window.window_handle().window_handle() {
+            if let RawWindowHandle::AppKit(handle) = host.as_raw() {
+                unsafe { subtake_update_options_glass(handle.ns_view.as_ptr()); }
+            }
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = window;
+}
+
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
     fn subtake_update_recorder_glass(view: *mut std::ffi::c_void, bar: f64, options: f64, height: f64, expanded: bool);
+    fn subtake_update_options_glass(view: *mut std::ffi::c_void);
 }
