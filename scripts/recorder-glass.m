@@ -51,9 +51,12 @@ void subtake_update_recorder_glass(void *pointer, double barWidth, double option
         NSView *parent = slintView.superview;
         if (!parent) return;
         glass = [[SubTakeRecorderGlass alloc] initWithFrame:slintView.frame];
-        glass.material = NSVisualEffectMaterialPopover;
+        // Use the lightest system material for translucent glass rather than
+        // Popover, whose high-contrast backing reads as a solid white sheet.
+        glass.material = NSVisualEffectMaterialUnderWindowBackground;
         glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
         glass.state = NSVisualEffectStateActive;
+        glass.alphaValue = 0.72;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
         // winit casts window.contentView to its own class: preserve that identity.
         [parent addSubview:glass positioned:NSWindowBelow relativeTo:slintView];
@@ -86,9 +89,12 @@ void subtake_update_options_glass(void *pointer) {
         NSView *parent = slintView.superview;
         if (!parent) return;
         glass = [[SubTakeRecorderGlass alloc] initWithFrame:slintView.frame];
-        glass.material = NSVisualEffectMaterialPopover;
+        // Use the lightest system material for translucent glass rather than
+        // Popover, whose high-contrast backing reads as a solid white sheet.
+        glass.material = NSVisualEffectMaterialUnderWindowBackground;
         glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
         glass.state = NSVisualEffectStateActive;
+        glass.alphaValue = 0.72;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
         [parent addSubview:glass positioned:NSWindowBelow relativeTo:slintView];
         objc_setAssociatedObject(slintView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
