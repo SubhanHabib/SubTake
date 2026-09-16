@@ -389,16 +389,19 @@ impl App {
         });
         // A launch-time Slint window has no native handle until the event loop starts.
         // Positioning must not prevent source discovery or opening the recorder.
+        // Configure native panel behavior immediately when Winit has already
+        // created its AppKit host. The one-tick retry covers a cold launch.
+        let _ = platform::configure_recording_hud(launcher.window(), true);
         if first_show {
-        Timer::single_shot(Duration::from_millis(100), || {
-            with_app(|s, _| {
-                if let Some(launcher) = &s.launcher {
-                    if let Err(error) = platform::position_launcher(launcher.window()) {
-                        eprintln!("Recorder position: {error:#}");
+            Timer::single_shot(Duration::from_millis(20), || {
+                with_app(|s, _| {
+                    if let Some(launcher) = &s.launcher {
+                        if let Err(error) = platform::position_launcher(launcher.window()) {
+                            eprintln!("Recorder position: {error:#}");
+                        }
                     }
-                }
-            })
-        });
+                })
+            });
         }
         if self.sources.is_empty() && !ui.get_busy() && !ui.get_recording() {
             self.action(ui, "sources-passive")?;

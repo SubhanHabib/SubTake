@@ -498,30 +498,19 @@ impl Companion {
 
 /// Keep recording controls reachable in fullscreen Spaces. This runs only on
 /// the UI thread, while Slint owns and retains the NSView/NSWindow handles.
-pub fn configure_recording_hud(window: &slint::Window) -> Result<()> {
+pub fn configure_recording_hud(window: &slint::Window, movable: bool) -> Result<()> {
     #[cfg(target_os = "macos")]
     {
-        use objc2::{msg_send, runtime::AnyObject};
         use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-        let handle = window.window_handle();
-        if let RawWindowHandle::AppKit(handle) = handle.window_handle()?.as_raw() {
-            // SAFETY: the raw NSView is borrowed from a live Slint window on its
-            // creating UI thread. All AppKit calls complete before it can close.
-            unsafe {
-                let view = &*handle.ns_view.as_ptr().cast::<AnyObject>();
-                let native: *mut AnyObject = msg_send![view, window];
-                if !native.is_null() {
-                    let behavior: usize = msg_send![native, collectionBehavior];
-                    let _: () = msg_send![native,setCollectionBehavior:behavior|1|(1<<8)];
-                    let _: () = msg_send![native,setLevel:25isize];
-                    let _: () = msg_send![native,setHidesOnDeactivate:false];
-                    let _: () = msg_send![native,setSharingType:0usize];
-                }
-            }
+        let host = window.window_handle();
+        if let RawWindowHandle::AppKit(handle) = host.window_handle()?.as_raw() {
+            // Slint owns the content view. AppKit applies native non-activating
+            // floating-panel behavior to its enclosing NSWindow.
+            unsafe { subtake_configure_recorder_overlay(handle.ns_view.as_ptr(), movable); }
         }
     }
     #[cfg(not(target_os = "macos"))]
-    let _ = window;
+    let _ = (window, movable);
     Ok(())
 }
 
@@ -563,7 +552,7 @@ pub fn install_status_item(callback: extern "C" fn(*const std::ffi::c_char)) {
     let _ = callback;
 }
 pub fn position_launcher(window: &slint::Window) -> Result<()> {
-    configure_recording_hud(window)?;
+    configure_recording_hud(window, true)?;
     #[cfg(target_os = "macos")]
     {
         use raw_window_handle::{HasWindowHandle, RawWindowHandle};
@@ -580,7 +569,7 @@ pub fn position_launcher(window: &slint::Window) -> Result<()> {
 /// two windows deliberately never share a Slint render tree, so opening a menu
 /// cannot change the bar's geometry or redraw its transparent envelope.
 pub fn position_launcher_options(options: &slint::Window, launcher: &slint::Window) -> Result<()> {
-    configure_recording_hud(options)?;
+    configure_recording_hud(options, false)?;
     #[cfg(target_os = "macos")]
     {
         use raw_window_handle::{HasWindowHandle, RawWindowHandle};
@@ -599,6 +588,7 @@ pub fn position_launcher_options(options: &slint::Window, launcher: &slint::Wind
 }
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
+    fn subtake_configure_recorder_overlay(view: *mut std::ffi::c_void, movable: bool);
     fn subtake_set_editor_active(active: bool);
     fn subtake_activate_launcher();
     fn subtake_install_status_item(callback: extern "C" fn(*const std::ffi::c_char));

@@ -83,6 +83,28 @@ void subtake_set_editor_active(bool active) {
     [NSApp setActivationPolicy:active ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory];
     if (active) [NSApp activateIgnoringOtherApps:YES];
 }
+
+// Configure a Winit-owned NSWindow with AppKit panel semantics.  Slint keeps
+// ownership of the content view; AppKit owns activation, Spaces and z-order.
+void subtake_configure_recorder_overlay(void *rawView, bool movable) {
+    NSView *view = (__bridge NSView *)rawView;
+    NSWindow *window = view.window;
+    if (!window) return;
+    window.styleMask = NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel;
+    window.level = NSFloatingWindowLevel;
+    window.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                NSWindowCollectionBehaviorFullScreenAuxiliary |
+                                NSWindowCollectionBehaviorIgnoresCycle |
+                                NSWindowCollectionBehaviorStationary;
+    window.hidesOnDeactivate = NO;
+    window.movableByWindowBackground = movable;
+    window.animationBehavior = NSWindowAnimationBehaviorUtilityWindow;
+    window.opaque = NO;
+    window.backgroundColor = NSColor.clearColor;
+    window.titleVisibility = NSWindowTitleHidden;
+    window.titlebarAppearsTransparent = YES;
+}
+
 void subtake_activate_launcher(void) {
     // Do not make every floating surface key.  The recorder bar owns its
     // options child, and AppKit preserves that child’s ordering and focus.
