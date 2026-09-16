@@ -541,29 +541,6 @@ pub fn activate_launcher() {
         subtake_activate_launcher();
     }
 }
-
-/// Present an AppKit-owned recorder menu above the macOS overlay bar.
-pub fn show_native_recorder_menu(window: &slint::Window, payload: &str) -> Result<()> {
-    #[cfg(target_os = "macos")]
-    {
-        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-        let payload = std::ffi::CString::new(payload)?;
-        let host = window.window_handle();
-        if let RawWindowHandle::AppKit(handle) = host.window_handle()?.as_raw() {
-            unsafe { subtake_show_recorder_menu(handle.ns_view.as_ptr(), payload.as_ptr()); }
-        }
-    }
-    #[cfg(not(target_os = "macos"))]
-    let _ = (window, payload);
-    Ok(())
-}
-pub fn install_native_recorder_menu(callback: extern "C" fn(*const std::ffi::c_char, *const std::ffi::c_char)) {
-    #[cfg(target_os = "macos")]
-    unsafe { subtake_install_recorder_menu(callback); }
-    #[cfg(not(target_os = "macos"))]
-    let _ = callback;
-}
-
 pub fn install_status_item(callback: extern "C" fn(*const std::ffi::c_char)) {
     #[cfg(target_os = "macos")]
     unsafe {
@@ -615,8 +592,6 @@ unsafe extern "C" {
     fn subtake_set_editor_active(active: bool);
     fn subtake_activate_launcher();
     fn subtake_install_status_item(callback: extern "C" fn(*const std::ffi::c_char));
-    fn subtake_install_recorder_menu(callback: extern "C" fn(*const std::ffi::c_char, *const std::ffi::c_char));
-    fn subtake_show_recorder_menu(view: *mut std::ffi::c_void, payload: *const std::ffi::c_char);
     fn subtake_set_app_icon(bytes: *const u8, length: usize);
     fn subtake_position_launcher(view: *mut std::ffi::c_void);
     fn subtake_position_launcher_options(options: *mut std::ffi::c_void, launcher: *mut std::ffi::c_void);
