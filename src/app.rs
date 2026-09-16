@@ -1,7 +1,7 @@
 use crate::{AppTray, EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
-use slint::{ComponentHandle, ModelRc, SharedString, Timer, TimerMode, VecModel};
+use slint::{ComponentHandle, Model, ModelRc, SharedString, Timer, TimerMode, VecModel};
 use std::{
     cell::RefCell,
     path::{Path, PathBuf},
@@ -263,6 +263,30 @@ impl App {
         }
     }
 
+    #[cfg(target_os = "macos")]
+    fn native_launcher_menu_payload(&self, ui: &EditorWindow, panel: &str) -> String {
+        let values = |items: ModelRc<SharedString>| {
+            (0..items.row_count())
+                .filter_map(|index| items.row_data(index))
+                .map(|item| item.to_string())
+                .collect::<Vec<_>>()
+        };
+        json!({
+            "panel": panel,
+            "sources": values(ui.get_source_names()),
+            "sourceIndex": ui.get_source_index(),
+            "microphones": values(ui.get_microphone_names()),
+            "microphoneIndex": ui.get_microphone_index(),
+            "cameras": values(ui.get_camera_names()),
+            "cameraIndex": ui.get_camera_index(),
+            "microphone": ui.get_capture_mic(),
+            "systemAudio": ui.get_capture_system(),
+            "camera": ui.get_capture_camera(),
+            "countdown": self.preferences.countdown_seconds,
+            "hasProject": self.history.is_some(),
+        }).to_string()
+    }
+
     fn sync_launcher_options(&self, ui: &EditorWindow) {
         let (Some(launcher), Some(options)) = (&self.launcher, &self.launcher_options) else {
             return;
@@ -319,6 +343,20 @@ impl App {
         let Some(launcher) = &self.launcher else { return Ok(()); };
         launcher.set_panel(panel.into());
         self.sync_launcher(ui);
+
+        #[cfg(target_os = "macos")]
+        if std::env::var_os("SUBTAKE_LAUNCHER_SMOKE").is_none() {
+            if panel.is_empty() {
+                return Ok(());
+            }
+            return platform::show_native_recorder_menu(
+                launcher.window(),
+                &self.native_launcher_menu_payload(ui, panel),
+            );
+        }
+
+        // The Slint options component remains the Windows/Linux implementation
+        // and the deterministic cross-platform geometry-test harness.
         let Some(options) = &self.launcher_options else { return Ok(()); };
         if panel.is_empty() {
             options.hide()?;
@@ -331,9 +369,6 @@ impl App {
             window.set_blur(false);
             window.set_transparent(true);
         });
-        // The menu is positioned synchronously. A deferred retry
-        // only covers the first-show case where Winit has not exposed its AppKit
-        // view until the next event-loop tick.
         if platform::position_launcher_options(options.window(), launcher.window()).is_err() {
             let options = options.as_weak();
             let launcher = launcher.as_weak();
@@ -3933,8 +3968,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     }
     #[cfg(target_os = "macos")]
     Timer::single_shot(Duration::from_millis(100), || {
-        // AppKit status items must be created on the running main event loop.
+        // AppKit status items and launcher menus must be installed on the main event loop.
         platform::install_status_item(status_menu_action);
+        platform::install_native_recorder_menu(recorder_menu_action);
     });
     // The development watcher requests a normal quit only after a successful
     // build. Never interrupt capture/export; unsaved projects use the existing
@@ -4328,6 +4364,28 @@ extern "C" fn open_document_event(path: *const std::ffi::c_char) {
         if s.can_replace(ui) {
             let result = s.load(ui, PathBuf::from(path));
             report(ui, result);
+        }
+    });
+}
+
+#[cfg(target_os = "macos")]
+extern "C" fn recorder_menu_action(key: *const std::ffi::c_char, value: *const std::ffi::c_char) {
+    if key.is_null() || value.is_null() {
+        return;
+    }
+    let key = unsafe { std::ffi::CStr::from_ptr(key) }.to_string_lossy().to_string();
+    let value = unsafe { std::ffi::CStr::from_ptr(value) }.to_string_lossy().to_string();
+    post(move |s, ui| {
+        match key.as_str() {
+            "dismiss" => {
+                let result = s.set_launcher_options_panel(ui, "");
+                report(ui, result);
+            }
+            "action" => {
+                let result = s.action(ui, &value);
+                report(ui, result);
+            }
+            _ => s.apply_launcher_option(ui, &key, &value),
         }
     });
 }
