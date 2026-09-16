@@ -12,6 +12,34 @@ The Rust/Slint application is the main project at this repository root. The prev
 
 ## Run the Mac app
 
+### Development: refresh after saves
+
+```sh
+cd /Users/subs/Personal/SubTake
+python3 scripts/dev.py
+```
+
+This builds and opens `target/dev/SubTake.app`, then watches Rust, Slint UI,
+native helper sources, scripts, and assets. Saves are debounced; a successful
+build requests a normal quit and launches the new instance. A failed build keeps
+the last working app open. Recording and busy operations finish before restart;
+unsaved projects show the usual save/discard/cancel prompt. Cancelling keeps the
+current app open until the next source save. Windows and playback position reset
+on restart; this is rebuild-and-relaunch, not in-place UI hot reload.
+
+Only one development supervisor runs per checkout. **Ctrl+C** stops it and asks
+the app to close; from another terminal use `python3 scripts/dev.py --stop`.
+For a build and launch without watching use `python3 scripts/dev.py --once`.
+The first launch closes old SubTake instances and their helpers. Later refreshes
+wait for the old instance to exit before opening its replacement.
+
+The development bundle links local resources and reuses unchanged packaged
+helpers when available; changed/missing Swift helpers are compiled. For a
+self-contained bundle, use `python3 scripts/build-mac.py` instead. The approved
+Porcelain identity is documented in `assets/branding/BRANDING.md`.
+
+### Packaged application
+
 The locally built application is `dist/SubTake.app`. It targets macOS 14 or later; the build verified on this machine is Apple Silicon.
 
 ```sh

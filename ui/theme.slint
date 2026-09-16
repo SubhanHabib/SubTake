@@ -19,8 +19,10 @@ export global Theme {
     out property <color> toggle-thumb: #ffffff;
     out property <color> on-accent: #253014;
     out property <color> unchecked: dark ? #ffffff22 : #18223530;
+    // Floating surfaces are soft and translucent, matching the rounded reference UI.
     out property <color> overlay: dark ? #202126a6 : #ffffffa6;
     out property <color> popup: dark ? #202126f5 : #fafafaf5;
+    out property <color> overlay-shadow: dark ? #00000055 : #00000018;
     out property <color> canvas-dot: dark ? #ffffff10 : #292a2d13;
     out property <color> track: dark ? #ffffff09 : #ececeb66;
     out property <color> playhead: dark ? #d6d6d5 : #737570;
@@ -35,6 +37,7 @@ export global Theme {
     out property <length> radius-control: 16px;
     out property <length> radius-card: 16px;
     out property <length> radius-panel: 20px;
+    out property <length> radius-overlay: 24px;
     out property <length> border-width: 1px;
     out property <length> focus-width: 2px;
     out property <length> slider-focus-width: 1px;

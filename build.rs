@@ -48,6 +48,7 @@ fn main() {
         println!("cargo:rustc-link-arg=-Wl,-headerpad_max_install_names");
         println!("cargo:rerun-if-changed=scripts/file-events.m");
         println!("cargo:rerun-if-changed=scripts/recorder-glass.m");
+        println!("cargo:rerun-if-changed=scripts/brand-mark.h");
         cc::Build::new()
             .file("scripts/file-events.m")
             .file("scripts/recorder-glass.m")

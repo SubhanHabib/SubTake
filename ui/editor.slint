@@ -404,9 +404,15 @@ export component AppTray inherits SystemTrayIcon {
 }
 export component RecordingLauncher inherits Window {
     title: "SubTake recorder";
-    width:660px;height:root.panel=="" ? 106px : 386px;
-    no-frame:true;always-on-top:true;background:transparent;
-    default-font-family:Theme.font-family;default-font-size:Theme.font-body;
+    in property <length> bar-width: 692px;
+    width: root.bar-width + 32px;
+    height: 80px;
+    no-frame: true;
+    always-on-top: true;
+    background: transparent;
+    default-font-family: Theme.font-family;
+    default-font-size: Theme.font-body;
+    in property <string> appearance: "system";
     in-out property <string> panel;
     in property <[string]> source-names;
     in-out property <int> source-index;
@@ -423,74 +429,120 @@ export component RecordingLauncher inherits Window {
     in property <bool> has-project;
     in property <bool> cancellable;
     in property <string> status;
-    in property <string> elapsed:"00:00";
+    in property <string> elapsed: "00:00";
     in property <string> directory;
-    in property <int> countdown:3;
+    in property <int> countdown: 3;
     callback action(string);
-    callback option(string,string);
     callback panel-change(string);
-    function toggle-panel(name:string) {root.panel=root.panel==name ? "" : name;root.panel-change(root.panel);}
-    function begin-recording() {if root.source-names.length==0 {root.toggle-panel("sources");root.action("sources");}else {root.action("start-recording");}}
-    init => {Palette.color-scheme=ColorScheme.dark;}
-    if root.panel!="": Panel {variant:overlay;x:10px;y:8px;width:parent.width - 20px;height:264px;
-        VerticalLayout {padding:16px;spacing:10px;
-            HorizontalLayout {height:Theme.control-height;
-                Label {text:root.panel=="sources" ? "Screens and windows" : root.panel=="audio" ? "Microphone & system audio" : root.panel=="camera" ? "Webcam" : root.panel=="countdown" ? "Countdown delay" : "More";color:Theme.text;font-weight:600;vertical-alignment:center;horizontal-stretch:1;}
-                IconButton {size:small;icon:@image-url("../assets/icons/X-regular.svg");label:"Close options";variant:ghost;clicked=>{root.toggle-panel(root.panel);}}
+    function toggle-panel(name: string) { root.panel = root.panel == name ? "" : name; root.panel-change(root.panel); }
+    function begin-recording() { if root.source-names.length == 0 { root.toggle-panel("sources"); root.action("sources"); } else { root.action("start-recording"); } }
+    init => { Palette.color-scheme = root.appearance == "light" ? ColorScheme.light : root.appearance == "dark" ? ColorScheme.dark : ColorScheme.unknown; }
+    changed appearance => { Palette.color-scheme = root.appearance == "light" ? ColorScheme.light : root.appearance == "dark" ? ColorScheme.dark : ColorScheme.unknown; }
+
+    Panel {
+        variant: overlay;
+        x: 16px;
+        y: 8px;
+        width: root.bar-width;
+        height: 64px;
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 8px;
+            Rectangle { width: 20px; height: 40px;
+                Image { x: 2px; y: 12px; width: 16px; height: 16px; source: @image-url("../assets/icons/DotsSixVertical-regular.svg"); colorize: Theme.muted; }
+                TouchArea { mouse-cursor: move; pointer-event(e) => { if e.kind == PointerEventKind.down { root.action("drag-launcher"); } } }
             }
-            if root.panel=="sources": VerticalLayout {spacing:10px;alignment:start;
-                Dropdown {label:"Capture source";enabled:!root.busy;model:root.source-names;current-index <=> root.source-index;selected(value)=>{root.option("source",self.current-index);}}
-                Label {text:"Choose a display or a visible window to record.";color:Theme.muted;height:20px;}
-                ToolButton {icon:@image-url("../assets/icons/ArrowClockwise-regular.svg");text:"Refresh displays and windows";enabled:!root.busy;clicked=>{root.action("sources");}}
-            }
-            if root.panel=="audio": VerticalLayout {spacing:8px;alignment:start;
-                HorizontalLayout {height:Theme.control-height;Label {text:"Microphone";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.microphone;label:"Microphone";toggled(value)=>{root.option("microphone",value ? "true" : "false");}}}
-                Dropdown {label:"Microphone";enabled:!root.busy && root.microphone;model:root.microphone-names;current-index <=> root.microphone-index;selected(value)=>{root.option("microphone-device",self.current-index);}}
-                HorizontalLayout {height:Theme.control-height;Label {text:"System audio";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.system-audio;label:"System audio";toggled(value)=>{root.option("system-audio",value ? "true" : "false");}}}
-            }
-            if root.panel=="camera": VerticalLayout {spacing:10px;alignment:start;
-                HorizontalLayout {height:Theme.control-height;Label {text:"Webcam overlay";color:Theme.text;vertical-alignment:center;horizontal-stretch:1;}Toggle {checked:root.camera;label:"Webcam overlay";toggled(value)=>{root.option("camera",value ? "true" : "false");}}}
-                Dropdown {label:"Camera";enabled:!root.busy && root.camera;model:root.camera-names;current-index <=> root.camera-index;selected(value)=>{root.option("camera-device",self.current-index);}}
-                Label {text:"Your camera is recorded separately and added to the project.";color:Theme.muted;wrap:word-wrap;height:34px;}
-            }
-            if root.panel=="countdown": VerticalLayout {spacing:14px;alignment:start;
-                Label {text:"Give yourself a moment before recording starts.";color:Theme.muted;height:24px;}
-                SegmentedControl {model:["No delay","3 seconds","5 seconds","10 seconds"];current-index:root.countdown==0 ? 0 : root.countdown==3 ? 1 : root.countdown==5 ? 2 : 3;selected(index)=>{root.option("countdown",[0,3,5,10][index]);}}
-            }
-            if root.panel=="more": VerticalLayout {spacing:10px;alignment:start;
-                ToolButton {size:regular;icon:@image-url("../assets/icons/Sparkle-regular.svg");text:"Create video · spike";clicked=>{root.action("storyboard-spike");}}
-                HorizontalLayout {spacing:8px;height:Theme.control-height;
-                    ToolButton {icon:@image-url("../assets/icons/FolderOpen-regular.svg");text:"Open video or project";clicked=>{root.action("open");}}
-                    ToolButton {icon:@image-url("../assets/icons/Stack-regular.svg");text:"Projects";clicked=>{root.action("projects");}}
-                    ToolButton {icon:@image-url("../assets/icons/FilmStrip-regular.svg");text:"Back to editor";enabled:root.has-project;clicked=>{root.action("show-editor");}}
-                }
-                Label {text:"Recordings path";color:Theme.muted;height:18px;}
-                HorizontalLayout {height:Theme.control-height;spacing:10px;Label {text:root.directory;color:Theme.text;overflow:elide;vertical-alignment:center;horizontal-stretch:1;}ToolButton {has-icon:false;text:"Choose folder…";clicked=>{root.action("recording-folder");}}}
-            }
-        }
-    }
-    Panel {variant:overlay;x:6px;y:root.panel=="" ? 6px : 286px;width:parent.width - 12px;height:64px;
-        HorizontalLayout {padding:12px;spacing:8px;
-            Rectangle {width:20px;height:40px;Image {x:2px;y:12px;width:16px;height:16px;source:@image-url("../assets/icons/DotsSixVertical-regular.svg");colorize:Theme.muted;}TouchArea {mouse-cursor:move;pointer-event(e)=>{if e.kind==PointerEventKind.down {root.action("drag-launcher");}}}}
-            if !root.recording && !root.busy: HorizontalLayout {spacing:8px;
+            if !root.recording && !root.busy: HorizontalLayout {
+                spacing: 8px;
                 AppMark {}
-                ToolButton {size:large;width:224px;icon:@image-url("../assets/icons/Monitor-regular.svg");text:root.source-names.length>0 ? root.source-names[root.source-index] : "Choose a source";label:"Screens and windows";active:root.panel=="sources";clicked=>{root.toggle-panel("sources");}}
-                Rectangle {width:1px;Rectangle {y:7px;height:26px;width:1px;background:Theme.border;}}
-                IconButton {size:large;icon:root.microphone ? @image-url("../assets/icons/Microphone-regular.svg") : @image-url("../assets/icons/MicrophoneSlash-regular.svg");label:"Microphone & system audio";active:root.microphone || root.system-audio;variant:ghost;clicked=>{root.toggle-panel("audio");}}
-                IconButton {size:large;icon:root.camera ? @image-url("../assets/icons/VideoCamera-regular.svg") : @image-url("../assets/icons/VideoCameraSlash-regular.svg");label:"Webcam";active:root.camera;variant:ghost;clicked=>{root.toggle-panel("camera");}}
-                IconButton {size:large;icon:@image-url("../assets/icons/Timer-regular.svg");label:"Countdown delay";active:root.countdown>0;variant:ghost;clicked=>{root.toggle-panel("countdown");}}
-                RecordButton {clicked=>{root.begin-recording();}}
-                IconButton {size:large;icon:@image-url("../assets/icons/DotsThree-regular.svg");label:"More options";variant:ghost;clicked=>{root.toggle-panel("more");}}
+                ToolButton { size: large; width: 190px; icon: @image-url("../assets/icons/Monitor-regular.svg"); text: root.source-names.length > 0 ? root.source-names[root.source-index] : "Choose a source"; label: "Screens and windows"; active: root.panel == "sources"; clicked => { root.toggle-panel("sources"); } }
+                Rectangle { width: 1px; Rectangle { y: 7px; height: 26px; width: 1px; background: Theme.border; } }
+                IconButton { size: large; icon: root.microphone ? @image-url("../assets/icons/Microphone-regular.svg") : @image-url("../assets/icons/MicrophoneSlash-regular.svg"); label: "Microphone & system audio"; active: root.microphone || root.system-audio; variant: ghost; clicked => { root.toggle-panel("audio"); } }
+                IconButton { size: large; icon: root.camera ? @image-url("../assets/icons/VideoCamera-regular.svg") : @image-url("../assets/icons/VideoCameraSlash-regular.svg"); label: "Webcam"; active: root.camera; variant: ghost; clicked => { root.toggle-panel("camera"); } }
+                IconButton { size: large; icon: @image-url("../assets/icons/Timer-regular.svg"); label: "Countdown delay"; active: root.countdown > 0; variant: ghost; clicked => { root.toggle-panel("countdown"); } }
+                RecordButton { clicked => { root.begin-recording(); } }
+                IconButton { size: large; icon: @image-url("../assets/icons/DotsThree-regular.svg"); label: "More options"; variant: ghost; clicked => { root.toggle-panel("more"); } }
             }
-            if root.recording || root.busy: HorizontalLayout {spacing:10px;
-                Rectangle {width:8px;Rectangle {y:16px;width:8px;height:8px;border-radius:4px;background:root.paused ? #e8b251 : #f43f5e;}}
-                Label {text:root.recording ? (root.paused ? "PAUSED  " : "REC  ")+root.elapsed : root.status;horizontal-stretch:1;color:Theme.text;vertical-alignment:center;overflow:elide;}
-                if root.recording: ToolButton {size:large;icon:root.paused ? @image-url("../assets/icons/Play-fill.svg") : @image-url("../assets/icons/Pause-fill.svg");text:root.paused ? "Resume" : "Pause";enabled:!root.busy;clicked=>{root.action("pause-recording");}}
-                if root.recording: ToolButton {size:large;icon:@image-url("../assets/icons/Stop-fill.svg");text:"Stop";icon-color:#f43f5e;enabled:!root.busy;clicked=>{root.action("stop-recording");}}
-                if root.cancellable: ToolButton {size:large;has-icon:false;text:"Cancel";clicked=>{root.action("cancel");}}
+            if root.recording || root.busy: HorizontalLayout {
+                spacing: 10px;
+                Rectangle { width: 8px; Rectangle { y: 16px; width: 8px; height: 8px; border-radius: 4px; background: root.paused ? #e8b251 : #f43f5e; } }
+                Label { text: root.recording ? (root.paused ? "PAUSED  " : "REC  ") + root.elapsed : root.status; horizontal-stretch: 1; color: Theme.text; vertical-alignment: center; overflow: elide; }
+                if root.recording: ToolButton { size: large; icon: root.paused ? @image-url("../assets/icons/Play-fill.svg") : @image-url("../assets/icons/Pause-fill.svg"); text: root.paused ? "Resume" : "Pause"; enabled: !root.busy; clicked => { root.action("pause-recording"); } }
+                if root.recording: ToolButton { size: large; icon: @image-url("../assets/icons/Stop-fill.svg"); text: "Stop"; icon-color: #f43f5e; enabled: !root.busy; clicked => { root.action("stop-recording"); } }
+                if root.cancellable: ToolButton { size: large; has-icon: false; text: "Cancel"; clicked => { root.action("cancel"); } }
             }
-            IconButton {size:large;icon:@image-url("../assets/icons/EyeSlash-regular.svg");label:"Hide overlay — reopen from the menu bar";variant:ghost;clicked=>{root.action("hide-launcher");}}
+            IconButton { size: large; icon: @image-url("../assets/icons/Question-regular.svg"); label: root.status; variant: ghost; }
+            IconButton { size: large; icon: @image-url("../assets/icons/X-regular.svg"); label: "Close overlay — reopen from the menu bar"; variant: ghost; clicked => { root.action("hide-launcher"); } }
         }
     }
-    Panel {variant:overlay;x:16px;y:root.height - 30px;width:root.width - 32px;height:28px;Label {x:8px;y:2px;width:parent.width - 16px;height:24px;text:root.recording ? "Stop recording to open your video in the editor" : root.status;color:#aab3c7;font-size:Theme.font-small;wrap:word-wrap;horizontal-alignment:center;vertical-alignment:center;overflow:elide;}}
+}
+
+export component RecordingOptions inherits Window {
+    title: "SubTake recorder options";
+    in property <length> options-width: root.panel == "more" ? 520px : root.panel == "sources" ? 430px : root.panel == "audio" ? 420px : root.panel == "camera" ? 420px : 400px;
+    in property <length> options-height: root.panel == "more" ? 284px : root.panel == "camera" ? 276px : 264px;
+    width: root.options-width;
+    height: root.options-height;
+    no-frame: true;
+    always-on-top: true;
+    background: transparent;
+    default-font-family: Theme.font-family;
+    default-font-size: Theme.font-body;
+    in property <string> appearance: "system";
+    in property <string> panel;
+    in property <[string]> source-names;
+    in-out property <int> source-index;
+    in property <[string]> camera-names;
+    in property <[string]> microphone-names;
+    in-out property <int> camera-index;
+    in-out property <int> microphone-index;
+    in property <bool> camera;
+    in property <bool> microphone;
+    in property <bool> system-audio;
+    in property <bool> busy;
+    in property <bool> has-project;
+    in property <string> directory;
+    in property <int> countdown: 3;
+    callback action(string);
+    callback option(string, string);
+    callback panel-change(string);
+    init => { Palette.color-scheme = root.appearance == "light" ? ColorScheme.light : root.appearance == "dark" ? ColorScheme.dark : ColorScheme.unknown; }
+    changed appearance => { Palette.color-scheme = root.appearance == "light" ? ColorScheme.light : root.appearance == "dark" ? ColorScheme.dark : ColorScheme.unknown; }
+    Panel { variant: overlay; width: parent.width; height: parent.height;
+        VerticalLayout { padding: 20px; spacing: 12px;
+            HorizontalLayout { height: Theme.control-height;
+                Label { text: root.panel == "sources" ? "Screens and windows" : root.panel == "audio" ? "Microphone & system audio" : root.panel == "camera" ? "Webcam" : root.panel == "countdown" ? "Countdown delay" : "More"; color: Theme.text; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
+                IconButton { size: small; icon: @image-url("../assets/icons/X-regular.svg"); label: "Close options"; variant: ghost; clicked => { root.panel-change(""); } }
+            }
+            if root.panel == "sources": VerticalLayout { spacing: 10px; alignment: start;
+                Dropdown { label: "Capture source"; enabled: !root.busy; model: root.source-names; current-index <=> root.source-index; horizontal-stretch: 1; selected(value) => { root.option("source", self.current-index); } }
+                Label { text: "Choose a display or a visible window to record."; role: muted; horizontal-stretch: 1; wrap: word-wrap; min-height: 32px; }
+                ToolButton { icon: @image-url("../assets/icons/ArrowClockwise-regular.svg"); text: "Refresh displays and windows"; enabled: !root.busy; horizontal-stretch: 1; clicked => { root.action("sources"); } }
+            }
+            if root.panel == "audio": VerticalLayout { spacing: 8px; alignment: start;
+                HorizontalLayout { height: Theme.control-height; Label { text: "Microphone"; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; } Toggle { checked: root.microphone; label: "Microphone"; toggled(value) => { root.option("microphone", value ? "true" : "false"); } } }
+                Dropdown { label: "Microphone"; enabled: !root.busy && root.microphone; model: root.microphone-names; current-index <=> root.microphone-index; horizontal-stretch: 1; selected(value) => { root.option("microphone-device", self.current-index); } }
+                HorizontalLayout { height: Theme.control-height; Label { text: "System audio"; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; } Toggle { checked: root.system-audio; label: "System audio"; toggled(value) => { root.option("system-audio", value ? "true" : "false"); } } }
+            }
+            if root.panel == "camera": VerticalLayout { spacing: 10px; alignment: start;
+                HorizontalLayout { height: Theme.control-height; Label { text: "Webcam overlay"; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; } Toggle { checked: root.camera; label: "Webcam overlay"; toggled(value) => { root.option("camera", value ? "true" : "false"); } } }
+                Dropdown { label: "Camera"; enabled: !root.busy && root.camera; model: root.camera-names; current-index <=> root.camera-index; horizontal-stretch: 1; selected(value) => { root.option("camera-device", self.current-index); } }
+                Label { text: "Your camera is recorded separately and added to the project."; role: muted; horizontal-stretch: 1; wrap: word-wrap; min-height: 40px; }
+            }
+            if root.panel == "countdown": VerticalLayout { spacing: 14px; alignment: start;
+                Label { text: "Give yourself a moment before recording starts."; color: Theme.muted; height: 24px; }
+                SegmentedControl { model: ["No delay", "3 seconds", "5 seconds", "10 seconds"]; current-index: root.countdown == 0 ? 0 : root.countdown == 3 ? 1 : root.countdown == 5 ? 2 : 3; selected(index) => { root.option("countdown", [0, 3, 5, 10][index]); } }
+            }
+            if root.panel == "more": VerticalLayout { spacing: 10px; alignment: start;
+                ToolButton { size: regular; icon: @image-url("../assets/icons/Sparkle-regular.svg"); text: "Create video · spike"; horizontal-stretch: 1; clicked => { root.action("storyboard-spike"); } }
+                HorizontalLayout { spacing: 8px; height: Theme.control-height;
+                    ToolButton { icon: @image-url("../assets/icons/FolderOpen-regular.svg"); text: "Open video or project"; horizontal-stretch: 1; clicked => { root.action("open"); } }
+                    ToolButton { icon: @image-url("../assets/icons/Stack-regular.svg"); text: "Projects"; horizontal-stretch: 1; clicked => { root.action("projects"); } }
+                    ToolButton { icon: @image-url("../assets/icons/FilmStrip-regular.svg"); text: "Back to editor"; enabled: root.has-project; horizontal-stretch: 1; clicked => { root.action("show-editor"); } }
+                }
+                Label { text: "Recordings path"; role: muted; height: 18px; }
+                HorizontalLayout { height: Theme.control-height; spacing: 10px; Label { text: root.directory; color: Theme.text; wrap: word-wrap; vertical-alignment: center; horizontal-stretch: 1; } ToolButton { has-icon: false; text: "Choose folder…"; clicked => { root.action("recording-folder"); } } }
+            }
+        }
+    }
 }

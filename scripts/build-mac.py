@@ -14,6 +14,7 @@ root=Path(__file__).resolve().parents[1]
 repo=root/"legacy-electron"
 def run(*cmd): subprocess.run([str(c) for c in cmd],check=True,cwd=root)
 run("cargo","build","--locked",*(["--release"] if args.release else []))
+run("python3",root/"scripts/build-icons.py")
 destination=root/"dist"/"SubTake.app"
 destination.parent.mkdir(parents=True,exist_ok=True)
 staging=tempfile.TemporaryDirectory(prefix=".build-",dir=destination.parent)
@@ -24,7 +25,7 @@ shutil.copy2(root/"target"/("release" if args.release else "debug")/"subtake-nat
 info={"CFBundleName":"SubTake","CFBundleDisplayName":"SubTake","CFBundleExecutable":"SubTake","CFBundleIdentifier":"com.subtake.native","CFBundleVersion":"1","CFBundleShortVersionString":"0.1.0","CFBundlePackageType":"APPL","LSMinimumSystemVersion":"14.0","NSHighResolutionCapable":True,"NSMicrophoneUsageDescription":"SubTake records microphone audio when you enable it for a recording.","NSCameraUsageDescription":"SubTake records your camera when you enable the webcam overlay.","NSPrincipalClass":"NSApplication","CFBundleDocumentTypes":[{"CFBundleTypeName":"SubTake Project","CFBundleTypeRole":"Editor","CFBundleTypeExtensions":["recordly","openscreen"]}]}
 info["CFBundleIconFile"]="SubTake.icns"
 info["LSUIElement"]=True
-shutil.copy2(repo/"icons/icons/mac/icon.icns",resources/"SubTake.icns")
+shutil.copy2(root/"assets/branding/SubTake.icns",resources/"SubTake.icns")
 shutil.copy2(repo/"LICENSE.md",resources/"LICENSE.md")
 (resources/"licenses").mkdir(exist_ok=True)
 shutil.copy2(root/"assets/icons/LICENSE",resources/"licenses/Phosphor.txt")

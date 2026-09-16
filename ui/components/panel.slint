@@ -2,9 +2,12 @@ import { Theme } from "../theme.slint";
 export enum SurfaceVariant { panel, card, popup, overlay }
 export component Panel inherits Rectangle {
     in property <SurfaceVariant> variant:panel;
-    border-radius:root.variant==SurfaceVariant.card || root.variant==SurfaceVariant.popup ? Theme.radius-card : Theme.radius-panel;
-    border-width:Theme.border-width;border-color:Theme.border;
+    border-radius:root.variant==SurfaceVariant.overlay ? Theme.radius-overlay : root.variant==SurfaceVariant.card || root.variant==SurfaceVariant.popup ? Theme.radius-card : Theme.radius-panel;
+    border-width:root.variant==SurfaceVariant.overlay ? 0px : Theme.border-width;border-color:Theme.border;
     background:root.variant==SurfaceVariant.popup ? Theme.popup : root.variant==SurfaceVariant.card ? Theme.surface : root.variant==SurfaceVariant.overlay ? Theme.overlay : Theme.panel;
+    drop-shadow-blur:root.variant==SurfaceVariant.overlay ? 24px : 0px;
+    drop-shadow-offset-y:root.variant==SurfaceVariant.overlay ? 8px : 0px;
+    drop-shadow-color:root.variant==SurfaceVariant.overlay ? Theme.overlay-shadow : transparent;
     @children
 }
 export component Divider inherits Rectangle {

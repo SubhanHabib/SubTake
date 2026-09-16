@@ -546,6 +546,22 @@ pub fn set_editor_active(active: bool) {
     #[cfg(not(target_os = "macos"))]
     let _ = active;
 }
+pub fn activate_launcher() {
+    #[cfg(target_os = "macos")]
+    unsafe {
+        subtake_activate_launcher();
+    }
+}
+pub fn install_status_item(callback: extern "C" fn(*const std::ffi::c_char)) {
+    #[cfg(target_os = "macos")]
+    unsafe {
+        let icon = include_bytes!("../assets/branding/app-icon.png");
+        subtake_set_app_icon(icon.as_ptr(), icon.len());
+        subtake_install_status_item(callback);
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = callback;
+}
 pub fn position_launcher(window: &slint::Window) -> Result<()> {
     configure_recording_hud(window)?;
     #[cfg(target_os = "macos")]
@@ -560,10 +576,35 @@ pub fn position_launcher(window: &slint::Window) -> Result<()> {
     }
     Ok(())
 }
+/// Position the independent options window above the fixed recorder bar.  The
+/// two windows deliberately never share a Slint render tree, so opening a menu
+/// cannot change the bar's geometry or redraw its transparent envelope.
+pub fn position_launcher_options(options: &slint::Window, launcher: &slint::Window) -> Result<()> {
+    configure_recording_hud(options)?;
+    #[cfg(target_os = "macos")]
+    {
+        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+        let options_winit = options.window_handle();
+        let launcher_winit = launcher.window_handle();
+        let option_handle = options_winit.window_handle()?;
+        let launcher_handle = launcher_winit.window_handle()?;
+        if let (RawWindowHandle::AppKit(options), RawWindowHandle::AppKit(launcher)) = (option_handle.as_raw(), launcher_handle.as_raw()) {
+            // Both handles are owned by Slint on this event-loop thread.
+            unsafe { subtake_position_launcher_options(options.ns_view.as_ptr(), launcher.ns_view.as_ptr()); }
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (options, launcher);
+    Ok(())
+}
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
     fn subtake_set_editor_active(active: bool);
+    fn subtake_activate_launcher();
+    fn subtake_install_status_item(callback: extern "C" fn(*const std::ffi::c_char));
+    fn subtake_set_app_icon(bytes: *const u8, length: usize);
     fn subtake_position_launcher(view: *mut std::ffi::c_void);
+    fn subtake_position_launcher_options(options: *mut std::ffi::c_void, launcher: *mut std::ffi::c_void);
 }
 
 /// Native material masked to the two visible recorder cards; margins/text stay clear.
