@@ -19,8 +19,9 @@ export global Theme {
     out property <color> toggle-thumb: #ffffff;
     out property <color> on-accent: #ffffff;
     out property <color> unchecked: dark ? #ffffff22 : #18223530;
-    // Floating surfaces are soft and translucent, matching the rounded reference UI.
-    out property <color> overlay: dark ? #202126a6 : #ffffffa6;
+    // Native visual material supplies the blur behind overlay cards. This is
+    // only a low-opacity tint so the desktop remains visibly frosted beneath it.
+    out property <color> overlay: dark ? #20212642 : #ffffff24;
     out property <color> popup: dark ? #202126f5 : #fafafaf5;
     out property <color> overlay-shadow: dark ? #00000055 : #00000018;
     out property <color> canvas-dot: dark ? #ffffff10 : #292a2d13;
