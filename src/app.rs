@@ -315,15 +315,20 @@ impl App {
             window.set_blur(false);
             window.set_transparent(true);
         });
-        let options = options.as_weak();
-        let launcher = launcher.as_weak();
-        Timer::single_shot(Duration::from_millis(30), move || {
-            if let (Some(options), Some(launcher)) = (options.upgrade(), launcher.upgrade()) {
-                if let Err(error) = platform::position_launcher_options(options.window(), launcher.window()) {
-                    eprintln!("Recorder options position: {error:#}");
+        // The menu is positioned and parented synchronously.  A deferred retry
+        // only covers the first-show case where Winit has not exposed its AppKit
+        // view until the next event-loop tick.
+        if platform::position_launcher_options(options.window(), launcher.window()).is_err() {
+            let options = options.as_weak();
+            let launcher = launcher.as_weak();
+            Timer::single_shot(Duration::from_millis(1), move || {
+                if let (Some(options), Some(launcher)) = (options.upgrade(), launcher.upgrade()) {
+                    if let Err(error) = platform::position_launcher_options(options.window(), launcher.window()) {
+                        eprintln!("Recorder options position: {error:#}");
+                    }
                 }
-            }
-        });
+            });
+        }
         Ok(())
     }
 

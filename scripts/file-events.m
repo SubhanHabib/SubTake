@@ -84,13 +84,9 @@ void subtake_set_editor_active(bool active) {
     if (active) [NSApp activateIgnoringOtherApps:YES];
 }
 void subtake_activate_launcher(void) {
+    // Do not make every floating surface key.  The recorder bar owns its
+    // options child, and AppKit preserves that child’s ordering and focus.
     [NSApp activateIgnoringOtherApps:YES];
-    for (NSWindow *window in NSApp.windows) {
-        if (window.level == 25) {
-            [window orderFrontRegardless];
-            [window makeKeyAndOrderFront:nil];
-        }
-    }
 }
 void subtake_position_launcher(void *rawView) {
     NSView *view = (__bridge NSView *)rawView;
@@ -110,8 +106,10 @@ void subtake_position_launcher_options(void *rawOptionsView, void *rawLauncherVi
     NSRect menu = options.frame;
     // AppKit coordinates begin at the bottom.  A 14 point gap keeps the two
     // independently composited surfaces visually and functionally separate.
+    // Winit owns both NSWindows and expects them to retain independent frame
+    // coordinates. Position immediately before ordering the menu front.
     NSPoint origin = NSMakePoint(NSMidX(bar) - menu.size.width / 2,
                                  NSMaxY(bar) + 14);
     [options setFrameOrigin:origin];
-    [options orderFrontRegardless];
+    [options orderFront:nil];
 }
