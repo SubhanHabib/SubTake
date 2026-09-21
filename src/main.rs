@@ -6,10 +6,11 @@ use subtake_native::{
     project::Project,
     render::Scene,
 };
-slint::include_modules!();
+use subtake_native::ui_state::{AppTray, EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
 mod app;
 mod inspector;
 fn main() -> Result<()> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("benchmark") => {

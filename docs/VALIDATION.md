@@ -1,5 +1,7 @@
 # Native Mac validation record
 
+> GPUI migration notice: UI descriptions and validation evidence below predate the migration and are retained as historical reference. They do not certify current GPUI behavior. See [GPUI-MIGRATION.md](GPUI-MIGRATION.md) for current example coverage and pending acceptance gates.
+
 Recorded 12 September 2026 against parent revision `7512ef1518657edc2caae595136821d27a47167d`. This records the local build and checks actually run; it is not a full Mac/Windows parity certification. Machine-readable measurements, source hashes and the packaged executable hash are in [validation.json](validation.json).
 
 ## Host and package

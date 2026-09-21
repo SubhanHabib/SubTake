@@ -1,0 +1,5104 @@
+{
+  "ui_backend": "gpui",
+  "coverage": "controller callbacks, native snapshots and Vision OCR of editor labels; no pointer/keyboard/gesture coverage",
+  "recorded_at": "2026-09-21T19:42:47.469075+00:00",
+  "binary_sha256": "f0bb1b24530c32b0b480126c3493a8529c20a389da74a9b575f5b4c6156ff62a",
+  "cases": [
+    {
+      "panel": "Frame",
+      "size": "1360x880",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-final.log",
+      "snapshot": "test-output/gpui-editor-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.0639534887053383,
+              0.9573033712322968,
+              0.014534882938160618,
+              0.020224718614058057
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "c\u0440"
+          },
+          {
+            "bounds": [
+              0.018895348611742434,
+              0.8651685397220016,
+              0.023255813823026772,
+              0.011235954544760896
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.01744185993582625,
+              0.7955056182662844,
+              0.024709303238812614,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.014534883337019548,
+              0.728089887939374,
+              0.03197674470789292,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.014527008520439392,
+              0.6583822644643429,
+              0.031992494358735926,
+              0.013572549819946378
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.01889534865038098,
+              0.5910112362482187,
+              0.021802325809703153,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Audio"
+          },
+          {
+            "bounds": [
+              0.014366239262117119,
+              0.4836346128218024,
+              0.03090064385358025,
+              0.013249953226609601
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Settings"
+          },
+          {
+            "bounds": [
+              0.02034883723775548,
+              0.41573033722892616,
+              0.01889534838059369,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Help"
+          },
+          {
+            "bounds": [
+              0.023255814080701653,
+              0.35955056192321233,
+              0.013081394924837002,
+              0.0179775281385941
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Q"
+          },
+          {
+            "bounds": [
+              0.014534884213002182,
+              0.2831460675322969,
+              0.02906976587632123,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.014534883528910882,
+              0.20898876434078162,
+              0.021802325809703153,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.014534883426951192,
+              0.15730337093679114,
+              0.015988372353946463,
+              0.013483146103945742
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.21075581336260127,
+              0.8314606741558923,
+              0.06395348941578585,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00:00.000"
+          },
+          {
+            "bounds": [
+              0.058139533832584474,
+              0.4312499999075504,
+              0.08866279265459848,
+              0.013693820346485475
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.05782506406283932,
+              0.3569991192557854,
+              0.07907070272109087,
+              0.02099068598313769
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.07994186143613466,
+              0.28764044943722344,
+              0.05959302116842832,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.18168604659925566,
+              0.3617977531896961,
+              0.042151162203620446,
+              0.015730336579409587
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.1889534884954267,
+              0.31910112365214693,
+              0.018895348380593674,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.1918604651107294,
+              0.208988764251398,
+              0.030523255292107088,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.08420106067611106,
+              0.08232304351474196,
+              0.05107462265912223,
+              0.017376384951851676
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u00ab\" Position"
+          },
+          {
+            "bounds": [
+              0.0087209296525722,
+              0.015730337073869838,
+              0.18895348941578585,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.4708036742205587,
+              0.9605560124130839,
+              0.059806885438806856,
+              0.0137210748412393
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.45639534905807344,
+              0.8965909088340932,
+              0.042151162203620474,
+              0.013636363636363669
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.3241279071564431,
+              0.8966292135045374,
+              0.030523255292107088,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.41279069745125313,
+              0.8966292135322969,
+              0.02180232580970315,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Crop"
+          },
+          {
+            "bounds": [
+              0.316860466589217,
+              0.7750000000546524,
+              0.12063953175264247,
+              0.022752808440815286
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native SubTake"
+          },
+          {
+            "bounds": [
+              0.3023255815186825,
+              0.31910112365214693,
+              0.0188953483805937,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.Os"
+          },
+          {
+            "bounds": [
+              0.41569767454193834,
+              0.31910112365214693,
+              0.0188953483805937,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.5s"
+          },
+          {
+            "bounds": [
+              0.5285662560246465,
+              0.3197833365141036,
+              0.01974284508649038,
+              0.014393326369198878
+            ],
+            "confidence": 0.30000001192092896,
+            "in_editor_chrome": false,
+            "text": "S0\u00b0Z"
+          },
+          {
+            "bounds": [
+              0.30813953466963967,
+              0.159550562123687,
+              0.02180232580970315,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Trim"
+          },
+          {
+            "bounds": [
+              0.5319411837881153,
+              0.15712109741252878,
+              0.03350135298336243,
+              0.016094884005459886
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Speed"
+          },
+          {
+            "bounds": [
+              0.6424418606146935,
+              0.31910112363342036,
+              0.0188953483805937,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.8036670635821047,
+              0.9587180900119138,
+              0.046735640133128475,
+              0.017395280707966254
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.7834210457342926,
+              0.892087413815281,
+              0.02908814093645884,
+              0.013577981428666508
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.7921511624166887,
+              0.8494382023637576,
+              0.027616279265459842,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.7819767436522144,
+              0.8000000002908217,
+              0.024709303238812597,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Frame"
+          },
+          {
+            "bounds": [
+              0.7921118654944327,
+              0.7525631945860558,
+              0.04659022162942328,
+              0.0184691169045188
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "[]] Radius"
+          },
+          {
+            "bounds": [
+              0.7935710484213384,
+              0.6941030789676725,
+              0.05384627510519591,
+              0.01628822467543878
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u2022 Shadow"
+          },
+          {
+            "bounds": [
+              0.7819767443483401,
+              0.6449438202546083,
+              0.030523255292107088,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Padding"
+          },
+          {
+            "bounds": [
+              0.8020815295931077,
+              0.598090708875145,
+              0.04270351353813617,
+              0.01694167960773818
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Padding"
+          },
+          {
+            "bounds": [
+              0.7805232555455865,
+              0.5414772726150234,
+              0.055232558530919684,
+              0.011363636363636465
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Link all sides"
+          },
+          {
+            "bounds": [
+              0.7805232559217319,
+              0.49213483182874307,
+              0.0377906967611874,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Animation"
+          },
+          {
+            "bounds": [
+              0.8081395350887509,
+              0.44494382023855683,
+              0.05377906911513386,
+              0.013483146103945742
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Smoothness"
+          },
+          {
+            "bounds": [
+              0.7558139538177998,
+              0.31910112362909904,
+              0.02034883639391727,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8706395343421424,
+              0.9595505620998084,
+              0.04796511706183948,
+              0.015730336579409476
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.9549418597727493,
+              0.9595505618131958,
+              0.029069768681245667,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.8938953501343817,
+              0.84719101150941,
+              0.0508720902835621,
+              0.015730336579409476
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Background"
+          },
+          {
+            "bounds": [
+              0.9694767441378335,
+              0.7550561799255553,
+              0.008720930183635067,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "8"
+          },
+          {
+            "bounds": [
+              0.9622093021151781,
+              0.6966292137950352,
+              0.015988372353946456,
+              0.011235954544761118
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.3"
+          },
+          {
+            "bounds": [
+              0.965116279200009,
+              0.6000000000660046,
+              0.013081394924837064,
+              0.013483146103945742
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "20"
+          },
+          {
+            "bounds": [
+              0.9622093026523667,
+              0.4449438202813605,
+              0.014534882938160631,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5"
+          },
+          {
+            "bounds": [
+              0.8691860468224213,
+              0.31910112365214693,
+              0.02034883639391727,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-final-ocr.json"
+    },
+    {
+      "panel": "Frame",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-minimum-final.log",
+      "snapshot": "test-output/gpui-editor-minimum-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-minimum-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.26017441940024605,
+              0.8661087872430939,
+              0.03779069550183356,
+              0.018828450932222185
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.026133461217757406,
+              0.8262104427986464,
+              0.030581914162149233,
+              0.012851081174962697
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.026162791147364188,
+              0.7384937242917697,
+              0.03197674264713209,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.02034883699824583,
+              0.6485355651928457,
+              0.042151163062270805,
+              0.012552300621481383
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.01889534817436399,
+              0.5564853554779937,
+              0.043604652249083234,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.07994186120803685,
+              0.5564853554339584,
+              0.12209302162637516,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.0784883720124441,
+              0.46617647088112635,
+              0.11046511591697225,
+              0.02132352941176474
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.11482558145208613,
+              0.4163179922455583,
+              0.01308139489621532,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Os"
+          },
+          {
+            "bounds": [
+              0.11046511674212585,
+              0.37029288682258166,
+              0.08139534775091677,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.2616279068307581,
+              0.4644351472864683,
+              0.04796511591697222,
+              0.025270735516267684
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.2122093026857086,
+              0.4142259419211678,
+              0.02616278979243064,
+              0.016736400828641917
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.021802326352765404,
+              0.36820083731180664,
+              0.037790695501833546,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.020348837493306994,
+              0.2719665277493938,
+              0.02906976621978137,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.02034883712706564,
+              0.20292887100355417,
+              0.0203488369377292,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.2209302330069367,
+              0.2719665276883757,
+              0.03924418468864599,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.11912413722703144,
+              0.1104016590947835,
+              0.06843777092135683,
+              0.019782456229714862
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Position"
+          },
+          {
+            "bounds": [
+              0.011627914502926467,
+              0.01882845166252911,
+              0.2645348685128348,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.3766860462193593,
+              0.8623003092148495,
+              0.031744186245665273,
+              0.024604401868932424
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Crop"
+          },
+          {
+            "bounds": [
+              0.4578488353191524,
+              0.9476987445620592,
+              0.08284884083027749,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.43747252519043406,
+              0.8679957482003345,
+              0.05964797272974126,
+              0.01714657895705274
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.32267441830470983,
+              0.41422594213326136,
+              0.02761627897924307,
+              0.018828450932222185
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.0s"
+          },
+          {
+            "bounds": [
+              0.32267441806118624,
+              0.20711297134300122,
+              0.03633721020756936,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u2022 Trim"
+          },
+          {
+            "bounds": [
+              0.54211077370391,
+              0.2027354012450644,
+              0.048045894077845985,
+              0.021307440365062047
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "peeds"
+          },
+          {
+            "bounds": [
+              0.6482558138957951,
+              0.4142259412135971,
+              0.027616278979243125,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.7281631933834779,
+              0.9474781718007513,
+              0.06402244957125913,
+              0.021361648335176286
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.8415697679470763,
+              0.9497907956107836,
+              0.04505813754334742,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.6976040174505876,
+              0.8595008182968039,
+              0.04229196431685467,
+              0.019492087644689238
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.7107100928541282,
+              0.8052229136566408,
+              0.03788213924485806,
+              0.017169235734378563
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.6971710715129456,
+              0.7407321569194965,
+              0.032926882529745294,
+              0.01723324270809401
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Frame"
+          },
+          {
+            "bounds": [
+              0.7325189160230559,
+              0.6818013512247478,
+              0.04222960958675459,
+              0.01715043572818531
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Radius"
+          },
+          {
+            "bounds": [
+              0.9375000006032302,
+              0.9476987445831808,
+              0.03924418468864599,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.8531976727164914,
+              0.8012552299746716,
+              0.06831395674724972,
+              0.02092050243826482
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Background"
+          },
+          {
+            "bounds": [
+              0.7122093024792179,
+              0.6046025110700515,
+              0.013081394896215404,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "O"
+          },
+          {
+            "bounds": [
+              0.9578488371924089,
+              0.6820083687628059,
+              0.010174418468864577,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "8"
+          },
+          {
+            "bounds": [
+              0.7337036301540569,
+              0.6044065913600032,
+              0.05162958028365161,
+              0.01809094372917619
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Shadow"
+          },
+          {
+            "bounds": [
+              0.9476744191914023,
+              0.6046025111238471,
+              0.018895347750916724,
+              0.018828450932222185
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.3"
+          },
+          {
+            "bounds": [
+              0.7587209300164474,
+              0.4142259412135971,
+              0.024709302551892298,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8677325584952577,
+              0.41213389106592135,
+              0.026162789792430585,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-minimum-final-ocr.json"
+    },
+    {
+      "panel": "Cursor",
+      "size": "980x680",
+      "language": "fr",
+      "status": "passed",
+      "log": "test-output/gpui-ui-french-final.log",
+      "snapshot": "test-output/gpui-editor-french-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Curseur",
+          "Webcam",
+          "Sous-titres",
+          "Exporter",
+          "Open projects",
+          "Enregistrer",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-french-final.png",
+        "language": "fr",
+        "matched_labels": [
+          "Curseur",
+          "Webcam",
+          "Sous-titres",
+          "Exporter",
+          "Enregistrer",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.2601427904990739,
+              0.8659764530087242,
+              0.03785395330312297,
+              0.01909311939688285
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.026122539932349486,
+              0.8261841503114993,
+              0.03060375719654317,
+              0.0149957165998571
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Sc\u00e8ne"
+          },
+          {
+            "bounds": [
+              0.023255814661873934,
+              0.7384937242917697,
+              0.037790695501833546,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Curseur"
+          },
+          {
+            "bounds": [
+              0.020284450357739646,
+              0.648071127201554,
+              0.04227993634282327,
+              0.013481176600736777
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.01596861597700672,
+              0.5605259265878778,
+              0.05091160365513393,
+              0.014931410901686815
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Sous-titres"
+          },
+          {
+            "bounds": [
+              0.07994186120803685,
+              0.5564853554339584,
+              0.12209302162637516,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.021802326352765404,
+              0.36820083731180664,
+              0.037790695501833546,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.0784883720124441,
+              0.46617647088112635,
+              0.11046511591697225,
+              0.02132352941176474
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.11482558145208613,
+              0.4163179922455583,
+              0.01308139489621532,
+              0.014644350725061761
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "Os"
+          },
+          {
+            "bounds": [
+              0.11046511674212585,
+              0.37029288682258166,
+              0.08139534775091677,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.2616279068307581,
+              0.4644351472864683,
+              0.04796511591697222,
+              0.025270735516267684
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.2122093026857086,
+              0.4142259419211678,
+              0.02616278979243064,
+              0.016736400828641917
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.020348837493306994,
+              0.2719665277493938,
+              0.02906976621978137,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.02034883712706564,
+              0.20292887100355417,
+              0.0203488369377292,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.2209302330069367,
+              0.2719665276883757,
+              0.03924418468864599,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.11912413722703144,
+              0.1104016590947835,
+              0.06843777092135683,
+              0.019782456229714862
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "Position"
+          },
+          {
+            "bounds": [
+              0.011627914502926467,
+              0.01882845166252911,
+              0.2645348685128348,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.32267441830470983,
+              0.41422594213326136,
+              0.02761627897924307,
+              0.018828450932222185
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "1.0s"
+          },
+          {
+            "bounds": [
+              0.32267441806118624,
+              0.20711297134300122,
+              0.03633721020756936,
+              0.01673640082864203
+            ],
+            "confidence": 0.30000001192092896,
+            "in_editor_chrome": false,
+            "text": "\u2022 Trim"
+          },
+          {
+            "bounds": [
+              0.44331395160256737,
+              0.9476987445610716,
+              0.08284884083027744,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.43744174486538856,
+              0.8677599052436935,
+              0.0597095333800024,
+              0.0176182648714851
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.54211077370391,
+              0.2027354012450644,
+              0.048045894077845985,
+              0.021307440365062047
+            ],
+            "confidence": 0.30000001192092896,
+            "in_editor_chrome": false,
+            "text": "peeds"
+          },
+          {
+            "bounds": [
+              0.6482558138957951,
+              0.4142259412135971,
+              0.027616278979243125,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.6974993993267273,
+              0.9452127636817944,
+              0.08608185125856982,
+              0.022660342384787202
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": true,
+            "text": "\u2022 Enregistrer"
+          },
+          {
+            "bounds": [
+              0.6976437183012837,
+              0.8596742902124599,
+              0.04657302778594352,
+              0.019145143733305003
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.6991279059039411,
+              0.8198529409467492,
+              0.07994186245665258,
+              0.01696714303072766
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Motion presets"
+          },
+          {
+            "bounds": [
+              0.7121811238697769,
+              0.7613373627836639,
+              0.04802147223024944,
+              0.017074228735531105
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Focused"
+          },
+          {
+            "bounds": [
+              0.6990798541782369,
+              0.698437936130174,
+              0.037886802517637874,
+              0.013165969007155387
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Curseur"
+          },
+          {
+            "bounds": [
+              0.6976744171919612,
+              0.6359832634000957,
+              0.10174418858119416,
+              0.019163795078501966
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Afficher le curseur"
+          },
+          {
+            "bounds": [
+              0.6976744189540629,
+              0.5732217580595047,
+              0.0290697662197813,
+              0.020920501035802452
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Style"
+          },
+          {
+            "bounds": [
+              0.8328488365813692,
+              0.9476987445831808,
+              0.043604652249083276,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.927325582308243,
+              0.9476987454020898,
+              0.05087209039804885,
+              0.018828450932222185
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": true,
+            "text": "Exporter"
+          },
+          {
+            "bounds": [
+              0.790492615894865,
+              0.758795201423461,
+              0.045428782093281606,
+              0.01864617572111238
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Smooth"
+          },
+          {
+            "bounds": [
+              0.7587209300164474,
+              0.4142259412135971,
+              0.024709302551892298,
+              0.016736402231104175
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8677325584952577,
+              0.41213389106592135,
+              0.026162789792430585,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-french-final-ocr.json"
+    },
+    {
+      "panel": "Crop",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-crop-final.log",
+      "snapshot": "test-output/gpui-editor-crop-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-crop-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.26017441937117625,
+              0.8661087872744746,
+              0.03779069550183356,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.02616279059612172,
+              0.8263598330783806,
+              0.030523255406593786,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.02614329142661488,
+              0.7363129852480204,
+              0.03201574208785077,
+              0.014821728538064405
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.020284450357739646,
+              0.648071127201554,
+              0.04227993634282327,
+              0.013481176600736777
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.03633720937675328,
+              0.606694560648279,
+              0.011627906682539955,
+              0.0104602512191323
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "ccI"
+          },
+          {
+            "bounds": [
+              0.01889534817436399,
+              0.5564853554779937,
+              0.043604652249083234,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.07994186120716126,
+              0.5585774055889707,
+              0.12209302162637517,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.021802326352765404,
+              0.36820083731180664,
+              0.037790695501833546,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.0784883720124441,
+              0.46617647088112635,
+              0.11046511591697225,
+              0.02132352941176474
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.11482558145208613,
+              0.4163179922455583,
+              0.01308139489621532,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Os"
+          },
+          {
+            "bounds": [
+              0.11046511674212585,
+              0.37029288682258166,
+              0.08139534775091677,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.2616279068307581,
+              0.4644351472864683,
+              0.04796511591697222,
+              0.025270735516267684
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.2122093026857086,
+              0.4142259419211678,
+              0.02616278979243064,
+              0.016736400828641917
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.020348837493306994,
+              0.2719665277493938,
+              0.02906976621978137,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.02034883712706564,
+              0.20292887100355417,
+              0.0203488369377292,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.2209302330069367,
+              0.2719665276883757,
+              0.03924418468864599,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.11912413722703144,
+              0.1104016590947835,
+              0.06843777092135683,
+              0.019782456229714862
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Position"
+          },
+          {
+            "bounds": [
+              0.011627914502926467,
+              0.01882845166252911,
+              0.2645348685128348,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.32267441830470983,
+              0.41422594213326136,
+              0.02761627897924307,
+              0.018828450932222185
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.0s"
+          },
+          {
+            "bounds": [
+              0.32267441806118624,
+              0.20711297134300122,
+              0.03633721020756936,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u2022 Trim"
+          },
+          {
+            "bounds": [
+              0.45058139563826033,
+              0.9476987445586645,
+              0.0959302318339445,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.4374530390940468,
+              0.8678472176333032,
+              0.05968694492262239,
+              0.01744364009183985
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.54211077370391,
+              0.2027354012450644,
+              0.048045894077845985,
+              0.021307440365062047
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "peeds"
+          },
+          {
+            "bounds": [
+              0.6482558138957951,
+              0.4142259412135971,
+              0.027616278979243125,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.7266360952604632,
+              0.9469914303507534,
+              0.06416966963787474,
+              0.02233513172935031
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.8429871346924176,
+              0.9516643777337359,
+              0.042223404864875635,
+              0.015081286430358887
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.9375000007374553,
+              0.9476987455072033,
+              0.03779069550183356,
+              0.020920501035802563
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.8212209297866303,
+              0.7782426783862368,
+              0.03197674459340627,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Done"
+          },
+          {
+            "bounds": [
+              0.7107558135629315,
+              0.7007352943489586,
+              0.03197674459340616,
+              0.019117647058823573
+            ],
+            "confidence": 0.30000001192092896,
+            "in_editor_chrome": false,
+            "text": "* x"
+          },
+          {
+            "bounds": [
+              0.7107558135883099,
+              0.6234309622217791,
+              0.03197674459340616,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "% y"
+          },
+          {
+            "bounds": [
+              0.7587209300164474,
+              0.4142259412135971,
+              0.024709302551892298,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8677325584952577,
+              0.41213389106592135,
+              0.026162789792430585,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-crop-final-ocr.json"
+    },
+    {
+      "panel": "Wallpapers",
+      "size": "1360x880",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-background-final.log",
+      "snapshot": "test-output/gpui-editor-background-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-background-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.06395348869080342,
+              0.957303371198589,
+              0.014534882938160618,
+              0.020224718614058057
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "c\u0440"
+          },
+          {
+            "bounds": [
+              0.01857360594769188,
+              0.8636988602622185,
+              0.02377901077270508,
+              0.011943619901483737
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.01744185993582625,
+              0.7955056182662844,
+              0.024709303238812614,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.014534883864456298,
+              0.728089887939374,
+              0.03052325529210708,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.014527008520439392,
+              0.6583822644643429,
+              0.031992494358735926,
+              0.013572549819946378
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.01889534865038098,
+              0.5910112362482187,
+              0.021802325809703153,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Audio"
+          },
+          {
+            "bounds": [
+              0.014366239262117119,
+              0.4836346128218024,
+              0.03090064385358025,
+              0.013249953226609601
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Settings"
+          },
+          {
+            "bounds": [
+              0.02034883723775548,
+              0.41573033722892616,
+              0.01889534838059369,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Help"
+          },
+          {
+            "bounds": [
+              0.023255814080701653,
+              0.35955056192321233,
+              0.013081394924837002,
+              0.0179775281385941
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Q"
+          },
+          {
+            "bounds": [
+              0.014534884213002182,
+              0.2831460675322969,
+              0.02906976587632123,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.014534883528910882,
+              0.20898876434078162,
+              0.021802325809703153,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.014534883426951192,
+              0.15730337093679114,
+              0.015988372353946463,
+              0.013483146103945742
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.058139533832584474,
+              0.4312499999075504,
+              0.08866279265459848,
+              0.013693820346485475
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.05782506406283932,
+              0.3569991192557854,
+              0.07907070272109087,
+              0.02099068598313769
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.07994186143613466,
+              0.28764044943722344,
+              0.05959302116842832,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.08420106067611106,
+              0.08232304351474196,
+              0.05107462265912223,
+              0.017376384951851676
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u00ab Position"
+          },
+          {
+            "bounds": [
+              0.0087209296525722,
+              0.015730337073869838,
+              0.18895348941578585,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.21075581710865943,
+              0.8314606743637576,
+              0.0639534838059369,
+              0.01348314610394552
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00:00.000"
+          },
+          {
+            "bounds": [
+              0.18168604659925566,
+              0.3617977531896961,
+              0.042151162203620446,
+              0.015730336579409587
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.1889534884954267,
+              0.31910112365214693,
+              0.018895348380593674,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.1918604651107294,
+              0.208988764251398,
+              0.030523255292107088,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.4708036742205587,
+              0.9605560124130839,
+              0.059806885438806856,
+              0.0137210748412393
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.45639534905807344,
+              0.8965909088340932,
+              0.042151162203620474,
+              0.013636363636363669
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.3241279071564431,
+              0.8966292135045374,
+              0.030523255292107088,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.41279069745125313,
+              0.8966292135322969,
+              0.02180232580970315,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Crop"
+          },
+          {
+            "bounds": [
+              0.316860466589217,
+              0.7750000000546524,
+              0.12063953175264247,
+              0.022752808440815286
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native SubTake"
+          },
+          {
+            "bounds": [
+              0.3023255815186825,
+              0.31910112365214693,
+              0.0188953483805937,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.Os"
+          },
+          {
+            "bounds": [
+              0.41569767454193834,
+              0.31910112365214693,
+              0.0188953483805937,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.5s"
+          },
+          {
+            "bounds": [
+              0.5285662560246465,
+              0.3197833365141036,
+              0.01974284508649038,
+              0.014393326369198878
+            ],
+            "confidence": 0.30000001192092896,
+            "in_editor_chrome": false,
+            "text": "S0\u00b0Z"
+          },
+          {
+            "bounds": [
+              0.30813953466963967,
+              0.159550562123687,
+              0.02180232580970315,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Trim"
+          },
+          {
+            "bounds": [
+              0.5319411837881153,
+              0.15712109741252878,
+              0.03350135298336243,
+              0.016094884005459886
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Speed"
+          },
+          {
+            "bounds": [
+              0.6424418606146935,
+              0.31910112363342036,
+              0.0188953483805937,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.8051437014284918,
+              0.9589190129707954,
+              0.04523585263420549,
+              0.01699343486265703
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.8706395343314142,
+              0.9595505621035537,
+              0.04796511706183948,
+              0.015730336579409476
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.8095930224656008,
+              0.8808988764035155,
+              0.05668604794670551,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Background"
+          },
+          {
+            "bounds": [
+              0.7921511627786513,
+              0.8269662926466248,
+              0.026162789849674017,
+              0.015730336579409476
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.7834302325494428,
+              0.7795454545936078,
+              0.08575581382302677,
+              0.013712972402572632
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a background"
+          },
+          {
+            "bounds": [
+              0.7819767443742953,
+              0.7483146070240347,
+              0.030523255292107088,
+              0.011235954544760896
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "bluerays"
+          },
+          {
+            "bounds": [
+              0.8386627907228462,
+              0.746067415740162,
+              0.03488372073454016,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "cherrypop"
+          },
+          {
+            "bounds": [
+              0.7816543630719259,
+              0.6540708723132875,
+              0.03565818001242238,
+              0.016338807886297047
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "energy 17"
+          },
+          {
+            "bounds": [
+              0.838662790878577,
+              0.656179775358942,
+              0.03488372073454016,
+              0.013706588203256875
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "energy 19"
+          },
+          {
+            "bounds": [
+              0.9549418597765742,
+              0.9595505618149698,
+              0.029069768681245667,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.8938825000482584,
+              0.8268665095913894,
+              0.0508977890014648,
+              0.015929902683604835
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Background"
+          },
+          {
+            "bounds": [
+              0.8938953488623811,
+              0.7483146070228187,
+              0.03488372073454016,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "cityscape"
+          },
+          {
+            "bounds": [
+              0.8938953483405347,
+              0.6561797755590801,
+              0.036337210150326094,
+              0.011235954544760896
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "tarmvalley"
+          },
+          {
+            "bounds": [
+              0.781976744246178,
+              0.5662921351052925,
+              0.046511627646053544,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "glassmorphis"
+          },
+          {
+            "bounds": [
+              0.781976743975643,
+              0.5482954544555148,
+              0.015988372353946456,
+              0.011363636363636243
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "m 3"
+          },
+          {
+            "bounds": [
+              0.8372093018615222,
+              0.5662921351052925,
+              0.04796511706183937,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "glassmorphis"
+          },
+          {
+            "bounds": [
+              0.8372093021297129,
+              0.5483146070534622,
+              0.015988372353946456,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "m4"
+          },
+          {
+            "bounds": [
+              0.8938953494168429,
+              0.5573033710615987,
+              0.04505813823026761,
+              0.011446628787300739
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "ipad 17 dark"
+          },
+          {
+            "bounds": [
+              0.7819767438825582,
+              0.4561797752858807,
+              0.0436046516194063,
+              0.013706588203256764
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "ipad 17 light"
+          },
+          {
+            "bounds": [
+              0.8386627900379229,
+              0.4584269665679084,
+              0.04069767559275905,
+              0.011459397185932474
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "iridescent 9"
+          },
+          {
+            "bounds": [
+              0.8938953483336133,
+              0.4584269665745965,
+              0.03633721015032598,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "lemonade"
+          },
+          {
+            "bounds": [
+              0.9636627906430806,
+              0.3595505619531748,
+              0.011627906911513386,
+              0.017977528138594212
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Q"
+          },
+          {
+            "bounds": [
+              0.7558139537870529,
+              0.31910112366151033,
+              0.02034883639391727,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8706395350070546,
+              0.31910112365214693,
+              0.0188953483805937,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-background-final-ocr.json"
+    },
+    {
+      "panel": "Export",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-export-final.log",
+      "snapshot": "test-output/gpui-editor-export-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-export-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.2601427904990739,
+              0.8659764530087242,
+              0.03785395330312297,
+              0.01909311939688285
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.02616279059612172,
+              0.8263598330783806,
+              0.030523255406593786,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.026162791147364188,
+              0.7384937242917697,
+              0.03197674264713209,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.020284450357739646,
+              0.648071127201554,
+              0.04227993634282327,
+              0.013481176600736777
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.02034883695087767,
+              0.5585774056313098,
+              0.04215116306227081,
+              0.016736402231104286
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.07994186120803685,
+              0.5564853554339584,
+              0.12209302162637516,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.021802326352765404,
+              0.36820083731180664,
+              0.037790695501833546,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.0784883720124441,
+              0.46617647088112635,
+              0.11046511591697225,
+              0.02132352941176474
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.11482558145208613,
+              0.4163179922455583,
+              0.01308139489621532,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Os"
+          },
+          {
+            "bounds": [
+              0.11046511674212585,
+              0.37029288682258166,
+              0.08139534775091677,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.2616279068307581,
+              0.4644351472864683,
+              0.04796511591697222,
+              0.025270735516267684
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.2122093026857086,
+              0.4142259419211678,
+              0.02616278979243064,
+              0.016736400828641917
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.020348837493306994,
+              0.2719665277493938,
+              0.02906976621978137,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.02034883712706564,
+              0.20292887100355417,
+              0.0203488369377292,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.2209302330069367,
+              0.2719665276883757,
+              0.03924418468864599,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.11912413722703144,
+              0.1104016590947835,
+              0.06843777092135683,
+              0.019782456229714862
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Position"
+          },
+          {
+            "bounds": [
+              0.011627914502926467,
+              0.01882845166252911,
+              0.2645348685128348,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.45639534849296176,
+              0.947698744560766,
+              0.08430232612454164,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.3766860462193593,
+              0.8623003092148495,
+              0.031744186245665273,
+              0.024604401868932424
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Crop"
+          },
+          {
+            "bounds": [
+              0.43745487443053227,
+              0.8678613334156138,
+              0.05968327424964126,
+              0.017415408527149845
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.32267441830470983,
+              0.41422594213326136,
+              0.02761627897924307,
+              0.018828450932222185
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.0s"
+          },
+          {
+            "bounds": [
+              0.32267441806118624,
+              0.20711297134300122,
+              0.03633721020756936,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u2022 Trim"
+          },
+          {
+            "bounds": [
+              0.54211077370391,
+              0.2027354012450644,
+              0.048045894077845985,
+              0.021307440365062047
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "peeds"
+          },
+          {
+            "bounds": [
+              0.7252120147602851,
+              0.9471886068562094,
+              0.06411085323411592,
+              0.02194077828351193
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.8401162784478905,
+              0.9476987445831808,
+              0.043604652249083276,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.9360465122341654,
+              0.9476987445816117,
+              0.03924418468864599,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.6974267146320308,
+              0.8574348913529453,
+              0.045457563594895944,
+              0.0204463930690989
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.6991279066553976,
+              0.8200836823493816,
+              0.04941860510378471,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Resolution"
+          },
+          {
+            "bounds": [
+              0.821673656267835,
+              0.754115111926808,
+              0.03251286720742985,
+              0.02296190121594599
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "720p"
+          },
+          {
+            "bounds": [
+              0.8197674409132741,
+              0.6778242676616208,
+              0.03779069939438173,
+              0.0209205024382646
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1080p"
+          },
+          {
+            "bounds": [
+              0.8023255804006597,
+              0.5750000000945555,
+              0.07267442041513872,
+              0.019142259569729037
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Export video"
+          },
+          {
+            "bounds": [
+              0.6482558138957951,
+              0.4142259412135971,
+              0.027616278979243125,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.7587209300164474,
+              0.4142259412135971,
+              0.024709302551892298,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8677325584952577,
+              0.41213389106592135,
+              0.026162789792430585,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-export-final-ocr.json"
+    },
+    {
+      "panel": "Presets",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-presets-final.log",
+      "snapshot": "test-output/gpui-editor-presets-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-presets-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.2601427904990739,
+              0.8659764530087242,
+              0.03785395330312297,
+              0.01909311939688285
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.02616279059612172,
+              0.8263598330783806,
+              0.030523255406593786,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.026162791147364188,
+              0.7384937242917697,
+              0.03197674264713209,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.020284450357739646,
+              0.648071127201554,
+              0.04227993634282327,
+              0.013481176600736777
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.02034883695087767,
+              0.5585774056313098,
+              0.04215116306227081,
+              0.016736402231104286
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.07994186120803685,
+              0.5564853554339584,
+              0.12209302162637516,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.021802326352765404,
+              0.36820083731180664,
+              0.037790695501833546,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.0784883720124441,
+              0.46617647088112635,
+              0.11046511591697225,
+              0.02132352941176474
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.11482558145208613,
+              0.4163179922455583,
+              0.01308139489621532,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Os"
+          },
+          {
+            "bounds": [
+              0.11046511674212585,
+              0.37029288682258166,
+              0.08139534775091677,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.2616279068307581,
+              0.4644351472864683,
+              0.04796511591697222,
+              0.025270735516267684
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.2122093026857086,
+              0.4142259419211678,
+              0.02616278979243064,
+              0.016736400828641917
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.020348837493306994,
+              0.2719665277493938,
+              0.02906976621978137,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.02034883712706564,
+              0.20292887100355417,
+              0.0203488369377292,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.2209302330069367,
+              0.2719665276883757,
+              0.03924418468864599,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.11912413722703144,
+              0.1104016590947835,
+              0.06843777092135683,
+              0.019782456229714862
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Position"
+          },
+          {
+            "bounds": [
+              0.011627914502926467,
+              0.01882845166252911,
+              0.2645348685128348,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.45639534849296176,
+              0.947698744560766,
+              0.08430232612454164,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.3766860462193593,
+              0.8623003092148495,
+              0.031744186245665273,
+              0.024604401868932424
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Crop"
+          },
+          {
+            "bounds": [
+              0.43745487443053227,
+              0.8678613334156138,
+              0.05968327424964126,
+              0.017415408527149845
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.32267441830470983,
+              0.41422594213326136,
+              0.02761627897924307,
+              0.018828450932222185
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.0s"
+          },
+          {
+            "bounds": [
+              0.32267441806118624,
+              0.20711297134300122,
+              0.03633721020756936,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u2022 Trim"
+          },
+          {
+            "bounds": [
+              0.54211077370391,
+              0.2027354012450644,
+              0.048045894077845985,
+              0.021307440365062047
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "peeds"
+          },
+          {
+            "bounds": [
+              0.6482558138957951,
+              0.4142259412135971,
+              0.027616278979243125,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.7252906967825629,
+              0.9476987447711047,
+              0.06395348918681243,
+              0.02092050243826471
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.8415208059534632,
+              0.9515746728912966,
+              0.043702573192362815,
+              0.015260696411132812
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.9375000006032302,
+              0.9476987445831808,
+              0.03924418468864599,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.7339252924174486,
+              0.8446928049395869,
+              0.05104476383754186,
+              0.019819411109475493
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.699127906723021,
+              0.7948529410265226,
+              0.07703488408302772,
+              0.01477049028172206
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a look"
+          },
+          {
+            "bounds": [
+              0.7107338529333894,
+              0.7321258696833624,
+              0.03783461901606344,
+              0.01901185933281402
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Studio"
+          },
+          {
+            "bounds": [
+              0.6991279059010341,
+              0.671323529396227,
+              0.07994186245665258,
+              0.016960989727693443
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Motion presets"
+          },
+          {
+            "bounds": [
+              0.7105685105211844,
+              0.6116599772568199,
+              0.04975062779017858,
+              0.017641594830681395
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Focused"
+          },
+          {
+            "bounds": [
+              0.7776162791781417,
+              0.7322175729700195,
+              0.04796511591697228,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Minimal"
+          },
+          {
+            "bounds": [
+              0.8531976739838328,
+              0.7322175729895153,
+              0.029069768166055443,
+              0.016736402231104286
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Bold"
+          },
+          {
+            "bounds": [
+              0.7906976756869017,
+              0.6108786617985331,
+              0.04505813754334742,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Smooth"
+          },
+          {
+            "bounds": [
+              0.7587209300164474,
+              0.4142259412135971,
+              0.024709302551892298,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8677325584952577,
+              0.41213389106592135,
+              0.026162789792430585,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-presets-final-ocr.json"
+    },
+    {
+      "panel": "Captions",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-captions-final.log",
+      "snapshot": "test-output/gpui-editor-captions-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-captions-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.25872093060625845,
+              0.8661087872744746,
+              0.03924418468864593,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.2645348827882742,
+              0.8054393304791716,
+              0.03779069939438179,
+              0.01046025121913241
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "DA:0A:0A.090"
+          },
+          {
+            "bounds": [
+              0.02616279059612172,
+              0.8263598330783806,
+              0.030523255406593786,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.026143296843542753,
+              0.7363089517665662,
+              0.0334692195970185,
+              0.0148297962020425
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor |"
+          },
+          {
+            "bounds": [
+              0.02034883699545805,
+              0.6485355651936758,
+              0.04215116306227081,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.02034883695087767,
+              0.5585774056313098,
+              0.04215116306227081,
+              0.016736402231104286
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.07994186120803685,
+              0.5564853554339584,
+              0.12209302162637516,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.021802326352765404,
+              0.36820083731180664,
+              0.037790695501833546,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.0784883720124441,
+              0.46617647088112635,
+              0.11046511591697225,
+              0.02132352941176474
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.11482558145208613,
+              0.4163179922455583,
+              0.01308139489621532,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Os"
+          },
+          {
+            "bounds": [
+              0.11046511674212585,
+              0.37029288682258166,
+              0.08139534775091677,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.2616279068307581,
+              0.4644351472864683,
+              0.04796511591697222,
+              0.025270735516267684
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.2122093026857086,
+              0.4142259419211678,
+              0.02616278979243064,
+              0.016736400828641917
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.2209302330069367,
+              0.2719665276883757,
+              0.03924418468864599,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.020348837493306994,
+              0.2719665277493938,
+              0.02906976621978137,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.02034883712706564,
+              0.20292887100355417,
+              0.0203488369377292,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.11912413722703144,
+              0.1104016590947835,
+              0.06843777092135683,
+              0.019782456229714862
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Position"
+          },
+          {
+            "bounds": [
+              0.011627914502926467,
+              0.01882845166252911,
+              0.2645348685128348,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.37770348836898787,
+              0.8623003093089705,
+              0.030726744204151335,
+              0.02439519657808198
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Crop"
+          },
+          {
+            "bounds": [
+              0.4563953484873714,
+              0.9476987445620592,
+              0.08430232612454158,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.43747518185459405,
+              0.868015786580628,
+              0.059642659401407006,
+              0.017106502196368112
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.32412790680693865,
+              0.7779411761239676,
+              0.06976744204151386,
+              0.01285380265291991
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native SubTake"
+          },
+          {
+            "bounds": [
+              0.32703488394339353,
+              0.5585774064675411,
+              0.01453488310989065,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "K"
+          },
+          {
+            "bounds": [
+              0.32267441830470983,
+              0.41422594213326136,
+              0.02761627897924307,
+              0.018828450932222185
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.0s"
+          },
+          {
+            "bounds": [
+              0.32267441806118624,
+              0.20711297134300122,
+              0.03633721020756936,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u2022 Trim"
+          },
+          {
+            "bounds": [
+              0.54211077370391,
+              0.2027354012450644,
+              0.048045894077845985,
+              0.021307440365062047
+            ],
+            "confidence": 0.5,
+            "in_editor_chrome": false,
+            "text": "peeds"
+          },
+          {
+            "bounds": [
+              0.6482558138957951,
+              0.4142259412135971,
+              0.027616278979243125,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.7281726931472934,
+              0.9475393850688698,
+              0.0640034500433474,
+              0.021239222498501076
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.8415697679470763,
+              0.9497907956107836,
+              0.04505813754334742,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.9375000006062584,
+              0.9476987445816117,
+              0.03924418468864599,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.6976606338366431,
+              0.8576589448142039,
+              0.0596205925454899,
+              0.02108378410339362
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.6991279077011712,
+              0.8179916321910383,
+              0.05959302162637514,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Transcription"
+          },
+          {
+            "bounds": [
+              0.6976744172847565,
+              0.7719665270001526,
+              0.0944767465396803,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Speech language"
+          },
+          {
+            "bounds": [
+              0.7092141497152182,
+              0.7231623985375768,
+              0.06849030475227202,
+              0.020202399702633045
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Auto detect"
+          },
+          {
+            "bounds": [
+              0.7093023246940016,
+              0.575000000091337,
+              0.06540697837362486,
+              0.019142259569729148
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Import SRT"
+          },
+          {
+            "bounds": [
+              0.7688953485827211,
+              0.6463235295771775,
+              0.13953488408302772,
+              0.019117647058823573
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Download Whisper Small"
+          },
+          {
+            "bounds": [
+              0.8052059217738871,
+              0.5772296319784929,
+              0.059646295041454134,
+              0.019180903715245834
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Transcribe"
+          },
+          {
+            "bounds": [
+              0.7587209300164474,
+              0.4142259412135971,
+              0.024709302551892298,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8677325584952577,
+              0.41213389106592135,
+              0.026162789792430585,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-captions-final-ocr.json"
+    },
+    {
+      "panel": "Preferences",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-settings-final.log",
+      "snapshot": "test-output/gpui-editor-settings-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-settings-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.26017441937117625,
+              0.8661087872744746,
+              0.03779069550183356,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native"
+          },
+          {
+            "bounds": [
+              0.2645348827882742,
+              0.8054393304791716,
+              0.03779069939438179,
+              0.01046025121913241
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "DA:0A:0A.090"
+          },
+          {
+            "bounds": [
+              0.02616279059612172,
+              0.8263598330783806,
+              0.030523255406593786,
+              0.012552300621481494
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.026143296843542753,
+              0.7363089517665662,
+              0.0334692195970185,
+              0.0148297962020425
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor |"
+          },
+          {
+            "bounds": [
+              0.020284450357739646,
+              0.648071127201554,
+              0.04227993634282327,
+              0.013481176600736777
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.03633720937675328,
+              0.606694560648279,
+              0.011627906682539955,
+              0.0104602512191323
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "ccI"
+          },
+          {
+            "bounds": [
+              0.01889534817436399,
+              0.5564853554779937,
+              0.043604652249083234,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.07994186120803685,
+              0.5564853554339584,
+              0.12209302162637516,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "00:00.000 / 00:04.000"
+          },
+          {
+            "bounds": [
+              0.0784883720124441,
+              0.46617647088112635,
+              0.11046511591697225,
+              0.02132352941176474
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "** Suggest zooms"
+          },
+          {
+            "bounds": [
+              0.11482558145208613,
+              0.4163179922455583,
+              0.01308139489621532,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Os"
+          },
+          {
+            "bounds": [
+              0.11046511674212585,
+              0.37029288682258166,
+              0.08139534775091677,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.2616279068307581,
+              0.4644351472864683,
+              0.04796511591697222,
+              0.025270735516267684
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "+ Add"
+          },
+          {
+            "bounds": [
+              0.2122093026857086,
+              0.4142259419211678,
+              0.02616278979243064,
+              0.016736400828641917
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "0.5s"
+          },
+          {
+            "bounds": [
+              0.021802326352765404,
+              0.36820083731180664,
+              0.037790695501833546,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Source"
+          },
+          {
+            "bounds": [
+              0.020348837493306994,
+              0.2719665277493938,
+              0.02906976621978137,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.02034883712706564,
+              0.20292887100355417,
+              0.0203488369377292,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Clip"
+          },
+          {
+            "bounds": [
+              0.2209302330069367,
+              0.2719665276883757,
+              0.03924418468864599,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Zoom"
+          },
+          {
+            "bounds": [
+              0.11912413722703144,
+              0.1104016590947835,
+              0.06843777092135683,
+              0.019782456229714862
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Position"
+          },
+          {
+            "bounds": [
+              0.011627914502926467,
+              0.01882845166252911,
+              0.2645348685128348,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.37770348836898787,
+              0.8623003093089705,
+              0.030726744204151335,
+              0.02439519657808198
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Crop"
+          },
+          {
+            "bounds": [
+              0.4563953484873714,
+              0.9476987445620592,
+              0.08430232612454158,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "fixture.recordly"
+          },
+          {
+            "bounds": [
+              0.43747518185459405,
+              0.868015786580628,
+              0.059642659401407006,
+              0.017106502196368112
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Fit \u2022 100%"
+          },
+          {
+            "bounds": [
+              0.32412790680693865,
+              0.7779411761239676,
+              0.06976744204151386,
+              0.01285380265291991
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Native SubTake"
+          },
+          {
+            "bounds": [
+              0.32267441830470983,
+              0.41422594213326136,
+              0.02761627897924307,
+              0.018828450932222185
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "1.0s"
+          },
+          {
+            "bounds": [
+              0.32267441806118624,
+              0.20711297134300122,
+              0.03633721020756936,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "\u2022 Trim"
+          },
+          {
+            "bounds": [
+              0.54211077370391,
+              0.2027354012450644,
+              0.048045894077845985,
+              0.021307440365062047
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "peeds"
+          },
+          {
+            "bounds": [
+              0.6482558138957951,
+              0.4142259412135971,
+              0.027616278979243125,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "2.5s"
+          },
+          {
+            "bounds": [
+              0.7281742091495935,
+              0.9475491133084486,
+              0.06400041774827603,
+              0.021219765438753035
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.8429487144078849,
+              0.9493789976288538,
+              0.04375373295375273,
+              0.017559996773214848
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.937426931636862,
+              0.9473783583950549,
+              0.03939032262685349,
+              0.019469224705415566
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.6974524155424969,
+              0.8582563928112888,
+              0.05424397526955116,
+              0.020640819212969563
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Settings"
+          },
+          {
+            "bounds": [
+              0.6991279078761237,
+              0.8200836825982313,
+              0.06395348529426426,
+              0.01673640082864203
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Appearance"
+          },
+          {
+            "bounds": [
+              0.7107558140808601,
+              0.757322175553369,
+              0.03052325540659384,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Light"
+          },
+          {
+            "bounds": [
+              0.7703488367707053,
+              0.7594142257067337,
+              0.029069768166055554,
+              0.016736402231104286
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Dark"
+          },
+          {
+            "bounds": [
+              0.8299418614612675,
+              0.7573221764695464,
+              0.04360464835653499,
+              0.020920501035802563
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "System"
+          },
+          {
+            "bounds": [
+              0.6988673477872435,
+              0.6803906246204257,
+              0.15164123846560107,
+              0.023791414148667256
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Automatic recording zooms"
+          },
+          {
+            "bounds": [
+              0.6991279077897474,
+              0.6255230122263893,
+              0.23982557958486128,
+              0.014918163944693141
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Suagest zooms when a new recordina onens."
+          },
+          {
+            "bounds": [
+              0.7485465077460067,
+              0.577205882483709,
+              0.1802325657435826,
+              0.016936377216787868
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Customize keyboard shortcuts..."
+          },
+          {
+            "bounds": [
+              0.7587209300164474,
+              0.4142259412135971,
+              0.024709302551892298,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.Os"
+          },
+          {
+            "bounds": [
+              0.8677325584952577,
+              0.41213389106592135,
+              0.026162789792430585,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "3.5s"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-settings-final-ocr.json"
+    },
+    {
+      "panel": "Recording",
+      "size": "980x680",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-recording-final.log",
+      "snapshot": "test-output/gpui-editor-recording-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-recording-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.47819767534169844,
+              0.9497907947292034,
+              0.04505813754334742,
+              0.016736402231104175
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Untitled"
+          },
+          {
+            "bounds": [
+              0.7281654238135806,
+              0.947492575087657,
+              0.0640179887109873,
+              0.021332841760972054
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.8428291136767742,
+              0.9484907867163463,
+              0.043990415456343634,
+              0.017157358281752688
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Presets"
+          },
+          {
+            "bounds": [
+              0.9384460349386567,
+              0.9462430639480822,
+              0.03883460297876473,
+              0.020905080963583567
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export|"
+          },
+          {
+            "bounds": [
+              0.28779069452391537,
+              0.8639705877310091,
+              0.18459302941147165,
+              0.02941176470588236
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "No Video Loaded"
+          },
+          {
+            "bounds": [
+              0.02615210652415311,
+              0.8242215199204013,
+              0.030544623550103636,
+              0.014736876768224327
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.6975294301145811,
+              0.8583649863460202,
+              0.06722789686553332,
+              0.01972382349126478
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Recording"
+          },
+          {
+            "bounds": [
+              0.6989308922395081,
+              0.8182024084438817,
+              0.08176671242227362,
+              0.01886780121747178
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Capture source"
+          },
+          {
+            "bounds": [
+              0.2920492913570471,
+              0.8032556876804443,
+              0.17462626865931918,
+              0.02174593280343451
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Open a video or start a recording"
+          },
+          {
+            "bounds": [
+              0.7091772955180912,
+              0.7581654430357525,
+              0.1470664043815768,
+              0.020686500212725445
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "SubTake - demo window"
+          },
+          {
+            "bounds": [
+              0.026143296843542753,
+              0.7363089517665662,
+              0.0334692195970185,
+              0.014829795500811316
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.29067555994401506,
+              0.7383332539224513,
+              0.0654512055066167,
+              0.019149392492630923
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Open video"
+          },
+          {
+            "bounds": [
+              0.3849425305059072,
+              0.7382427592010088,
+              0.08333643699178889,
+              0.021045177123125924
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "New recording"
+          },
+          {
+            "bounds": [
+              0.754360464487979,
+              0.6820083679844265,
+              0.16860465224908328,
+              0.018828452334684442
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Refresh displays and windows"
+          },
+          {
+            "bounds": [
+              0.020291470568497935,
+              0.6481234916352552,
+              0.04226589592135682,
+              0.013376447733710828
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.03633720937675328,
+              0.606694560648279,
+              0.011627906682539955,
+              0.0104602512191323
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "ccI"
+          },
+          {
+            "bounds": [
+              0.01889534817436399,
+              0.5564853554779937,
+              0.043604652249083234,
+              0.018828452334684553
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.6989184012000634,
+              0.6075731465212364,
+              0.044023661710777984,
+              0.01916333086350397
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Camera"
+          },
+          {
+            "bounds": [
+              0.7093023267773153,
+              0.5271966525645929,
+              0.08575581141880584,
+              0.02092050243826471
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "System default"
+          },
+          {
+            "bounds": [
+              0.02461458873932062,
+              0.4703465979257617,
+              0.030712682373669684,
+              0.017465800397536313
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Audio"
+          },
+          {
+            "bounds": [
+              0.6988633793014319,
+              0.4535138466244165,
+              0.06728163738639992,
+              0.018426300497616066
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Microphone"
+          },
+          {
+            "bounds": [
+              0.7093023267760622,
+              0.37647058810510925,
+              0.08575581141880584,
+              0.01911764705882346
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "System default"
+          },
+          {
+            "bounds": [
+              0.6976329665985508,
+              0.29884221225884877,
+              0.07711778757523524,
+              0.0215624374501846
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "System audio"
+          },
+          {
+            "bounds": [
+              0.01998489032652753,
+              0.15744775193057292,
+              0.04147686471744459,
+              0.018700361251831055
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Settings"
+          },
+          {
+            "bounds": [
+              0.03488372100466026,
+              0.11506276213849143,
+              0.011627906682539955,
+              0.018828450932222296
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u00ae"
+          },
+          {
+            "bounds": [
+              0.030523256297494153,
+              0.07322175783830587,
+              0.021802324178267496,
+              0.014644350725061761
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Help"
+          },
+          {
+            "bounds": [
+              0.010174415813130815,
+              0.020588235376379438,
+              0.21802326124541616,
+              0.017068668674020238
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source and press Start recording"
+          },
+          {
+            "bounds": [
+              0.6991279058127939,
+              0.19037656881711684,
+              0.27470930449816644,
+              0.019182254987604508
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.6991279041831475,
+              0.16527196625444174,
+              0.21802326124541604,
+              0.01708097457885749
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Your video saves to the recordings folder."
+          },
+          {
+            "bounds": [
+              0.7962797379040444,
+              0.10849465854693074,
+              0.08476145218829712,
+              0.021169813941506743
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Start recording"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-recording-final-ocr.json"
+    },
+    {
+      "panel": "Recording",
+      "size": "1360x880",
+      "language": "en",
+      "status": "passed",
+      "log": "test-output/gpui-ui-empty-final.log",
+      "snapshot": "test-output/gpui-editor-empty-final.png",
+      "visible_ui_text": {
+        "expected_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Open projects",
+          "Save",
+          "Record",
+          "Presets"
+        ],
+        "image": "/Users/subs/Personal/SubTake/test-output/gpui-editor-empty-final.png",
+        "language": "en",
+        "matched_labels": [
+          "Cursor",
+          "Webcam",
+          "Captions",
+          "Export",
+          "Record",
+          "Presets"
+        ],
+        "minimum_distinct_labels": 3,
+        "missing_labels": [
+          "Open projects",
+          "Save"
+        ],
+        "observations": [
+          {
+            "bounds": [
+              0.06395348867626853,
+              0.9573033712322968,
+              0.014534882938160618,
+              0.020224718614058057
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "c\u0440"
+          },
+          {
+            "bounds": [
+              0.48546511594893277,
+              0.959550562084827,
+              0.03197674470789297,
+              0.015730336579409587
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Untitled"
+          },
+          {
+            "bounds": [
+              0.8036477347645179,
+              0.9585646904527149,
+              0.04677429760203644,
+              0.01770207990299577
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Record"
+          },
+          {
+            "bounds": [
+              0.870533149168006,
+              0.9587359795619694,
+              0.0481778874116785,
+              0.017359502207149102
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "\u2022 Presets"
+          },
+          {
+            "bounds": [
+              0.9563953486666886,
+              0.9617977530942665,
+              0.027616279265459842,
+              0.011235954544760896
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Export"
+          },
+          {
+            "bounds": [
+              0.34593023496505215,
+              0.892045454547165,
+              0.13372092527501722,
+              0.025000000000000022
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "No Video Loaded"
+          },
+          {
+            "bounds": [
+              0.018895348611742434,
+              0.8629213484648811,
+              0.023255813823026772,
+              0.013483146103945631
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Scene"
+          },
+          {
+            "bounds": [
+              0.7818484376850513,
+              0.8905798431661636,
+              0.049717802159926494,
+              0.016189487413926562
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Recording"
+          },
+          {
+            "bounds": [
+              0.7819767445960861,
+              0.8606741573110349,
+              0.061046510584214175,
+              0.013757660714062814
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Capture source"
+          },
+          {
+            "bounds": [
+              0.35029069655450623,
+              0.8494318180378316,
+              0.1279069788315717,
+              0.013636363636363669
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Open a video or start a recording"
+          },
+          {
+            "bounds": [
+              0.7906976752487668,
+              0.8157303371053306,
+              0.1061046488144819,
+              0.01348314610394552
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "SubTake - demo window"
+          },
+          {
+            "bounds": [
+              0.017429739331041947,
+              0.7954378840894232,
+              0.026187032811781936,
+              0.011371422897685779
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Cursor"
+          },
+          {
+            "bounds": [
+              0.34881742007492184,
+              0.7976075056094144,
+              0.04800469454597017,
+              0.016020944443616014
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Open video"
+          },
+          {
+            "bounds": [
+              0.41706912277722513,
+              0.7972321822816457,
+              0.06142078287461228,
+              0.018126816641200638
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "New recording"
+          },
+          {
+            "bounds": [
+              0.8225653397106478,
+              0.7528097108459122,
+              0.12374743293313417,
+              0.01811865080486652
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Refresh displays and windows"
+          },
+          {
+            "bounds": [
+              0.014534883880109253,
+              0.728089887933612,
+              0.030523255292107074,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Webcam"
+          },
+          {
+            "bounds": [
+              0.7834207246062891,
+              0.6965752015312565,
+              0.031995759290807446,
+              0.013591170310974121
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Camera"
+          },
+          {
+            "bounds": [
+              0.01452649521926693,
+              0.6583793340832825,
+              0.03199352096108829,
+              0.013578410582108957
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Captions"
+          },
+          {
+            "bounds": [
+              0.7906976743459301,
+              0.6357954544454545,
+              0.0625,
+              0.013642747835679536
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "System default"
+          },
+          {
+            "bounds": [
+              0.018895348655572013,
+              0.591011236250894,
+              0.021802325809703156,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Audio"
+          },
+          {
+            "bounds": [
+              0.7819767454810814,
+              0.5775280898892037,
+              0.05087209028356221,
+              0.01348314610394552
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Microphone"
+          },
+          {
+            "bounds": [
+              0.7921511632398697,
+              0.5191011238647896,
+              0.061046510584214064,
+              0.015730336579409587
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "System default"
+          },
+          {
+            "bounds": [
+              0.7819667774928438,
+              0.4583408156371521,
+              0.05670597973991842,
+              0.015902638977224104
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "System audio"
+          },
+          {
+            "bounds": [
+              0.01598837274365757,
+              0.12359550592475932,
+              0.029069765876321232,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Settings"
+          },
+          {
+            "bounds": [
+              0.7834302293289505,
+              0.14602272713447273,
+              0.19622093649471506,
+              0.015909090909090873
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source, then press the red Record button."
+          },
+          {
+            "bounds": [
+              0.7819033793867707,
+              0.12527570917792286,
+              0.15857395845301014,
+              0.01638437401164672
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Your video saves to the recordings folder."
+          },
+          {
+            "bounds": [
+              0.8529968552197247,
+              0.08283419826723493,
+              0.06152099160587088,
+              0.01816118522123855
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Start recording"
+          },
+          {
+            "bounds": [
+              0.02034883736493571,
+              0.053932584568587516,
+              0.01889534838059369,
+              0.011235954544761007
+            ],
+            "confidence": 1,
+            "in_editor_chrome": true,
+            "text": "Help"
+          },
+          {
+            "bounds": [
+              0.008720936405127243,
+              0.013483146579209127,
+              0.15697673348819507,
+              0.015730336579409476
+            ],
+            "confidence": 1,
+            "in_editor_chrome": false,
+            "text": "Choose a source and press Start recording"
+          }
+        ],
+        "scope": "Visible editor header/rail labels only; media fixture text does not count",
+        "status": "passed"
+      },
+      "ocr_report": "test-output/gpui-ui-empty-final-ocr.json"
+    }
+  ],
+  "user_preferences_unchanged": true,
+  "checks": [
+    "controller callbacks select the intended panel; no pointer hit testing",
+    "recording discovery clears busy on success, failure, empty result and cancellation",
+    "refresh preserves selected source",
+    "Record opens configuration without starting capture",
+    "empty recording layout",
+    "editing and caption/history commands",
+    "selector preserves nondefault stored value",
+    "linked and independent padding with undo",
+    "crop preview and undo",
+    "folder search",
+    "wallpaper thumbnail readiness",
+    "snapshot of the selected panel",
+    "Vision OCR finds at least 3 distinct localized editor labels in header/rail; video fixture text excluded"
+  ]
+}

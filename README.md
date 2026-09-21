@@ -1,12 +1,12 @@
 # SubTake
 
-A native Rust/Slint desktop editor with a shared Skia compositor and an in-process FFmpeg decoder. macOS recording uses ScreenCaptureKit and AVFoundation helpers. There is no Electron, React, Tauri or WebView in this application.
+A native Rust/GPUI desktop editor with a shared Skia compositor and an in-process FFmpeg decoder. The core editor and recorder use native GPUI surfaces; macOS recording uses ScreenCaptureKit and AVFoundation helpers. The optional HyperFrames workspace intentionally retains its WKWebView integration in `scripts/agent-workspace.m` within this migration's scope.
 
-**Status: runnable local Mac implementation; full production parity is not yet certified.** The implementation and automated evidence are described in [PARITY.md](docs/PARITY.md). The screen-only recording flow has passed; real microphone/camera/system-audio combinations and long-session validation remain outstanding. [WINDOWS-HANDOFF.md](docs/WINDOWS-HANDOFF.md) lists the Windows work, and explicitly separates unfinished shared work from Windows-only work.
+**Status: GPUI migration implemented, with fresh local validation.** The all-target test run passed 68 tests with 1 ignored; all 11 packaged UI smoke cases passed, including visible-label OCR. Real mouse/keyboard checks verified opening the Cursor panel, numeric Enter commit, seeking and undo. See the [GPUI validation record and remaining gates](docs/GPUI-MIGRATION.md) and [packaged UI evidence](docs/gpui-ui-validation.json). Physical gestures, accessibility, real microphone/camera/system-audio capture combinations, long-session validation and public distribution remain unchecked. Earlier Slint results in [PARITY.md](docs/PARITY.md) are historical, not GPUI certification. [WINDOWS-HANDOFF.md](docs/WINDOWS-HANDOFF.md) separates unfinished shared work from Windows-only work.
 
-The Rust/Slint application is the main project at this repository root. The previous Electron/React app, its dependencies, original automation and architecture spike are preserved in [`legacy-electron/`](legacy-electron/README.md). Its workflows are archived under that directory and are not active root GitHub Actions. Shared reference assets and the cursor/Whisper build inputs still come from `legacy-electron/`; the packaged native app is self-contained.
+The Rust/GPUI application is the main project at this repository root. The previous Electron/React app, its dependencies, original automation and architecture spike are preserved in [`legacy-electron/`](legacy-electron/README.md). Its workflows are archived under that directory and are not active root GitHub Actions. Shared reference assets and the cursor/Whisper build inputs still come from `legacy-electron/`; the packaged native app is self-contained.
 
-- Root: `Cargo.toml`, `Cargo.lock`, `build.rs`, `src/`, `ui/`, `assets/`, `scripts/`, `tests/`, `docs/`.
+- Root: `Cargo.toml`, `Cargo.lock`, `build.rs`, `src/`, `crates/theme/`, `crates/ui/`, `assets/`, `scripts/`, `tests/`, `docs/`.
 - Native package: `dist/SubTake.app`.
 - Previous app: `legacy-electron/`, including its `node_modules/` and `spike/`.
 
@@ -19,7 +19,7 @@ cd /Users/subs/Personal/SubTake
 python3 scripts/dev.py
 ```
 
-This builds and opens `target/dev/SubTake.app`, then watches Rust, Slint UI,
+This builds and opens `target/dev/SubTake.app`, then watches Rust, GPUI surfaces and shared theme/control crates,
 native helper sources, scripts, and assets. Saves are debounced; a successful
 build requests a normal quit and launches the new instance. A failed build keeps
 the last working app open. Recording and busy operations finish before restart;
@@ -57,6 +57,8 @@ Appearance presets can be saved, loaded and removed from Presets in the header; 
 
 ## Build
 
+For GPUI/Skia local build-tool setup, use [the migration toolchain instructions](docs/GPUI-MIGRATION.md#local-build-toolchain). The dev/package scripts automatically use tools installed under `target/build-tools`; direct Cargo checks can use `python3 scripts/build_env.py check --locked --all-targets`. Coordinate checks through the root workspace while migration work is active.
+
 Requirements: Rust/Cargo, Xcode Command Line Tools, Python 3, FFmpeg 7 or newer development headers/libraries, FFmpeg and FFprobe. The default `native-ffmpeg` feature links libavformat, libavcodec, libavutil and libswscale. Set `FFMPEG_DIR` to a prefix containing `include/` and `lib/` if they are not in the usual Homebrew prefix. `--no-default-features` retains the slower subprocess decoder for diagnosis. The Mac package script also uses the existing cursor and Whisper binaries in `legacy-electron/electron/native/bin/darwin-arm64` (or `darwin-x64` on Intel).
 
 ```sh
@@ -77,10 +79,10 @@ Runtime overrides: `SUBTAKE_RESOURCES`, `SUBTAKE_FFMPEG`, `SUBTAKE_FFPROBE`, `SU
 | `timeline.rs`, `geometry.rs`, `motion.rs`, `effects.rs`, `autozoom.rs` | Source/output clocks, crop/frame layout, deterministic camera/cursor springs, spatial blur, explicit-click zoom clustering |
 | `media.rs`, `native_decoder.rs`, `scripts/decoder.c`, `render.rs`, `export.rs` | Runtime discovery, probing/decoding, native composition, audio mixing/playback, MP4/GIF export, cancellation |
 | `captions.rs`, `caption_editing.rs`, `segmentation.rs`, `transcription.rs`, `models.rs`, `subtitles.rs` | Caption layout/animation, local Whisper, model download, subtitle import/export timing |
-| `preferences.rs`, `library.rs`, `presets.rs`, `localization.rs`, `shortcuts.rs`, `app.rs`, `ui/editor.slint`, `ui/controls.slint`, `inspector.rs` | Preferences, bindings, native editor, timeline, inspector, tray and recording controls |
+| `preferences.rs`, `library.rs`, `presets.rs`, `localization.rs`, `shortcuts.rs`, `app.rs`, `ui_state.rs`, `ui_runtime.rs`, `gpui_views.rs`, `crates/ui/`, `crates/theme/`, `inspector.rs` | Preferences, bindings, native editor, timeline, inspector, tray and recording controls |
 | `platform.rs`, `scripts/*.swift`, `scripts/file-events.m` | Platform boundary: capture, telemetry/devices, fullscreen HUD and Finder document events |
 
-The shared Rust and Slint code is used directly by the Mac build and is the implementation Windows should retain. Windows capture methods currently return explicit unsupported errors. No Windows or Linux build has been executed here.
+The shared Rust and GPUI code is used directly by the Mac build and is the implementation Windows should retain. Windows capture methods currently return explicit unsupported errors. No Windows or Linux build has been executed here.
 
 ## Verification
 
@@ -113,4 +115,4 @@ AGPL-3.0-only, preserving the Recordly/OpenScreen lineage and the original motio
 
 ## UI component system
 
-The editor and recorder share the primitives exported from `ui/controls.slint`, with implementations in `ui/components/` and tokens in `ui/theme.slint`. See [UI-COMPONENTS.md](docs/UI-COMPONENTS.md) for the component map, variants, interactive gallery, architecture checks and transparency/blur boundaries.
+The GPUI migration places shared controls in `crates/ui/` and tokens in `crates/theme/`. See [GPUI-MIGRATION.md](docs/GPUI-MIGRATION.md) for the current verification plan and example coverage. [UI-COMPONENTS.md](docs/UI-COMPONENTS.md) preserves the previous Slint component reference.

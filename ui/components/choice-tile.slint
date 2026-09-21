@@ -1,8 +1,0 @@
-import { Theme } from "../theme.slint";
-import { ButtonSurface } from "button.slint";
-export component ChoiceTile inherits ButtonSurface {
-    border-radius:Theme.radius-card;
-    border-width:root.active || root.has-focus ? Theme.focus-width : Theme.border-width;
-    border-color:root.active || root.has-focus ? Theme.blue : root.has-hover ? Theme.accent-text : Theme.border;
-    @children
-}

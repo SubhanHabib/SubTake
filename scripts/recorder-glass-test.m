@@ -12,12 +12,12 @@ int main(void) {
         [NSApplication sharedApplication];
         NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(100,100,644,106)
             styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO];
-        NSView *slint = window.contentView;
-        subtake_update_recorder_glass((__bridge void *)slint,612,420,264,false);
-        assert(window.contentView == slint);
-        assert(slint.superview.subviews.count == 2);
-        assert(slint.superview.subviews.lastObject == slint);
-        SubTakeRecorderGlass *glass = (id)slint.superview.subviews.firstObject;
+        NSView *content = window.contentView;
+        subtake_update_recorder_glass((__bridge void *)content,612,420,264,false);
+        assert(window.contentView == content);
+        assert(content.superview.subviews.count == 2);
+        assert(content.superview.subviews.lastObject == content);
+        SubTakeRecorderGlass *glass = (id)content.superview.subviews.firstObject;
         assert([glass isKindOfClass:NSVisualEffectView.class]);
         assert(glass.blendingMode == NSVisualEffectBlendingModeBehindWindow);
         assert(glass.state == NSVisualEffectStateActive);
@@ -26,9 +26,9 @@ int main(void) {
         assert(alphaAt(glass.maskImage,322,90) < .01); // status text
         assert(alphaAt(glass.maskImage,16,8) < .01); // rounded corner
         [window setContentSize:NSMakeSize(644,378)];
-        subtake_update_recorder_glass((__bridge void *)slint,612,420,264,true);
-        assert(window.contentView == slint);
-        assert(slint.superview.subviews.count == 2); // no duplicate backgrounds
+        subtake_update_recorder_glass((__bridge void *)content,612,420,264,true);
+        assert(window.contentView == content);
+        assert(content.superview.subviews.count == 2); // no duplicate backgrounds
         assert(alphaAt(glass.maskImage,322,100) > .99); // options
         assert(alphaAt(glass.maskImage,50,100) < .01); // outside narrow options
         assert(alphaAt(glass.maskImage,322,275) < .01); // between cards

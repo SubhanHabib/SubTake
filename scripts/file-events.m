@@ -1,7 +1,8 @@
 #import <AppKit/AppKit.h>
 #import <Carbon/Carbon.h>
+#import <objc/runtime.h>
 #import "brand-mark.h"
-// Receive Finder's open-document AppleEvent without replacing winit's app delegate.
+// Receive Finder's open-document AppleEvent without replacing GPUI's app delegate.
 static void (*open_callback)(const char *) = NULL;
 static void (*status_callback)(const char *) = NULL;
 
@@ -84,7 +85,7 @@ void subtake_set_editor_active(bool active) {
     if (active) [NSApp activateIgnoringOtherApps:YES];
 }
 
-// Configure a Winit-owned NSWindow with AppKit panel semantics.  Slint keeps
+// Configure a GPUI-owned NSWindow with AppKit panel semantics. GPUI keeps
 // ownership of the content view; AppKit owns activation, Spaces and z-order.
 void subtake_configure_recorder_overlay(void *rawView, bool movable) {
     NSView *view = (__bridge NSView *)rawView;
@@ -121,14 +122,26 @@ void subtake_position_launcher(void *rawView) {
 static NSWindow *subtake_follow_launcher = nil;
 static NSWindow *subtake_follow_options = nil;
 static id subtake_follow_observer = nil;
+static id subtake_options_resize_observer = nil;
+
+static NSPoint subtake_options_origin(NSWindow *options, NSWindow *launcher) {
+    NSRect bar = launcher.frame, menu = options.frame;
+    NSRect screen = (launcher.screen ?: NSScreen.mainScreen).visibleFrame;
+    CGFloat y = NSMaxY(bar) + 14;
+    if (y + menu.size.height > NSMaxY(screen)) y = NSMinY(bar) - menu.size.height - 14;
+    y = MAX(NSMinY(screen), MIN(y, NSMaxY(screen) - menu.size.height));
+    CGFloat x = NSMidX(bar) - menu.size.width / 2;
+    x = MAX(NSMinX(screen), MIN(x, NSMaxX(screen) - menu.size.width));
+    return NSMakePoint(x, y);
+}
 
 static void subtake_place_options_above_launcher(NSWindow *options, NSWindow *launcher) {
     if (!options || !launcher || !options.isVisible) return;
-    NSRect bar = launcher.frame;
     NSRect menu = options.frame;
-    NSPoint origin = NSMakePoint(NSMidX(bar) - menu.size.width / 2,
-                                 NSMaxY(bar) + 14);
-    [options setFrameOrigin:origin];
+    NSPoint origin = subtake_options_origin(options, launcher);
+    if (fabs(menu.origin.x - origin.x) > 0.5 || fabs(menu.origin.y - origin.y) > 0.5) {
+        [options setFrameOrigin:origin];
+    }
 }
 
 void subtake_position_launcher_options(void *rawOptionsView, void *rawLauncherView) {
@@ -138,18 +151,40 @@ void subtake_position_launcher_options(void *rawOptionsView, void *rawLauncherVi
     NSWindow *launcher = launcherView.window;
     if (!options || !launcher) return;
 
-    // Slint renders the custom SubTake menu into its own Winit window. AppKit
+    // GPUI renders the custom SubTake menu into its own window. AppKit
     // makes that window a true child of the native overlay host: it stays above
-    // the bar and moves with the bar, without re-rendering either Slint tree.
+    // the bar and moves with the bar, without re-rendering either GPUI tree.
     subtake_place_options_above_launcher(options, launcher);
     if (options.parentWindow != launcher) {
         if (options.parentWindow) [options.parentWindow removeChildWindow:options];
         [launcher addChildWindow:options ordered:NSWindowAbove];
     }
 
-    // Winit can move its backing NSWindow directly, bypassing child-window
+    // The runtime can move its backing NSWindow directly, bypassing child-window
     // coordinate propagation. Keep one native observer as a narrow fallback
     // for that path; normal AppKit drags are handled by the child relationship.
+    if (subtake_follow_options != options) {
+        if (subtake_options_resize_observer) {
+            [[NSNotificationCenter defaultCenter] removeObserver:subtake_options_resize_observer];
+        }
+        __weak NSWindow *weakOptions = options;
+        subtake_options_resize_observer = [[NSNotificationCenter defaultCenter]
+            addObserverForName:nil object:options queue:nil
+            usingBlock:^(NSNotification *note) {
+                if (![note.name isEqualToString:NSWindowDidResizeNotification] &&
+                    ![note.name isEqualToString:NSWindowDidMoveNotification]) return;
+                // GPUI applies resize asynchronously. Re-anchor after AppKit
+                // finishes the resize, outside any GPUI callback's app borrow.
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    NSWindow *liveOptions = weakOptions;
+                    NSWindow *liveLauncher = subtake_follow_launcher;
+                    if (liveOptions && liveOptions == subtake_follow_options &&
+                        liveOptions.parentWindow == liveLauncher) {
+                        subtake_place_options_above_launcher(liveOptions, liveLauncher);
+                    }
+                });
+            }];
+    }
     subtake_follow_options = options;
     if (subtake_follow_launcher != launcher) {
         if (subtake_follow_observer) {
@@ -165,6 +200,8 @@ void subtake_position_launcher_options(void *rawOptionsView, void *rawLauncherVi
         }];
     }
     [options orderFront:nil];
+    // The first placement can run while the options window is still hidden.
+    subtake_place_options_above_launcher(options, launcher);
 }
 
 bool subtake_launcher_options_are_attached(void *rawOptionsView, void *rawLauncherView) {
@@ -174,9 +211,170 @@ bool subtake_launcher_options_are_attached(void *rawOptionsView, void *rawLaunch
     NSWindow *launcher = launcherView.window;
     if (!options || !launcher || options.parentWindow != launcher || !options.isVisible) return false;
 
-    NSRect bar = launcher.frame;
     NSRect menu = options.frame;
-    CGFloat expectedX = NSMidX(bar) - menu.size.width / 2;
-    CGFloat expectedY = NSMaxY(bar) + 14;
-    return fabs(menu.origin.x - expectedX) <= 2 && fabs(menu.origin.y - expectedY) <= 2;
+    NSPoint expected = subtake_options_origin(options, launcher);
+    return fabs(menu.origin.x - expected.x) <= 2 && fabs(menu.origin.y - expected.y) <= 2;
+}
+
+// Optional runtime bridge. All calls require the UI thread and a live borrowed
+// GPUI NSView. Keep GPUI's view and window delegate intact so its resize, input,
+// focus and close callbacks continue to run. Dimensions are AppKit points.
+static NSWindow *subtake_runtime_window(void *rawView) {
+    NSCAssert([NSThread isMainThread], @"Window operations must run on the UI thread");
+    return ((__bridge NSView *)rawView).window;
+}
+
+uint32_t subtake_window_number(void *rawView) {
+    NSWindow *window = subtake_runtime_window(rawView);
+    NSInteger number = window.windowNumber;
+    return number > 0 && (uint64_t)number <= UINT32_MAX ? (uint32_t)number : 0;
+}
+
+void subtake_window_show(void *rawView) {
+    [subtake_runtime_window(rawView) orderFront:nil];
+}
+
+void subtake_window_hide(void *rawView) {
+    [subtake_runtime_window(rawView) orderOut:nil];
+}
+
+void subtake_window_focus(void *rawView) {
+    NSWindow *window = subtake_runtime_window(rawView);
+    if (!window) return;
+    [NSApp activateIgnoringOtherApps:YES];
+    [window makeKeyAndOrderFront:nil];
+}
+
+void subtake_window_minimize(void *rawView, bool minimized) {
+    NSWindow *window = subtake_runtime_window(rawView);
+    if (minimized) [window miniaturize:nil];
+    else [window deminiaturize:nil];
+}
+
+void subtake_window_set_transparent(void *rawView, bool transparent) {
+    NSWindow *window = subtake_runtime_window(rawView);
+    window.opaque = !transparent;
+    window.backgroundColor = transparent ? NSColor.clearColor : NSColor.windowBackgroundColor;
+}
+
+// Position is the OUTER frame's top-left, in points, relative to the primary
+// display's top-left (x rightwards, y downwards). Negative coordinates are valid.
+void subtake_window_set_position(void *rawView, double x, double y) {
+    NSWindow *window = subtake_runtime_window(rawView);
+    NSScreen *primary = NSScreen.screens.firstObject;
+    if (!window || !primary || !isfinite(x) || !isfinite(y)) return;
+    [window setFrameTopLeftPoint:NSMakePoint(NSMinX(primary.frame) + x, NSMaxY(primary.frame) - y)];
+}
+
+bool subtake_window_get_position(void *rawView, double *x, double *y) {
+    NSWindow *window = subtake_runtime_window(rawView);
+    NSScreen *primary = NSScreen.screens.firstObject;
+    if (!window || !primary || !x || !y) return false;
+    *x = NSMinX(window.frame) - NSMinX(primary.frame);
+    *y = NSMaxY(primary.frame) - NSMaxY(window.frame);
+    return true;
+}
+
+bool subtake_window_drag(void *rawView) {
+    NSWindow *window = subtake_runtime_window(rawView);
+    NSEvent *event = NSApp.currentEvent;
+    if (window && event.window == window &&
+        (event.type == NSEventTypeLeftMouseDown || event.type == NSEventTypeLeftMouseDragged)) {
+        [window performWindowDragWithEvent:event];
+        return true;
+    }
+    return false;
+}
+
+typedef void (*SubTakeMagnifyCallback)(void *view, float x, float y, float delta, uint8_t phase);
+static char subtakeMagnifyKey;
+
+// The view owns the registration. Neither the registration nor either AppKit
+// block retains the view/window, so closing a window cannot leak GPUI's surface.
+@interface SubTakeMagnifyMonitor : NSObject
+@property(nonatomic, weak) NSView *view;
+@property(nonatomic, weak) NSWindow *window;
+@property(nonatomic, assign) SubTakeMagnifyCallback callback;
+@property(nonatomic, strong) id monitor;
+@property(nonatomic, strong) id closeObserver;
+- (void)invalidate;
+- (NSEvent *)handleEvent:(NSEvent *)event;
+@end
+
+@implementation SubTakeMagnifyMonitor
+- (void)invalidate {
+    self.callback = NULL;
+    if (self.monitor) {
+        [NSEvent removeMonitor:self.monitor];
+        self.monitor = nil;
+    }
+    if (self.closeObserver) {
+        [[NSNotificationCenter defaultCenter] removeObserver:self.closeObserver];
+        self.closeObserver = nil;
+    }
+}
+- (void)dealloc {
+    if (_monitor) [NSEvent removeMonitor:_monitor];
+    if (_closeObserver) [[NSNotificationCenter defaultCenter] removeObserver:_closeObserver];
+}
+- (NSEvent *)handleEvent:(NSEvent *)event {
+    // Promote weak references for the duration of the synchronous callback.
+    // The callback may remove or replace this registration reentrantly.
+    NSView *view = self.view;
+    NSWindow *window = self.window;
+    SubTakeMagnifyCallback callback = self.callback;
+    if (!view || !window || view.window != window) {
+        [self invalidate];
+        return event;
+    }
+    if (!callback || event.type != NSEventTypeMagnify || event.window != window ||
+        !window.isVisible || view.isHiddenOrHasHiddenAncestor) return event;
+
+    NSPoint point = [view convertPoint:event.locationInWindow fromView:nil];
+    NSRect bounds = view.bounds;
+    float x = (float)(point.x - NSMinX(bounds));
+    float y = (float)(view.isFlipped ? point.y - NSMinY(bounds) : NSMaxY(bounds) - point.y);
+    float delta = (float)event.magnification;
+    if (isfinite(x) && isfinite(y) && isfinite(delta)) {
+        // Preserve NSEventPhase's bit mask, including zero-delta end/cancel
+        // events. Do not clip coordinates: a gesture can end outside the view.
+        callback((__bridge void *)view, x, y, delta, (uint8_t)event.phase);
+    }
+    return event; // GPUI and the native responder chain still receive it.
+}
+@end
+
+void subtake_window_remove_magnify(void *rawView) {
+    NSCAssert([NSThread isMainThread], @"Magnify registration must run on the UI thread");
+    NSView *view = (__bridge NSView *)rawView;
+    if (!view) return;
+    SubTakeMagnifyMonitor *registration = objc_getAssociatedObject(view, &subtakeMagnifyKey);
+    [registration invalidate];
+    objc_setAssociatedObject(view, &subtakeMagnifyKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+bool subtake_window_install_magnify(void *rawView, SubTakeMagnifyCallback callback) {
+    NSWindow *window = subtake_runtime_window(rawView);
+    if (!window || !callback) return false;
+    NSView *view = (__bridge NSView *)rawView;
+    subtake_window_remove_magnify(rawView);
+    SubTakeMagnifyMonitor *registration = [SubTakeMagnifyMonitor new];
+    registration.view = view;
+    registration.window = window;
+    registration.callback = callback;
+    __weak SubTakeMagnifyMonitor *weakRegistration = registration;
+    registration.monitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskMagnify
+        handler:^NSEvent *(NSEvent *event) {
+            SubTakeMagnifyMonitor *live = weakRegistration;
+            return live ? [live handleEvent:event] : event;
+        }];
+    if (!registration.monitor) return false;
+    registration.closeObserver = [[NSNotificationCenter defaultCenter]
+        addObserverForName:NSWindowWillCloseNotification object:window queue:nil
+        usingBlock:^(NSNotification *note) {
+            (void)note;
+            [weakRegistration invalidate];
+        }];
+    objc_setAssociatedObject(view, &subtakeMagnifyKey, registration, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    return true;
 }

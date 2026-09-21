@@ -61,5 +61,4 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=WebKit");
         println!("cargo:rustc-link-lib=framework=Carbon");
     }
-    slint_build::compile("ui/editor.slint").expect("compile native editor interface");
 }

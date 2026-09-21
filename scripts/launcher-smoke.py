@@ -1,11 +1,11 @@
-"""Packaged recorder lifecycle checks. Optional capture uses only our generated fixture window."""
+"""Packaged GPUI recorder checks; preserve historical launcher reports and artifacts."""
 import argparse, datetime, hashlib, json, os, pathlib, subprocess
 parser=argparse.ArgumentParser()
 parser.add_argument('--capture-fixture',action='store_true')
 args=parser.parse_args()
 root=pathlib.Path(__file__).resolve().parents[1]
 app=root/'dist/SubTake.app/Contents/MacOS/SubTake'
-out=root/'test-output/launcher';out.mkdir(parents=True,exist_ok=True)
+out=root/'test-output/gpui-launcher';out.mkdir(parents=True,exist_ok=True)
 prefs=pathlib.Path.home()/'Library/Application Support/com.SubTake.SubTake-Native/preferences.json'
 before=prefs.read_bytes() if prefs.exists() else None
 cases=[]
@@ -21,9 +21,9 @@ for mode in ['idle','sources','audio','camera','countdown','more']+(['capture'] 
     assert 'LAUNCHER_SMOKE_PASSED' in log.read_text(),log
     assert 'RECORDER_NATIVE_GLASS_INSTALLED' in log.read_text(), 'Native recorder material missing: '+str(log)
     cases.append(dict(mode=mode,status='passed',log=str(log.relative_to(root))))
-    print(mode,'passed',flush=True)
+    print('GPUI launcher',mode,'passed',flush=True)
 assert before==(prefs.read_bytes() if prefs.exists() else None),'User preferences changed during launcher checks'
-report=dict(recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),binary_sha256=hashlib.sha256(app.read_bytes()).hexdigest(),cases=cases,user_preferences_unchanged=True)
+report=dict(ui_backend='gpui',recorded_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),binary_sha256=hashlib.sha256(app.read_bytes()).hexdigest(),cases=cases,user_preferences_unchanged=True)
 if args.capture_fixture:
     report['capture']=json.loads((out/'capture-lifecycle.json').read_text())
     video=report['capture']['source'];checks=[]
@@ -38,4 +38,5 @@ if args.capture_fixture:
     report['capture']['occlusion_checks']=checks
     report['capture']['helper_sha256']=hashlib.sha256((root/'dist/SubTake.app/Contents/Resources/bin/recordly-screencapturekit-helper').read_bytes()).hexdigest()
     print('Independent-window content checks passed',flush=True)
-(root/'docs/launcher-validation.json').write_text(json.dumps(report,indent=2)+'\n')
+(root/'docs/gpui-launcher-validation.json').write_text(json.dumps(report,indent=2)+'\n')
+print('GPUI launcher report: docs/gpui-launcher-validation.json',flush=True)

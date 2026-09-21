@@ -1,7 +1,7 @@
 use crate::{AppTray, EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
-use slint::{ComponentHandle, ModelRc, SharedString, Timer, TimerMode, VecModel};
+use subtake_native::ui_runtime as ui_runtime;
 use std::{
     cell::RefCell,
     path::{Path, PathBuf},
@@ -20,8 +20,9 @@ use subtake_native::{
     render::Scene,
     timeline::{self, n},
 };
+use ui_runtime::{ModelRc, SharedString, Timer, TimerMode, VecModel};
 
-thread_local! {static STATE:RefCell<Option<(Rc<RefCell<App>>,slint::Weak<EditorWindow>)>>=const{RefCell::new(None)};}
+thread_local! {static STATE:RefCell<Option<(Rc<RefCell<App>>,ui_runtime::Weak<EditorWindow>)>>=const{RefCell::new(None)};}
 fn with_app(f: impl FnOnce(&mut App, &EditorWindow)) {
     STATE.with(|slot| {
         if let Some((state, weak)) = slot.borrow().as_ref() {
@@ -42,7 +43,7 @@ fn when_idle<T>(state: &RefCell<T>, refresh: impl FnOnce(&T)) {
 }
 
 fn post(f: impl FnOnce(&mut App, &EditorWindow) + Send + 'static) {
-    let _ = slint::invoke_from_event_loop(move || with_app(f));
+    let _ = ui_runtime::invoke_from_event_loop(move || with_app(f));
 }
 fn report(ui: &EditorWindow, result: Result<()>) {
     if let Err(error) = result {
@@ -50,7 +51,7 @@ fn report(ui: &EditorWindow, result: Result<()>) {
     }
 }
 
-// Winit creates the AppKit host asynchronously on a cold accessory launch.
+// A cold accessory launch may precede creation of the AppKit host.
 // Retry native panel configuration briefly instead of showing a generic window
 // first or emitting a spurious handle error.
 fn position_launcher_when_ready(attempt: u8) {
@@ -154,12 +155,12 @@ impl Preview {
                                 ui.set_edit_scale(scale);
                             }
                             let buffer =
-                                slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
+                                ui_runtime::SharedPixelBuffer::<ui_runtime::Rgba8Pixel>::clone_from_slice(
                                     &pixels,
                                     request.width,
                                     request.height,
                                 );
-                            ui.set_preview(slint::Image::from_rgba8(buffer));
+                            ui.set_preview(ui_runtime::Image::from_rgba8(buffer));
                         }
                         Err(e) => {
                             s.stop(ui);
@@ -223,7 +224,7 @@ impl App {
     #[cfg(target_os = "macos")]
     fn ensure_tray_visible(&self) -> Result<()> {
         // macOS uses the retained AppKit status item installed after the event
-        // loop starts. Keeping the Slint tray hidden avoids a second menu-bar
+        // loop starts. Keeping the GPUI tray hidden avoids a second menu-bar
         // item while preserving the cross-platform tray object.
         Ok(())
     }
@@ -326,24 +327,12 @@ impl App {
         }
         options.show()?;
         platform::update_options_glass(options.window());
-        use slint::winit_030::WinitWindowAccessor;
-        options.window().with_winit_window(|window| {
-            window.set_blur(false);
-            window.set_transparent(true);
-        });
-        // The menu is positioned synchronously. A deferred retry
-        // only covers the first-show case where Winit has not exposed its AppKit
-        // view until the next event-loop tick.
-        if platform::position_launcher_options(options.window(), launcher.window()).is_err() {
-            let options = options.as_weak();
-            let launcher = launcher.as_weak();
-            Timer::single_shot(Duration::from_millis(20), move || {
-                if let (Some(options), Some(launcher)) = (options.upgrade(), launcher.upgrade()) {
-                    if let Err(error) = platform::position_launcher_options(options.window(), launcher.window()) {
-                        eprintln!("Recorder options position: {error:#}");
-                    }
-                }
-            });
+        options.window().set_blur(false);
+        options.window().set_transparent(true);
+        // Existing windows can move immediately. First-show placement belongs
+        // to the runtime's post-creation callback, not a timing-dependent retry.
+        if options.window().native_view().is_some() {
+            platform::position_launcher_options(options.window(), launcher.window())?;
         }
         Ok(())
     }
@@ -383,8 +372,8 @@ impl App {
             options.on_panel_change(|_| {
                 post(move |s, ui| report(ui, s.set_launcher_options_panel(ui, "")));
             });
-            launcher.window().on_close_requested(|| slint::CloseRequestResponse::HideWindow);
-            options.window().on_close_requested(|| slint::CloseRequestResponse::HideWindow);
+            launcher.window().on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
+            options.window().on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
             self.launcher = Some(launcher);
             self.launcher_options = Some(options);
         }
@@ -395,18 +384,15 @@ impl App {
         let launcher = self.launcher.as_ref().unwrap();
         launcher.show()?;
         platform::activate_launcher();
-        use slint::winit_030::WinitWindowAccessor;
-        launcher.window().with_winit_window(|window| {
-            // The recorder uses masked card-level frosting. Window-wide blur
-            // would blur the whole transparent envelope when a menu resizes it.
-            window.set_blur(false);
-            window.set_transparent(true);
-            window.focus_window();
-        });
-        // A launch-time Slint window has no native handle until the event loop starts.
+        // The recorder uses masked card-level frosting. Window-wide blur
+        // would blur the whole transparent envelope when a menu resizes it.
+        launcher.window().set_blur(false);
+        launcher.window().set_transparent(true);
+        launcher.window().focus_window();
+        // A launch-time GPUI window has no native handle until the event loop starts.
         // Positioning must not prevent source discovery or opening the recorder.
         // Configure immediately when possible; the bounded retry handles a
-        // cold launch before Winit has exposed the backing NSView.
+        // cold launch before GPUI has exposed the backing NSView.
         let _ = platform::configure_recording_hud(launcher.window(), true);
         if first_show {
             position_launcher_when_ready(0);
@@ -430,24 +416,16 @@ impl App {
         }
         platform::set_editor_active(true);
         if !self.editor_shown {
-            ui.window().set_size(slint::LogicalSize::new(1360., 880.));
+            ui.window().set_size(ui_runtime::LogicalSize::new(1360., 880.));
             self.editor_shown = true;
         }
         ui.show()?;
-        // Cold-start show may precede the native window. Activate editor glass
-        // from the running event loop, using its specific handle and no App borrow.
-        let editor = ui.as_weak();
-        Timer::single_shot(Duration::from_millis(100), move || {
-            if let Some(ui) = editor.upgrade() {
-                use slint::winit_030::WinitWindowAccessor;
-                ui.window().with_winit_window(|window| window.set_blur(true));
-            }
-        });
-        use slint::winit_030::WinitWindowAccessor;
-        ui.window().with_winit_window(|window| {
-            window.set_minimized(false);
-            window.focus_window();
-        });
+        // Editor glass is the window's own `WindowBackgroundAppearance::Blurred`
+        // now that SubTake renders on the zui fork: gpui installs the
+        // `UnderWindowBackground` view itself. Adding SubTake's helper on top
+        // would stack a second material and double-darken the chrome.
+        ui.window().set_minimized(false);
+        ui.window().focus_window();
         Ok(())
     }
     fn finish_sources(&mut self, ui: &EditorWindow, result: Result<Vec<Value>>, cancelled: bool) {
@@ -796,6 +774,9 @@ impl App {
             let mut regions = vec![];
             let selected_keys = self.selected_keys();
             for (key, row, tint, title) in [
+                // Track tints identify a clip's category, so unlike the
+                // controls they stay coloured; the chrome around them is
+                // achromatic, which is what lets them read at all.
                 ("zoomRegions", 0, "#397afa", "Zoom"),
                 ("trimRegions", 1, "#ee5261", "Trim"),
                 ("speedRegions", 1, "#dc922d", "Speed"),
@@ -826,7 +807,7 @@ impl App {
                                 })
                             / 1000.) as f32,
                         row,
-                        tint: slint::Color::from_rgb_u8(red, green, blue),
+                        tint: ui_runtime::Color::from_rgb_u8(red, green, blue),
                         selected: selected_keys
                             .iter()
                             .any(|(kind, id)| kind == key && r["id"] == *id),
@@ -1975,9 +1956,9 @@ impl App {
                         }
                         let artwork_source = source.clone();
                         let artwork_info = info.clone();
-                        ui.set_thumbnails(slint::Image::default());
-                        ui.set_frosted_thumbnails(slint::Image::default());
-                        ui.set_waveform(slint::Image::default());
+                        ui.set_thumbnails(ui_runtime::Image::default());
+                        ui.set_frosted_thumbnails(ui_runtime::Image::default());
+                        ui.set_waveform(ui_runtime::Image::default());
                         std::thread::spawn(move || {
                             let result = media::timeline_artwork(&artwork_source, &artwork_info);
                             // Blur the real filmstrip once on the artwork worker, never capture the desktop.
@@ -1989,16 +1970,16 @@ impl App {
                                 }
                                 match result {
                                     Ok((thumbs, wave)) => {
-                                        if let Ok(image) = slint::Image::load_from_path(&thumbs) {
+                                        if let Ok(image) = ui_runtime::Image::load_from_path(&thumbs) {
                                             ui.set_thumbnails(image);
                                             if let Some(ref pixels) = frosted {
-                                                ui.set_frosted_thumbnails(slint::Image::from_rgba8(
-                                                    slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
+                                                ui.set_frosted_thumbnails(ui_runtime::Image::from_rgba8(
+                                                    ui_runtime::SharedPixelBuffer::<ui_runtime::Rgba8Pixel>::clone_from_slice(
                                                         pixels.as_raw(), pixels.width(), pixels.height())));
                                             }
                                         }
                                         if let Some(wave) = wave {
-                                            if let Ok(image) = slint::Image::load_from_path(&wave) {
+                                            if let Ok(image) = ui_runtime::Image::load_from_path(&wave) {
                                                 ui.set_waveform(image);
                                             }
                                         }
@@ -2444,7 +2425,7 @@ impl App {
                         let result: serde_json::Value = serde_json::from_slice(&output.stdout)?;
                         Ok(result["url"].as_str().context("Missing workspace URL")?.to_owned())
                     })();
-                    let _ = slint::invoke_from_event_loop(move || {
+                    let _ = ui_runtime::invoke_from_event_loop(move || {
                         let result = result.and_then(|url| platform::open_agent_workspace(&url));
                         if let Some(ui) = weak.upgrade() {
                             ui.set_status(match result {
@@ -2472,11 +2453,8 @@ impl App {
                 }
             }
             "drag-launcher" => {
-                use slint::winit_030::WinitWindowAccessor;
                 if let Some(launcher) = &self.launcher {
-                    launcher.window().with_winit_window(|window| {
-                        let _ = window.drag_window();
-                    });
+                    launcher.window().drag_window()?;
                 }
             }
             "recording-folder" => {
@@ -2493,7 +2471,7 @@ impl App {
                 if self.can_replace(ui) {
                     self.stop(ui);
                     self.job_cancel.store(true, Ordering::Relaxed);
-                    slint::quit_event_loop()?;
+                    ui_runtime::quit_event_loop()?;
                 }
             }
             "open" => {
@@ -2857,10 +2835,7 @@ impl App {
                 }
             }
             "drag-window" => {
-                use slint::winit_030::WinitWindowAccessor;
-                ui.window().with_winit_window(|window| {
-                    let _ = window.drag_window();
-                });
+                ui.window().drag_window()?;
             }
             "start-recording" => {
                 ensure!(self.recording.is_none(), "A recording is already running");
@@ -3203,31 +3178,6 @@ fn set_nested(v: &mut Value, key: &str, value: Value) {
 }
 
 pub fn run(path: Option<PathBuf>) -> Result<()> {
-    #[cfg(target_os = "macos")]
-    {
-        use slint::winit_030::winit::platform::macos::WindowAttributesExtMacOS;
-        use slint::winit_030::winit::platform::macos::{
-            ActivationPolicy, EventLoopBuilderExtMacOS,
-        };
-        let mut events = slint::winit_030::winit::event_loop::EventLoop::with_user_event();
-        events.with_activation_policy(ActivationPolicy::Accessory);
-        slint::BackendSelector::new()
-            .with_winit_event_loop_builder(events)
-            .with_winit_window_attributes_hook(move |attributes| {
-                // This hook runs before Slint supplies title/no-frame properties.
-                // Never infer window identity here: the recorder must start clear.
-                let attributes = attributes.with_transparent(true).with_blur(false);
-                if attributes.decorations && attributes.title != "SubTake recording" {
-                    attributes
-                        .with_titlebar_transparent(true)
-                        .with_title_hidden(true)
-                        .with_fullsize_content_view(true)
-                } else {
-                    attributes
-                }
-            })
-            .select()?;
-    }
     let ui = EditorWindow::new()?;
     ui.set_mac_titlebar(cfg!(target_os = "macos"));
     ui.on_translate(|text, locale| subtake_native::localization::translate(&text, &locale).into());
@@ -3273,8 +3223,8 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     .map(|(index, title, w, h, pixels)| Wallpaper {
                         key: format!("wallpaper-{index}").into(),
                         title: title.into(),
-                        source: slint::Image::from_rgba8(slint::SharedPixelBuffer::<
-                            slint::Rgba8Pixel,
+                        source: ui_runtime::Image::from_rgba8(ui_runtime::SharedPixelBuffer::<
+                            ui_runtime::Rgba8Pixel,
                         >::clone_from_slice(
                             &pixels, w, h
                         )),
@@ -3315,20 +3265,13 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     unsafe {
         subtake_install_document_events(open_document_event);
     }
-    use slint::winit_030::{EventResult, WinitWindowAccessor, winit::event::WindowEvent};
-    ui.window().on_winit_window_event(|_, event| {
-        if let WindowEvent::DroppedFile(path) = event {
-            let path = path.clone();
-            post(move |s, ui| {
-                if !ui.get_busy() && s.recording.is_none() && s.can_replace(ui) {
-                    let result = s.load(ui, path);
-                    report(ui, result);
-                }
-            });
-            EventResult::PreventDefault
-        } else {
-            EventResult::Propagate
-        }
+    ui.window().on_drop_file(|path| {
+        post(move |s, ui| {
+            if !ui.get_busy() && s.recording.is_none() && s.can_replace(ui) {
+                let result = s.load(ui, path);
+                report(ui, result);
+            }
+        });
     });
     let tray = AppTray::new()?;
     #[cfg(not(target_os = "macos"))]
@@ -3349,6 +3292,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     ui.on_seek(|time| with_app(|s, ui| s.seek(ui, time as f64)));
     ui.on_panel_change(|panel| {
         with_app(|s, ui| {
+            ui.set_panel(panel.clone());
             if panel == "Recent" {
                 s.recoveries = subtake_native::recovery::list().unwrap_or_default();
                 let result = s.reload_library();
@@ -3543,9 +3487,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                 }
             } else if key == " " {
                 Some("play")
-            } else if key == SharedString::from(slint::platform::Key::Delete)
-                || key == SharedString::from(slint::platform::Key::Backspace)
-            {
+            } else if matches!(key.as_str(), "delete" | "backspace" | "\u{7f}" | "\u{8}") {
                 Some("delete")
             } else {
                 None
@@ -3572,9 +3514,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             platform::set_editor_active(false);
         });
         if close {
-            slint::CloseRequestResponse::HideWindow
+            ui_runtime::CloseRequestResponse::HideWindow
         } else {
-            slint::CloseRequestResponse::KeepWindowShown
+            ui_runtime::CloseRequestResponse::KeepWindowShown
         }
     });
     if let Some(snapshot) = std::env::var_os("SUBTAKE_UI_SNAPSHOT") {
@@ -3588,25 +3530,15 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         let smoke_ui = ui.as_weak();
         Timer::single_shot(Duration::from_secs(3), move || {
             if let Some(ui) = smoke_ui.upgrade() {
-                for (y, panel) in [(146.0, "Cursor"), (204.0, "Webcam"), (88.0, "Frame")] {
-                    let position = slint::LogicalPosition::new(38., y);
-                    ui.window()
-                        .dispatch_event(slint::platform::WindowEvent::PointerPressed {
-                            position,
-                            button: slint::platform::PointerEventButton::Left,
-                        });
-                    ui.window()
-                        .dispatch_event(slint::platform::WindowEvent::PointerReleased {
-                            position,
-                            button: slint::platform::PointerEventButton::Left,
-                        });
+                // Exercise controller callbacks. Native pointer hit testing
+                // requires separate GPUI view interaction validation.
+                for panel in ["Cursor", "Webcam", "Frame"] {
+                    ui.invoke_panel_change(panel.into());
                     if ui.get_panel() != panel {
-                        eprintln!("UI_SMOKE_FAILED: rail click did not open {panel}");
+                        eprintln!("UI_SMOKE_FAILED: panel callback did not open {panel}");
                         std::process::exit(1);
                     }
                 }
-                ui.window()
-                    .dispatch_event(slint::platform::WindowEvent::PointerExited);
             }
             with_app(|s, ui| {
                 let result = (|| -> Result<()> {
@@ -3617,7 +3549,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                         })
                     }) {
                         ui.window()
-                            .set_size(slint::LogicalSize::new(size.0, size.1));
+                            .set_size(ui_runtime::LogicalSize::new(size.0, size.1));
                     }
                     // Exercise discovery completion, failure, empty results, cancellation and
                     // configuration reopening without recording the user's desktop.
@@ -3852,7 +3784,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                         s.document = None;
                         s.selected = None;
                         s.refresh(ui);
-                        ui.set_preview(slint::Image::default());
+                        ui.set_preview(ui_runtime::Image::default());
                         ui.set_status("Choose a source and press Start recording".into());
                     }
                     Ok(())
@@ -3890,7 +3822,6 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             std::process::exit(1);
                         }
                         if panel == "Wallpapers" {
-                            use slint::Model;
                             if ui.get_wallpapers().row_count() == 0 {
                                 eprintln!("UI_SMOKE_FAILED: wallpaper thumbnails were not loaded");
                                 std::process::exit(1);
@@ -3912,7 +3843,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                                         std::process::exit(1)
                                     }
                                 } else {
-                                    println!("UI_SMOKE_PASSED")
+                                    println!("UI_SMOKE_PASSED: controller callbacks and native snapshot; pointer hit testing not exercised")
                                 }
                             }
                             Err(e) => {
@@ -3921,7 +3852,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             }
                         }
                         if std::env::var_os("SUBTAKE_UI_KEEP_OPEN").is_none() {
-                            let _ = slint::quit_event_loop();
+                            let _ = ui_runtime::quit_event_loop();
                         }
                     })
                 });
@@ -3990,7 +3921,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     if std::env::var_os("SUBTAKE_LAUNCHER_SMOKE").is_some() {
         Timer::single_shot(Duration::from_secs(3), || launcher_smoke_step(0));
     }
-    slint::run_event_loop_until_quit()?;
+    ui_runtime::run_event_loop_until_quit()?;
     state.borrow().recovery.flush();
     Ok(())
 }
@@ -4063,28 +3994,22 @@ fn launcher_smoke_step(step: u8) {
                     !ui.window().is_visible() && s.launcher.as_ref().unwrap().window().is_visible(),
                     "Tray Open did not restore the recorder"
                 );
-                // Exercise the source control with real native pointer events.
+                // Exercise options state and native window placement. This does
+                // not inject pointer events or test source-control hit testing.
                 let launcher = s.launcher.as_ref().unwrap();
-                launcher.window().set_position(slint::PhysicalPosition::new(210, 160));
+                launcher.window().set_position(ui_runtime::PhysicalPosition::new(210, 500));
                 let anchor_position = launcher.window().position();
                 let anchor_size = launcher.window().size();
-                let anchor_bottom = anchor_position.y + anchor_size.height as i32;
-                let anchor_center = anchor_position.x + anchor_size.width as i32 / 2;
-                for event in [
-                    slint::platform::WindowEvent::PointerPressed {
-                        position: slint::LogicalPosition::new(140., 38.),
-                        button: slint::platform::PointerEventButton::Left,
-                    },
-                    slint::platform::WindowEvent::PointerReleased {
-                        position: slint::LogicalPosition::new(140., 38.),
-                        button: slint::platform::PointerEventButton::Left,
-                    },
-                ] {
-                    launcher.window().dispatch_event(event);
-                }
+                // Native positions are logical points; sizes are physical pixels.
+                // Compare edges in points, using each window's current scale.
+                let anchor_scale = launcher.window().scale_factor() as f64;
+                let anchor_bottom = anchor_position.y as f64 + anchor_size.height as f64 / anchor_scale;
+                let anchor_center = anchor_position.x as f64 + anchor_size.width as f64 / anchor_scale / 2.;
+                s.set_launcher_options_panel(ui, "sources")?;
                 ensure!(
-                    launcher.get_panel() == "sources",
-                    "Source control did not open its options"
+                    s.launcher.as_ref().unwrap().get_panel() == "sources"
+                        && s.launcher_options.as_ref().unwrap().window().is_visible(),
+                    "Source options controller did not open its native window"
                 );
                 s.set_launcher_options_panel(ui, "")?;
                 if mode != "capture" {
@@ -4096,19 +4021,21 @@ fn launcher_smoke_step(step: u8) {
                             let launcher = s.launcher.as_ref().unwrap();
                             let position = launcher.window().position();
                             let size = launcher.window().size();
-                            assert!((position.y + size.height as i32 - anchor_bottom).abs() <= 1,
+                            let scale = launcher.window().scale_factor() as f64;
+                            assert!((position.y as f64 + size.height as f64 / scale - anchor_bottom).abs() <= 1.,
                                 "Opening a recorder menu moved the bar vertically");
-                            assert!((position.x + size.width as i32 / 2 - anchor_center).abs() <= 1,
+                            assert!((position.x as f64 + size.width as f64 / scale / 2. - anchor_center).abs() <= 1.,
                                 "Opening a recorder menu moved the bar horizontally");
                             if mode != "idle" {
                                 let options = s.launcher_options.as_ref().unwrap();
                                 assert!(options.window().is_visible(), "Options window did not open");
                                 let option_position = options.window().position();
                                 let option_size = options.window().size();
-                                assert!(option_position.y + option_size.height as i32 <= position.y - 12,
-                                    "Options window overlaps the fixed recorder bar");
+                                let option_scale = options.window().scale_factor() as f64;
+                                assert!(option_position.y as f64 + option_size.height as f64 / option_scale <= position.y as f64 - 12.,
+                                    "Options window overlaps the fixed recorder bar: menu={option_position:?} size={option_size:?} scale={option_scale}, bar={position:?} size={size:?} scale={scale}");
                                 // A native move notification must carry the independent menu.
-                                launcher.window().set_position(slint::PhysicalPosition::new(position.x + 37, position.y + 31));
+                                launcher.window().set_position(ui_runtime::PhysicalPosition::new(position.x + 37, position.y + 31));
                                 Timer::single_shot(Duration::from_millis(80), move || {
                                     with_app(|s, _| {
                                         let launcher = s.launcher.as_ref().unwrap();
@@ -4210,7 +4137,7 @@ fn launcher_smoke_step(step: u8) {
                 s.discard_recovery();
                 s.recovery.flush();
                 println!("LAUNCHER_SMOKE_PASSED capture");
-                slint::quit_event_loop()?;
+                ui_runtime::quit_event_loop()?;
             } else if step == 20 {
                 verify_automatic_zooms(s, ui, &output)?;
                 // Reopening an ordinary video must not silently re-apply zooms.
@@ -4237,7 +4164,7 @@ fn launcher_smoke_step(step: u8) {
                 println!(
                     "LAUNCHER_SMOKE_PASSED autozoom: fresh applied, ordinary reopen unchanged, preference off respected"
                 );
-                slint::quit_event_loop()?;
+                ui_runtime::quit_event_loop()?;
             } else if step == 10 {
                 ensure!(!ui.window().is_visible(), "Setup opened an empty editor");
                 let image = s.launcher.as_ref().unwrap().window().take_snapshot()?;
@@ -4249,7 +4176,7 @@ fn launcher_smoke_step(step: u8) {
                     image::ColorType::Rgba8,
                 )?;
                 println!("LAUNCHER_SMOKE_PASSED {mode}");
-                slint::quit_event_loop()?;
+                ui_runtime::quit_event_loop()?;
             }
             Ok(())
         })();

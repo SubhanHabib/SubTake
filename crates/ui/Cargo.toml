@@ -1,0 +1,8 @@
+[package]
+name = "subtake-ui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+gpui = { git = "https://github.com/zeronsh/zui", rev = "c2d273dc3dadcb260b0fa7c35fc2fe02a14f5add" }
+subtake-theme = { path = "../theme" }

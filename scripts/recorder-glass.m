@@ -2,7 +2,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
 
-// This view never receives events. Slint remains the topmost content view.
+// This view never receives events. GPUI remains the topmost content view.
 @interface SubTakeRecorderGlass : NSVisualEffectView
 @property CGFloat barWidth;
 @property CGFloat optionsWidth;
@@ -38,19 +38,44 @@
 @end
 
 static char glassKey;
+static char blurKey;
+
+void subtake_window_set_blur(void *pointer, bool enabled) {
+    NSCAssert([NSThread isMainThread], @"Window material must run on the UI thread");
+    NSView *view = (__bridge NSView *)pointer;
+    if (!view.window) return;
+    SubTakeRecorderGlass *blur = objc_getAssociatedObject(view, &blurKey);
+    if (!enabled) {
+        [blur removeFromSuperview];
+        objc_setAssociatedObject(view, &blurKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        return;
+    }
+    if (!blur && view.superview) {
+        blur = [[SubTakeRecorderGlass alloc] initWithFrame:view.frame];
+        blur.material = NSVisualEffectMaterialUnderWindowBackground;
+        blur.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+        blur.state = NSVisualEffectStateActive;
+        blur.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+        [view.superview addSubview:blur positioned:NSWindowBelow relativeTo:view];
+        objc_setAssociatedObject(view, &blurKey, blur, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    // No recorder mask: this is a full-window runtime material. Transparency
+    // and GPUI's rendered background are controlled independently by the caller.
+    blur.frame = view.frame;
+}
 void subtake_update_recorder_glass(void *pointer, double barWidth, double optionsWidth,
                                   double optionsHeight, bool expanded) {
     NSCAssert([NSThread isMainThread], @"Recorder material must run on the UI thread");
-    NSView *slintView = (__bridge NSView *)pointer;
-    NSWindow *window = slintView.window;
+    NSView *gpuiView = (__bridge NSView *)pointer;
+    NSWindow *window = gpuiView.window;
     if (!window) return;
-    SubTakeRecorderGlass *glass = objc_getAssociatedObject(slintView, &glassKey);
+    SubTakeRecorderGlass *glass = objc_getAssociatedObject(gpuiView, &glassKey);
     if (!glass) {
-        // Keep the material beneath Slint's Metal surface. Adding it as a child
+        // Keep the material beneath GPUI's Metal surface. Adding it as a child
         // of the Metal surface makes AppKit composite it over the rendered UI.
-        NSView *parent = slintView.superview;
+        NSView *parent = gpuiView.superview;
         if (!parent) return;
-        glass = [[SubTakeRecorderGlass alloc] initWithFrame:slintView.frame];
+        glass = [[SubTakeRecorderGlass alloc] initWithFrame:gpuiView.frame];
         // Use the lightest system material for translucent glass rather than
         // Popover, whose high-contrast backing reads as a solid white sheet.
         glass.material = NSVisualEffectMaterialUnderWindowBackground;
@@ -58,16 +83,16 @@ void subtake_update_recorder_glass(void *pointer, double barWidth, double option
         glass.state = NSVisualEffectStateActive;
         glass.alphaValue = 0.72;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-        // winit casts window.contentView to its own class: preserve that identity.
-        [parent addSubview:glass positioned:NSWindowBelow relativeTo:slintView];
-        objc_setAssociatedObject(slintView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        // Preserve GPUI's content view and responder identity.
+        [parent addSubview:glass positioned:NSWindowBelow relativeTo:gpuiView];
+        objc_setAssociatedObject(gpuiView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         window.opaque = NO;
         window.backgroundColor = NSColor.clearColor;
         if (getenv("SUBTAKE_LAUNCHER_SMOKE")) fprintf(stderr, "RECORDER_NATIVE_GLASS_INSTALLED\n");
-        window.hasShadow = NO; // Slint draws the shadows for each card, not the envelope.
+        window.hasShadow = NO; // GPUI draws the shadows for each card, not the envelope.
 
     }
-    glass.frame = slintView.frame;
+    glass.frame = gpuiView.frame;
     if (glass.barWidth == barWidth && glass.optionsWidth == optionsWidth &&
         glass.optionsHeight == optionsHeight && glass.expanded == expanded &&
         NSEqualSizes(glass.maskImage.size, glass.bounds.size)) return;
@@ -81,14 +106,14 @@ void subtake_update_recorder_glass(void *pointer, double barWidth, double option
 
 void subtake_update_options_glass(void *pointer) {
     NSCAssert([NSThread isMainThread], @"Options material must run on the UI thread");
-    NSView *slintView = (__bridge NSView *)pointer;
-    NSWindow *window = slintView.window;
+    NSView *gpuiView = (__bridge NSView *)pointer;
+    NSWindow *window = gpuiView.window;
     if (!window) return;
-    SubTakeRecorderGlass *glass = objc_getAssociatedObject(slintView, &glassKey);
+    SubTakeRecorderGlass *glass = objc_getAssociatedObject(gpuiView, &glassKey);
     if (!glass) {
-        NSView *parent = slintView.superview;
+        NSView *parent = gpuiView.superview;
         if (!parent) return;
-        glass = [[SubTakeRecorderGlass alloc] initWithFrame:slintView.frame];
+        glass = [[SubTakeRecorderGlass alloc] initWithFrame:gpuiView.frame];
         // Use the lightest system material for translucent glass rather than
         // Popover, whose high-contrast backing reads as a solid white sheet.
         glass.material = NSVisualEffectMaterialUnderWindowBackground;
@@ -96,13 +121,13 @@ void subtake_update_options_glass(void *pointer) {
         glass.state = NSVisualEffectStateActive;
         glass.alphaValue = 0.72;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-        [parent addSubview:glass positioned:NSWindowBelow relativeTo:slintView];
-        objc_setAssociatedObject(slintView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        [parent addSubview:glass positioned:NSWindowBelow relativeTo:gpuiView];
+        objc_setAssociatedObject(gpuiView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         window.opaque = NO;
         window.backgroundColor = NSColor.clearColor;
         window.hasShadow = NO;
     }
-    glass.frame = slintView.frame;
+    glass.frame = gpuiView.frame;
     glass.fullSurface = YES;
     [glass updateMask];
 }

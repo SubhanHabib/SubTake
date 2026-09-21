@@ -1,6 +1,8 @@
-"""Collect already-run local validation evidence; this script does not run tests."""
+"""Collect historical pre-GPUI evidence only; never certify the migrated UI."""
 import hashlib,json,pathlib,re,subprocess,datetime
 root=pathlib.Path(__file__).resolve().parents[1];out=root/'test-output'
+if (root/'src/ui_runtime.rs').exists():
+    raise SystemExit('Legacy validation aggregation is retired for GPUI: its logs and JSON inputs predate the migration. Follow docs/GPUI-MIGRATION.md and collect fresh evidence; docs/validation.json will not be overwritten.')
 def read(name):return json.loads((out/name).read_text())
 def command(*args):return subprocess.check_output(args,cwd=root,text=True).strip()
 tests=(out/'tests-final.log').read_text();counts=re.findall(r'test result: ok\. (\d+) passed; (\d+) failed',tests)

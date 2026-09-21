@@ -1,5 +1,9 @@
 # Shared UI primitives
 
+> GPUI migration notice: UI descriptions and validation evidence below predate the migration and are retained as historical reference. They do not certify current GPUI behavior. See [GPUI-MIGRATION.md](GPUI-MIGRATION.md) for current example coverage and pending acceptance gates.
+
+Current boundary check: `python3 scripts/check-ui-primitives.py` inspects GPUI Rust sources and shared crate dependencies. It requires `crates/theme`, `crates/ui`, the runtime/state adapters and editor surface. It no longer scans Slint controls or enforces the historical 40px control height. A pass is a static architecture result only; use the migration checklist for rendered controls and actual input acceptance.
+
 All native screens import app controls from `ui/controls.slint`. That file only re-exports components; the implementations are in `ui/components/`, and shared colour, typography, sizing, radius and state tokens are in `ui/theme.slint`. The editor and recorder use the same implementations.
 
 | Family | Single source | Contract |

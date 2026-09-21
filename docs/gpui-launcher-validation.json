@@ -1,0 +1,81 @@
+{
+  "ui_backend": "gpui",
+  "recorded_at": "2026-09-21T17:14:39.115060+00:00",
+  "binary_sha256": "d6a55143e9cc847c18a02b38ef2b54511767d9b7e80f5aa160920ea8d1bd86e1",
+  "cases": [
+    {
+      "mode": "idle",
+      "status": "passed",
+      "log": "test-output/gpui-launcher/idle.log"
+    },
+    {
+      "mode": "sources",
+      "status": "passed",
+      "log": "test-output/gpui-launcher/sources.log"
+    },
+    {
+      "mode": "audio",
+      "status": "passed",
+      "log": "test-output/gpui-launcher/audio.log"
+    },
+    {
+      "mode": "camera",
+      "status": "passed",
+      "log": "test-output/gpui-launcher/camera.log"
+    },
+    {
+      "mode": "countdown",
+      "status": "passed",
+      "log": "test-output/gpui-launcher/countdown.log"
+    },
+    {
+      "mode": "more",
+      "status": "passed",
+      "log": "test-output/gpui-launcher/more.log"
+    },
+    {
+      "mode": "capture",
+      "status": "passed",
+      "log": "test-output/gpui-launcher/capture.log"
+    }
+  ],
+  "user_preferences_unchanged": true,
+  "capture": {
+    "status": "passed",
+    "scope": "menu-bar launch, hide/Open, source control, countdown cancellation, screen-only capture of selected SubTake window, pause/resume/stop, final editor handoff",
+    "microphone": false,
+    "camera": false,
+    "system_audio": false,
+    "source": "/Users/subs/Personal/SubTake/test-output/gpui-launcher/Recording-1790010871-e08e8481.mp4",
+    "media": {
+      "width": 1440,
+      "height": 904,
+      "duration": 3.39,
+      "fps": 35.22504892367906,
+      "audio_tracks": 0
+    },
+    "occlusion_checks": [
+      {
+        "time": 0.25,
+        "blue_fraction": 0.9001875,
+        "red_fraction": 0.0
+      },
+      {
+        "time": 0.75,
+        "blue_fraction": 0.9003125,
+        "red_fraction": 0.0
+      },
+      {
+        "time": 1.5,
+        "blue_fraction": 0.9003125,
+        "red_fraction": 0.0
+      },
+      {
+        "time": 2.5,
+        "blue_fraction": 0.9001875,
+        "red_fraction": 0.0
+      }
+    ],
+    "helper_sha256": "3b1a80524f8df3c7b2f5c2fc1a7c2b4d9ae89333936b637dc7c1f29537ca1c4c"
+  }
+}

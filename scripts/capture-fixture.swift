@@ -5,6 +5,8 @@ app.setActivationPolicy(.accessory)
 func makeWindow(_ title:String,_ frame:NSRect,_ color:NSColor,_ text:String)->NSWindow {
     let window=NSWindow(contentRect:frame,styleMask:[.titled,.closable],backing:.buffered,defer:false)
     window.title=title;window.isReleasedWhenClosed=false
+    window.hidesOnDeactivate=false
+    window.collectionBehavior=[.canJoinAllSpaces,.fullScreenAuxiliary]
     let view=NSView(frame:NSRect(origin:.zero,size:frame.size));view.wantsLayer=true;view.layer?.backgroundColor=color.cgColor
     let label=NSTextField(labelWithString:text);label.frame=NSRect(x:40,y:160,width:frame.width-80,height:100)
     label.font=NSFont.systemFont(ofSize:32,weight:.semibold);label.textColor = .white;label.alignment = .center

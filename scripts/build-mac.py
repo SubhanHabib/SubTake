@@ -5,6 +5,8 @@ are distribution steps and are not claimed by this local build.
 """
 import argparse, os, platform, plistlib, shutil, subprocess, tempfile
 from pathlib import Path
+from build_env import build_environment
+from bundle_resources import copy_ui_assets, verify_ui_assets
 
 parser=argparse.ArgumentParser()
 parser.add_argument("--release",action="store_true")
@@ -12,8 +14,8 @@ parser.add_argument("--identity",default="-")
 args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
 repo=root/"legacy-electron"
-def run(*cmd): subprocess.run([str(c) for c in cmd],check=True,cwd=root)
-run("cargo","build","--locked",*(["--release"] if args.release else []))
+def run(*cmd): subprocess.run([str(c) for c in cmd],check=True,cwd=root,env=build_environment())
+run("cargo","build","--locked","--bin","subtake-native",*(["--release"] if args.release else []))
 run("python3",root/"scripts/build-icons.py")
 destination=root/"dist"/"SubTake.app"
 destination.parent.mkdir(parents=True,exist_ok=True)
@@ -29,7 +31,8 @@ shutil.copy2(root/"assets/branding/SubTake.icns",resources/"SubTake.icns")
 shutil.copy2(repo/"LICENSE.md",resources/"LICENSE.md")
 (resources/"licenses").mkdir(exist_ok=True)
 shutil.copy2(root/"assets/icons/LICENSE",resources/"licenses/Phosphor.txt")
-(resources/"NOTICE.md").write_text("SubTake Native contains code adapted from Recordly and OpenScreen, including motion work by @webadderall. The application is licensed under AGPL-3.0-only. Runtime components retain their own licenses. See the repository-root Rust source and Cargo.lock for dependency versions.\n")
+shutil.copy2(root/"assets/fonts/licenses/Geist-OFL.txt",resources/"licenses/Geist-OFL.txt")
+(resources/"NOTICE.md").write_text("SubTake Native contains code adapted from Recordly and OpenScreen, including motion work by @webadderall. Its presentation layer (theme tokens, control metrics and hover motion) is adapted from Zeron (github.com/zeronsh/zeron), MIT (c) 2026 Wing. Bundled interface fonts are Geist and Geist Mono, (c) 2024 The Geist Project Authors, SIL Open Font License 1.1 (see licenses/Geist-OFL.txt). The application is licensed under AGPL-3.0-only. Runtime components retain their own licenses. See the repository-root Rust source and Cargo.lock for dependency versions.\n")
 (contents/"Info.plist").write_bytes(plistlib.dumps(info))
 run("xcrun","swiftc","-O","-target",f"{platform.machine()}-apple-macos14.0",root/"scripts"/"platform.swift","-o",bins/"subtake-platform")
 run("xcrun","swiftc","-O","-target",f"{platform.machine()}-apple-macos14.0",root/"scripts"/"companion.swift","-o",bins/"subtake-companion")
@@ -41,6 +44,8 @@ for name in ["recordly-native-cursor-monitor","recordly-system-cursors","whisper
 for source,dest in [(repo/"public"/"wallpapers",resources/"public"/"wallpapers"),(repo/"src"/"assets"/"cursors",resources/"src"/"assets"/"cursors")]:
     shutil.copytree(source,dest,dirs_exist_ok=True)
 shutil.copytree(root/"assets/wallpaper-thumbnails",resources/"assets/wallpaper-thumbnails",dirs_exist_ok=True)
+copy_ui_assets(root, resources)
+print(f"Verified {verify_ui_assets(root, resources)} packaged GPUI icon/branding resources")
 for name in ["ffmpeg","ffprobe"]:
     executable=os.environ.get("SUBTAKE_"+name.upper()) or shutil.which(name)
     if not executable:raise RuntimeError(f"Install {name} or set SUBTAKE_{name.upper()}")

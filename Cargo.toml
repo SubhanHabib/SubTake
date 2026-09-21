@@ -9,14 +9,40 @@ description = "Native SubTake editor and portable media engine"
 default = ["native-ffmpeg"]
 native-ffmpeg = []
 
+[workspace]
+members = ["crates/theme", "crates/ui"]
+resolver = "2"
+
 [dependencies]
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-slint = { version = "=1.17.1", default-features = false, features = ["std", "backend-winit", "renderer-skia", "compat-1-2", "accessibility", "raw-window-handle-06", "unstable-winit-030"] }
+# gpui — zeronsh/zui, the fork the Zeron reference renders on. Stock gpui
+# 0.2.2 (same version, crates.io) lacks two fixes window glass needs:
+#   f596cde — destination alpha on transparent windows (Porter-Duff OVER,
+#             not additive), without which translucent chrome renders
+#             see-through instead of tinted.
+#   8a8954c — macOS blurred view on UnderWindowBackground; macOS 26 stopped
+#             vending CABackdropLayer for the Selection material.
+# The fork also splits the platform layer out, so `runtime_shaders` and
+# `font-kit` are gpui_platform features and the app is built with
+# `gpui_platform::application()` rather than `Application::new()`.
+gpui = { git = "https://github.com/zeronsh/zui", rev = "c2d273dc3dadcb260b0fa7c35fc2fe02a14f5add" }
+gpui_platform = { git = "https://github.com/zeronsh/zui", rev = "c2d273dc3dadcb260b0fa7c35fc2fe02a14f5add", features = [
+    "font-kit",
+    "runtime_shaders",
+] }
+subtake-theme = { path = "crates/theme" }
+subtake-ui = { path = "crates/ui" }
+smallvec = "1"
+async-channel = "2"
+futures-lite = "2"
+env_logger = "0.11"
+# Cursor artwork contains embedded raster images inside SVG files.
+resvg = { version = "0.45", default-features = false, features = ["raster-images"] }
 rfd = "0.16"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
-skia-safe = { version = "0.99", features = ["textlayout", "svg"] }
+skia-safe = { version = "0.99", features = ["textlayout", "svg", "gl"] }
 tempfile = "3"
 uuid = { version = "1", features = ["v4"] }
 crossbeam-channel = "0.5"
@@ -36,12 +62,7 @@ skia-safe = { version = "0.99", features = ["metal"] }
 
 [build-dependencies]
 cc = "1"
-slint-build = "=1.17.1"
 
 [profile.release]
 lto = "thin"
 codegen-units = 1
-
-[dev-dependencies]
-# Inject the same gesture events as winit in native UI regression tests.
-i-slint-core = { version = "=1.17.1", default-features = false }

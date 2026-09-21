@@ -1,5 +1,7 @@
 # Native parity and release status
 
+> GPUI migration notice: UI descriptions and validation evidence below predate the migration and are retained as historical reference. They do not certify current GPUI behavior. See [GPUI-MIGRATION.md](GPUI-MIGRATION.md) for current example coverage and pending acceptance gates.
+
 Date: 12 September 2026. Reference: parent Electron checkout at `7512ef1518657edc2caae595136821d27a47167d`.
 
 **Implemented means a working code path exists. Verified means the stated check was run. Neither word alone means every edge case or pixel matches Electron.** This is a substantial runnable native Mac implementation, not a declaration that every current product behavior has been ported and certified.

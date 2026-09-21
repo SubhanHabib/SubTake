@@ -13,6 +13,8 @@ import signal
 import subprocess
 import sys
 import time
+from build_env import build_environment
+from bundle_resources import verify_ui_assets
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / "target/dev"
@@ -37,11 +39,12 @@ def run(*args, **kwargs):
 
 def snapshot():
     files = [ROOT / p for p in ("Cargo.toml", "Cargo.lock", "build.rs")]
-    for directory in ("src", "ui", "scripts", "assets"):
+    for directory in ("src", "crates/theme", "crates/ui", "scripts", "assets"):
         files.extend(p for p in (ROOT / directory).rglob("*")
                      if p.is_file() and "__pycache__" not in p.parts
-                     and p.suffix in {".rs", ".slint", ".m", ".h", ".c", ".swift",
-                                      ".py", ".svg", ".png", ".jpg", ".json", ".toml"})
+                     and p.suffix in {".rs", ".m", ".h", ".c", ".swift", ".metal",
+                                      ".py", ".svg", ".png", ".jpg", ".jpeg", ".webp",
+                                      ".json", ".toml", ".ttf", ".otf"})
     result = {}
     for path in files:
         try:
@@ -56,7 +59,7 @@ def prepare():
     # Compile while the last working instance stays open. Failed builds never
     # replace it. Build outputs are outside the watched paths.
     run("python3", ROOT / "scripts/build-icons.py")
-    run("cargo", "build", "--locked")
+    run("cargo", "build", "--locked", "--bin", "subtake-native", env=build_environment())
     resources = APP / "Contents/Resources"
     bins = resources / "bin"
     bins.mkdir(parents=True, exist_ok=True)
@@ -66,8 +69,14 @@ def prepare():
     for name, source in (("public", legacy / "public"), ("src", legacy / "src"),
                          ("assets", ROOT / "assets")):
         link = resources / name
+        if link.is_symlink() and link.resolve() != source.resolve():
+            # Repair only a development resource link, never a real directory.
+            link.unlink()
         if not link.exists():
             link.symlink_to(source, target_is_directory=True)
+    # The assets link includes icons/ and branding/ at the same paths used by
+    # GPUI in the release bundle. Reject stale real directories/missing assets.
+    verify_ui_assets(ROOT, resources, development=True)
     for source in (packaged / "bin").glob("*"):
         dest = bins / source.name
         if not dest.exists():
@@ -218,7 +227,7 @@ def main():
             resources = prepare()
             close_old_instances()
             child = install_and_launch(resources)
-            log("Watching src/, ui/, scripts/, assets/ and Cargo files. Ctrl+C stops. Compile errors keep the last working app.")
+            log("Watching src/, crates/theme/, crates/ui/, scripts/, assets/ and Cargo files. Ctrl+C stops. Compile errors keep the last working app.")
             while not stopping:
                 if child.poll() is not None:
                     log("App exited; supervisor stopped.")
@@ -253,4 +262,3 @@ if __name__ == "__main__":
     except (RuntimeError, subprocess.CalledProcessError) as error:
         log(str(error))
         sys.exit(1)
-

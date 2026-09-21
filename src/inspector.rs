@@ -1,6 +1,7 @@
 //! Presentation metadata for the native inspector. Stored project keys stay unchanged.
 use crate::Field;
-use slint::{ModelRc, SharedString, VecModel};
+use subtake_native::ui_runtime as ui_runtime;
+use ui_runtime::{ModelRc, SharedString, VecModel};
 
 pub fn present(mut fields: Vec<Field>, panel: &str, language: &str) -> Vec<Field> {
     if panel == "Frame" {

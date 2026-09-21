@@ -1,5 +1,7 @@
 # Windows completion ledger
 
+> GPUI migration notice: UI descriptions and validation evidence below predate the migration and are retained as historical reference. They do not certify current GPUI behavior. See [GPUI-MIGRATION.md](GPUI-MIGRATION.md) for current example coverage and pending acceptance gates.
+
 Date: 12 September 2026. Native implementation: repository root. Legacy reference: `legacy-electron/`.
 
 **Windows recording is not implemented or tested.** The shared editor/media code is present and exercised on Mac; no Windows build, device test or installer has been run. Keep the shared implementation; replace the OS boundary and validate it on Windows. The unfinished shared work in [PARITY.md](PARITY.md) still applies to both platforms.

@@ -1,5 +1,7 @@
 # Native editor visual design
 
+> GPUI migration notice: UI descriptions and validation evidence below predate the migration and are retained as historical reference. They do not certify current GPUI behavior. See [GPUI-MIGRATION.md](GPUI-MIGRATION.md) for current example coverage and pending acceptance gates.
+
 The September 13 refresh follows the two light video-editor reference screenshots supplied by the user: neutral surfaces, rounded controls, a dotted preview canvas, a right-hand inspector, filled numeric sliders, soft timeline colors and a larger labelled filmstrip. This is a Slint implementation; no web view was added. Existing SubTake actions and project keys remain connected to the native editing core.
 
 The header is 56px tall with centered project title, project/save/history controls, recording, presets and a lime Export action. The left rail uses circular icon controls with captions. The inspector is 280px wide and scrolls independently. The timeline has a 240px minimum and 320px preferred/maximum height so its bottom controls stay inside a 980x680 window. Effect lanes scroll, and trim handles retain full-height hit targets around their smaller visible grips. The rounded source strip and neutral playhead share the same time mapping as the tracks.
