@@ -619,8 +619,21 @@ pub fn launcher_options_are_attached(options: &slint::Window, launcher: &slint::
     }
 }
 
+/// Called on the UI thread; the generated workspace has no native message bridge.
+pub fn open_agent_workspace(url: &str) -> Result<()> {
+    #[cfg(target_os = "macos")]
+    {
+        let url = std::ffi::CString::new(url)?;
+        unsafe { subtake_open_agent_workspace(url.as_ptr()) };
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    bail!("The embedded agent workspace is currently macOS-only")
+}
+
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
+    fn subtake_open_agent_workspace(url: *const std::ffi::c_char);
     fn subtake_configure_recorder_overlay(view: *mut std::ffi::c_void, movable: bool);
     fn subtake_set_editor_active(active: bool);
     fn subtake_activate_launcher();

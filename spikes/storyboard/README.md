@@ -75,3 +75,34 @@ Tests cover approval invalidation, stale writes, media bounds, feedback, preserv
 and scene identity. The end-to-end acceptance run also exercises browser approval,
 feedback → agent revision → regeneration, playback, narrow layout, and native opening.
 See the local `workspaces/demo/verification.json` for the actual run evidence.
+
+## Actual HyperFrames / agent capture spike (2026-09-20)
+
+The default for new CLI intake is now `--engine hyperframes`. The earlier native
+backend remains available via `--engine native`; existing workspaces are preserved.
+
+The agent uses the native `capture WINDOW_ID OUTPUT.mp4 SECONDS` CLI plus Computer
+Use. It then imports the captured file and source ranges into the reviewed board.
+Generate preview runs HyperFrames 0.8.55, checks the HTML composition and starts a
+loopback Studio. Projects → Create video · spike opens the board and lightweight player (with an optional Studio timeline) inside
+SubTake's WKWebView (separate workspace window, ephemeral browser data, no native
+JavaScript bridge). There is no intermediate movie generation in this backend.
+
+`npm ci --prefix spikes/storyboard` installs the pinned local runtime. Follow
+[SKILL.md](SKILL.md) for the complete agent flow. `launch WORKSPACE --no-open`
+selects which workspace the native entry opens. A live Studio generation is also
+editable with HyperFrames directly; Refresh preview updates the reviewed hash.
+Approve & export validates that hash, freezes the source and invokes HyperFrames'
+renderer. The board has a resulting movie download link. Generated workspaces and
+node_modules are ignored; package-lock.json pins the runtime.
+
+The agent is still Codex (or another external agent), not embedded in SubTake.
+Capture requires macOS screen recording access for the running build. This is a
+local developer integration, not production packaging, an autonomous agent loop,
+or a finished visual editor. Narration remains script-only and source audio is
+not included. Native project edits and Studio edits do not sync back into the
+storyboard; regeneration preserves earlier generations instead.
+
+Stop a generation's managed Studio with:
+`spikes/storyboard/node_modules/.bin/hyperframes preview WORKSPACE/builds/GENERATION/composition --stop`.
+The board server is a separate local Python process recorded in `.server.json`.

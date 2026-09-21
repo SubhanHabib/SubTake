@@ -154,6 +154,15 @@ def build(work):
         data['job']=dict(status='running',message='Preparing scene footage',generation=generation)
         write(work/'storyboard.json',data)
     try:
+        if data.get('engine') == 'hyperframes':
+            import hyperframes_backend as hf
+            report=hf.generate(work,data,output)
+            write(output/'report.json',report)
+            with locked(work):
+                latest=state(work);latest['build']=report
+                latest['job']=dict(status='complete',message='Live HyperFrames composition ready')
+                write(work/'storyboard.json',latest)
+            return report
         assets={a['id']:a for a in data['assets']}; parts=[]; total=0; mapping=[]; captions=[]; zooms=[]; clips=[]
         for index,scene in enumerate(plan['scenes']):
             asset=assets[scene['asset_id']]; target=output/f'part-{index:02d}.mp4'
@@ -213,7 +222,10 @@ def serve(work):
             if parsed.path=='/media':
                 requested=urllib.parse.parse_qs(parsed.query).get('path',[''])[0]
                 data=state(work);allowed={a['poster'] for a in data['assets']}
-                if data.get('build'): allowed.update(data['build']['posters']);allowed.add(data['build']['preview'])
+                if data.get('build'):
+                    allowed.update(data['build']['posters'])
+                    if data['build'].get('preview'): allowed.add(data['build']['preview'])
+                if data.get('export'): allowed.add(data['export'])
                 if requested not in allowed: return self.reply({'error':'Unknown media'},404)
                 path=(work/requested).resolve()
                 if not path.is_relative_to(work): return self.reply({'error':'Invalid path'},403)
@@ -234,6 +246,28 @@ def serve(work):
                     current=state(work)
                     if data['revision']!=current['revision'] or current['approved_revision']!=current['revision']: raise ValueError('Approve the current revision first')
                     threading.Thread(target=background_build,args=(work,),daemon=True).start();result={'started':True}
+                elif self.path=='/api/export':
+                    with locked(work):
+                        current=state(work)
+                        report=current.get('build')
+                        if not report or report.get('engine')!='hyperframes': raise ValueError('Generate a HyperFrames preview first')
+                        if current['revision']!=data['revision'] or report['revision']!=current['revision'] or current['approved_revision']!=current['revision']:
+                            raise ValueError('Review and generate the current story before exporting')
+                        if current.get('job',{}).get('status')=='running': raise ValueError('A job is already running')
+                        current['job']=dict(status='running',message='Exporting the reviewed HyperFrames composition')
+                        write(work/'storyboard.json',current)
+                    threading.Thread(target=background_export,args=(work,report,data['source_sha256']),daemon=True).start()
+                    result={'started':True}
+                elif self.path=='/api/refresh-preview':
+                    import hyperframes_backend as hf
+                    with locked(work):
+                        current=state(work);report=current.get('build')
+                        if not report or report.get('engine')!='hyperframes': raise ValueError('No HyperFrames preview')
+                        report['preview_url']=hf.preview(work/report['project'])
+                        report['player_url']=hf.player(work/report['project'])
+                        report['source_sha256']=hf.digest(work/report['project'])
+                        write(work/'storyboard.json',current)
+                    result=current
                 elif self.path=='/api/open':
                     current=state(work)
                     if not current.get('build'): raise ValueError('Build a draft first')
@@ -251,7 +285,18 @@ def background_build(work):
     try: build(work)
     except Exception as error: print(str(error),file=sys.stderr)
 
-def launch(work):
+def background_export(work,report,expected_hash):
+    try:
+        import hyperframes_backend as hf
+        path=hf.export(work,report,expected_hash)
+        with locked(work):
+            data=state(work);data['export']=path;data['job']=dict(status='complete',message='Export ready')
+            write(work/'storyboard.json',data)
+    except Exception as error:
+        with locked(work):
+            data=state(work);data['job']=dict(status='failed',message=str(error));write(work/'storyboard.json',data)
+
+def launch(work, open_browser=True):
     state(work)  # Refuse a missing or invalid workspace before changing the launcher target.
     (HERE/'workspaces').mkdir(exist_ok=True)
     write(HERE/'workspaces/active.json', {'workspace':str(work)})
@@ -260,13 +305,16 @@ def launch(work):
         saved=read(config);url=saved['url']
         try:
             urllib.request.urlopen(url.replace('/?','/api/state?'),timeout=1).read()
-            subprocess.Popen(['open',url]);return {'url':url}
+            if open_browser: subprocess.Popen(['open',url])
+            return {'url':url}
         except Exception: pass
     with (work/'server.log').open('a') as log:
         process=subprocess.Popen([sys.executable,str(__file__),'serve',str(work)],stdout=log,stderr=log,start_new_session=True)
     for _ in range(100):
         if config.exists() and read(config)['pid']==process.pid:
-            url=read(config)['url'];subprocess.Popen(['open',url]);return {'url':url}
+            url=read(config)['url']
+            if open_browser: subprocess.Popen(['open',url])
+            return {'url':url}
         if process.poll() is not None: raise ValueError('Board server failed; see server.log')
         time.sleep(.05)
     raise ValueError('Board server did not start')
@@ -277,19 +325,23 @@ def main():
     parser.add_argument('workspace',nargs='?',type=Path)
     parser.add_argument('--brief',type=Path);parser.add_argument('--asset',type=Path,action='append',default=[])
     parser.add_argument('--file',type=Path);parser.add_argument('--revision',type=int)
+    parser.add_argument('--no-open',action='store_true')
+    parser.add_argument('--engine',choices=['native','hyperframes'],default='hyperframes')
     args=parser.parse_args()
     active=HERE/'workspaces/active.json'
     work=(args.workspace or (Path(read(active)['workspace']) if active.exists() else HERE/'workspaces/demo')).resolve()
     if args.command=='init':
         if not args.brief or not args.asset: parser.error('init requires --brief and --asset')
         result=init(work,args.brief,args.asset)
+        result['engine']=args.engine
+        write(work/'storyboard.json',result)
     elif args.command=='context': result=state(work)
     elif args.command=='plan':
         if not args.file or args.revision is None: parser.error('plan requires --file and --revision')
         result=update_plan(work,read(args.file),args.revision)
     elif args.command=='build': result=build(work)
     elif args.command=='serve': return serve(work)
-    elif args.command=='launch': result=launch(work)
+    elif args.command=='launch': result=launch(work,not args.no_open)
     else:
         data=state(work)
         if not data.get('build'): raise ValueError('Build a draft first')

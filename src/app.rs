@@ -2435,16 +2435,26 @@ impl App {
                     script.is_file(),
                     "Storyboard spike requires the local checkout"
                 );
-                let log = std::fs::File::create(
-                    std::env::temp_dir().join("subtake-storyboard-launch.log"),
-                )?;
-                std::process::Command::new("python3")
-                    .arg(script)
-                    .arg("launch")
-                    .stdout(log.try_clone()?)
-                    .stderr(log)
-                    .spawn()?;
-                ui.set_status("Opening the storyboard companion…".into());
+                let weak = ui.as_weak();
+                std::thread::spawn(move || {
+                    let result = (|| -> anyhow::Result<String> {
+                        let output = std::process::Command::new("python3")
+                            .arg(script).args(["launch", "--no-open"]).output()?;
+                        ensure!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+                        let result: serde_json::Value = serde_json::from_slice(&output.stdout)?;
+                        Ok(result["url"].as_str().context("Missing workspace URL")?.to_owned())
+                    })();
+                    let _ = slint::invoke_from_event_loop(move || {
+                        let result = result.and_then(|url| platform::open_agent_workspace(&url));
+                        if let Some(ui) = weak.upgrade() {
+                            ui.set_status(match result {
+                                Ok(()) => "Agent video workspace opened".into(),
+                                Err(error) => format!("Agent workspace: {error}").into(),
+                            });
+                        }
+                    });
+                });
+                ui.set_status("Opening the agent video workspace…".into());
             }
             "projects" => {
                 ui.set_panel("Recent".into());

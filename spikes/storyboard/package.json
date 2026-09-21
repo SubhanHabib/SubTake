@@ -1,0 +1,5 @@
+{
+  "name": "subtake-agent-video-spike",
+  "private": true,
+  "dependencies": { "hyperframes": "0.8.55", "gsap": "3.14.2" }
+}

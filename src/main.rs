@@ -138,12 +138,37 @@ fn main() -> Result<()> {
                 |v| eprintln!("{:.0}%", v * 100.),
             )?;
         }
+        Some("capture") => {
+            use std::io::Write;
+            let id: u64 = args.get(1).context("capture WINDOW_ID OUTPUT.mp4 SECONDS")?.parse()?;
+            let output = PathBuf::from(args.get(2).context("Missing output path")?);
+            let seconds: u64 = args.get(3).context("Missing duration")?.parse()?;
+            anyhow::ensure!((1..=120).contains(&seconds), "Capture duration must be 1–120 seconds");
+            anyhow::ensure!(!output.exists(), "Refusing to overwrite an existing recording");
+            anyhow::ensure!(output.is_absolute(), "Use an absolute capture output path");
+            anyhow::ensure!(output.parent().is_some_and(|p| p.is_dir()), "Output directory does not exist");
+            let source = subtake_native::platform::sources()?.into_iter()
+                .find(|s| s["kind"] == "window" && s["nativeId"].as_u64() == Some(id))
+                .context("Window is no longer available; enumerate sources again")?;
+            let mut recording = subtake_native::platform::Recording::start(
+                &source, output, false, false, false, &AtomicBool::new(false),
+            )?;
+            println!("{}", serde_json::json!({"status":"recording", "source":source, "seconds":seconds}));
+            std::io::stdout().flush()?;
+            let start = std::time::Instant::now();
+            while start.elapsed().as_secs() < seconds {
+                if let Some(error) = recording.error() { anyhow::bail!(error); }
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+            let output = recording.stop()?;
+            println!("{}", serde_json::json!({"status":"complete", "path":output}));
+        }
         Some("sources") => println!(
             "{}",
             serde_json::to_string_pretty(&subtake_native::platform::sources()?)?
         ),
         Some("--help") => println!(
-            "SubTake native\n  subtake-native [VIDEO|PROJECT]\n  subtake-native probe VIDEO\n  subtake-native validate PROJECT\n  subtake-native render PROJECT OUTPUT.png TIME [WIDTH HEIGHT]\n  subtake-native export PROJECT OUTPUT [WIDTH HEIGHT FPS]\n  subtake-native benchmark PROJECT [WIDTH HEIGHT FRAMES]\n  subtake-native sources\n  subtake-native download-model\n  subtake-native transcribe VIDEO MODEL [LANGUAGE]"
+            "SubTake native\n  subtake-native [VIDEO|PROJECT]\n  subtake-native probe VIDEO\n  subtake-native validate PROJECT\n  subtake-native render PROJECT OUTPUT.png TIME [WIDTH HEIGHT]\n  subtake-native export PROJECT OUTPUT [WIDTH HEIGHT FPS]\n  subtake-native benchmark PROJECT [WIDTH HEIGHT FRAMES]\n  subtake-native sources\n  subtake-native capture WINDOW_ID OUTPUT.mp4 SECONDS\n  subtake-native download-model\n  subtake-native transcribe VIDEO MODEL [LANGUAGE]"
         ),
         _ => app::run(args.first().map(PathBuf::from))?,
     }
