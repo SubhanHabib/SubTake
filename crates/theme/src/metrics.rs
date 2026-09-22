@@ -315,6 +315,19 @@ impl Theme {
     /// `FONT_SMALL` and nothing else, so it is that line plus its leading and
     /// not a row's worth of height.
     pub const RULER_HEIGHT: f32 = 16.0;
+
+    /// The console's height: its own padding, the transport row, and the lane
+    /// stack the handoff draws — a ruler, the source lane and five lanes. A
+    /// project with more lanes than that scrolls inside the console rather
+    /// than growing it into the stage.
+    pub const CONSOLE_HEIGHT: f32 = Self::PANEL_PADDING * 2.0
+        + Self::TRANSPORT_SIZE
+        + Self::GAP_BLOCK
+        + Self::RULER_HEIGHT
+        + Self::LANE_GAP
+        + Self::LANE_SOURCE_HEIGHT
+        + Self::LANE_GAP
+        + 5.0 * Self::LANE_PITCH;
 }
 
 // ---------------------------------------------------------------------------

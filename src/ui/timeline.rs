@@ -89,17 +89,6 @@ impl RootView {
         let visible = window.get_timeline_visible();
         let offset = window.get_timeline_offset();
         let editor = window.clone();
-        let position = self.slider(
-            "timeline-position",
-            0.,
-            (window.get_duration() - visible).max(0.001),
-            offset,
-            ("Position", "ArrowsOutSimple-regular"),
-            (1.0, " s"),
-            cx,
-            move |v, _, _, _| editor.set_timeline_offset(v),
-        );
-        let editor = window.clone();
         let editor_out = window.clone();
         let editor_in = window.clone();
         let (elapsed, total) = window
@@ -513,14 +502,15 @@ impl RootView {
         }
         let console = panel(theme)
             .id("timeline")
-            .h(px(310.))
-            .mx(px(Theme::GAP))
-            .mb(px(Theme::GAP))
+            .h(px(Theme::CONSOLE_HEIGHT))
+            .mx(px(Theme::INSET))
+            .mb(px(Theme::INSET))
             .flex_shrink_0()
             .child(toolbar)
             .child(fade_edges(
                 row()
                     .id("track-scroll")
+                    .gap(px(Theme::LANE_GUTTER_GAP))
                     .items_start()
                     .flex_1()
                     .min_h_0()
@@ -541,25 +531,20 @@ impl RootView {
                                         + Theme::LANE_SOURCE_HEIGHT
                                         + Theme::LANE_GAP))
                                     .pt(px(Theme::RULER_HEIGHT + Theme::LANE_GAP))
-                                    .text_size(px(Theme::FONT_SMALL))
+                                    .text_size(px(Theme::FONT_SECONDARY))
                                     .text_color(theme.muted)
                                     .child("Source"),
                             )
                             .children(labels.into_iter().map(|label| {
                                 div()
                                     .h(px(Theme::LANE_PITCH))
-                                    .text_size(px(Theme::FONT_SMALL))
+                                    .text_size(px(Theme::FONT_SECONDARY))
                                     .text_color(theme.muted)
                                     .child(label)
                             })),
                     )
                     .child(timeline),
             ))
-            .child(
-                div()
-                    .ml(px(Theme::LANE_GUTTER + Theme::LANE_GUTTER_GAP))
-                    .child(position),
-            )
             .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
                 if let Surface::Editor(window) = &s.surface {
                     let delta = event.delta.pixel_delta(px(20.));
