@@ -157,7 +157,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                 keys.last().cloned()
             };
             app.extra_selection = keys;
-            ui.set_panel("Selection".into());
+            app.show_selection(ui);
             app.refresh(ui);
             app.epoch += 1;
             app.request();

@@ -12,6 +12,7 @@ mod slider;
 mod status;
 mod switch;
 mod tile;
+mod timecode;
 mod tooltip;
 
 pub use button::{Button, button, focus_ring, hairline, icon_button, tool_button};
@@ -28,4 +29,5 @@ pub use slider::Slider;
 pub use status::{composer_footer, context_chip, progress_bar, status_dot};
 pub use switch::{switch, toggle};
 pub use tile::{choice_tile, empty_state, media_tile, swatch};
+pub use timecode::{TimecodeField, format_timecode};
 pub use tooltip::tooltip;

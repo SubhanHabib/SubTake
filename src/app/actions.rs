@@ -104,7 +104,7 @@ impl App {
                     .to_owned();
                 self.extra_selection.clear();
                 self.selected = Some(("annotationRegions".into(), id));
-                ui.set_panel("Selection".into());
+                self.show_selection(ui);
                 self.refresh(ui);
                 self.epoch += 1;
                 self.request();
@@ -582,10 +582,9 @@ impl App {
                     }
                     Ok(())
                 })?;
-                self.selected = None;
-                self.extra_selection.clear();
-                self.refresh(ui);
+                self.deselect(ui);
             }
+            "deselect" => self.deselect(ui),
             "previous-frame" => self.seek(
                 ui,
                 self.source_time - 1. / self.info.as_ref().map(|i| i.fps).unwrap_or(30.),
@@ -1173,9 +1172,33 @@ impl App {
         })?;
         self.extra_selection.clear();
         self.selected = selected.map(|id| (key.into(), id));
-        ui.set_panel("Selection".into());
+        self.show_selection(ui);
         self.refresh(ui);
         Ok(())
+    }
+}
+
+impl App {
+    /// Selection is not a tool: it takes the inspector's place while a region
+    /// is selected, and remembers what it replaced.
+    pub(super) fn show_selection(&mut self, ui: &EditorWindow) {
+        let panel = ui.get_panel();
+        if panel != "Selection" {
+            self.panel_before_selection = Some(panel.to_string());
+        }
+        ui.set_panel("Selection".into());
+    }
+
+    /// Nothing selected: the panel Selection replaced comes back.
+    pub(super) fn deselect(&mut self, ui: &EditorWindow) {
+        self.selected = None;
+        self.extra_selection.clear();
+        if ui.get_panel() == "Selection"
+            && let Some(panel) = self.panel_before_selection.take()
+        {
+            ui.set_panel(panel.into());
+        }
+        self.refresh(ui);
     }
 }
 

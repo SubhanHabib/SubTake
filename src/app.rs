@@ -125,6 +125,9 @@ pub struct App {
     /// count is over whatever app is in front, so the bar has no focus.
     escape_hotkey: Option<global_hotkey::hotkey::HotKey>,
     last_export: Option<PathBuf>,
+    /// The panel a click on a region replaced with Selection, to go back to
+    /// when nothing is selected any more.
+    panel_before_selection: Option<String>,
     /// The Export panel's Frame format: a still of the current frame. Not
     /// stored in the project — a still is a one-off, not a setting.
     export_frame: bool,
@@ -184,6 +187,7 @@ impl App {
             hotkey_ids: vec![],
             escape_hotkey: None,
             last_export: None,
+            panel_before_selection: None,
             export_frame: false,
             export_path: None,
         }

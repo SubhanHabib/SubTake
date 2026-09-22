@@ -64,7 +64,7 @@ right.
 
 The pod offers tools — Scene, Cursor, Camera, Captions, Audio — then a hairline
 and Settings. Selection has no button: clicking a region opens it in place of
-whatever panel was showing. Not drawn by the
+whatever panel was showing, and deselecting goes back to that panel. Not drawn by the
 design: the round-2 pod starts with a Sparkle "Zoom" and moves Scene onto the
 aspect pod, but neither the Zoom inspector nor that way into Scene is drawn
 yet, so the Sparkle still opens Scene; and Help stays under Settings, because
@@ -170,6 +170,29 @@ jobs until toasts are drawn.
 gallery on the panel, where Export runs a fake eight-second export;
 `export-progress`, `export-done` and `export-failed` hold the pill in one
 state.
+
+## Selection
+
+The region the timeline has selected, named by its kind — a tint swatch the
+colour of its lane, "Zoom region" in Space Grotesk 19, and an X that
+deselects. TIMING is two timecode fields, Start and End, over the duration in
+Geist Mono. A timecode field is typed or scrubbed: click it and the whole value
+is selected, so typing replaces it (Return or clicking away keeps it, Esc puts
+it back); drag across it and it scrubs 10 ms a pixel, 100 with Shift, the
+value going Geist Mono 500 while the hand is on it. A zoom region then has
+MOTION — a stepped Zoom level slider through the renderer's six sizes, 125% to
+500%, and Follow cursor. A ghost "Delete region" in `danger` with ⌫ ends the
+panel. With nothing selected the panel is a plate, "Nothing selected" and
+where to click.
+
+Not drawn by the design: every other kind's rows, and a zoom's focus point —
+the handoff draws a zoom region only, so the rest keep their rows below the
+timing. Not wired: the Ease / Linear / Spring row. A zoom moves on the motion
+preset's one curve, so a region has nothing of its own for the three to
+choose between.
+
+`SUBTAKE_GALLERY_SCREEN=selection` opens the gallery on a zoom region's
+panel, `selection-empty` on the empty state; clicking any region opens it.
 
 ## The recorder
 

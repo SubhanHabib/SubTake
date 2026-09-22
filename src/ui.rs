@@ -32,6 +32,7 @@ mod options;
 mod presets;
 mod preview;
 mod recorder;
+mod selection;
 mod timeline;
 
 pub use menus::menu_commands;
@@ -202,6 +203,7 @@ pub struct RootView {
     inputs: HashMap<String, Entity<TextInput>>,
     dropdowns: HashMap<String, Entity<Dropdown>>,
     sliders: HashMap<String, Entity<Slider>>,
+    timecodes: HashMap<String, Entity<subtake_ui::TimecodeField>>,
     timeline_bounds: Rc<Cell<Bounds<Pixels>>>,
     preview_bounds: Rc<Cell<Bounds<Pixels>>>,
     preview_viewport: Rc<Cell<Bounds<Pixels>>>,
@@ -247,6 +249,7 @@ impl RootView {
             inputs: HashMap::new(),
             dropdowns: HashMap::new(),
             sliders: HashMap::new(),
+            timecodes: HashMap::new(),
             timeline_bounds: Rc::new(Cell::new(Bounds::default())),
             preview_bounds: Rc::new(Cell::new(Bounds::default())),
             preview_viewport: Rc::new(Cell::new(Bounds::default())),

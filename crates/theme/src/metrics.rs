@@ -395,6 +395,22 @@ impl Theme {
     pub const EXPORT_TRACK_RADIUS: f32 = 2.0;
     pub const EXPORT_TRACK_GAP: f32 = 5.0;
 
+    // ---- selection ---------------------------------------------------------
+
+    /// The selected-all highlight behind a timecode field's value.
+    pub const TIMECODE_SELECTION_PADDING: f32 = 2.0;
+    pub const TIMECODE_SELECTION_RADIUS: f32 = 4.0;
+    /// The lane-tint swatch before a region's kind in the panel title.
+    pub const SELECTION_SWATCH: f32 = 9.0;
+    pub const SELECTION_SWATCH_RADIUS: f32 = 3.0;
+    /// "Nothing selected": the column's floor and insets, its icon and how
+    /// wide its line may run.
+    pub const SELECTION_EMPTY_HEIGHT: f32 = 150.0;
+    pub const SELECTION_EMPTY_PADDING_Y: f32 = 20.0;
+    pub const SELECTION_EMPTY_PADDING_X: f32 = 12.0;
+    pub const SELECTION_EMPTY_ICON: f32 = 22.0;
+    pub const SELECTION_EMPTY_TEXT_WIDTH: f32 = 210.0;
+
     // ---- on-screen countdown -----------------------------------------------
 
     /// The numeral centred on the display the capture will record.

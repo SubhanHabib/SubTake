@@ -520,9 +520,6 @@ impl RootView {
                 )
                 .child(self.action("import", "Import video or project", "open", true));
         }
-        if name == "Selection" && e.get_selected_id().is_empty() {
-            content = content.child("Select a clip or effect in the timeline to edit it.");
-        }
         if name == "Wallpapers" {
             let mut wallpapers = row().flex_wrap();
             for tile in e.get_wallpapers().iter() {
@@ -779,8 +776,7 @@ impl RootView {
                         )),
                 );
         }
-        let export = name == "Export";
-        if !export {
+        if !matches!(name.as_str(), "Export" | "Selection") {
             for field in e.get_fields().iter() {
                 content = content.child(self.field(e, field, window, cx));
             }
@@ -790,7 +786,7 @@ impl RootView {
         // bottom padding, which is what left the dead band under the last row.
         let has_footer = matches!(
             name.as_str(),
-            "Preferences" | "Recording" | "Selection" | "Export" | "Captions"
+            "Preferences" | "Recording" | "Export" | "Captions"
         );
         let mut footer = column();
         // TODO(redesign): every arm below belongs to a panel the handoff does
@@ -824,14 +820,7 @@ impl RootView {
                     .primary(),
                 )
             }
-            "Selection" => {
-                footer = footer.child(self.action(
-                    "delete-region",
-                    "Delete selected region",
-                    "delete",
-                    !e.get_selected_id().is_empty(),
-                ))
-            }
+            "Selection" => (heading, content) = self.selection_panel(e, window, cx),
             "Export" => {
                 let (h, c, f) = self.export_panel(e, cx);
                 heading = h;

@@ -16,7 +16,9 @@
 //! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either; `=export`,
 //! `=export-gif` or `=export-frame` opens the Export panel, whose button runs
 //! a fake eight-second export in the titlebar pill; `=export-progress`,
-//! `=export-done` or `=export-failed` holds the pill in one state; `=card-<panel>`
+//! `=export-done` or `=export-failed` holds the pill in one state;
+//! `=selection` opens Selection on a zoom region, `=selection-empty` with
+//! nothing selected (clicking any region opens it too); `=card-<panel>`
 //! opens that recorder card; `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
 use crate::{
@@ -57,6 +59,8 @@ struct Gallery {
     /// Field values keyed by field key, so panels rebuild with the edits kept.
     values: Vec<(String, String)>,
     regions: Vec<Region>,
+    /// The panel a click on a region replaced with Selection.
+    before_selection: Option<String>,
     playback: Timer,
     /// Handle for timers, which run from the pump loop and never re-enter a callback.
     me: Weak<RefCell<Gallery>>,
@@ -81,6 +85,7 @@ pub fn run() -> Result<()> {
         },
         values: vec![],
         regions: fixture_regions(),
+        before_selection: None,
         playback: Timer::default(),
         me: Weak::new(),
     }));
@@ -91,6 +96,17 @@ pub fn run() -> Result<()> {
     match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
         Ok("empty") => editor.set_has_video(false),
         Ok("presets") => editor.set_dialog("presets".into()),
+        // The Selection panel over a zoom region, or with nothing selected.
+        Ok("selection") => {
+            let mut g = gallery.borrow_mut();
+            if let Some(r) = g.regions.iter_mut().find(|r| r.id == "z2") {
+                r.selected = true;
+            }
+            editor.set_selected_id("z2".into());
+            editor.set_panel("Selection".into());
+            g.before_selection = Some("Frame".into());
+        }
+        Ok("selection-empty") => editor.set_panel("Selection".into()),
         // The titlebar pill: `export-progress` (held at 62%), `export-done`
         // or `export-failed`.
         Ok("export-progress") => {
@@ -184,6 +200,16 @@ pub fn run() -> Result<()> {
     editor.on_field_change(move |key, value| {
         let mut g = g.borrow_mut();
         g.set_value(&key, &value);
+        if let ("region.startMs" | "region.endMs", Ok(ms)) = (key.as_str(), value.parse::<f32>())
+            && let Some(r) = g.regions.iter_mut().find(|r| r.selected)
+        {
+            if key == "region.startMs" {
+                r.start = ms / 1000.;
+            } else {
+                r.end = ms / 1000.;
+            }
+            g.push_timeline();
+        }
         if key == "prefs.appearance" {
             g.appearance = match value.as_str() {
                 "light" => "light",
@@ -225,7 +251,13 @@ pub fn run() -> Result<()> {
             r.selected = if additive { r.selected ^ hit } else { hit };
         }
         g.editor.set_selected_id(id);
+        let panel = g.editor.get_panel();
+        if panel != "Selection" {
+            g.before_selection = Some(panel.to_string());
+        }
+        g.editor.set_panel("Selection".into());
         g.push_timeline();
+        g.push_fields();
     });
     let g = gallery.clone();
     editor.on_move_region(move |kind, id, delta, mode| {
@@ -428,6 +460,22 @@ impl Gallery {
                 });
             }
             "cancel-export" => self.editor.set_export_state(String::new()),
+            "delete" | "deselect" => {
+                if action == "delete" {
+                    self.regions.retain(|r| !r.selected);
+                }
+                for r in &mut self.regions {
+                    r.selected = false;
+                }
+                self.editor.set_selected_id(String::new());
+                if self.editor.get_panel() == "Selection"
+                    && let Some(panel) = self.before_selection.take()
+                {
+                    self.editor.set_panel(panel.into());
+                }
+                self.push_timeline();
+                self.push_fields();
+            }
             "sources" => {
                 // A fake refresh, long enough to see the Refreshing state.
                 self.options.set_sources_loading(true);

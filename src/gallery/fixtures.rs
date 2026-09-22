@@ -580,30 +580,41 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
             ]
         }
         "Selection" => {
-            let selected = fixture.regions.iter().find(|r| r.selected);
-            match selected {
-                Some(r) => vec![
-                    section(&format!(
-                        "{} · {}",
-                        r.label,
-                        r.kind.trim_end_matches("Regions")
-                    )),
-                    text("region.start", "Start", &format!("{:.2}", r.start)),
-                    text("region.end", "End", &format!("{:.2}", r.end)),
-                    slider("region.zoom", "Zoom level", "2.0", 1., 4.),
-                    dropdown(
-                        "region.easing",
-                        "Easing",
-                        &[("ease", "Ease"), ("linear", "Linear"), ("spring", "Spring")],
-                        "ease",
-                    ),
-                    action("region.delete", "Delete region"),
-                ],
-                None => vec![
-                    section("Nothing selected"),
-                    action("select-hint", "Click a region in the timeline"),
-                ],
+            let Some(r) = fixture.regions.iter().find(|r| r.selected) else {
+                return vec![];
+            };
+            // The timing is the region's own, so a drag on the timeline and
+            // an edit here stay one value.
+            let time = |key: &str, seconds: f32| Field {
+                key: key.into(),
+                value: format!("{:.0}", seconds * 1000.).into(),
+                ..Default::default()
+            };
+            let mut fields = vec![time("region.startMs", r.start), time("region.endMs", r.end)];
+            match r.kind.as_str() {
+                "zoomRegions" => fields.extend([
+                    slider("region.depth", "Zoom depth", "3", 1., 6.),
+                    text("region.mode", "", "auto"),
+                    slider("region.focus.cx", "Focus X", "0.5", 0., 1.),
+                    slider("region.focus.cy", "Focus Y", "0.5", 0., 1.),
+                ]),
+                "clipRegions" => fields.extend([
+                    toggle("region.muted", "Mute clip", false),
+                    slider("region.speed", "Playback speed", "1", 0.25, 4.),
+                ]),
+                "speedRegions" => {
+                    fields.push(slider("region.speed", "Playback speed", "2", 0.25, 4.))
+                }
+                "audioRegions" => fields.extend([
+                    slider("region.volume", "Volume", "1", 0., 3.),
+                    toggle("region.normalize", "Normalize audio", false),
+                ]),
+                "autoCaptions" | "annotationRegions" => {
+                    fields.push(text("region.text", "Text", &r.label))
+                }
+                _ => {}
             }
+            fields
         }
         "Recording" => vec![
             section("Sources"),

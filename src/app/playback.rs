@@ -250,7 +250,8 @@ impl App {
         //
         // TODO(redesign): the "Stage" handoff draws three of these — Frame,
         // Recent and Wallpapers; its fourth, Presets, is a dialog now — and
-        // says nothing about the other ten, marked below. They are carried into the new design by the
+        // round 2 draws Export and Selection. The rest are marked below;
+        // they are carried into the new design by the
         // generic field renderer rather than left on the old one, so they
         // are correct but undesigned: their grouping, their density and
         // which of them the rail should still offer are open questions for
@@ -263,9 +264,9 @@ impl App {
                 "Cursor",      // not drawn
                 "Webcam",      // not drawn
                 "Captions",    // not drawn
-                "Selection",   // not drawn
+                "Selection",   // drawn
                 "Recording",   // not drawn
-                "Export",      // not drawn
+                "Export",      // drawn
                 "Audio",       // not drawn
                 "Preferences", // not drawn
                 "Recent",      // drawn
