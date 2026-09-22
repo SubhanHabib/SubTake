@@ -30,6 +30,11 @@ pub(super) fn macos_cursor_image() -> Arc<gpui::Image> {
 /// clear instead. The preview centres in what is left, which reads slightly
 /// left of the window's true centre — the handoff's own choice, over centring
 /// in the window and letting the inspector cover the picture's right edge.
+/// The aspect dropdown's trigger. A dropdown sizes to its widest option, and
+/// the aspect list's options are two to six characters, so without a width the
+/// pod changed shape every time the ratio changed.
+const ASPECT_TRIGGER_WIDTH: f32 = 108.0;
+
 fn stage_reserve(el: impl IntoElement) -> Div {
     div()
         .flex()
@@ -351,49 +356,49 @@ impl RootView {
                     ),
             );
         }
-        // The two pods. The handoff floats them over the stage rather than
-        // stacking them above and below it: the picture is the thing being
-        // worked on, and a strip of controls in the flow above it steals the
-        // height that would otherwise be picture. They are absolute children
-        // of the viewport, which is already `relative`, so nothing about the
-        // stage's own measurement — the zoom and pan both depend on it —
-        // changes.
-        // A pod is centred by a full-width absolute strip around it rather
-        // than by a half-width offset: gpui at the pinned revision has no
-        // transform, so `left: 50%` would put the pod's left edge at the
-        // middle instead of the pod.
-        let float = |top: bool| {
-            let el = div().absolute().left_0().right_0().flex().justify_center();
-            if top {
-                el.top(px(Theme::GAP_LARGE))
-            } else {
-                el.bottom(px(Theme::GAP_LARGE))
-            }
-        };
-        let aspect_pod = float(true).child(
-            pod(theme)
-                .child(div().w(px(108.)).flex_shrink_0().child(aspect_control))
-                .child(self.action("crop", "Crop", "visual-crop", true))
-                .child(
-                    button(
-                        "fit-preview",
-                        format!("Fit · {}%", (e.get_preview_zoom() * 100.).round()),
-                        theme,
+        // The aspect pod. The handoff floats it at the stage's top left, not
+        // over its centre: the stage's left reserve already ends where the
+        // tool pod's air does, so the pod sits flush with the picture area's
+        // own left edge and reads as belonging to the frame under it.
+        //
+        // It is an absolute child of the viewport, which is already
+        // `relative`, so nothing about the stage's own measurement — the zoom
+        // and the pan both depend on it — changes.
+        let aspect_pod = div()
+            .absolute()
+            .left_0()
+            .top(px(Theme::INSET))
+            .child(frosted(
+                UiSurface::Pod.radius(),
+                UiSurface::Pod.blur(),
+                pod(theme)
+                    .child(
+                        div()
+                            .w(px(ASPECT_TRIGGER_WIDTH))
+                            .flex_shrink_0()
+                            .child(aspect_control),
                     )
-                    .ghost()
-                    .on_click(cx.listener(|s, _, _, cx| {
-                        if let Surface::Editor(e) = &s.surface {
-                            e.set_preview_zoom(1.);
-                        }
-                        s.preview_pan = point(px(0.), px(0.));
-                        s.preview_known_zoom = 1.;
-                        if matches!(s.pinch, Some((false, ..))) {
-                            s.pinch = None;
-                        }
-                        cx.notify();
-                    })),
-                ),
-        );
+                    .child(self.action("crop", "Crop", "visual-crop", true))
+                    .child(
+                        button(
+                            "fit-preview",
+                            format!("Fit · {}%", (e.get_preview_zoom() * 100.).round()),
+                            theme,
+                        )
+                        .ghost()
+                        .on_click(cx.listener(|s, _, _, cx| {
+                            if let Surface::Editor(e) = &s.surface {
+                                e.set_preview_zoom(1.);
+                            }
+                            s.preview_pan = point(px(0.), px(0.));
+                            s.preview_known_zoom = 1.;
+                            if matches!(s.pinch, Some((false, ..))) {
+                                s.pinch = None;
+                            }
+                            cx.notify();
+                        })),
+                    ),
+            ));
         stage_reserve(
             div().flex().flex_col().child(
                 div()
@@ -438,65 +443,7 @@ impl RootView {
                             .top(self.preview_pan.y)
                             .child(picture),
                     )
-                    .child(aspect_pod)
-                    // Transport: the timecode, a centred icon cluster with a
-                    // filled play plate, and the audio panel, all on one pod
-                    // floating at the foot of the stage.
-                    .child(
-                        float(false).child(
-                            pod(theme)
-                                .gap(px(Theme::GAP_LARGE))
-                                .child(
-                                    // Geist Mono, not Geist. A timecode counts, and
-                                    // proportional digits reflow as it does — every glyph
-                                    // beside the seconds shifted each time they ticked
-                                    // from 9 to 10.
-                                    mono(e.get_time_label())
-                                        .flex_none()
-                                        .text_size(px(Theme::FONT_CONTROL))
-                                        .text_color(theme.muted),
-                                )
-                                .child(
-                                    row()
-                                        .gap(px(Theme::GAP_SMALL))
-                                        .flex_none()
-                                        .child(self.icon_action(
-                                            "previous-frame",
-                                            "SkipBack-fill",
-                                            "Previous frame",
-                                            "previous-frame",
-                                            true,
-                                        ))
-                                        .child(
-                                            icon_button(
-                                                "play",
-                                                if e.get_playing() {
-                                                    "Pause-fill"
-                                                } else {
-                                                    "Play-fill"
-                                                },
-                                                if e.get_playing() { "Pause" } else { "Play" },
-                                                theme,
-                                            )
-                                            .transport()
-                                            .on_click(self.command("play")),
-                                        )
-                                        .child(self.icon_action(
-                                            "next-frame",
-                                            "SkipForward-fill",
-                                            "Next frame",
-                                            "next-frame",
-                                            true,
-                                        )),
-                                )
-                                .child(
-                                    self.panel_button(e, "Audio", "Audio")
-                                        .glyph("SpeakerHigh-regular")
-                                        .icon_only()
-                                        .ghost(),
-                                ),
-                        ),
-                    ),
+                    .child(aspect_pod),
             ),
         )
         .into_any_element()

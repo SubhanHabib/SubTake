@@ -102,71 +102,146 @@ impl RootView {
         let editor = window.clone();
         let editor_out = window.clone();
         let editor_in = window.clone();
+        let (elapsed, total) = window
+            .get_time_label()
+            .split_once(" / ")
+            .map(|(a, b)| (a.to_owned(), format!(" / {b}")))
+            .unwrap_or_else(|| (window.get_time_label(), String::new()));
         let toolbar = row()
-            .gap(px(Theme::GAP_SMALL))
-            .child(self.icon_action(
-                "add-zoom",
-                "MagnifyingGlassPlus-regular",
-                "Add zoom",
-                "add-zoom",
-                true,
-            ))
+            .gap(px(Theme::GAP_LARGE))
+            // The transport belongs to the console, not to the stage. It had
+            // been floated over the picture on a pod of its own, which is the
+            // one thing the handoff does NOT float: the pods carry the tools
+            // and the framing, and the thing that moves the playhead sits on
+            // the same surface as the playhead.
             .child(
-                button("auto-zoom", "Suggest zooms", theme)
-                    .glyph("MagicWand-regular")
-                    .ghost()
-                    .on_click(self.command("auto-zoom")),
+                row()
+                    .gap(px(Theme::GAP_LARGE))
+                    .flex_none()
+                    .child(
+                        row()
+                            .gap(px(Theme::GAP_SMALL))
+                            .child(self.icon_action(
+                                "previous-frame",
+                                "SkipBack-fill",
+                                "Previous frame",
+                                "previous-frame",
+                                true,
+                            ))
+                            .child(
+                                icon_button(
+                                    "play",
+                                    if window.get_playing() {
+                                        "Pause-fill"
+                                    } else {
+                                        "Play-fill"
+                                    },
+                                    if window.get_playing() {
+                                        "Pause"
+                                    } else {
+                                        "Play"
+                                    },
+                                    theme,
+                                )
+                                .transport()
+                                .on_click(self.command("play")),
+                            )
+                            .child(self.icon_action(
+                                "next-frame",
+                                "SkipForward-fill",
+                                "Next frame",
+                                "next-frame",
+                                true,
+                            )),
+                    )
+                    // Geist Mono, not Geist. A timecode counts, and
+                    // proportional digits reflow as it does — every glyph
+                    // beside the seconds shifted each time they ticked from 9
+                    // to 10. The position is the reading and the duration is
+                    // the context, so only the position is at full strength.
+                    .child(
+                        mono(elapsed)
+                            .flex_none()
+                            .text_size(px(Theme::FONT_TIMECODE))
+                            .text_color(theme.text)
+                            .child(
+                                div()
+                                    .text_size(px(Theme::FONT_TIMECODE))
+                                    .text_color(theme.muted)
+                                    .child(total),
+                            )
+                            .flex()
+                            .items_baseline(),
+                    ),
             )
-            .child(self.icon_action(
-                "split-clip",
-                "Scissors-regular",
-                "Split clip",
-                "split-clip",
-                true,
-            ))
-            .child(self.menu_button("Add", cx))
+            .child(div().flex_1())
+            .child(
+                row()
+                    .gap(px(Theme::GAP))
+                    .flex_none()
+                    .child(
+                        button("auto-zoom", "Suggest zooms", theme)
+                            .glyph("MagicWand-regular")
+                            .raised()
+                            .on_click(self.command("auto-zoom")),
+                    )
+                    .child(
+                        self.action("split-clip", "Split", "split-clip", true)
+                            .glyph("Scissors-regular")
+                            .raised(),
+                    )
+                    .child(self.menu_button("Add", cx)),
+            )
             .child(div().flex_1())
             // Snap keeps the accent plate while engaged; the zoom cluster is
             // icon-only so the strip stays quiet.
             .child(
-                icon_button("snap", "Magnet-regular", "Snap", theme)
-                    .ghost()
-                    .selected(window.get_snap())
-                    .on_click(move |_, _, _| editor.set_snap(!editor.get_snap())),
-            )
-            .child(
-                icon_button(
-                    "fit-timeline",
-                    "ArrowsOutSimple-regular",
-                    "Fit timeline",
-                    theme,
-                )
-                .ghost()
-                .on_click(cx.listener(|s, _, _, _| {
-                    if let Surface::Editor(window) = &s.surface {
-                        window.set_timeline_zoom(1.);
-                        window.set_timeline_offset(0.);
-                    }
-                })),
-            )
-            .child(
-                icon_button(
-                    "zoom-out",
-                    "MagnifyingGlassMinus-regular",
-                    "Zoom out",
-                    theme,
-                )
-                .ghost()
-                .on_click(move |_, _, _| {
-                    editor_out.set_timeline_zoom((editor_out.get_timeline_zoom() / 1.5).max(1.))
-                }),
-            )
-            .child(
-                icon_button("zoom-in", "MagnifyingGlassPlus-regular", "Zoom in", theme)
-                    .ghost()
-                    .on_click(move |_, _, _| {
-                        editor_in.set_timeline_zoom((editor_in.get_timeline_zoom() * 1.5).min(100.))
-                    }),
+                row()
+                    .gap(px(Theme::GAP_SMALL))
+                    .flex_none()
+                    .child(
+                        icon_button("snap", "Magnet-regular", "Snap", theme)
+                            .ghost()
+                            .selected(window.get_snap())
+                            .on_click(move |_, _, _| editor.set_snap(!editor.get_snap())),
+                    )
+                    .child(
+                        icon_button(
+                            "fit-timeline",
+                            "ArrowsOutSimple-regular",
+                            "Fit timeline",
+                            theme,
+                        )
+                        .ghost()
+                        .on_click(cx.listener(|s, _, _, _| {
+                            if let Surface::Editor(window) = &s.surface {
+                                window.set_timeline_zoom(1.);
+                                window.set_timeline_offset(0.);
+                            }
+                        })),
+                    )
+                    .child(
+                        icon_button(
+                            "zoom-out",
+                            "MagnifyingGlassMinus-regular",
+                            "Zoom out",
+                            theme,
+                        )
+                        .ghost()
+                        .on_click(move |_, _, _| {
+                            editor_out
+                                .set_timeline_zoom((editor_out.get_timeline_zoom() / 1.5).max(1.))
+                        }),
+                    )
+                    .child(
+                        icon_button("zoom-in", "MagnifyingGlassPlus-regular", "Zoom in", theme)
+                            .ghost()
+                            .on_click(move |_, _, _| {
+                                editor_in.set_timeline_zoom(
+                                    (editor_in.get_timeline_zoom() * 1.5).min(100.),
+                                )
+                            }),
+                    ),
             );
         // The ruler: eight ticks, which is the redesign's every-12.5%, set in
         // Geist Mono so a tick's width does not change with its digits.

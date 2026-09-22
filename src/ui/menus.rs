@@ -71,6 +71,7 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         let control = button(name, name, self.theme)
+            .raised()
             .selected(self.menu.as_deref() == Some(name))
             .glyph("Plus-regular")
             .on_click(cx.listener(move |s, _, _, cx| {

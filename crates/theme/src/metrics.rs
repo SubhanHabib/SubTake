@@ -42,6 +42,12 @@ impl Theme {
     /// Record's caption — the one control allowed to be louder than body
     /// without being a title.
     pub const FONT_ACTION: f32 = 15.0;
+    /// The console's timecode, and nothing else. It is the one number the
+    /// editor is read from across the room, and the handoff sets it a step
+    /// above body where every other Geist Mono figure sits at 11-13. It is a
+    /// mono size rather than an eighth step on the interface scale: no label,
+    /// row or button may take it.
+    pub const FONT_TIMECODE: f32 = 14.0;
     /// An inspector's own heading.
     pub const FONT_HEADING: f32 = 19.0;
     /// A panel or dialog title.
