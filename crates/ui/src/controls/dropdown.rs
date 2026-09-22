@@ -173,7 +173,7 @@ impl Render for Dropdown {
             // drawn whole.
             let viewport = window.viewport_size();
             let trigger = self.bounds.get();
-            let width = trigger.size.width.max(px(Theme::MENU_MIN_WIDTH));
+            let width = trigger.size.width;
             let max_height = Theme::MENU_MAX_HEIGHT
                 .min(f32::from(viewport.height) - Theme::GAP * 2.0 - Theme::CONTROL_HEIGHT)
                 .max(Theme::CONTROL_HEIGHT);

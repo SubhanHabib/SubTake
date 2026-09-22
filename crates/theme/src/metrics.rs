@@ -192,8 +192,38 @@ impl Theme {
     /// the width it will not shrink below when its trigger is narrower than
     /// its rows. Shared by the dropdown and the command palette so one is
     /// never a different shape from the other.
+    ///
+    /// The handoff says a menu has no maximum height. That is true of a menu
+    /// on a 1600 x 1000 shell and false of one in the recorder's options
+    /// window, so this is the ceiling a menu takes when the window it opens
+    /// in is bigger than it; the dropdown lowers it to what its own window
+    /// can actually show.
     pub const MENU_MAX_HEIGHT: f32 = 280.0;
-    pub const MENU_MIN_WIDTH: f32 = 180.0;
+    pub const MENU_MIN_WIDTH: f32 = 216.0;
+
+    // ---- menu interior ---------------------------------------------------
+    //
+    // Two sections of the handoff give these different numbers: the primitive
+    // reference has a 34px item at radius 12 with 12px sides on a 180-wide
+    // surface, and "Menus and overlays" has a 32px item at radius 14 with
+    // 10px sides on a 216-wide one. The later, dedicated section wins, and
+    // the difference between hover and checked goes with it: both are `sunk`,
+    // and the tick is what says which item is the current one.
+    /// The surface's own padding, inside its radius.
+    pub const MENU_PADDING: f32 = 6.0;
+    pub const MENU_ITEM_HEIGHT: f32 = 32.0;
+    pub const MENU_ITEM_PADDING: f32 = 10.0;
+    /// Items sit a hair apart rather than flush, so two adjacent fills read
+    /// as two rows instead of one block.
+    pub const MENU_ITEM_GAP: f32 = 1.0;
+    pub const MENU_ITEM_RADIUS: f32 = Self::RADIUS_INNER;
+    /// A fixed column for the tick, held whether or not an item carries one,
+    /// so the labels in a menu line up with each other.
+    pub const CHECK_GUTTER: f32 = Self::ICON_SIZE_SMALL;
+    /// A rule between groups of items: inset from both edges, with air of its
+    /// own above and below.
+    pub const MENU_SEPARATOR_INSET: f32 = 10.0;
+    pub const MENU_SEPARATOR_MARGIN: f32 = 5.0;
 
     /// Small marks: the unsaved dot, a progress rule, a colour sample and a
     /// picker thumbnail. Named here so no view invents its own.
