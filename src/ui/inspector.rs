@@ -945,7 +945,15 @@ impl RootView {
             .gap_0()
             .size_full()
             .min_h_0()
-            .child(heading.pt(px(Theme::PANEL_PADDING)))
+            // Padding on the fixed-height title row would come out of its
+            // height and push the close control up past the panel's edge; on
+            // a wrapper it sits 18 down, as far as it sits from the side.
+            .child(
+                div()
+                    .flex_none()
+                    .pt(px(Theme::PANEL_PADDING))
+                    .child(heading),
+            )
             .child(
                 // Each edge fades only by what is scrolled out past it: a
                 // panel that fits is never dimmed, and a row the edge cuts
