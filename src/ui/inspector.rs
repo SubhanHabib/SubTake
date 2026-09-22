@@ -402,8 +402,9 @@ impl RootView {
         }
         match field.kind {
             5 => {
-                // A small muted caption with a rule running out to the edge.
-                return section_label(label, theme)
+                // A small muted caption. The handoff draws it bare, with no
+                // rule running out to the edge.
+                return caps_label(label, theme)
                     .mt(px(Theme::GAP_SMALL))
                     .into_any_element();
             }

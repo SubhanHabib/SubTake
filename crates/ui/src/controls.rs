@@ -22,7 +22,6 @@ pub use input::{TextInput, init};
 pub use menu::{menu_list, menu_row, menu_separator, menu_surface};
 pub use panel::{
     Surface, caps_label, content_panel, divider, panel, panel_header, panel_variant, pod,
-    section_label,
 };
 pub use segmented_control::segmented_control;
 pub use slider::Slider;
