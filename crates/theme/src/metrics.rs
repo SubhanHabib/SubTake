@@ -130,8 +130,17 @@ impl Theme {
     /// second cycle while capture is running.
     pub const RECORD_HEIGHT: f32 = 60.0;
     pub const RECORD_DOT: f32 = 12.0;
-    /// The unified titlebar.
+    /// The unified titlebar, and what it keeps clear at each end: the traffic
+    /// lights sit at {14,15} and the first control clears them, while the
+    /// right end is a hair tighter than a float's inset because the buttons
+    /// there are already round.
     pub const TITLEBAR_HEIGHT: f32 = 64.0;
+    pub const TITLEBAR_TRAFFIC_LIGHTS: f32 = 92.0;
+    pub const TITLEBAR_PADDING: f32 = 20.0;
+    /// The document pill in the middle of the titlebar. Shorter than a
+    /// control, because it is a label on a plate rather than something to
+    /// press.
+    pub const TITLE_PILL_HEIGHT: f32 = 36.0;
 
     /// A chip: a context label, a piece of metadata on a plate.
     pub const CHIP_HEIGHT: f32 = 26.0;

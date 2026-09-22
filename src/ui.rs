@@ -21,7 +21,6 @@ use subtake_ui::{
     tile_grid, toggle, tool_button, tooltip,
 };
 
-/// Title bar strip: tall enough to seat the 40px icon cluster with air.
 mod editor;
 mod inspector;
 mod menus;
@@ -30,9 +29,6 @@ mod recorder;
 mod timeline;
 
 pub use menus::menu_commands;
-
-/// Title bar strip: tall enough to seat the 40px icon cluster with air.
-const TITLEBAR_HEIGHT: f32 = 56.0;
 
 #[derive(Clone)]
 pub enum Surface {

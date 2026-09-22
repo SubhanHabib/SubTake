@@ -11,90 +11,45 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.theme;
-        // The unified window titlebar: a strip tall enough for the 40px icon
-        // cluster, carrying no fill of its own — the redesign has the shell's
-        // `bg` run unbroken behind it rather than a second tone on top.
+        // The unified window titlebar: 64 tall, carrying no fill of its own —
+        // the redesign has the shell's `bg` run unbroken behind it rather
+        // than a second tone on top.
+        //
+        // Open, Save, Undo and Redo used to sit here as an icon cluster. The
+        // handoff's titlebar holds the document and the three things you do
+        // to a finished one, and nothing else; all four commands are in the
+        // File and Edit menus, so the cluster was a second copy of a menu in
+        // the app's most valuable strip of chrome.
         let mut header = div()
+            .relative()
             .flex()
             .items_center()
-            .gap(px(Theme::GAP_SMALL))
-            .h(px(TITLEBAR_HEIGHT))
-            .px(px(Theme::GAP_LARGE))
+            .gap(px(Theme::GAP))
+            .h(px(Theme::TITLEBAR_HEIGHT))
+            .pl(px(Theme::GAP_LARGE))
+            .pr(px(Theme::TITLEBAR_PADDING))
             .flex_shrink_0();
         if e.get_mac_titlebar() {
-            // Traffic lights sit at {14,15}; the cluster starts at 88px.
-            header = header.pl(px(88.));
+            header = header.pl(px(Theme::TITLEBAR_TRAFFIC_LIGHTS));
         }
-        header = header
-            .child(self.brand())
-            .child(self.icon_action(
-                "open",
-                "FolderOpen-regular",
-                "Open projects",
-                "Recent",
-                true,
-            ))
-            .child(self.icon_action(
-                "save",
-                "FloppyDisk-regular",
-                "Save",
-                "save",
-                e.get_has_video(),
-            ))
-            .child(self.icon_action(
-                "undo",
-                "ArrowCounterClockwise-regular",
-                "Undo",
-                "undo",
-                e.get_can_undo(),
-            ))
-            .child(self.icon_action(
-                "redo",
-                "ArrowClockwise-regular",
-                "Redo",
-                "redo",
-                e.get_can_redo(),
-            ))
-            // Document title, with the unsaved dot as a coloured mark rather
-            // than a bullet in the string.
-            .child(
-                div()
-                    .id("title-drag")
-                    .flex_1()
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .gap(px(Theme::GAP_SMALL))
-                    .when(e.get_dirty(), |el| el.child(status_dot(theme)))
-                    .child(
-                        div()
-                            .min_w_0()
-                            .text_ellipsis()
-                            .text_size(px(Theme::FONT_BODY))
-                            .text_color(theme.text)
-                            .child(e.get_document_title()),
-                    )
-                    .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
+        header = header.child(div().flex_1()).child(
+            button(
+                "record",
+                self.translate(e, if e.get_recording() { "Stop" } else { "Record" }),
+                theme,
             )
-            .child(
-                button(
-                    "record",
-                    self.translate(e, if e.get_recording() { "Stop" } else { "Record" }),
-                    theme,
-                )
-                .glyph(if e.get_recording() {
-                    "Stop-fill"
-                } else {
-                    "Record-regular"
-                })
-                .ghost()
-                .enabled(!e.get_busy())
-                .on_click(self.command(if e.get_recording() {
-                    "stop-recording"
-                } else {
-                    "record"
-                })),
-            );
+            .glyph(if e.get_recording() {
+                "Stop-fill"
+            } else {
+                "Record-regular"
+            })
+            .enabled(!e.get_busy())
+            .on_click(self.command(if e.get_recording() {
+                "stop-recording"
+            } else {
+                "record"
+            })),
+        );
         if e.get_recording() {
             header = header.child(
                 button(
@@ -107,7 +62,6 @@ impl RootView {
                     theme,
                 )
                 .glyph("Pause-regular")
-                .ghost()
                 .on_click(self.command("pause-recording")),
             );
         }
@@ -115,13 +69,53 @@ impl RootView {
             .child(
                 self.panel_button(e, "Presets", "Presets")
                     .glyph("Stack-regular")
-                    .ghost(),
+                    .icon_only(),
             )
             .child(
                 self.panel_button(e, "Export", "Export")
                     .glyph("Export-regular")
                     .primary()
                     .enabled(e.get_has_video() && !e.get_busy()),
+            )
+            // The document pill, centred on the window rather than on the gap
+            // between the two clusters: a `flex_1` between them centres it in
+            // whatever they leave, which moves every time a button appears.
+            // gpui at the pinned revision has no transform, so it is a
+            // full-width absolute strip with the pill centred inside it.
+            //
+            // The strip itself takes no pointer events — only the pill has a
+            // listener — so the buttons underneath it stay clickable.
+            .child(
+                div()
+                    .absolute()
+                    .left_0()
+                    .right_0()
+                    .flex()
+                    .justify_center()
+                    .child(
+                        row()
+                            .id("title-drag")
+                            .max_w(relative(0.4))
+                            .h(px(Theme::TITLE_PILL_HEIGHT))
+                            .px(px(Theme::CONTROL_PADDING_SMALL))
+                            .gap(px(Theme::GAP_SMALL))
+                            .rounded_full()
+                            .bg(theme.sunk)
+                            // The handoff's dot is decoration. This one says
+                            // the document has unsaved work, which is the
+                            // only thing the titlebar has left to say it
+                            // with, so it appears rather than always burning.
+                            .when(e.get_dirty(), |el| el.child(status_dot(theme)))
+                            .child(
+                                div()
+                                    .min_w_0()
+                                    .text_ellipsis()
+                                    .font_weight(FontWeight::MEDIUM)
+                                    .text_color(theme.text)
+                                    .child(e.get_document_title()),
+                            )
+                            .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
+                    ),
             );
         // The tool pod. The handoff docks nothing: the rail is a 60-wide
         // float 24 from the window's left edge, vertically centred, and the
