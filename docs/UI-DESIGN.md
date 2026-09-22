@@ -52,20 +52,37 @@ and parked rather than left unbuilt.
 
 ## The editor
 
-A titlebar with no fill of its own, a left rail of panel buttons, the stage, and
-a 300px inspector on `card`. Two pods float over the stage: the aspect and crop
-controls at its head, the transport at its foot. Below them the console — the
-timeline — on `glass`.
+Nothing is docked. That is the change the redesign is named for, and every
+other difference follows from it.
 
-The lane stack is 42 for the source lane and 30 for every other, 4 between them,
-with a 78px label gutter. A region is its lane's tint at four strengths: `22` at
-rest, `2e` under the pointer, `3d` when selected, `66` for the edge. The
-playhead is a 2px accent rule the full height of the stack with a 16px dot and a
-soft accent ring.
+A titlebar with no fill of its own — traffic lights, the document on a `sunk`
+pill centred on the window, and Record / Presets / Export at the right. Then
+one stage filling the rest, with three floats over it: the tool pod at the left
+(60 wide, inset 24, centred on the stage's height), the aspect and crop
+controls at the stage's top left, and the 340-wide inspector on `card` at the
+right. The stage keeps each float's width clear at its side, so the picture
+runs under nothing; the preview centres in what is left and therefore reads
+slightly left of the window's true centre. That is the handoff's own answer to
+its own open question — the alternative was a larger frame with its right edge
+covered.
 
-The status strip under the console has no counterpart in the redesign, which
-puts progress on the thing that is progressing. It is carried because export and
-transcription still need somewhere to speak.
+Below the stage the console, inset 24 on all three of its edges. Its first row
+is the transport: SkipBack, Play on `ink`, SkipForward, the timecode in Geist
+Mono, then Suggest zooms / Split / Add as raised buttons, then snap, fit and
+the two zoom steps as round icon buttons. The transport belongs here and not on
+a pod: the thing that moves the playhead sits on the same surface as the
+playhead.
+
+The lane stack is 42 for the source lane and 30 for every other, 4 between
+them, with a 78px label gutter 14 from the tracks. A region is its lane's tint
+at four strengths: `22` at rest, `2e` under the pointer, `3d` when selected,
+`66` for the edge. The playhead is a 2px accent rule the full height of the
+stack with a 16px dot and a soft accent ring.
+
+The status line has no counterpart in the redesign, which puts progress on the
+thing that is progressing. It is carried because export and transcription still
+need somewhere to speak, and it lives inside the console, only while it has
+something to report.
 
 ## The recorder
 

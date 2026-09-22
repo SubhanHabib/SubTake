@@ -19,14 +19,14 @@ never name the file.
 
 | Family | File | Contract |
 | --- | --- | --- |
-| Buttons | `button.rs` | `Button` owns every variant — primary, secondary, raised, ghost, danger, record, transport — plus the icon-only and rail forms, focus, hover tweening, the glow under a filled plate and the accent inset a selected control carries. `focus_ring` and `hairline` live here because every other control's edge is built from them. |
+| Buttons | `button.rs` | `Button` owns every variant — primary, secondary, raised, ghost, danger, record, transport — plus the icon-only form and `tool_button`, the tool pod's entry, which takes the accent fill outright while its panel is open. Also focus, hover tweening, the glow under a filled plate and the accent inset a selected control carries. `focus_ring` and `hairline` live here because every other control's edge is built from them. |
 | Dropdowns | `dropdown.rs` | Trigger plus anchored popup. Stable index/value mapping, keyboard arrows, Home/End, Enter/Space, Escape, and a menu that occludes what is behind it. |
 | Menus | `menu.rs` | The plate, the scrolling list, the row and the separator every transient menu is built from. A row is **not** a `Button`: a menu's current item is marked by an accent tick in a fixed gutter over a `sunk` fill, never by an accent pill. |
 | Inputs | `input.rs` | `TextInput`: value entry, placeholder, focus, disabled, edit and commit callbacks. |
 | Sliders | `slider.rs` | The scrub field — a filled slider that *is* the row, with its caption inside the plate and its value in Geist Mono on the right. Track `sunk`, hover `sunk2`, scrubbing fill `accent_soft`. Drag previews, release commits, and the committed number is quantised to the step the display shows. |
 | Switches | `switch.rs` | `toggle` and `switch`: `sunk2` off, `accent` on, thumb travelling 18 in 140ms. |
 | Segmented controls | `segmented_control.rs` | An `ink` pill sliding between positions; inactive segments hover from `muted` to `text` with no fill. |
-| Panels | `panel.rs` | `Surface` — `Panel` (glass, holds controls), `Content` (card, holds text), `Pod` (glass, holds icons), `Card`, `Popup`, `Overlay` — plus each one's radius and blur, the caps labels and the dividers drawn on them. |
+| Panels | `panel.rs` | `Surface` — `Panel` (glass, holds controls), `Content` (card, holds text), `Pod` (glass, holds icons), `Card`, `Popup`, `Overlay` — plus each one's radius and blur, the caps labels and the dividers drawn on them. A float takes its blur by being wrapped in `frosted` at its own surface's radius and blur; `panel_variant` only paints the plate. |
 | Tiles | `tile.rs` | Colour swatches, captioned thumbnails, selection cards and the empty-state plane. |
 | Field rows | `field_row.rs` | The label/control row, the group card, the setting card and the tile grid. |
 | Status | `status.rs` | The unsaved dot, the progress rule, the context chip and the composer footer. |
