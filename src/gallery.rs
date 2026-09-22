@@ -10,7 +10,11 @@
 //! looks live: toggles flip, dropdowns pick, sliders move, the scrubber
 //! seeks, and ⌘⇧D (or the appearance dropdown) swaps light and dark on all
 //! three windows at once.
-use crate::{EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
+//!
+//! ⌘⇧E swaps the editor for the empty state ("Nothing open yet") and back;
+//! the titlebar's Presets button, or ⌘⇧P, opens the Presets dialog.
+//! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either.
+use crate::{EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions, Region, Wallpaper};
 use anyhow::Result;
 use std::{
     cell::RefCell,
@@ -73,6 +77,11 @@ pub fn run() -> Result<()> {
 
     seed_editor(&editor);
     seed_recorder(&launcher, &options);
+    match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
+        Ok("empty") => editor.set_has_video(false),
+        Ok("presets") => editor.set_dialog("presets".into()),
+        _ => {}
+    }
     {
         let g = gallery.borrow();
         g.apply_appearance();
@@ -119,7 +128,9 @@ pub fn run() -> Result<()> {
     editor.on_keyboard(move |key, command, shift, _alt| {
         let mut g = g.borrow_mut();
         match (key.as_str(), command, shift) {
-            ("d", true, true) => g.action("toggle-appearance"),
+            ("d" | "D", true, true) => g.action("toggle-appearance"),
+            ("e" | "E", true, true) => g.action("toggle-empty"),
+            ("p" | "P", true, true) => g.action("toggle-presets"),
             (" ", false, false) | ("space", false, false) => g.action("play-pause"),
             ("arrowleft", false, _) => g.nudge(-1.),
             ("arrowright", false, _) => g.nudge(1.),
@@ -226,6 +237,31 @@ impl Gallery {
                 self.push_fields();
             }
             "play" | "pause" | "play-pause" | "toggle-play" => self.toggle_play(),
+            "toggle-empty" => {
+                let has_video = !self.editor.get_has_video();
+                self.editor.set_has_video(has_video);
+                self.editor.set_panel("Frame".into());
+                self.push_fields();
+            }
+            "toggle-presets" => {
+                let open = self.editor.get_dialog() == "presets";
+                self.editor
+                    .set_dialog(if open { "" } else { "presets" }.into());
+            }
+            // Opening anything from the empty state lands back on the
+            // fixture project.
+            "open" => self.action("show-project"),
+            key if key.starts_with("library-open-") => self.action("show-project"),
+            "show-project" => {
+                self.editor.set_has_video(true);
+                self.push_fields();
+            }
+            key if key.starts_with("look-") => {
+                self.editor.set_look_choice(key["look-".len()..].into())
+            }
+            key if key.starts_with("motion-") => {
+                self.editor.set_motion_choice(key["motion-".len()..].into())
+            }
             "record" | "start-recording" => {
                 self.launcher.set_recording(true);
                 self.launcher.set_paused(false);

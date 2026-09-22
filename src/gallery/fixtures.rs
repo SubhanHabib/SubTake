@@ -25,8 +25,8 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
     ui.set_snap(true);
     ui.set_auto_apply_zooms(true);
     ui.set_connect_zooms(false);
-    ui.set_motion_choice("Smooth".into());
-    ui.set_look_choice("Studio".into());
+    ui.set_motion_choice("smooth".into());
+    ui.set_look_choice("studio".into());
     ui.set_background_value("wallpaper-1".into());
     ui.set_aspect_index(0);
     ui.set_preview(gradient(
@@ -83,6 +83,39 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
         })
         .collect::<Vec<_>>(),
     )));
+    // The empty state's cards, as the handoff draws them (⌘⇧E shows it).
+    ui.set_recents(ModelRc::new(VecModel::from(
+        [
+            (
+                "Onboarding walkthrough",
+                "1:42 · yesterday",
+                [0xe8, 0x9a, 0x5c],
+                [0x3b, 0x2a, 0x6b],
+            ),
+            (
+                "Bug repro · timeline",
+                "0:38 · Tuesday",
+                [0x1a, 0x6b, 0x4a],
+                [0x9a, 0xc8, 0xe0],
+            ),
+            (
+                "Release notes demo",
+                "3:05 · last week",
+                [0x8a, 0x2f, 0x6a],
+                [0x7f, 0xd3, 0xe0],
+            ),
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(i, (title, meta, a, b))| Recent {
+            key: format!("library-open-{i}"),
+            title: title.into(),
+            meta: meta.into(),
+            thumbnail: gradient(480, 192, a, b, Style::Preview),
+        })
+        .collect::<Vec<_>>(),
+    )));
+    ui.set_saved_presets(ModelRc::new(VecModel::from(vec!["Client demo".to_owned()])));
     ui.set_source_names(ModelRc::new(VecModel::from(source_names())));
     ui.set_camera_names(ModelRc::new(VecModel::from(camera_names())));
     ui.set_microphone_names(ModelRc::new(VecModel::from(microphone_names())));
@@ -431,32 +464,6 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
             slider("backgroundBlur", "Blur", "12", 0., 80.),
             text("background.color", "Solid colour", "#1F3B73"),
             action("choose-background", "Choose image…"),
-        ],
-        "Presets" => vec![
-            section("Motion"),
-            dropdown(
-                "preset.motion",
-                "Motion",
-                &[
-                    ("gentle", "Gentle"),
-                    ("smooth", "Smooth"),
-                    ("snappy", "Snappy"),
-                ],
-                "smooth",
-            ),
-            section("Look"),
-            dropdown(
-                "preset.look",
-                "Look",
-                &[
-                    ("studio", "Studio"),
-                    ("minimal", "Minimal"),
-                    ("vivid", "Vivid"),
-                ],
-                "studio",
-            ),
-            action("preset.save", "Save as preset…"),
-            action("preset.reset", "Reset to defaults"),
         ],
         "Selection" => {
             let selected = fixture.regions.iter().find(|r| r.selected);
