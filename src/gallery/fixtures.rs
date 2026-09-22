@@ -190,7 +190,7 @@ pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOpt
             ])
             .map(|(full, (a, b))| {
                 let (name, detail) = match full.split_once(" · ") {
-                    Some((name, detail)) => (name.to_owned(), detail.replace('×', " × ")),
+                    Some((name, detail)) => (name.to_owned(), detail.to_owned()),
                     None => (full.clone(), String::new()),
                 };
                 CaptureSource {
@@ -253,8 +253,8 @@ impl Recorder for RecordingOptions {
 
 pub(super) fn source_names() -> Vec<String> {
     [
-        "Built-in Display · 3456×2234",
-        "Studio Display · 5120×2880",
+        "Built-in Display · 3456 × 2234",
+        "Studio Display · 5120 × 2880",
         "Safari — Release notes",
         "Terminal",
         "Figma — SubTake redesign",

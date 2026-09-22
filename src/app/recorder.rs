@@ -410,12 +410,12 @@ impl App {
 }
 
 /// What the Source card draws for one platform source. The platform names a
-/// display "<name> · <width>×<height>"; the card sets the resolution on its
+/// display "<name> · <width> × <height>"; the card sets the resolution on its
 /// own line, so it is split back out here.
 fn capture_source(source: &Value) -> CaptureSource {
     let full = source["name"].as_str().unwrap_or("Source");
     let (name, detail) = match full.split_once(" · ") {
-        Some((name, detail)) => (name, detail.replace('×', " × ")),
+        Some((name, detail)) => (name, detail.to_owned()),
         None => (full, String::new()),
     };
     CaptureSource {

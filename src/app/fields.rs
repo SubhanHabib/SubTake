@@ -814,7 +814,7 @@ impl App {
             720 => "720".to_owned(),
             1080 => "1080".to_owned(),
             h if h == source_height => "source".to_owned(),
-            h => format!("{}×{h}", settings.width),
+            h => format!("{} × {h}", settings.width),
         };
         let format = if self.export_frame {
             "frame"

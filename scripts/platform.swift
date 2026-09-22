@@ -16,7 +16,7 @@ if command == "sources" || command == "sources-passive" {
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             var sources: [[String: Any]] = content.displays.map { d in
-                ["kind": "display", "nativeId": d.displayID, "name": "Display \(d.displayID) · \(d.width)×\(d.height)", "x": d.frame.minX, "y": d.frame.minY, "width": d.frame.width, "height": d.frame.height]
+                ["kind": "display", "nativeId": d.displayID, "name": "Display \(d.displayID) · \(d.width) × \(d.height)", "x": d.frame.minX, "y": d.frame.minY, "width": d.frame.width, "height": d.frame.height]
             }
             sources += content.windows.filter { $0.windowLayer == 0 && $0.frame.width >= 80 && $0.frame.height >= 80 && $0.owningApplication?.processID != getpid() }.map { w in
                 ["kind": "window", "nativeId": w.windowID, "name": "\(w.owningApplication?.applicationName ?? "App") — \(w.title ?? "Window")", "x": w.frame.minX, "y": w.frame.minY, "width": w.frame.width, "height": w.frame.height]

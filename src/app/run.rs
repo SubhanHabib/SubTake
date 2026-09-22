@@ -383,7 +383,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     // Exercise discovery completion, failure, empty results, cancellation and
                     // configuration reopening without recording the user's desktop.
                     let fixtures = vec![
-                        json!({"kind":"display","nativeId":1,"name":"Built-in display · 1920×1080"}),
+                        json!({"kind":"display","nativeId":1,"name":"Built-in display · 1920 × 1080"}),
                         json!({"kind":"window","nativeId":2,"name":"SubTake — demo window"}),
                     ];
                     for (result, cancelled) in [
