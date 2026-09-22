@@ -12,6 +12,7 @@ pub fn configure_recording_hud(window: &crate::ui_runtime::Window, movable: bool
             subtake_configure_recorder_overlay(native_view(window)?, movable);
         }
     }
+
     #[cfg(not(target_os = "macos"))]
     let _ = (window, movable);
     Ok(())
@@ -35,15 +36,18 @@ pub fn set_editor_active(active: bool) {
     unsafe {
         subtake_set_editor_active(active);
     }
+
     #[cfg(not(target_os = "macos"))]
     let _ = active;
 }
+
 pub fn activate_launcher() {
     #[cfg(target_os = "macos")]
     unsafe {
         subtake_activate_launcher();
     }
 }
+
 pub fn install_status_item(callback: extern "C" fn(*const std::ffi::c_char)) {
     #[cfg(target_os = "macos")]
     unsafe {
@@ -51,9 +55,11 @@ pub fn install_status_item(callback: extern "C" fn(*const std::ffi::c_char)) {
         subtake_set_app_icon(icon.as_ptr(), icon.len());
         subtake_install_status_item(callback);
     }
+
     #[cfg(not(target_os = "macos"))]
     let _ = callback;
 }
+
 #[cfg(target_os = "macos")]
 pub(super) fn native_view(window: &crate::ui_runtime::Window) -> Result<*mut std::ffi::c_void> {
     window
@@ -86,6 +92,7 @@ pub fn position_launcher_options(
             subtake_position_launcher_options(native_view(options)?, native_view(launcher)?);
         }
     }
+
     #[cfg(not(target_os = "macos"))]
     let _ = (options, launcher);
     Ok(())
@@ -102,6 +109,7 @@ pub fn launcher_options_are_attached(
             subtake_launcher_options_are_attached(native_view(options)?, native_view(launcher)?)
         })
     }
+
     #[cfg(not(target_os = "macos"))]
     {
         let option_position = options.position();
@@ -126,6 +134,7 @@ pub fn open_agent_workspace(url: &str) -> Result<()> {
         unsafe { subtake_open_agent_workspace(url.as_ptr()) };
         Ok(())
     }
+
     #[cfg(not(target_os = "macos"))]
     bail!("The embedded agent workspace is currently macOS-only")
 }
@@ -189,6 +198,7 @@ pub unsafe fn ui_window_install_magnify(
         );
         Ok(())
     }
+
     #[cfg(not(target_os = "macos"))]
     {
         let _ = (view, callback);
@@ -206,6 +216,7 @@ pub unsafe fn ui_window_remove_magnify(view: *mut std::ffi::c_void) {
     unsafe {
         subtake_window_remove_magnify(view);
     }
+
     #[cfg(not(target_os = "macos"))]
     let _ = view;
 }
@@ -218,6 +229,7 @@ pub unsafe fn ui_window_number(view: *mut std::ffi::c_void) -> u32 {
     unsafe {
         subtake_window_number(view)
     }
+
     #[cfg(not(target_os = "macos"))]
     {
         let _ = view;
@@ -238,6 +250,7 @@ pub unsafe fn ui_window_position(view: *mut std::ffi::c_void) -> (i32, i32) {
         }
         (x.round() as i32, y.round() as i32)
     }
+
     #[cfg(not(target_os = "macos"))]
     {
         let _ = view;
@@ -253,6 +266,7 @@ pub unsafe fn ui_window_set_position(view: *mut std::ffi::c_void, x: i32, y: i32
     unsafe {
         subtake_window_set_position(view, x as f64, y as f64);
     }
+
     #[cfg(not(target_os = "macos"))]
     let _ = (view, x, y);
 }
@@ -269,6 +283,7 @@ pub unsafe fn ui_window_drag(view: *mut std::ffi::c_void) -> Result<()> {
         );
         Ok(())
     }
+
     #[cfg(not(target_os = "macos"))]
     {
         let _ = view;
@@ -354,6 +369,7 @@ pub fn update_recorder_glass(
             }
         }
     }
+
     #[cfg(not(target_os = "macos"))]
     let _ = (window, bar, options, height, expanded);
 }
@@ -368,6 +384,7 @@ pub fn update_options_glass(window: &crate::ui_runtime::Window) {
             }
         }
     }
+
     #[cfg(not(target_os = "macos"))]
     let _ = window;
 }

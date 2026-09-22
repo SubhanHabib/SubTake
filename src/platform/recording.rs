@@ -11,6 +11,7 @@ pub struct Recording {
     pub paused: bool,
     events: crossbeam_channel::Receiver<String>,
 }
+
 impl Recording {
     pub fn start(
         source: &Value,
@@ -25,6 +26,7 @@ impl Recording {
             let _ = (source, output, mic, system, camera);
             bail!("Windows capture integration remains in WINDOWS-HANDOFF.md")
         }
+
         #[cfg(target_os = "macos")]
         {
             ensure!(
@@ -106,6 +108,7 @@ impl Recording {
             })
         }
     }
+
     pub(super) fn send(&mut self, command: &str) -> Result<()> {
         writeln!(
             self.process
@@ -117,6 +120,7 @@ impl Recording {
         )?;
         Ok(())
     }
+
     pub fn pause(&mut self) -> Result<()> {
         self.send(if self.paused { "resume" } else { "pause" })?;
         let marker = if self.paused {
@@ -141,6 +145,7 @@ impl Recording {
         }
         bail!("Recorder did not acknowledge pause/resume")
     }
+
     pub fn stop(mut self) -> Result<PathBuf> {
         match self.finish_recording() {
             Ok(path) => Ok(path),
@@ -153,6 +158,7 @@ impl Recording {
             }
         }
     }
+
     pub(super) fn finish_recording(&mut self) -> Result<PathBuf> {
         let mut issues = vec![];
         let mut companion_ok = true;
@@ -228,6 +234,7 @@ impl Recording {
         );
         Ok(self.output.clone())
     }
+
     pub fn error(&mut self) -> Option<String> {
         if let Some(c) = &mut self.companion
             && c.process.child.try_wait().ok().flatten().is_some()
@@ -252,6 +259,7 @@ pub(super) struct Telemetry {
     samples: std::sync::Arc<std::sync::Mutex<Vec<Value>>>,
     reader: Option<std::thread::JoinHandle<()>>,
 }
+
 impl Telemetry {
     pub(super) fn start(source: &Value) -> Result<Self> {
         let state = std::sync::Arc::new(std::sync::Mutex::new(String::from("arrow")));
@@ -298,6 +306,7 @@ impl Telemetry {
             reader: Some(reader),
         })
     }
+
     pub(super) fn command(&mut self, command: &str) -> Result<()> {
         writeln!(
             self.process
@@ -309,6 +318,7 @@ impl Telemetry {
         )?;
         Ok(())
     }
+
     pub(super) fn finish(&mut self) -> Result<Vec<Value>> {
         self.process.child.stdin.take();
         self.process.finish(Duration::from_secs(5))?;

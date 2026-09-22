@@ -1008,6 +1008,7 @@ pub(super) fn get_nested(value: &Value, key: &str) -> Value {
         .fold(value, |value, k| value.get(k).unwrap_or(&Value::Null))
         .clone()
 }
+
 pub(super) fn set_nested(root: &mut Value, key: &str, value: Value) {
     if !root.is_object() {
         *root = json!({})

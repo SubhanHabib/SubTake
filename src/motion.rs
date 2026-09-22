@@ -10,10 +10,12 @@ pub struct Spring {
     velocity: f64,
     initialized: bool,
 }
+
 impl Spring {
     pub fn step(&mut self, target: f64, ms: f64, stiffness: f64, damping: f64, mass: f64) -> f64 {
         self.step_with_rest(target, ms, (stiffness, damping, mass), (0.0002, 0.01))
     }
+
     pub fn step_with_rest(
         &mut self,
         target: f64,
@@ -76,6 +78,7 @@ impl Spring {
         self.value
     }
 }
+
 pub fn cursor_config(project: &Project) -> (f64, f64, f64) {
     let s = project.number("cursorSmoothing", 0.67).clamp(0., 2.);
     let (k, c, m) = if s <= 0. {
@@ -99,6 +102,7 @@ pub fn cursor_config(project: &Project) -> (f64, f64, f64) {
             .clamp(0.25, 3.),
     )
 }
+
 pub fn smooth_cursor(project: &Project, points: &[Value]) -> Vec<(f64, f64)> {
     let (k, c, m) = cursor_config(project);
     let (mut x, mut y) = (Spring::default(), Spring::default());
@@ -124,6 +128,7 @@ pub fn smooth_cursor(project: &Project, points: &[Value]) -> Vec<(f64, f64)> {
         })
         .collect()
 }
+
 pub fn sway(dx: f64, dy: f64, ms: f64, amount: f64) -> f64 {
     let distance = dx.hypot(dy);
     if distance < 0.01 || amount <= 0. {
@@ -142,6 +147,7 @@ pub struct Follow {
     was_zoomed: bool,
     full: bool,
 }
+
 impl Follow {
     pub fn step(
         &mut self,
@@ -196,6 +202,7 @@ impl Follow {
         (self.x, self.y)
     }
 }
+
 pub fn cursor_at(points: &[Value], time: f64) -> Option<(f64, f64)> {
     if points.is_empty() {
         return None;
@@ -212,6 +219,7 @@ pub fn cursor_at(points: &[Value], time: f64) -> Option<(f64, f64)> {
         n(a, "cy", 0.5) + (n(b, "cy", 0.5) - n(a, "cy", 0.5)) * t,
     ))
 }
+
 #[derive(Clone, Copy, Default, Debug)]
 pub struct Transform {
     pub scale: f64,
@@ -227,6 +235,7 @@ pub struct CameraTrack {
     follow: Follow,
     springs: [Spring; 3],
 }
+
 impl CameraTrack {
     pub fn at(
         &mut self,
@@ -336,6 +345,7 @@ pub struct CursorTrack {
     position: [Spring; 2],
     rotation: Spring,
 }
+
 impl CursorTrack {
     pub fn at(
         &mut self,

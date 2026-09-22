@@ -153,6 +153,13 @@ style edition. Blank lines are yours, and they mark **semantic paragraphs**:
 acquire input, derive, apply, return. Do not blank-line every statement, and do
 not run two phases together.
 
+**Every item is separated by one blank line**: between two functions, between a
+function and the `impl` or `}` around it, between a struct and its `impl`,
+between consts, and before every `#[…]` attribute that opens a new item. Two
+adjacent closing braces are fine; a `}` directly followed by `fn` is not.
+`rustfmt` keeps blank lines it finds but does not insert them, so this one is
+checked by eye and in review.
+
 ```rust
 pub(super) fn load(&mut self, ui: &EditorWindow, path: &Path) -> Result<()> {
     let text = std::fs::read_to_string(path).with_context(|| path.display().to_string())?;

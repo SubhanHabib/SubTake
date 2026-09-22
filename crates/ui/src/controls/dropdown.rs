@@ -23,9 +23,11 @@ impl Dropdown {
     pub fn set_handler(&mut self, change: impl Fn(usize, &mut Window, &mut App) + 'static) {
         self.change = Box::new(change);
     }
+
     pub fn is_focused(&self, window: &Window) -> bool {
         self.focus.is_focused(window)
     }
+
     pub fn new(
         cx: &mut Context<Self>,
         items: Vec<String>,
@@ -45,6 +47,7 @@ impl Dropdown {
             change: Box::new(change),
         }
     }
+
     fn choose(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
         if self.enabled && index < self.items.len() {
             self.selected = index;

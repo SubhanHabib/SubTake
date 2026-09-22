@@ -377,6 +377,7 @@ pub fn reduced_motion() -> bool {
                 .map(|value| value.trim() == "1")
                 .unwrap_or(false)
         }
+
         #[cfg(not(target_os = "macos"))]
         {
             false

@@ -87,6 +87,7 @@ impl Scene {
         self.cursor_assets.insert(key, asset.clone());
         Ok(asset)
     }
+
     pub(super) fn draw_cursor(
         &mut self,
         canvas: &Canvas,

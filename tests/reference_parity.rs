@@ -6,12 +6,15 @@ use subtake_native::{
     project::Project,
     timeline,
 };
+
 fn corpus() -> Value {
     serde_json::from_str(include_str!("reference-fixtures.json")).unwrap()
 }
+
 fn near(a: f64, b: f64) {
     assert!((a - b).abs() < 1e-8, "{a} differs from reference {b}");
 }
+
 #[test]
 fn frame_geometry_matches_production_typescript() {
     for case in corpus()["geometries"].as_array().unwrap() {
@@ -33,6 +36,7 @@ fn frame_geometry_matches_production_typescript() {
         near(frame.height, r["croppedDisplayHeight"].as_f64().unwrap());
     }
 }
+
 #[test]
 fn cursor_springs_match_production_typescript() {
     for case in corpus()["springs"].as_array().unwrap() {
@@ -58,6 +62,7 @@ fn cursor_springs_match_production_typescript() {
         }
     }
 }
+
 #[test]
 fn zoom_strength_matches_production_typescript() {
     for case in corpus()["zooms"].as_array().unwrap() {
@@ -72,6 +77,7 @@ fn zoom_strength_matches_production_typescript() {
         );
     }
 }
+
 #[test]
 fn zero_zoom_is_identity() {
     let p = Project::new(Path::new("fixture.mp4"));
@@ -79,6 +85,7 @@ fn zero_zoom_is_identity() {
     near(camera.scale, 1.);
     near(camera.progress, 0.);
 }
+
 #[test]
 fn connected_zoom_holds_through_short_gap() {
     let mut p = Project::new(Path::new("fixture.mp4"));
@@ -158,6 +165,7 @@ fn legacy_export_dimensions_match_production() {
         );
     }
 }
+
 #[test]
 fn whisper_word_reconstruction_matches_production() {
     for case in corpus()["transcriptions"].as_array().unwrap() {

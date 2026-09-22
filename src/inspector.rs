@@ -204,9 +204,11 @@ pub fn present(mut fields: Vec<Field>, panel: &str, language: &str) -> Vec<Field
     }
     result
 }
+
 fn is_preset(key: &str) -> bool {
     key.contains("preset")
 }
+
 fn group<'a>(panel: &str, key: &str) -> (i32, &'a str) {
     match panel {
         "Frame" => {

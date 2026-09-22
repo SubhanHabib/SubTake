@@ -13,11 +13,13 @@ pub struct Word {
     pub end: f64,
     pub real: bool,
 }
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Line {
     pub words: Vec<Word>,
     pub width: f64,
 }
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Layout {
     pub lines: Vec<Line>,
@@ -26,6 +28,7 @@ pub struct Layout {
     pub scale: f64,
     pub page: usize,
 }
+
 fn covered(cues: &[Value], time: f64) -> bool {
     let mut sorted: Vec<_> = cues.iter().collect();
     sorted.sort_by(|a, b| n(a, "startMs", 0.).total_cmp(&n(b, "startMs", 0.)));
@@ -45,6 +48,7 @@ fn covered(cues: &[Value], time: f64) -> bool {
     }
     false
 }
+
 pub fn flatten(cues: &[Value]) -> Vec<Word> {
     let mut words = vec![];
     for (cue_index, cue) in cues.iter().enumerate() {
@@ -116,6 +120,7 @@ pub fn flatten(cues: &[Value]) -> Vec<Word> {
     }
     words
 }
+
 pub fn layout(
     cues: &[Value],
     time: f64,

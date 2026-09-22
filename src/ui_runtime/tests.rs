@@ -31,6 +31,7 @@ fn preview_upload_swizzles_red_and_blue_without_changing_alpha() {
         &[10, 20, 255, 128, 3, 2, 1, 255]
     );
 }
+
 #[test]
 fn worker_can_return_ui_identity_but_cannot_access_main_thread_state() {
     let ui = crate::ui_state::EditorWindow::new().unwrap();
@@ -44,6 +45,7 @@ fn worker_can_return_ui_identity_but_cannot_access_main_thread_state() {
     returned.upgrade().unwrap().set_status("completion".into());
     assert_eq!(ui.get_status(), "completion");
 }
+
 #[test]
 fn restarting_and_stopping_timers_discards_obsolete_callbacks() {
     let count = Rc::new(Cell::new(0));
@@ -68,6 +70,7 @@ fn restarting_and_stopping_timers_discards_obsolete_callbacks() {
     drain_commands();
     assert_eq!(count.get(), 2);
 }
+
 #[test]
 fn callback_can_schedule_another_timer_without_borrowing_the_scheduler() {
     let count = Rc::new(Cell::new(0));

@@ -34,19 +34,23 @@ impl Slider {
     pub fn set_handler(&mut self, change: impl Fn(f32, bool, &mut Window, &mut App) + 'static) {
         self.change = Box::new(change);
     }
+
     pub fn sync(&mut self, value: f32) {
         if !self.dragging {
             self.value = value;
         }
     }
+
     pub fn set_caption(&mut self, label: impl Into<SharedString>, glyph: impl Into<SharedString>) {
         self.label = label.into();
         self.glyph = glyph.into();
     }
+
     pub fn set_unit(&mut self, scale: f32, unit: impl Into<SharedString>) {
         self.scale = scale;
         self.unit = unit.into();
     }
+
     pub fn new(
         minimum: f32,
         maximum: f32,
@@ -68,6 +72,7 @@ impl Slider {
             change: Box::new(change),
         }
     }
+
     fn set(&mut self, x: Pixels, commit: bool, window: &mut Window, cx: &mut Context<Self>) {
         let b = self.bounds.get();
         let f = (f32::from(x - b.left()) / f32::from(b.size.width).max(1.)).clamp(0., 1.);

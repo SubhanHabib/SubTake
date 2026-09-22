@@ -7,6 +7,7 @@ fn explicit(value: &Value) -> bool {
         Some("click" | "double-click" | "right-click" | "middle-click")
     )
 }
+
 fn strength(points: &[Value], click: &Value) -> f64 {
     if click["interactionType"] == "double-click" {
         return 1500.;
@@ -57,6 +58,7 @@ fn strength(points: &[Value], click: &Value) -> f64 {
     }
     900.
 }
+
 pub fn suggest(points: &[Value], duration: f64, reserved: &[(f64, f64)]) -> Vec<Value> {
     if duration <= 0. {
         return vec![];
@@ -117,6 +119,7 @@ pub fn suggest(points: &[Value], duration: f64, reserved: &[(f64, f64)]) -> Vec<
     }
     regions
 }
+
 pub fn from_source(
     p: &Project,
     source: &std::path::Path,

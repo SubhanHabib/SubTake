@@ -7,6 +7,7 @@ use super::*;
 pub(super) struct EditorCommand {
     action: String,
 }
+
 pub(super) fn install_menus(cx: &mut gpui::App) {
     cx.on_action(|command: &EditorCommand, _| {
         let command = command.action.clone();

@@ -26,6 +26,7 @@ pub struct ExportSettings {
     pub quality: String,
     pub hardware: bool,
 }
+
 impl Default for ExportSettings {
     fn default() -> Self {
         Self {
@@ -39,6 +40,7 @@ impl Default for ExportSettings {
         }
     }
 }
+
 impl ExportSettings {
     pub fn from_project(project: &Project) -> Self {
         let gif = project.text("exportFormat", "mp4") == "gif";
@@ -55,6 +57,7 @@ impl ExportSettings {
             hardware: project.flag("nativeExportHardware", false),
         }
     }
+
     pub fn for_media(project: &Project, info: &MediaInfo) -> Self {
         let mut settings = Self::from_project(project);
         if !project.editor.contains_key("nativeExportWidth")
@@ -67,6 +70,7 @@ impl ExportSettings {
         }
         settings
     }
+
     pub fn store(&self, project: &mut Project) {
         use serde_json::json;
         project.set("nativeExportWidth", json!(self.width));
@@ -85,6 +89,7 @@ impl ExportSettings {
         project.set("nativeExportHardware", json!(self.hardware));
     }
 }
+
 pub fn legacy_dimensions(
     p: &Project,
     source_width: f64,
@@ -141,6 +146,7 @@ pub fn legacy_dimensions(
     };
     (even(width * scale), even(height * scale))
 }
+
 fn tempo(mut speed: f64) -> String {
     let mut filters = vec![];
     while speed > 2. {
@@ -154,6 +160,7 @@ fn tempo(mut speed: f64) -> String {
     filters.push(format!("atempo={speed:.8}"));
     filters.join(",")
 }
+
 pub fn audio_command(
     p: &Project,
     source: &Path,
@@ -277,6 +284,7 @@ pub fn audio_command(
     ]);
     Ok(command)
 }
+
 pub fn render_audio(
     p: &Project,
     source: &Path,
@@ -293,6 +301,7 @@ pub fn render_audio(
     let mut child = ManagedChild::spawn(&mut command)?;
     child.finish_cancellable(Duration::from_secs(3600), cancel)
 }
+
 pub fn export(
     p: &Project,
     source: &Path,
@@ -452,6 +461,7 @@ struct PcmSource {
     stdout: std::io::BufReader<std::process::ChildStdout>,
     cancel: Arc<AtomicBool>,
 }
+
 impl Iterator for PcmSource {
     type Item = f32;
     fn next(&mut self) -> Option<f32> {
@@ -463,20 +473,25 @@ impl Iterator for PcmSource {
         Some(f32::from_le_bytes(b))
     }
 }
+
 impl rodio::Source for PcmSource {
     fn current_span_len(&self) -> Option<usize> {
         None
     }
+
     fn channels(&self) -> u16 {
         2
     }
+
     fn sample_rate(&self) -> u32 {
         48000
     }
+
     fn total_duration(&self) -> Option<Duration> {
         None
     }
 }
+
 pub fn play_audio(
     p: Project,
     source: PathBuf,

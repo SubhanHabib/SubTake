@@ -5,6 +5,7 @@ use serde_json::{Value, json};
 fn clean(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
+
 pub fn normalized_words(cue: &Value) -> Vec<Value> {
     let a = n(cue, "startMs", 0.);
     let b = n(cue, "endMs", a + 1.);
@@ -60,6 +61,7 @@ pub fn normalized_words(cue: &Value) -> Vec<Value> {
         })
         .collect()
 }
+
 fn spacing(mut ws: Vec<Value>) -> Vec<Value> {
     ws.sort_by(|a, b| {
         n(a, "startMs", 0.)
@@ -74,6 +76,7 @@ fn spacing(mut ws: Vec<Value>) -> Vec<Value> {
     }
     ws
 }
+
 fn sorted(project: &Project) -> Vec<Value> {
     let mut cues = project.regions("autoCaptions").to_vec();
     cues.sort_by(|a, b| {
@@ -83,6 +86,7 @@ fn sorted(project: &Project) -> Vec<Value> {
     });
     cues
 }
+
 pub fn split(project: &mut Project, id: &str, time: f64) -> Result<String> {
     ensure!(time.is_finite(), "Invalid split time");
     let mut cues = sorted(project);
@@ -120,6 +124,7 @@ pub fn split(project: &mut Project, id: &str, time: f64) -> Result<String> {
     project.set("autoCaptions", json!(cues));
     Ok(right_id)
 }
+
 pub fn merge_next(project: &mut Project, id: &str) -> Result<()> {
     let mut cues = sorted(project);
     let i = cues
@@ -137,6 +142,7 @@ pub fn merge_next(project: &mut Project, id: &str) -> Result<()> {
     project.set("autoCaptions", json!(cues));
     Ok(())
 }
+
 pub fn edit_word(
     project: &mut Project,
     id: &str,

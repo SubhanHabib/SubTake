@@ -13,6 +13,7 @@ pub struct Region {
     pub tint: Color,
     pub selected: bool,
 }
+
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Field {
     pub key: String,
@@ -25,12 +26,14 @@ pub struct Field {
     pub values: ModelRc<String>,
     pub choice: i32,
 }
+
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Wallpaper {
     pub key: String,
     pub title: String,
     pub source: Image,
 }
+
 struct Properties {
     appearance: String,
     auto_apply_zooms: bool,
@@ -101,6 +104,7 @@ struct Properties {
     directory: String,
     countdown: i32,
 }
+
 impl Default for Properties {
     fn default() -> Self {
         Self {
@@ -181,6 +185,7 @@ impl Default for Properties {
         }
     }
 }
+
 #[derive(Default)]
 struct Callbacks {
     action: Option<Rc<dyn Fn(String)>>,
@@ -195,28 +200,34 @@ struct Callbacks {
     translate: Option<Rc<dyn Fn(String, String) -> String>>,
     option: Option<Rc<dyn Fn(String, String)>>,
 }
+
 pub struct UiData {
     props: RefCell<Properties>,
     callbacks: RefCell<Callbacks>,
     pub(crate) window: Window,
 }
+
 #[derive(Clone)]
 pub struct UiHandle(pub(crate) Rc<UiData>);
 impl UiHandle {
     pub fn window(&self) -> &Window {
         &self.0.window
     }
+
     pub fn show(&self) -> anyhow::Result<()> {
         self.window().show();
         Ok(())
     }
+
     pub fn hide(&self) -> anyhow::Result<()> {
         self.window().hide();
         Ok(())
     }
+
     pub fn get_timeline_visible(&self) -> f32 {
         (self.get_duration() / self.get_timeline_zoom().max(1.)).max(0.001)
     }
+
     pub fn get_options_width(&self) -> f32 {
         match self.get_panel().as_str() {
             "more" => 520.,
@@ -225,6 +236,7 @@ impl UiHandle {
             _ => 400.,
         }
     }
+
     pub fn get_options_height(&self) -> f32 {
         match self.get_panel().as_str() {
             "more" => 284.,
@@ -232,12 +244,15 @@ impl UiHandle {
             _ => 264.,
         }
     }
+
     pub fn invoke_reset_preview(&self) {
         self.set_preview_zoom(1.);
     }
+
     pub fn get_appearance(&self) -> String {
         self.0.props.borrow().appearance.clone()
     }
+
     pub fn set_appearance(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.appearance != value {
@@ -245,9 +260,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_auto_apply_zooms(&self) -> bool {
         self.0.props.borrow().auto_apply_zooms
     }
+
     pub fn set_auto_apply_zooms(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.auto_apply_zooms != value {
@@ -255,9 +272,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_connect_zooms(&self) -> bool {
         self.0.props.borrow().connect_zooms
     }
+
     pub fn set_connect_zooms(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.connect_zooms != value {
@@ -265,9 +284,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_motion_choice(&self) -> String {
         self.0.props.borrow().motion_choice.clone()
     }
+
     pub fn set_motion_choice(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.motion_choice != value {
@@ -275,9 +296,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_look_choice(&self) -> String {
         self.0.props.borrow().look_choice.clone()
     }
+
     pub fn set_look_choice(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.look_choice != value {
@@ -285,9 +308,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_language(&self) -> String {
         self.0.props.borrow().language.clone()
     }
+
     pub fn set_language(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.language != value {
@@ -295,9 +320,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_document_title(&self) -> String {
         self.0.props.borrow().document_title.clone()
     }
+
     pub fn set_document_title(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.document_title != value {
@@ -305,9 +332,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_can_undo(&self) -> bool {
         self.0.props.borrow().can_undo
     }
+
     pub fn set_can_undo(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.can_undo != value {
@@ -315,9 +344,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_can_redo(&self) -> bool {
         self.0.props.borrow().can_redo
     }
+
     pub fn set_can_redo(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.can_redo != value {
@@ -325,9 +356,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_dirty(&self) -> bool {
         self.0.props.borrow().dirty
     }
+
     pub fn set_dirty(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.dirty != value {
@@ -335,9 +368,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_has_video(&self) -> bool {
         self.0.props.borrow().has_video
     }
+
     pub fn set_has_video(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.has_video != value {
@@ -345,9 +380,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_playing(&self) -> bool {
         self.0.props.borrow().playing
     }
+
     pub fn set_playing(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.playing != value {
@@ -355,9 +392,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_recording(&self) -> bool {
         self.0.props.borrow().recording
     }
+
     pub fn set_recording(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.recording != value {
@@ -365,9 +404,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_recording_paused(&self) -> bool {
         self.0.props.borrow().recording_paused
     }
+
     pub fn set_recording_paused(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.recording_paused != value {
@@ -375,9 +416,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_busy(&self) -> bool {
         self.0.props.borrow().busy
     }
+
     pub fn set_busy(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.busy != value {
@@ -385,9 +428,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_sources_loading(&self) -> bool {
         self.0.props.borrow().sources_loading
     }
+
     pub fn set_sources_loading(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.sources_loading != value {
@@ -395,9 +440,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_mac_titlebar(&self) -> bool {
         self.0.props.borrow().mac_titlebar
     }
+
     pub fn set_mac_titlebar(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.mac_titlebar != value {
@@ -405,9 +452,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_edit_visible(&self) -> bool {
         self.0.props.borrow().edit_visible
     }
+
     pub fn set_edit_visible(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.edit_visible != value {
@@ -415,9 +464,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_wallpapers(&self) -> ModelRc<Wallpaper> {
         self.0.props.borrow().wallpapers.clone()
     }
+
     pub fn set_wallpapers(&self, value: ModelRc<Wallpaper>) {
         let mut props = self.0.props.borrow_mut();
         if props.wallpapers != value {
@@ -425,9 +476,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_aspect_index(&self) -> i32 {
         self.0.props.borrow().aspect_index
     }
+
     pub fn set_aspect_index(&self, value: i32) {
         let mut props = self.0.props.borrow_mut();
         if props.aspect_index != value {
@@ -435,9 +488,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_background_value(&self) -> String {
         self.0.props.borrow().background_value.clone()
     }
+
     pub fn set_background_value(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.background_value != value {
@@ -445,9 +500,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_recording_hint(&self) -> String {
         self.0.props.borrow().recording_hint.clone()
     }
+
     pub fn set_recording_hint(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.recording_hint != value {
@@ -455,9 +512,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_status(&self) -> String {
         self.0.props.borrow().status.clone()
     }
+
     pub fn set_status(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.status != value {
@@ -465,9 +524,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_progress(&self) -> f32 {
         self.0.props.borrow().progress
     }
+
     pub fn set_progress(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.progress != value {
@@ -475,9 +536,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_preview(&self) -> Image {
         self.0.props.borrow().preview.clone()
     }
+
     pub fn set_preview(&self, value: Image) {
         let mut props = self.0.props.borrow_mut();
         if props.preview != value {
@@ -485,9 +548,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_thumbnails(&self) -> Image {
         self.0.props.borrow().thumbnails.clone()
     }
+
     pub fn set_thumbnails(&self, value: Image) {
         let mut props = self.0.props.borrow_mut();
         if props.thumbnails != value {
@@ -495,9 +560,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_frosted_thumbnails(&self) -> Image {
         self.0.props.borrow().frosted_thumbnails.clone()
     }
+
     pub fn set_frosted_thumbnails(&self, value: Image) {
         let mut props = self.0.props.borrow_mut();
         if props.frosted_thumbnails != value {
@@ -505,9 +572,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_waveform(&self) -> Image {
         self.0.props.borrow().waveform.clone()
     }
+
     pub fn set_waveform(&self, value: Image) {
         let mut props = self.0.props.borrow_mut();
         if props.waveform != value {
@@ -515,9 +584,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_edit_x(&self) -> f32 {
         self.0.props.borrow().edit_x
     }
+
     pub fn set_edit_x(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.edit_x != value {
@@ -525,9 +596,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_edit_y(&self) -> f32 {
         self.0.props.borrow().edit_y
     }
+
     pub fn set_edit_y(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.edit_y != value {
@@ -535,9 +608,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_edit_width(&self) -> f32 {
         self.0.props.borrow().edit_width
     }
+
     pub fn set_edit_width(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.edit_width != value {
@@ -545,9 +620,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_edit_height(&self) -> f32 {
         self.0.props.borrow().edit_height
     }
+
     pub fn set_edit_height(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.edit_height != value {
@@ -555,9 +632,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_edit_scale(&self) -> f32 {
         self.0.props.borrow().edit_scale
     }
+
     pub fn set_edit_scale(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.edit_scale != value {
@@ -565,9 +644,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_preview_zoom(&self) -> f32 {
         self.0.props.borrow().preview_zoom
     }
+
     pub fn set_preview_zoom(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.preview_zoom != value {
@@ -575,9 +656,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_preview_pixel_width(&self) -> f32 {
         self.0.props.borrow().preview_pixel_width
     }
+
     pub fn set_preview_pixel_width(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.preview_pixel_width != value {
@@ -585,9 +668,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_preview_aspect(&self) -> f32 {
         self.0.props.borrow().preview_aspect
     }
+
     pub fn set_preview_aspect(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.preview_aspect != value {
@@ -595,9 +680,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_duration(&self) -> f32 {
         self.0.props.borrow().duration
     }
+
     pub fn set_duration(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.duration != value {
@@ -605,9 +692,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_playhead(&self) -> f32 {
         self.0.props.borrow().playhead
     }
+
     pub fn set_playhead(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.playhead != value {
@@ -615,9 +704,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_timeline_zoom(&self) -> f32 {
         self.0.props.borrow().timeline_zoom
     }
+
     pub fn set_timeline_zoom(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.timeline_zoom != value {
@@ -625,9 +716,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_timeline_offset(&self) -> f32 {
         self.0.props.borrow().timeline_offset
     }
+
     pub fn set_timeline_offset(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.timeline_offset != value {
@@ -635,9 +728,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_snap(&self) -> bool {
         self.0.props.borrow().snap
     }
+
     pub fn set_snap(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.snap != value {
@@ -645,9 +740,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_time_label(&self) -> String {
         self.0.props.borrow().time_label.clone()
     }
+
     pub fn set_time_label(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.time_label != value {
@@ -655,9 +752,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_regions(&self) -> ModelRc<Region> {
         self.0.props.borrow().regions.clone()
     }
+
     pub fn set_regions(&self, value: ModelRc<Region>) {
         let mut props = self.0.props.borrow_mut();
         if props.regions != value {
@@ -665,9 +764,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_audio_row(&self) -> i32 {
         self.0.props.borrow().audio_row
     }
+
     pub fn set_audio_row(&self, value: i32) {
         let mut props = self.0.props.borrow_mut();
         if props.audio_row != value {
@@ -675,9 +776,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_track_labels(&self) -> ModelRc<String> {
         self.0.props.borrow().track_labels.clone()
     }
+
     pub fn set_track_labels(&self, value: ModelRc<String>) {
         let mut props = self.0.props.borrow_mut();
         if props.track_labels != value {
@@ -685,9 +788,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_selected_id(&self) -> String {
         self.0.props.borrow().selected_id.clone()
     }
+
     pub fn set_selected_id(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.selected_id != value {
@@ -695,9 +800,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_fields(&self) -> ModelRc<Field> {
         self.0.props.borrow().fields.clone()
     }
+
     pub fn set_fields(&self, value: ModelRc<Field>) {
         let mut props = self.0.props.borrow_mut();
         if props.fields != value {
@@ -705,9 +812,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_source_names(&self) -> ModelRc<String> {
         self.0.props.borrow().source_names.clone()
     }
+
     pub fn set_source_names(&self, value: ModelRc<String>) {
         let mut props = self.0.props.borrow_mut();
         if props.source_names != value {
@@ -715,9 +824,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_camera_names(&self) -> ModelRc<String> {
         self.0.props.borrow().camera_names.clone()
     }
+
     pub fn set_camera_names(&self, value: ModelRc<String>) {
         let mut props = self.0.props.borrow_mut();
         if props.camera_names != value {
@@ -725,9 +836,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_microphone_names(&self) -> ModelRc<String> {
         self.0.props.borrow().microphone_names.clone()
     }
+
     pub fn set_microphone_names(&self, value: ModelRc<String>) {
         let mut props = self.0.props.borrow_mut();
         if props.microphone_names != value {
@@ -735,9 +848,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_source_index(&self) -> i32 {
         self.0.props.borrow().source_index
     }
+
     pub fn set_source_index(&self, value: i32) {
         let mut props = self.0.props.borrow_mut();
         if props.source_index != value {
@@ -745,9 +860,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_camera_index(&self) -> i32 {
         self.0.props.borrow().camera_index
     }
+
     pub fn set_camera_index(&self, value: i32) {
         let mut props = self.0.props.borrow_mut();
         if props.camera_index != value {
@@ -755,9 +872,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_microphone_index(&self) -> i32 {
         self.0.props.borrow().microphone_index
     }
+
     pub fn set_microphone_index(&self, value: i32) {
         let mut props = self.0.props.borrow_mut();
         if props.microphone_index != value {
@@ -765,9 +884,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_capture_mic(&self) -> bool {
         self.0.props.borrow().capture_mic
     }
+
     pub fn set_capture_mic(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.capture_mic != value {
@@ -775,9 +896,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_capture_camera(&self) -> bool {
         self.0.props.borrow().capture_camera
     }
+
     pub fn set_capture_camera(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.capture_camera != value {
@@ -785,9 +908,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_capture_system(&self) -> bool {
         self.0.props.borrow().capture_system
     }
+
     pub fn set_capture_system(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.capture_system != value {
@@ -795,9 +920,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_panel(&self) -> String {
         self.0.props.borrow().panel.clone()
     }
+
     pub fn set_panel(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.panel != value {
@@ -821,9 +948,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_panel_index(&self) -> i32 {
         self.0.props.borrow().panel_index
     }
+
     pub fn set_panel_index(&self, value: i32) {
         let mut props = self.0.props.borrow_mut();
         if props.panel_index != value {
@@ -831,9 +960,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_bar_width(&self) -> f32 {
         self.0.props.borrow().bar_width
     }
+
     pub fn set_bar_width(&self, value: f32) {
         let mut props = self.0.props.borrow_mut();
         if props.bar_width != value {
@@ -841,9 +972,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_camera(&self) -> bool {
         self.0.props.borrow().camera
     }
+
     pub fn set_camera(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.camera != value {
@@ -851,9 +984,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_microphone(&self) -> bool {
         self.0.props.borrow().microphone
     }
+
     pub fn set_microphone(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.microphone != value {
@@ -861,9 +996,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_system_audio(&self) -> bool {
         self.0.props.borrow().system_audio
     }
+
     pub fn set_system_audio(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.system_audio != value {
@@ -871,9 +1008,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_paused(&self) -> bool {
         self.0.props.borrow().paused
     }
+
     pub fn set_paused(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.paused != value {
@@ -881,9 +1020,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_has_project(&self) -> bool {
         self.0.props.borrow().has_project
     }
+
     pub fn set_has_project(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.has_project != value {
@@ -891,9 +1032,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_cancellable(&self) -> bool {
         self.0.props.borrow().cancellable
     }
+
     pub fn set_cancellable(&self, value: bool) {
         let mut props = self.0.props.borrow_mut();
         if props.cancellable != value {
@@ -901,9 +1044,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_elapsed(&self) -> String {
         self.0.props.borrow().elapsed.clone()
     }
+
     pub fn set_elapsed(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.elapsed != value {
@@ -911,9 +1056,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_directory(&self) -> String {
         self.0.props.borrow().directory.clone()
     }
+
     pub fn set_directory(&self, value: String) {
         let mut props = self.0.props.borrow_mut();
         if props.directory != value {
@@ -921,9 +1068,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn get_countdown(&self) -> i32 {
         self.0.props.borrow().countdown
     }
+
     pub fn set_countdown(&self, value: i32) {
         let mut props = self.0.props.borrow_mut();
         if props.countdown != value {
@@ -931,9 +1080,11 @@ impl UiHandle {
             self.window().invalidate();
         }
     }
+
     pub fn on_action(&self, callback: impl Fn(String) + 'static) {
         self.0.callbacks.borrow_mut().action = Some(Rc::new(callback));
     }
+
     pub fn invoke_action(&self, a0: String) {
         let callback = self.0.callbacks.borrow().action.clone();
         if let Some(callback) = callback {
@@ -942,9 +1093,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_seek(&self, callback: impl Fn(f32) + 'static) {
         self.0.callbacks.borrow_mut().seek = Some(Rc::new(callback));
     }
+
     pub fn invoke_seek(&self, a0: f32) {
         let callback = self.0.callbacks.borrow().seek.clone();
         if let Some(callback) = callback {
@@ -953,9 +1106,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_panel_change(&self, callback: impl Fn(String) + 'static) {
         self.0.callbacks.borrow_mut().panel_change = Some(Rc::new(callback));
     }
+
     pub fn invoke_panel_change(&self, a0: String) {
         let callback = self.0.callbacks.borrow().panel_change.clone();
         if let Some(callback) = callback {
@@ -964,9 +1119,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_field_change(&self, callback: impl Fn(String, String) + 'static) {
         self.0.callbacks.borrow_mut().field_change = Some(Rc::new(callback));
     }
+
     pub fn invoke_field_change(&self, a0: String, a1: String) {
         let callback = self.0.callbacks.borrow().field_change.clone();
         if let Some(callback) = callback {
@@ -975,9 +1132,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_select_region(&self, callback: impl Fn(String, String, bool) + 'static) {
         self.0.callbacks.borrow_mut().select_region = Some(Rc::new(callback));
     }
+
     pub fn invoke_select_region(&self, a0: String, a1: String, a2: bool) {
         let callback = self.0.callbacks.borrow().select_region.clone();
         if let Some(callback) = callback {
@@ -986,9 +1145,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_move_region(&self, callback: impl Fn(String, String, f32, i32) + 'static) {
         self.0.callbacks.borrow_mut().move_region = Some(Rc::new(callback));
     }
+
     pub fn invoke_move_region(&self, a0: String, a1: String, a2: f32, a3: i32) {
         let callback = self.0.callbacks.borrow().move_region.clone();
         if let Some(callback) = callback {
@@ -997,9 +1158,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_canvas_edit(&self, callback: impl Fn(f32, f32, bool) + 'static) {
         self.0.callbacks.borrow_mut().canvas_edit = Some(Rc::new(callback));
     }
+
     pub fn invoke_canvas_edit(&self, a0: f32, a1: f32, a2: bool) {
         let callback = self.0.callbacks.borrow().canvas_edit.clone();
         if let Some(callback) = callback {
@@ -1008,9 +1171,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_preview_click(&self, callback: impl Fn(f32, f32) + 'static) {
         self.0.callbacks.borrow_mut().preview_click = Some(Rc::new(callback));
     }
+
     pub fn invoke_preview_click(&self, a0: f32, a1: f32) {
         let callback = self.0.callbacks.borrow().preview_click.clone();
         if let Some(callback) = callback {
@@ -1019,9 +1184,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_keyboard(&self, callback: impl Fn(String, bool, bool, bool) -> bool + 'static) {
         self.0.callbacks.borrow_mut().keyboard = Some(Rc::new(callback));
     }
+
     pub fn invoke_keyboard(&self, a0: String, a1: bool, a2: bool, a3: bool) -> bool {
         let callback = self.0.callbacks.borrow().keyboard.clone();
         if let Some(callback) = callback {
@@ -1030,9 +1197,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_translate(&self, callback: impl Fn(String, String) -> String + 'static) {
         self.0.callbacks.borrow_mut().translate = Some(Rc::new(callback));
     }
+
     pub fn invoke_translate(&self, a0: String, a1: String) -> String {
         let callback = self.0.callbacks.borrow().translate.clone();
         if let Some(callback) = callback {
@@ -1041,9 +1210,11 @@ impl UiHandle {
             Default::default()
         }
     }
+
     pub fn on_option(&self, callback: impl Fn(String, String) + 'static) {
         self.0.callbacks.borrow_mut().option = Some(Rc::new(callback));
     }
+
     pub fn invoke_option(&self, a0: String, a1: String) {
         let callback = self.0.callbacks.borrow().option.clone();
         if let Some(callback) = callback {
@@ -1053,6 +1224,7 @@ impl UiHandle {
         }
     }
 }
+
 macro_rules! surface {
     ($name:ident, $variant:ident, $kind:expr) => {
         #[derive(Clone)]
@@ -1063,6 +1235,7 @@ macro_rules! surface {
                 &self.0
             }
         }
+
         impl $name {
             pub fn new() -> anyhow::Result<Self> {
                 let window = Window::new($kind);
@@ -1085,10 +1258,12 @@ macro_rules! surface {
                 ui_runtime::register(crate::ui::Surface::$variant(value.clone()));
                 Ok(value)
             }
+
             pub fn as_weak(&self) -> ui_runtime::Weak<Self> {
                 ui_runtime::Weak::new(&self.0.0)
             }
         }
+
         impl ui_runtime::FromUiData for $name {
             fn from_data(data: Rc<UiData>) -> Self {
                 Self(UiHandle(data))
@@ -1108,13 +1283,16 @@ surface!(RecordingOptions, Options, ui_runtime::WindowKind::Options);
 pub struct AppTray {
     callback: Rc<RefCell<Option<Rc<dyn Fn(String)>>>>,
 }
+
 impl AppTray {
     pub fn new() -> anyhow::Result<Self> {
         Ok(Self::default())
     }
+
     pub fn on_action(&self, f: impl Fn(String) + 'static) {
         *self.callback.borrow_mut() = Some(Rc::new(f));
     }
+
     pub fn show(&self) -> anyhow::Result<()> {
         Ok(())
     }

@@ -6,11 +6,13 @@ use super::*;
 pub trait FromUiData {
     fn from_data(data: Rc<UiData>) -> Self;
 }
+
 pub struct Weak<T> {
     id: u64,
     thread: std::thread::ThreadId,
     marker: PhantomData<fn() -> T>,
 }
+
 thread_local! {pub(super) static WEAK_DATA:RefCell<BTreeMap<u64,std::rc::Weak<UiData>>>=const { RefCell::new(BTreeMap::new()) };}
 impl<T> Clone for Weak<T> {
     fn clone(&self) -> Self {
@@ -21,6 +23,7 @@ impl<T> Clone for Weak<T> {
         }
     }
 }
+
 impl<T: FromUiData> Weak<T> {
     pub fn new(data: &Rc<UiData>) -> Self {
         let id = data.window.0.id;
@@ -33,6 +36,7 @@ impl<T: FromUiData> Weak<T> {
             marker: PhantomData,
         }
     }
+
     pub fn upgrade(&self) -> Option<T> {
         // Worker threads may carry this identity, but UI ownership never crosses threads.
         if std::thread::current().id() != self.thread {

@@ -16,6 +16,7 @@ pub struct Binding {
     shift: bool,
     alt: bool,
 }
+
 impl Binding {
     pub fn parse(text: &str) -> Result<Self> {
         let mut result = Self {
@@ -43,6 +44,7 @@ impl Binding {
         ensure!(!result.key.is_empty(), "Shortcut needs a key");
         Ok(result)
     }
+
     pub fn matches(&self, key: &str, primary: bool, shift: bool, alt: bool) -> bool {
         self.key
             == if key == " " {
@@ -55,12 +57,14 @@ impl Binding {
             && self.alt == alt
     }
 }
+
 pub fn defaults() -> BTreeMap<String, String> {
     ACTIONS
         .into_iter()
         .map(|(a, _, b)| (a.into(), b.into()))
         .collect()
 }
+
 pub fn validate(action: &str, text: &str, bindings: &BTreeMap<String, String>) -> Result<()> {
     let binding = Binding::parse(text)?;
     for fixed in [
@@ -90,6 +94,7 @@ pub fn validate(action: &str, text: &str, bindings: &BTreeMap<String, String>) -
     }
     Ok(())
 }
+
 pub fn action(
     bindings: &BTreeMap<String, String>,
     key: &str,

@@ -48,15 +48,18 @@ pub struct Scene {
     fonts: FontCollection,
     font_key: Value,
 }
+
 fn paint(color: Color) -> Paint {
     let mut p = Paint::default();
     p.set_anti_alias(true).set_color(color);
     p
 }
+
 fn color(text: &str) -> Color {
     let [r, g, b, a] = parse_color(text);
     Color::from_argb(a, r, g, b)
 }
+
 fn image(bytes: Vec<u8>, width: u32, height: u32) -> Result<sk::Image> {
     sk::images::raster_from_data(
         &ImageInfo::new(
@@ -70,6 +73,7 @@ fn image(bytes: Vec<u8>, width: u32, height: u32) -> Result<sk::Image> {
     )
     .context("Create decoded frame")
 }
+
 fn text(value: &Value, key: &str, default: &str) -> String {
     value
         .get(key)
@@ -77,6 +81,7 @@ fn text(value: &Value, key: &str, default: &str) -> String {
         .unwrap_or(default)
         .into()
 }
+
 fn squircle(rect: Rect, radius: f32) -> sk::Path {
     let mut path = sk::PathBuilder::new();
     let r = radius.clamp(0., rect.width().min(rect.height()) / 2.);
@@ -103,6 +108,7 @@ fn squircle(rect: Rect, radius: f32) -> sk::Path {
     path.close();
     path.detach()
 }
+
 impl Scene {
     /// Normalized edit bounds use the same camera transform as the composed image.
     pub fn edit_bounds(
@@ -176,6 +182,7 @@ impl Scene {
             cam.scale as f32,
         ])
     }
+
     pub fn new(source: PathBuf, info: MediaInfo, width: u32, height: u32) -> Result<Self> {
         ensure!(
             width > 0 && height > 0 && width <= 8192 && height <= 8192,
@@ -224,6 +231,7 @@ impl Scene {
             gpu: metal_context(),
         })
     }
+
     pub fn backend(&self) -> &'static str {
         #[cfg(target_os = "macos")]
         if self.gpu.is_some() {
@@ -231,10 +239,12 @@ impl Scene {
         }
         "Skia CPU"
     }
+
     pub fn with_frame_rate(mut self, rate: f64) -> Self {
         self.frame_rate = rate.clamp(1., 120.);
         self
     }
+
     fn create_surface(&mut self) -> Result<sk::Surface> {
         #[cfg(target_os = "macos")]
         if let Some(gpu) = &mut self.gpu {
@@ -253,6 +263,7 @@ impl Scene {
         sk::surfaces::raster_n32_premul((self.width as i32, self.height as i32))
             .context("Allocate software composition target")
     }
+
     pub fn asset(&mut self, name: &str) -> Result<sk::Image> {
         if let Some(i) = self.assets.get(name) {
             return Ok(i.clone());
@@ -307,6 +318,7 @@ impl Scene {
         self.assets.insert(name.into(), i.clone());
         Ok(i)
     }
+
     pub fn render(&mut self, document: &Project, source_time: f64) -> Result<Vec<u8>> {
         let font_key = document.editor.get("nativeFonts").unwrap_or(&Value::Null);
         if &self.font_key != font_key {

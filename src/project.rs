@@ -46,6 +46,7 @@ impl Project {
                 .clone(),
         }
     }
+
     pub fn load(path: &Path) -> Result<Self> {
         let metadata = fs::metadata(path).context("Read project metadata")?;
         ensure!(
@@ -56,6 +57,7 @@ impl Project {
         p.validate()?;
         Ok(p)
     }
+
     pub fn validate(&self) -> Result<()> {
         ensure!(
             (1..=2).contains(&self.version),
@@ -147,6 +149,7 @@ impl Project {
             }
         }
     }
+
     pub fn source_path(&self, document_path: Option<&Path>) -> PathBuf {
         let path = local_path(&self.video_path);
         if path.is_absolute() {
@@ -158,6 +161,7 @@ impl Project {
                 .join(path)
         }
     }
+
     pub fn save(&self, path: &Path) -> Result<()> {
         self.validate()?;
         let parent = path
@@ -187,6 +191,7 @@ impl Project {
         fs::File::open(parent)?.sync_all()?;
         Ok(())
     }
+
     pub fn number(&self, key: &str, default: f64) -> f64 {
         self.editor
             .get(key)
@@ -194,18 +199,21 @@ impl Project {
             .filter(|x| x.is_finite())
             .unwrap_or(default)
     }
+
     pub fn flag(&self, key: &str, default: bool) -> bool {
         self.editor
             .get(key)
             .and_then(Value::as_bool)
             .unwrap_or(default)
     }
+
     pub fn text<'a>(&'a self, key: &str, default: &'a str) -> &'a str {
         self.editor
             .get(key)
             .and_then(Value::as_str)
             .unwrap_or(default)
     }
+
     pub fn regions(&self, key: &str) -> &[Value] {
         self.editor
             .get(key)
@@ -213,9 +221,11 @@ impl Project {
             .map(Vec::as_slice)
             .unwrap_or(&[])
     }
+
     pub fn set(&mut self, key: &str, value: Value) {
         self.editor.insert(key.into(), value);
     }
+
     pub fn add(&mut self, key: &str, mut region: Value) -> Result<String> {
         let id = uuid::Uuid::new_v4().to_string();
         region["id"] = json!(id);
@@ -227,6 +237,7 @@ impl Project {
             .push(region);
         Ok(id)
     }
+
     pub fn change_region(&mut self, key: &str, id: &str, patch: Value) -> Result<()> {
         let region = self
             .editor
@@ -256,6 +267,7 @@ impl Project {
         }
         Ok(())
     }
+
     pub fn remove_region(&mut self, key: &str, id: &str) -> Result<()> {
         let regions = self
             .editor
@@ -275,6 +287,7 @@ pub struct History {
     future: Vec<Project>,
     saved: Option<Project>,
 }
+
 impl History {
     pub fn new(project: Project) -> Self {
         Self {
@@ -284,6 +297,7 @@ impl History {
             future: vec![],
         }
     }
+
     pub fn edit(&mut self, change: impl FnOnce(&mut Project) -> Result<()>) -> Result<()> {
         let mut next = self.project.clone();
         change(&mut next)?;
@@ -297,28 +311,35 @@ impl History {
         }
         Ok(())
     }
+
     pub fn can_undo(&self) -> bool {
         !self.past.is_empty()
     }
+
     pub fn can_redo(&self) -> bool {
         !self.future.is_empty()
     }
+
     pub fn undo(&mut self) {
         if let Some(p) = self.past.pop() {
             self.future.push(std::mem::replace(&mut self.project, p));
         }
     }
+
     pub fn redo(&mut self) {
         if let Some(p) = self.future.pop() {
             self.past.push(std::mem::replace(&mut self.project, p));
         }
     }
+
     pub fn dirty(&self) -> bool {
         self.saved.as_ref() != Some(&self.project)
     }
+
     pub fn mark_unsaved(&mut self) {
         self.saved = None;
     }
+
     pub fn mark_saved(&mut self) {
         self.saved = Some(self.project.clone());
     }

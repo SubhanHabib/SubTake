@@ -31,6 +31,7 @@ pub fn resources() -> PathBuf {
     }
     Path::new(env!("CARGO_MANIFEST_DIR")).join("legacy-electron")
 }
+
 pub fn binary(name: &str) -> Result<PathBuf> {
     let env = format!("SUBTAKE_{}", name.to_uppercase().replace('-', "_"));
     if let Some(path) = std::env::var_os(env) {
@@ -129,6 +130,7 @@ pub struct ManagedChild {
     pub child: Child,
     pub errors: Arc<Mutex<String>>,
 }
+
 impl ManagedChild {
     pub fn spawn(command: &mut Command) -> Result<Self> {
         let mut child = command.stderr(Stdio::piped()).spawn()?;
@@ -155,9 +157,11 @@ impl ManagedChild {
         });
         Ok(Self { child, errors })
     }
+
     pub fn finish(&mut self, timeout: Duration) -> Result<()> {
         self.finish_cancellable(timeout, &std::sync::atomic::AtomicBool::new(false))
     }
+
     pub fn finish_cancellable(
         &mut self,
         timeout: Duration,
@@ -185,6 +189,7 @@ impl ManagedChild {
         }
     }
 }
+
 impl Drop for ManagedChild {
     fn drop(&mut self) {
         let _ = self.child.kill();
@@ -206,6 +211,7 @@ pub struct Decoder {
     last_index: Option<u64>,
     last: Option<Vec<u8>>,
 }
+
 impl Decoder {
     pub fn new(path: PathBuf, width: u32, height: u32) -> Self {
         Self {
@@ -222,10 +228,12 @@ impl Decoder {
             last: None,
         }
     }
+
     pub fn with_rate(mut self, rate: f64) -> Self {
         self.rate = rate.clamp(1., 240.);
         self
     }
+
     #[allow(dead_code)]
     fn start(&mut self, time: f64) -> Result<()> {
         self.stdout = None;
@@ -258,6 +266,7 @@ impl Decoder {
         self.next_index = (time * self.rate).round() as u64;
         Ok(())
     }
+
     pub fn frame(&mut self, time: f64) -> Result<Vec<u8>> {
         let index = (time.max(0.) * self.rate + 1e-6).floor() as u64;
         if self.last_index == Some(index)
@@ -265,6 +274,7 @@ impl Decoder {
         {
             return Ok(frame.clone());
         }
+
         #[cfg(feature = "native-ffmpeg")]
         {
             if self.native.is_none() {
@@ -283,6 +293,7 @@ impl Decoder {
             self.last = Some(bytes.clone());
             Ok(bytes)
         }
+
         #[cfg(not(feature = "native-ffmpeg"))]
         {
             if self.process.is_none()

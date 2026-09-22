@@ -6,6 +6,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
 };
+
 const KEYS: &[&str] = &[
     "wallpaper",
     "shadowIntensity",
@@ -82,6 +83,7 @@ pub fn snapshot(project: &Project) -> Value {
     }
     Value::Object(data)
 }
+
 pub fn apply(project: &mut Project, data: &Value) -> Result<()> {
     let data = data.get("snapshot").unwrap_or(data);
     ensure!(data.is_object(), "Preset must contain settings");
@@ -105,6 +107,7 @@ pub fn apply(project: &mut Project, data: &Value) -> Result<()> {
     }
     Ok(())
 }
+
 pub fn load(path: &Path) -> Result<Value> {
     ensure!(
         path.metadata()?.len() <= 16 * 1024 * 1024,
@@ -117,6 +120,7 @@ pub fn load(path: &Path) -> Result<Value> {
     );
     Ok(data)
 }
+
 pub fn save(path: &Path, project: &Project) -> Result<()> {
     let dir = path.parent().context("Preset needs a parent folder")?;
     std::fs::create_dir_all(dir)?;
@@ -130,9 +134,11 @@ pub fn save(path: &Path, project: &Project) -> Result<()> {
     file.persist(path).map_err(|e| e.error)?;
     Ok(())
 }
+
 pub fn directory() -> Result<PathBuf> {
     Ok(crate::preferences::Preferences::directory()?.join("presets"))
 }
+
 pub fn list() -> Vec<PathBuf> {
     let mut entries = directory()
         .ok()
@@ -146,6 +152,7 @@ pub fn list() -> Vec<PathBuf> {
     entries.truncate(200);
     entries
 }
+
 pub fn motion(project: &mut Project, smooth: bool) {
     for (key, value) in [
         ("zoomSmoothness", 0.5),
@@ -224,6 +231,7 @@ pub fn appearance(project: &mut Project, name: &str) -> Result<()> {
 pub fn remove(path: &Path) -> Result<PathBuf> {
     remove_from(&directory()?, path)
 }
+
 fn remove_from(directory: &Path, path: &Path) -> Result<PathBuf> {
     ensure!(
         path.parent()

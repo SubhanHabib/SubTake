@@ -9,6 +9,7 @@ pub struct Blur {
     pub center: [f64; 2],
     pub strength: f64,
 }
+
 pub fn camera(
     p: &Project,
     previous: Transform,
@@ -65,6 +66,7 @@ pub fn camera(
     }
     result
 }
+
 const KERNEL: &str = r#"
 uniform shader scene;
 uniform float2 velocity;
@@ -91,6 +93,7 @@ half4 main(float2 point) {
 pub struct Filter {
     effect: sk::RuntimeEffect,
 }
+
 impl Filter {
     pub fn new() -> anyhow::Result<Self> {
         Ok(Self {
@@ -98,6 +101,7 @@ impl Filter {
                 .map_err(|e| anyhow::anyhow!("Motion shader: {e}"))?,
         })
     }
+
     pub fn image_filter(
         &self,
         blur: &Blur,

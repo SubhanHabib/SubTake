@@ -157,6 +157,7 @@ pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOpt
 pub(super) trait Recorder {
     fn seed(&self);
 }
+
 impl Recorder for RecordingLauncher {
     fn seed(&self) {
         self.set_has_project(true);
@@ -166,6 +167,7 @@ impl Recorder for RecordingLauncher {
         self.set_panel("".into());
     }
 }
+
 impl Recorder for RecordingOptions {
     fn seed(&self) {
         self.set_has_project(true);
@@ -188,6 +190,7 @@ pub(super) fn source_names() -> Vec<String> {
     .map(String::from)
     .collect()
 }
+
 pub(super) fn camera_names() -> Vec<String> {
     [
         "FaceTime HD Camera",
@@ -198,6 +201,7 @@ pub(super) fn camera_names() -> Vec<String> {
     .map(String::from)
     .collect()
 }
+
 pub(super) fn microphone_names() -> Vec<String> {
     [
         "MacBook Pro Microphone",

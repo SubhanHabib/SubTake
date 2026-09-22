@@ -97,6 +97,7 @@ impl Scene {
         canvas.restore();
         canvas.restore();
     }
+
     pub(super) fn draw_text(
         &self,
         canvas: &Canvas,

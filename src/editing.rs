@@ -99,6 +99,7 @@ pub fn source_end(kind: &str, region: &Value) -> f64 {
                 1.
             }
 }
+
 pub fn move_group(
     p: &mut Project,
     keys: &[(String, String)],
@@ -139,6 +140,7 @@ pub fn crop_rect(project: &Project) -> [f64; 4] {
         n(crop, "height", 1.).clamp(0.01, 1. - y),
     ]
 }
+
 pub fn adjust_crop(project: &mut Project, dx: f64, dy: f64, resize: bool) -> Result<()> {
     anyhow::ensure!(
         dx.is_finite() && dy.is_finite(),

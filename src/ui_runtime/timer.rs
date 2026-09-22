@@ -8,10 +8,12 @@ pub(super) struct Scheduled {
     pub(super) interval: Option<Duration>,
     pub(super) callback: TimerCallback,
 }
+
 thread_local! {
     pub(super) static TIMERS: RefCell<BTreeMap<u64, Scheduled>> = const { RefCell::new(BTreeMap::new()) };
     static NEXT_ID: Cell<u64> = const { Cell::new(1) };
 }
+
 pub(super) fn next_id() -> u64 {
     NEXT_ID.with(|n| {
         let id = n.get();
@@ -19,15 +21,18 @@ pub(super) fn next_id() -> u64 {
         id
     })
 }
+
 #[derive(Clone, Copy)]
 pub enum TimerMode {
     SingleShot,
     Repeated,
 }
+
 #[derive(Default)]
 pub struct Timer {
     id: Cell<Option<u64>>,
 }
+
 impl Timer {
     pub fn start(&self, mode: TimerMode, duration: Duration, f: impl FnMut() + 'static) {
         self.stop();
@@ -35,6 +40,7 @@ impl Timer {
         self.id.set(Some(id));
         schedule(id, mode, duration, f);
     }
+
     pub fn stop(&self) {
         if let Some(id) = self.id.take() {
             TIMERS.with(|t| {
@@ -42,6 +48,7 @@ impl Timer {
             });
         }
     }
+
     pub fn single_shot(duration: Duration, f: impl FnOnce() + 'static) {
         let mut f = Some(f);
         schedule(next_id(), TimerMode::SingleShot, duration, move || {
@@ -51,11 +58,13 @@ impl Timer {
         });
     }
 }
+
 impl Drop for Timer {
     fn drop(&mut self) {
         self.stop();
     }
 }
+
 pub(super) fn schedule(id: u64, mode: TimerMode, duration: Duration, f: impl FnMut() + 'static) {
     TIMERS.with(|t| {
         t.borrow_mut().insert(

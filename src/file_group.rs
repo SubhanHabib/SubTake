@@ -5,6 +5,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
 };
+
 pub fn replace(work: &Path, files: &[(PathBuf, Option<PathBuf>)]) -> Result<()> {
     let backup = work.join("previous-recording");
     std::fs::create_dir_all(&backup)?;
@@ -69,6 +70,7 @@ pub fn replace(work: &Path, files: &[(PathBuf, Option<PathBuf>)]) -> Result<()> 
             )
         }));
     }
+
     #[cfg(unix)]
     if let Some((destination, _)) = files.first() {
         std::fs::File::open(destination.parent().unwrap_or(Path::new(".")))?

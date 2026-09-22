@@ -7,6 +7,7 @@ pub fn quit_event_loop() -> Result<()> {
     wake();
     Ok(())
 }
+
 pub fn run_event_loop_until_quit() -> Result<()> {
     gpui_platform::application().with_assets(Assets).run(|cx| {
         install_menus(cx);
@@ -62,6 +63,7 @@ pub fn run_event_loop_until_quit() -> Result<()> {
     CONTEXT.with(|c| c.borrow_mut().take());
     Ok(())
 }
+
 pub fn run_event_loop() -> Result<()> {
     run_event_loop_until_quit()
 }

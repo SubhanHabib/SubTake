@@ -40,6 +40,7 @@ pub enum Surface {
     Launcher(RecordingLauncher),
     Options(RecordingOptions),
 }
+
 impl Surface {
     fn action(&self, command: &str) {
         let surface = self.clone();
@@ -58,6 +59,7 @@ impl Surface {
             Self::Options(_) => "options",
         }
     }
+
     fn appearance(&self) -> String {
         match self {
             Self::Editor(s) => s.get_appearance(),
@@ -148,6 +150,7 @@ trait DeferredCommands {
     fn defer_field(&self, key: String, value: String);
     fn defer_option(&self, key: String, value: String);
 }
+
 macro_rules! deferred_commands {
     ($ty:ty) => {
         impl DeferredCommands for $ty {
@@ -157,18 +160,21 @@ macro_rules! deferred_commands {
                     ui.invoke_action(command)
                 });
             }
+
             fn defer_panel(&self, panel: String) {
                 let ui = self.clone();
                 crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
                     ui.invoke_panel_change(panel)
                 });
             }
+
             fn defer_field(&self, key: String, value: String) {
                 let ui = self.clone();
                 crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
                     ui.invoke_field_change(key, value)
                 });
             }
+
             fn defer_option(&self, key: String, value: String) {
                 let ui = self.clone();
                 crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {

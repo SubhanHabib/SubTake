@@ -4,9 +4,11 @@ use subtake_native::{
     project::{History, Project, parse_srt},
     timeline,
 };
+
 fn project() -> Project {
     Project::new(Path::new("/fixture/video.mp4"))
 }
+
 #[test]
 fn unknown_fields_and_legacy_settings_survive_atomic_save() {
     let dir = tempfile::tempdir().unwrap();
@@ -25,6 +27,7 @@ fn unknown_fields_and_legacy_settings_survive_atomic_save() {
         original
     );
 }
+
 #[test]
 fn invalid_edits_are_transactional_and_redo_branches() {
     let mut h = History::new(project());
@@ -57,6 +60,7 @@ fn invalid_edits_are_transactional_and_redo_branches() {
     h.redo();
     assert_eq!(h.project.text("wallpaper", ""), "#000000");
 }
+
 #[test]
 fn overlapping_trims_remove_the_union() {
     let mut p = project();
@@ -69,6 +73,7 @@ fn overlapping_trims_remove_the_union() {
     assert_eq!(timeline::source_time(&spans, 1.), 4.);
     assert_eq!(timeline::output_time(&spans, 3.), 1.);
 }
+
 #[test]
 fn speed_boundaries_and_clip_source_end() {
     let mut p = project();
@@ -89,12 +94,14 @@ fn speed_boundaries_and_clip_source_end() {
     assert_eq!(timeline::duration(&spans), 4.);
     assert_eq!(timeline::source_time(&spans, 2.), 3.);
 }
+
 #[test]
 fn removing_entire_video_has_zero_duration() {
     let mut p = project();
     p.set("trimRegions", json!([{"id":"a","startMs":0,"endMs":10000}]));
     assert_eq!(timeline::duration(&timeline::spans(&p, 5.)), 0.);
 }
+
 #[test]
 fn subtitle_import_retains_multiline_and_milliseconds() {
     let cues=parse_srt("1\r\n00:00:01,250 --> 00:00:02,750\r\nHello\r\nworld\r\n\r\n2\r\n00:01:00,000 --> 00:01:01,000\r\nNext").unwrap();
@@ -103,6 +110,7 @@ fn subtitle_import_retains_multiline_and_milliseconds() {
     assert_eq!(cues[0]["text"], "Hello\nworld");
     assert!(parse_srt("1\n00:00:02,000 --> 00:00:01,000\nx").is_err());
 }
+
 #[test]
 fn missing_media_is_not_silently_rewritten() {
     let p = project();

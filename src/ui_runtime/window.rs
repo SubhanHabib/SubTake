@@ -9,36 +9,43 @@ pub enum WindowKind {
     Launcher,
     Options,
 }
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CloseRequestResponse {
     HideWindow,
     KeepWindowShown,
 }
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct LogicalSize {
     pub width: f32,
     pub height: f32,
 }
+
 impl LogicalSize {
     pub fn new(width: f32, height: f32) -> Self {
         Self { width, height }
     }
 }
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct PhysicalPosition {
     pub x: i32,
     pub y: i32,
 }
+
 impl PhysicalPosition {
     pub fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 }
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct PhysicalSize {
     pub width: u32,
     pub height: u32,
 }
+
 pub(super) struct WindowState {
     pub(super) id: u64,
     kind: WindowKind,
@@ -52,6 +59,7 @@ pub(super) struct WindowState {
     close: RefCell<Option<Rc<dyn Fn() -> CloseRequestResponse>>>,
     drop_file: RefCell<Option<Rc<dyn Fn(std::path::PathBuf)>>>,
 }
+
 #[derive(Clone)]
 pub struct Window(pub(super) Rc<WindowState>);
 impl Window {
@@ -74,20 +82,25 @@ impl Window {
             drop_file: RefCell::new(None),
         }))
     }
+
     pub fn native_view(&self) -> Option<*mut std::ffi::c_void> {
         let ptr = self.0.native.get();
         (!ptr.is_null()).then_some(ptr)
     }
+
     pub fn invalidate(&self) {
         self.0.dirty.set(true);
         wake();
     }
+
     pub fn request_redraw(&self) {
         self.invalidate();
     }
+
     pub fn is_visible(&self) -> bool {
         self.0.visible.get()
     }
+
     pub fn show(&self) {
         self.0.visible.set(true);
         self.invalidate();
@@ -97,6 +110,7 @@ impl Window {
             }
         }
     }
+
     pub fn hide(&self) {
         self.0.visible.set(false);
         if let Some(view) = self.native_view() {
@@ -105,11 +119,13 @@ impl Window {
             }
         }
     }
+
     pub fn set_size(&self, size: LogicalSize) {
         self.0.size.set(size);
         self.0.resize.set(true);
         self.invalidate();
     }
+
     pub fn size(&self) -> PhysicalSize {
         let s = self.0.size.get();
         let scale = self.scale_factor();
@@ -118,9 +134,11 @@ impl Window {
             height: (s.height * scale) as u32,
         }
     }
+
     pub fn scale_factor(&self) -> f32 {
         self.0.scale.get()
     }
+
     pub fn position(&self) -> PhysicalPosition {
         self.native_view()
             .map(|v| {
@@ -129,6 +147,7 @@ impl Window {
             })
             .unwrap_or_default()
     }
+
     pub fn set_position(&self, position: PhysicalPosition) {
         if let Some(v) = self.native_view() {
             unsafe {
@@ -136,6 +155,7 @@ impl Window {
             }
         }
     }
+
     pub fn focus_window(&self) {
         if let Some(v) = self.native_view() {
             unsafe {
@@ -143,6 +163,7 @@ impl Window {
             }
         }
     }
+
     pub fn set_minimized(&self, value: bool) {
         if let Some(v) = self.native_view() {
             unsafe {
@@ -150,6 +171,7 @@ impl Window {
             }
         }
     }
+
     pub fn set_transparent(&self, value: bool) {
         if let Some(v) = self.native_view() {
             unsafe {
@@ -157,6 +179,7 @@ impl Window {
             }
         }
     }
+
     pub fn set_blur(&self, value: bool) {
         if let Some(v) = self.native_view() {
             unsafe {
@@ -164,23 +187,28 @@ impl Window {
             }
         }
     }
+
     pub fn drag_window(&self) -> Result<()> {
         unsafe {
             crate::platform::ui_window_drag(self.native_view().context("Window is not open yet")?)
         }
     }
+
     pub fn on_close_requested(&self, f: impl Fn() -> CloseRequestResponse + 'static) {
         *self.0.close.borrow_mut() = Some(Rc::new(f));
     }
+
     pub fn on_drop_file(&self, f: impl Fn(std::path::PathBuf) + 'static) {
         *self.0.drop_file.borrow_mut() = Some(Rc::new(f));
     }
+
     pub fn dispatch_drop(&self, path: std::path::PathBuf) {
         let f = self.0.drop_file.borrow().clone();
         if let Some(f) = f {
             f(path);
         }
     }
+
     pub fn take_snapshot(&self) -> Result<SharedPixelBuffer<Rgba8Pixel>> {
         let view = self.native_view().context("Window is not open yet")?;
         let number = unsafe { crate::platform::ui_window_number(view) };
@@ -217,9 +245,11 @@ impl Window {
         ))
     }
 }
+
 pub fn register(surface: Surface) {
     SURFACES.with(|s| s.borrow_mut().push(surface));
 }
+
 pub(super) fn surface_window(surface: &Surface) -> &Window {
     match surface {
         Surface::Editor(s) => s.window(),
@@ -227,6 +257,7 @@ pub(super) fn surface_window(surface: &Surface) -> &Window {
         Surface::Options(s) => s.window(),
     }
 }
+
 pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
     let surfaces = SURFACES.with(|s| s.borrow().clone());
     for surface in surfaces {

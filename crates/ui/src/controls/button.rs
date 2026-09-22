@@ -71,14 +71,17 @@ impl Button {
         self.glyph = Some(name.to_owned().into());
         self
     }
+
     pub fn glyph_size(mut self, size: f32) -> Self {
         self.glyph_size = size;
         self
     }
+
     pub fn icon_only(mut self) -> Self {
         self.icon_only = true;
         self
     }
+
     pub fn round(mut self) -> Self {
         self.round = true;
         self
@@ -90,38 +93,47 @@ impl Button {
         self.menu_item = true;
         self
     }
+
     pub fn variant(mut self, variant: ButtonVariant) -> Self {
         self.variant = variant;
         self
     }
+
     pub fn primary(mut self) -> Self {
         self.variant = ButtonVariant::Primary;
         self
     }
+
     pub fn ghost(mut self) -> Self {
         self.variant = ButtonVariant::Ghost;
         self
     }
+
     pub fn link(mut self) -> Self {
         self.variant = ButtonVariant::Link;
         self
     }
+
     pub fn danger(mut self) -> Self {
         self.variant = ButtonVariant::Danger;
         self
     }
+
     pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
         self
     }
+
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
     }
+
     pub fn stretch(mut self) -> Self {
         self.stretch = true;
         self
     }
+
     pub fn on_click(
         mut self,
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,

@@ -6,12 +6,14 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
+
 const MODEL_URL: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin";
 async fn cancelled(cancel: &AtomicBool) {
     while !cancel.load(Ordering::Relaxed) {
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
 }
+
 pub fn download(cancel: &AtomicBool, progress: impl Fn(f32)) -> Result<PathBuf> {
     let dir = crate::preferences::Preferences::directory()?.join("whisper");
     std::fs::create_dir_all(&dir)?;

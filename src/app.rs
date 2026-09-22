@@ -49,6 +49,7 @@ fn when_idle<T>(state: &RefCell<T>, refresh: impl FnOnce(&T)) {
 fn post(f: impl FnOnce(&mut App, &EditorWindow) + Send + 'static) {
     let _ = ui_runtime::invoke_from_event_loop(move || with_app(f));
 }
+
 fn report(ui: &EditorWindow, result: Result<()>) {
     if let Err(error) = result {
         ui.set_status(format!("{error:#}"));

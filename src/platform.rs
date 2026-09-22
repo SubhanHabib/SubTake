@@ -43,9 +43,11 @@ pub fn helper(name: &str) -> Result<PathBuf> {
         .find(|p| p.is_file())
         .with_context(|| format!("Native helper is missing: {name}"))
 }
+
 pub fn sources() -> Result<Vec<Value>> {
     sources_cancellable(&std::sync::atomic::AtomicBool::new(false), true)
 }
+
 pub fn sources_cancellable(
     cancel: &std::sync::atomic::AtomicBool,
     request_access: bool,
@@ -64,11 +66,13 @@ pub fn sources_cancellable(
         )?;
         Ok(serde_json::from_slice(&bytes)?)
     }
+
     #[cfg(not(target_os = "macos"))]
     {
         bail!("Native recording source enumeration is not implemented on this platform")
     }
 }
+
 pub fn devices() -> Result<Value> {
     #[cfg(target_os = "macos")]
     {
@@ -79,6 +83,7 @@ pub fn devices() -> Result<Value> {
         )?;
         Ok(serde_json::from_slice(&bytes)?)
     }
+
     #[cfg(not(target_os = "macos"))]
     {
         bail!("Native device enumeration is pending on this platform")
@@ -90,12 +95,14 @@ pub fn reveal(path: &Path) -> Result<()> {
     {
         Command::new("/usr/bin/open").arg("-R").arg(path).spawn()?;
     }
+
     #[cfg(target_os = "windows")]
     {
         Command::new("explorer.exe")
             .arg(format!("/select,{}", path.display()))
             .spawn()?;
     }
+
     #[cfg(target_os = "linux")]
     {
         Command::new("xdg-open")

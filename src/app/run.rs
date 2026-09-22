@@ -701,6 +701,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         report(&ui, result);
         state.borrow().sync_launcher(&ui);
     }
+
     #[cfg(target_os = "macos")]
     Timer::single_shot(Duration::from_millis(100), || {
         // AppKit status items must be created on the running main event loop.
@@ -761,6 +762,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
 unsafe extern "C" {
     fn subtake_install_document_events(callback: extern "C" fn(*const std::ffi::c_char));
 }
+
 #[cfg(target_os = "macos")]
 extern "C" fn open_document_event(path: *const std::ffi::c_char) {
     if path.is_null() {

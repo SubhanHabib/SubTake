@@ -21,6 +21,7 @@ pub fn mapped_cues(project: &Project, spans: &[Span]) -> Vec<Value> {
     output.sort_by(|a, b| n(a, "startMs", 0.).total_cmp(&n(b, "startMs", 0.)));
     output
 }
+
 fn timestamp(ms: f64, vtt: bool) -> String {
     let ms = ms.max(0.).round() as u64;
     format!(
@@ -32,6 +33,7 @@ fn timestamp(ms: f64, vtt: bool) -> String {
         ms % 1000
     )
 }
+
 pub fn format(cues: &[Value], vtt: bool) -> String {
     let mut text = if vtt {
         "WEBVTT\n\n".to_owned()
@@ -51,6 +53,7 @@ pub fn format(cues: &[Value], vtt: bool) -> String {
     }
     text
 }
+
 pub fn write(project: &Project, spans: &[Span], video: &Path) -> Result<()> {
     let cues = mapped_cues(project, spans);
     for (extension, vtt) in [("srt", false), ("vtt", true)] {

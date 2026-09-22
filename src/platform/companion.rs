@@ -6,6 +6,7 @@ pub(super) struct Companion {
     pub(super) process: ManagedChild,
     pub(super) events: crossbeam_channel::Receiver<String>,
 }
+
 impl Companion {
     pub(super) fn start(
         folder: &Path,
@@ -38,9 +39,11 @@ impl Companion {
         companion.wait_cancellable("Companion ready", Duration::from_secs(75), cancel)?;
         Ok(companion)
     }
+
     pub(super) fn wait(&mut self, marker: &str, timeout: Duration) -> Result<()> {
         self.wait_cancellable(marker, timeout, &std::sync::atomic::AtomicBool::new(false))
     }
+
     pub(super) fn wait_cancellable(
         &mut self,
         marker: &str,
@@ -69,6 +72,7 @@ impl Companion {
             );
         }
     }
+
     pub(super) fn command(&mut self, command: &str) -> Result<()> {
         writeln!(
             self.process

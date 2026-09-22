@@ -428,16 +428,19 @@ impl Gallery {
 trait Appearance {
     fn theme(&self, value: &str);
 }
+
 impl Appearance for EditorWindow {
     fn theme(&self, value: &str) {
         self.set_appearance(value.into());
     }
 }
+
 impl Appearance for RecordingLauncher {
     fn theme(&self, value: &str) {
         self.set_appearance(value.into());
     }
 }
+
 impl Appearance for RecordingOptions {
     fn theme(&self, value: &str) {
         self.set_appearance(value.into());

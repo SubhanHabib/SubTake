@@ -16,6 +16,7 @@ pub(super) fn wake() {
         .0
         .try_send(());
 }
+
 pub fn invoke_from_event_loop(f: impl FnOnce() + Send + 'static) -> Result<()> {
     COMPLETIONS
         .get_or_init(crossbeam_channel::unbounded)
@@ -41,6 +42,7 @@ pub(super) fn drain_completions(
         rearm();
     }
 }
+
 pub(super) fn drain_commands() {
     let queue = &COMPLETIONS.get_or_init(crossbeam_channel::unbounded).1;
     drain_completions(queue, wake);

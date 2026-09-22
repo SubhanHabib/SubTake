@@ -10,6 +10,7 @@ pub struct Span {
     pub speed: f64,
     pub muted: bool,
 }
+
 impl Span {
     pub fn duration(&self) -> f64 {
         (self.source_end - self.source_start) / self.speed
@@ -90,12 +91,14 @@ pub fn spans(project: &Project, duration: f64) -> Vec<Span> {
     }
     result
 }
+
 pub fn duration(spans: &[Span]) -> f64 {
     spans
         .last()
         .map(|s| s.output_start + s.duration())
         .unwrap_or(0.)
 }
+
 pub fn source_time(spans: &[Span], output: f64) -> f64 {
     spans
         .iter()
@@ -103,6 +106,7 @@ pub fn source_time(spans: &[Span], output: f64) -> f64 {
         .map(|s| s.source_start + (output - s.output_start).max(0.) * s.speed)
         .unwrap_or_else(|| spans.last().map(|s| s.source_end).unwrap_or(0.))
 }
+
 pub fn output_time(spans: &[Span], source: f64) -> f64 {
     for s in spans {
         if source < s.source_start {
@@ -124,10 +128,12 @@ pub struct Camera {
     pub target_scale: f64,
     pub follow: bool,
 }
+
 pub fn ease_out_zoom(t: f64) -> f64 {
     fn sample(a: f64, b: f64, t: f64) -> f64 {
         3. * a * (1. - t) * (1. - t) * t + 3. * b * (1. - t) * t * t + t * t * t
     }
+
     fn derivative(a: f64, b: f64, t: f64) -> f64 {
         3. * a * (1. - t) * (1. - t) + 6. * (b - a) * (1. - t) * t + 3. * (1. - b) * t * t
     }
@@ -157,6 +163,7 @@ pub fn ease_out_zoom(t: f64) -> f64 {
     }
     sample(1., 1., solved)
 }
+
 pub fn region_strength(region: &Value, time: f64, enter: f64, exit: f64) -> f64 {
     let time = time - 200.;
     let start = n(region, "startMs", 0.) + 1000. - 1522.575;
@@ -177,6 +184,7 @@ pub fn region_strength(region: &Value, time: f64, enter: f64, exit: f64) -> f64 
     }
     1. - ease_out_zoom((time - zoom_out_start) / exit)
 }
+
 pub fn camera(project: &Project, time: f64) -> Camera {
     let mut regions: Vec<_> = project.regions("zoomRegions").iter().collect();
     regions.sort_by(|a, b| n(a, "startMs", 0.).total_cmp(&n(b, "startMs", 0.)));

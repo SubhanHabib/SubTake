@@ -23,6 +23,7 @@ unsafe extern "C" {
     ) -> i32;
     fn subtake_decoder_close(decoder: *mut c_void);
 }
+
 pub struct NativeDecoder {
     handle: NonNull<c_void>,
     width: u32,
@@ -65,6 +66,7 @@ impl NativeDecoder {
             height,
         })
     }
+
     pub fn frame(&mut self, seconds: f64) -> Result<Vec<u8>> {
         ensure!(
             seconds.is_finite() && seconds >= 0.,
@@ -91,6 +93,7 @@ impl NativeDecoder {
         Ok(rgba)
     }
 }
+
 impl Drop for NativeDecoder {
     fn drop(&mut self) {
         unsafe {

@@ -9,26 +9,33 @@ pub struct Silence {
     pub start_ms: f64,
     pub end_ms: f64,
 }
+
 fn number(value: &Value, key: &str) -> f64 {
     value[key].as_f64().unwrap_or(0.)
 }
+
 fn start(value: &Value) -> f64 {
     number(value, "startMs")
 }
+
 fn end(value: &Value) -> f64 {
     number(value, "endMs")
 }
+
 fn text(value: &Value) -> &str {
     value["text"].as_str().unwrap_or("")
 }
+
 fn words(value: &Value) -> Vec<Value> {
     value["words"].as_array().cloned().unwrap_or_default()
 }
+
 fn order(left: &Value, right: &Value) -> std::cmp::Ordering {
     start(left)
         .total_cmp(&start(right))
         .then(end(left).total_cmp(&end(right)))
 }
+
 fn utf16_len(text: &str) -> usize {
     text.encode_utf16().count()
 }
@@ -69,6 +76,7 @@ pub fn parse_silences(log: &str) -> Vec<Silence> {
     intervals.sort_by(|a, b| a.start_ms.total_cmp(&b.start_ms));
     intervals
 }
+
 pub fn ends_sentence(text: &str) -> bool {
     let text = text
         .trim()
@@ -96,6 +104,7 @@ pub fn ends_sentence(text: &str) -> bool {
     }
     true
 }
+
 pub fn text_from_words(words: &[Value]) -> String {
     let mut result = String::new();
     for (i, w) in words.iter().enumerate() {
@@ -106,6 +115,7 @@ pub fn text_from_words(words: &[Value]) -> String {
     }
     result.trim().into()
 }
+
 fn piece(mut words: Vec<Value>) -> Value {
     if let Some(w) = words.first_mut()
         && w["leadingSpace"] == true
@@ -114,6 +124,7 @@ fn piece(mut words: Vec<Value>) -> Value {
     }
     json!({"id":"","startMs":start(&words[0]),"endMs":end(words.last().unwrap()),"text":text_from_words(&words),"words":words})
 }
+
 fn pad(cues: &mut [Value]) {
     for i in 0..cues.len() {
         let (a, b) = (start(&cues[i]), end(&cues[i]));
@@ -132,6 +143,7 @@ fn pad(cues: &mut [Value]) {
         cues[i]["endMs"] = json!((b + right).round().max(a + 1.));
     }
 }
+
 fn merge_short(cues: Vec<Value>) -> Vec<Value> {
     let mut merged: Vec<Value> = vec![];
     for next in cues {
@@ -159,6 +171,7 @@ fn merge_short(cues: Vec<Value>) -> Vec<Value> {
     }
     merged
 }
+
 fn sentences(cue: Value) -> Vec<Value> {
     let ws = words(&cue);
     if !ws.is_empty() {
@@ -217,6 +230,7 @@ fn sentences(cue: Value) -> Vec<Value> {
         })
         .collect()
 }
+
 fn silence_fallback(cues: &[Value], silences: &[Silence]) -> Vec<Value> {
     let a = start(&cues[0]);
     let b = cues.iter().map(end).fold(a, f64::max);
@@ -302,6 +316,7 @@ fn silence_fallback(cues: &[Value], silences: &[Silence]) -> Vec<Value> {
     pad(&mut pieces);
     pieces.into_iter().flat_map(sentences).collect()
 }
+
 pub fn segment(cues: &[Value], silences: &[Silence]) -> Vec<Value> {
     if cues.is_empty() {
         return vec![];

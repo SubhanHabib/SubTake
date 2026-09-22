@@ -11,6 +11,7 @@ pub fn translate(text: &str, locale: &str) -> String {
     if let Some(rest) = text.strip_prefix("+ ") {
         return format!("+ {}", translate(rest, locale));
     }
+
     static CATALOG: OnceLock<Value> = OnceLock::new();
     let catalog = CATALOG.get_or_init(|| {
         serde_json::from_str(include_str!("../assets/localization.json"))

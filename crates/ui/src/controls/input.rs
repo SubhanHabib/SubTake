@@ -58,9 +58,11 @@ impl TextInput {
     pub fn set_handler(&mut self, accepted: impl Fn(String, &mut Window, &mut App) + 'static) {
         self.accepted = Box::new(accepted);
     }
+
     pub fn set_on_change(&mut self, changed: impl Fn(String, &mut Window, &mut App) + 'static) {
         self.changed = Some(Box::new(changed));
     }
+
     pub fn set_on_cancel(&mut self, cancelled: impl Fn(&mut Window, &mut App) + 'static) {
         self.cancelled = Some(Box::new(cancelled));
     }
@@ -72,15 +74,19 @@ impl TextInput {
         self.selected_range = self.content.len()..self.content.len();
         self.committed = value.to_owned();
     }
+
     pub fn set_placeholder(&mut self, placeholder: impl Into<SharedString>) {
         self.placeholder = placeholder.into();
     }
+
     pub fn text(&self) -> &str {
         &self.content
     }
+
     pub fn focus(&self, window: &mut Window, cx: &mut App) {
         window.focus(&self.focus_handle, cx);
     }
+
     pub fn new(
         cx: &mut Context<Self>,
         content: String,
@@ -106,6 +112,7 @@ impl TextInput {
             scroll_offset: px(0.),
         }
     }
+
     pub fn sync(&mut self, value: &str, window: &Window) {
         if !self.focus_handle.is_focused(window) && self.content.as_ref() != value {
             self.content = value.to_owned().into();
@@ -113,6 +120,7 @@ impl TextInput {
             self.committed = value.to_owned();
         }
     }
+
     fn accept(&mut self, _: &Accept, window: &mut Window, cx: &mut Context<Self>) {
         if self.marked_range.is_none() {
             self.commit(window, cx);
@@ -239,6 +247,7 @@ impl TextInput {
             ));
         }
     }
+
     fn cut(&mut self, _: &Cut, window: &mut Window, cx: &mut Context<Self>) {
         if !self.selected_range.is_empty() {
             cx.write_to_clipboard(ClipboardItem::new_string(

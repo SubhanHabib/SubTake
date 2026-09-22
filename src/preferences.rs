@@ -18,6 +18,7 @@ pub struct Preferences {
     pub recent_projects: Vec<PathBuf>,
     pub editor_shortcuts: std::collections::BTreeMap<String, String>,
 }
+
 impl Default for Preferences {
     fn default() -> Self {
         let modifier = if cfg!(target_os = "macos") {
@@ -41,6 +42,7 @@ impl Default for Preferences {
         }
     }
 }
+
 impl Preferences {
     pub fn directory() -> Result<PathBuf> {
         // UI smoke runs have isolated settings/recovery and never change the user's language or recents.
@@ -56,6 +58,7 @@ impl Preferences {
                 .to_path_buf(),
         )
     }
+
     pub fn load() -> Result<Self> {
         let path = Self::directory()?.join("preferences.json");
         let mut preferences: Self = if path.exists() {
@@ -75,6 +78,7 @@ impl Preferences {
         }
         Ok(preferences)
     }
+
     pub fn save(&self) -> Result<()> {
         let dir = Self::directory()?;
         std::fs::create_dir_all(&dir)?;
@@ -86,6 +90,7 @@ impl Preferences {
             .map_err(|e| e.error)?;
         Ok(())
     }
+
     pub fn opened(&mut self, path: PathBuf) {
         self.recent_projects.retain(|p| p != &path);
         self.recent_projects.insert(0, path);

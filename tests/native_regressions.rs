@@ -12,6 +12,7 @@ use subtake_native::{
     motion::CameraTrack,
     project::Project,
 };
+
 #[test]
 fn export_options_roundtrip_through_project_history() {
     let mut p = Project::new(Path::new("video.mp4"));
@@ -38,6 +39,7 @@ fn export_options_roundtrip_through_project_history() {
     assert_eq!(restored.quality, "medium");
     assert!(!restored.gif_loop);
 }
+
 #[test]
 fn file_urls_decode_spaces_and_unicode() {
     let root = tempfile::tempdir().unwrap();
@@ -46,6 +48,7 @@ fn file_urls_decode_spaces_and_unicode() {
     p.video_path = url::Url::from_file_path(&file).unwrap().to_string();
     assert_eq!(p.source_path(None), file);
 }
+
 #[test]
 fn camera_seek_order_does_not_change_composition() {
     let mut p = Project::new(Path::new("video.mp4"));
@@ -69,6 +72,7 @@ fn camera_seek_order_does_not_change_composition() {
         );
     }
 }
+
 #[cfg(unix)]
 #[test]
 fn process_cancellation_and_output_limits_are_enforced() {
@@ -134,6 +138,7 @@ fn subtitle_output_clock_follows_cuts_and_speed() {
     assert!(subtitles::format(&cues, false).contains("00:00:02,000 --> 00:00:02,500"));
     assert!(subtitles::format(&cues, true).starts_with("WEBVTT\n\n"));
 }
+
 #[test]
 fn recovery_preserves_saved_document_and_unknown_fields() {
     use subtake_native::{project::History, recovery};
@@ -159,6 +164,7 @@ fn recovery_preserves_saved_document_and_unknown_fields() {
     assert!(!snapshot.exists());
     assert!(saved.exists());
 }
+
 #[test]
 fn transcription_prefers_microphone_sidecar() {
     let dir = tempfile::tempdir().unwrap();
@@ -208,6 +214,7 @@ fn caption_moves_retime_words_and_text_edits_replace_old_recognition() {
         .unwrap();
     assert!(p.regions("autoCaptions")[0].get("words").is_none());
 }
+
 #[test]
 fn clip_resize_keeps_encoded_duration_consistent_with_source_speed() {
     let mut p = Project::new(Path::new("fixture.mp4"));
@@ -386,6 +393,7 @@ fn crop_drag_stays_in_source_and_repairs_imported_bounds() {
     assert_eq!(crop_rect(&p), [0.6, 0.5, 0.4, 0.5]);
     assert!(adjust_crop(&mut p, f64::NAN, 0., false).is_err());
 }
+
 #[test]
 fn folder_library_search_filters_sidecars_and_deduplicates_recents() {
     let dir = tempfile::tempdir().unwrap();

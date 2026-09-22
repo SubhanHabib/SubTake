@@ -22,6 +22,7 @@ impl gpui::AssetSource for Assets {
             Err(e) => Err(e.into()),
         }
     }
+
     fn list(&self, path: &str) -> Result<Vec<gpui::SharedString>> {
         let directory = crate::media::resources().join(path);
         if !directory.is_dir() {

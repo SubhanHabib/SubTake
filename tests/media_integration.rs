@@ -5,6 +5,7 @@ use subtake_native::{
     media,
     project::Project,
 };
+
 fn fixture(path: &Path) {
     let result = Command::new(media::binary("ffmpeg").unwrap())
         .args([
@@ -25,6 +26,7 @@ fn fixture(path: &Path) {
         .unwrap();
     assert!(result.success());
 }
+
 #[test]
 fn decoder_reuses_source_frames_for_higher_output_rates() {
     let dir = tempfile::tempdir().unwrap();
@@ -39,6 +41,7 @@ fn decoder_reuses_source_frames_for_higher_output_rates() {
     assert_eq!(second, decoder.frame(0.6).unwrap());
     assert_eq!(first, decoder.frame(0.).unwrap());
 }
+
 #[test]
 fn cancelled_export_preserves_existing_destination() {
     let dir = tempfile::tempdir().unwrap();

@@ -15,9 +15,11 @@ pub(super) struct FrameRequest {
     width: u32,
     height: u32,
 }
+
 pub(super) struct Preview {
     slot: Arc<(Mutex<Option<FrameRequest>>, Condvar)>,
 }
+
 impl Preview {
     pub(super) fn new() -> Self {
         let slot: Arc<(Mutex<Option<FrameRequest>>, Condvar)> =
@@ -109,6 +111,7 @@ impl Preview {
         });
         Self { slot }
     }
+
     fn request(&self, frame: FrameRequest) {
         let (lock, wake) = &*self.slot;
         *lock.lock().unwrap() = Some(frame);

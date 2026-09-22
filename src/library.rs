@@ -4,6 +4,7 @@ use std::{
     collections::HashSet,
     path::{Path, PathBuf},
 };
+
 pub fn entries(folder: Option<&Path>, recent: &[PathBuf], query: &str) -> Result<Vec<PathBuf>> {
     let mut candidates = recent.to_vec();
     if let Some(folder) = folder {
