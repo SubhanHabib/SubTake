@@ -254,23 +254,6 @@ impl RootView {
         if (e.get_preview_pixel_width() - width).abs() > 0.5 {
             e.set_preview_pixel_width(width);
         }
-        let editor = e.clone();
-        let aspect_control = self.dropdown(
-            "aspect",
-            ["Native", "16:9", "9:16", "1:1", "4:3", "3:2"]
-                .map(str::to_owned)
-                .to_vec(),
-            e.get_aspect_index(),
-            true,
-            cx,
-            move |i, _, _| {
-                editor.set_aspect_index(i as i32);
-                editor.defer_field(
-                    "aspectRatio".into(),
-                    ["native", "16:9", "9:16", "1:1", "4:3", "3:2"][i].into(),
-                );
-            },
-        );
         let mut picture = div()
             .id("preview-image")
             .relative()
@@ -356,49 +339,6 @@ impl RootView {
                     ),
             );
         }
-        // The aspect pod. The handoff floats it at the stage's top left, not
-        // over its centre: the stage's left reserve already ends where the
-        // tool pod's air does, so the pod sits flush with the picture area's
-        // own left edge and reads as belonging to the frame under it.
-        //
-        // It is an absolute child of the viewport, which is already
-        // `relative`, so nothing about the stage's own measurement — the zoom
-        // and the pan both depend on it — changes.
-        let aspect_pod = div()
-            .absolute()
-            .left_0()
-            .top(px(Theme::INSET))
-            .child(frosted(
-                UiSurface::Pod.radius(),
-                UiSurface::Pod.blur(),
-                pod(theme)
-                    .child(
-                        div()
-                            .w(px(ASPECT_TRIGGER_WIDTH))
-                            .flex_shrink_0()
-                            .child(aspect_control),
-                    )
-                    .child(self.action("crop", "Crop", "visual-crop", true))
-                    .child(
-                        button(
-                            "fit-preview",
-                            format!("Fit · {}%", (e.get_preview_zoom() * 100.).round()),
-                            theme,
-                        )
-                        .ghost()
-                        .on_click(cx.listener(|s, _, _, cx| {
-                            if let Surface::Editor(e) = &s.surface {
-                                e.set_preview_zoom(1.);
-                            }
-                            s.preview_pan = point(px(0.), px(0.));
-                            s.preview_known_zoom = 1.;
-                            if matches!(s.pinch, Some((false, ..))) {
-                                s.pinch = None;
-                            }
-                            cx.notify();
-                        })),
-                    ),
-            ));
         stage_reserve(
             div().flex().flex_col().child(
                 div()
@@ -442,10 +382,82 @@ impl RootView {
                             .left(self.preview_pan.x)
                             .top(self.preview_pan.y)
                             .child(picture),
-                    )
-                    .child(aspect_pod),
+                    ),
             ),
         )
         .into_any_element()
+    }
+
+    /// The aspect pod: the frame's ratio, the crop tool and the zoom reset.
+    ///
+    /// The handoff floats it at the stage's top left rather than over the
+    /// picture's centre, so it hangs from the stage itself and not from the
+    /// viewport inside it. The viewport clips — the picture has to be able to
+    /// run past its own edge under zoom — and a float that lives in a clipped
+    /// box is a float that disappears the moment the picture grows.
+    pub(super) fn aspect_pod(
+        &mut self,
+        e: &EditorWindow,
+        cx: &mut Context<Self>,
+    ) -> Option<AnyElement> {
+        if !e.get_has_video() {
+            return None;
+        }
+        let theme = self.theme;
+        let editor = e.clone();
+        let aspect_control = self.dropdown(
+            "aspect",
+            ["Native", "16:9", "9:16", "1:1", "4:3", "3:2"]
+                .map(str::to_owned)
+                .to_vec(),
+            e.get_aspect_index(),
+            true,
+            cx,
+            move |i, _, _| {
+                editor.set_aspect_index(i as i32);
+                editor.defer_field(
+                    "aspectRatio".into(),
+                    ["native", "16:9", "9:16", "1:1", "4:3", "3:2"][i].into(),
+                );
+            },
+        );
+        Some(
+            div()
+                .absolute()
+                .left(px(STAGE_RESERVE_LEFT))
+                .top(px(Theme::INSET))
+                .child(frosted(
+                    UiSurface::Pod.radius(),
+                    UiSurface::Pod.blur(),
+                    pod(theme)
+                        .child(
+                            div()
+                                .w(px(ASPECT_TRIGGER_WIDTH))
+                                .flex_shrink_0()
+                                .child(aspect_control),
+                        )
+                        .child(self.action("crop", "Crop", "visual-crop", true))
+                        .child(
+                            button(
+                                "fit-preview",
+                                format!("Fit · {}%", (e.get_preview_zoom() * 100.).round()),
+                                theme,
+                            )
+                            .ghost()
+                            .on_click(cx.listener(|s, _, _, cx| {
+                                if let Surface::Editor(e) = &s.surface {
+                                    e.set_preview_zoom(1.);
+                                }
+                                s.preview_pan = point(px(0.), px(0.));
+                                s.preview_known_zoom = 1.;
+                                if matches!(s.pinch, Some((false, ..))) {
+                                    s.pinch = None;
+                                }
+                                cx.notify();
+                            })),
+                        ),
+                ))
+                .into_any_element(),
+        )
     }
 }

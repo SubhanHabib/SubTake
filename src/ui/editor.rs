@@ -172,6 +172,7 @@ impl RootView {
                 rail,
             ));
         let preview = self.preview(e, window, cx);
+        let aspect_pod = self.aspect_pod(e, cx);
         let inspector = self.inspector(e, window, cx);
         let mut root = div()
             .flex()
@@ -189,6 +190,7 @@ impl RootView {
                     .flex_1()
                     .min_h_0()
                     .child(preview)
+                    .children(aspect_pod)
                     .child(rail)
                     .child(inspector),
             );
