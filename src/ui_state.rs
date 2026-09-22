@@ -1068,8 +1068,10 @@ macro_rules! surface {
                 let window = Window::new($kind);
                 let mut props = Properties::default();
                 if $kind == ui_runtime::WindowKind::Editor {
-                    props.camera_names = ModelRc::new(VecModel::from(vec!["System default".into()]));
-                    props.microphone_names = ModelRc::new(VecModel::from(vec!["System default".into()]));
+                    props.camera_names =
+                        ModelRc::new(VecModel::from(vec!["System default".into()]));
+                    props.microphone_names =
+                        ModelRc::new(VecModel::from(vec!["System default".into()]));
                 } else {
                     // Recorder surfaces begin with their options closed; the
                     // controller supplies device models when synchronizing them.

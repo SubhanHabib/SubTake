@@ -11,9 +11,13 @@
 //! seeks, and ⌘⇧D (or the appearance dropdown) swaps light and dark on all
 //! three windows at once.
 use crate::{EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
-use subtake_native::platform;
 use anyhow::Result;
-use std::{cell::RefCell, rc::{Rc, Weak}, time::Duration};
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+    time::Duration,
+};
+use subtake_native::platform;
 use subtake_native::ui_runtime::{
     self, Color, Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, Timer, TimerMode, VecModel,
 };
@@ -179,7 +183,9 @@ pub fn run() -> Result<()> {
         .on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
 
     // -- Show ---------------------------------------------------------------
-    editor.window().set_size(ui_runtime::LogicalSize::new(1360., 880.));
+    editor
+        .window()
+        .set_size(ui_runtime::LogicalSize::new(1360., 880.));
     editor.show()?;
     show_recorder(&launcher, &options);
 
@@ -190,7 +196,11 @@ impl Gallery {
     fn action(&mut self, action: &str) {
         match action {
             "toggle-appearance" => {
-                self.appearance = if self.appearance == "dark" { "light" } else { "dark" };
+                self.appearance = if self.appearance == "dark" {
+                    "light"
+                } else {
+                    "dark"
+                };
                 self.set_value("prefs.appearance", self.appearance);
                 self.apply_appearance();
                 self.push_fields();
@@ -202,10 +212,11 @@ impl Gallery {
                 self.launcher.set_status("Recording".into());
                 let launcher = self.launcher.clone();
                 let started = std::time::Instant::now();
-                self.playback.start(TimerMode::Repeated, Duration::from_millis(250), move || {
-                    let s = started.elapsed().as_secs();
-                    launcher.set_elapsed(format!("{:02}:{:02}", s / 60, s % 60).into());
-                });
+                self.playback
+                    .start(TimerMode::Repeated, Duration::from_millis(250), move || {
+                        let s = started.elapsed().as_secs();
+                        launcher.set_elapsed(format!("{:02}:{:02}", s / 60, s % 60).into());
+                    });
             }
             "stop" | "stop-recording" | "finish" => {
                 self.playback.stop();
@@ -241,15 +252,18 @@ impl Gallery {
                 editor.set_busy(true);
                 editor.set_status("Exporting…".into());
                 let started = std::time::Instant::now();
-                Timer::single_shot(Duration::from_millis(16), move || tick_export(editor, started));
+                Timer::single_shot(Duration::from_millis(16), move || {
+                    tick_export(editor, started)
+                });
             }
             "toggle-camera" => self.option("camera", &(!self.launcher.get_camera()).to_string()),
             "toggle-microphone" => {
                 self.option("microphone", &(!self.launcher.get_microphone()).to_string())
             }
-            "toggle-system-audio" => {
-                self.option("system_audio", &(!self.launcher.get_system_audio()).to_string())
-            }
+            "toggle-system-audio" => self.option(
+                "system_audio",
+                &(!self.launcher.get_system_audio()).to_string(),
+            ),
             other => {
                 self.editor
                     .set_status(format!("Gallery: “{other}” has no effect here").into());
@@ -295,7 +309,9 @@ impl Gallery {
                 self.launcher.set_directory(value.into());
                 self.options.set_directory(value.into());
             }
-            _ => self.launcher.set_status(format!("Gallery: option {key} = {value}").into()),
+            _ => self
+                .launcher
+                .set_status(format!("Gallery: option {key} = {value}").into()),
         }
     }
 
@@ -316,7 +332,11 @@ impl Gallery {
     }
 
     fn apply_appearance(&self) {
-        for window in [&self.editor as &dyn Appearance, &self.launcher, &self.options] {
+        for window in [
+            &self.editor as &dyn Appearance,
+            &self.launcher,
+            &self.options,
+        ] {
             window.theme(self.appearance);
         }
     }
@@ -335,7 +355,11 @@ impl Gallery {
             .start(TimerMode::Repeated, Duration::from_millis(33), move || {
                 let Some(g) = me.upgrade() else { return };
                 let mut g = g.borrow_mut();
-                g.playhead = if g.playhead + 0.033 >= DURATION { 0. } else { g.playhead + 0.033 };
+                g.playhead = if g.playhead + 0.033 >= DURATION {
+                    0.
+                } else {
+                    g.playhead + 0.033
+                };
                 g.push_time();
                 follow_playhead(&g.editor, g.playhead);
             });
@@ -404,7 +428,9 @@ fn tick_export(editor: EditorWindow, started: std::time::Instant) {
     let progress = (started.elapsed().as_secs_f32() / 4.).min(1.);
     editor.set_progress(progress);
     if progress < 1. {
-        Timer::single_shot(Duration::from_millis(33), move || tick_export(editor, started));
+        Timer::single_shot(Duration::from_millis(33), move || {
+            tick_export(editor, started)
+        });
     } else {
         editor.set_busy(false);
         editor.set_progress(0.);
@@ -482,10 +508,34 @@ fn seed_editor(ui: &EditorWindow) {
     ui.set_look_choice("Studio".into());
     ui.set_background_value("wallpaper-1".into());
     ui.set_aspect_index(0);
-    ui.set_preview(gradient(PREVIEW_W, PREVIEW_H, [0x1f, 0x3b, 0x73], [0xd9, 0x6c, 0x9d], Style::Preview));
-    ui.set_thumbnails(gradient(1600, 48, [0x1f, 0x3b, 0x73], [0xd9, 0x6c, 0x9d], Style::Strip));
-    ui.set_frosted_thumbnails(gradient(1600, 48, [0x4a, 0x5c, 0x86], [0xc7, 0x9a, 0xb4], Style::Strip));
-    ui.set_waveform(gradient(1600, 40, [0xa4, 0x68, 0xe9], [0xa4, 0x68, 0xe9], Style::Waveform));
+    ui.set_preview(gradient(
+        PREVIEW_W,
+        PREVIEW_H,
+        [0x1f, 0x3b, 0x73],
+        [0xd9, 0x6c, 0x9d],
+        Style::Preview,
+    ));
+    ui.set_thumbnails(gradient(
+        1600,
+        48,
+        [0x1f, 0x3b, 0x73],
+        [0xd9, 0x6c, 0x9d],
+        Style::Strip,
+    ));
+    ui.set_frosted_thumbnails(gradient(
+        1600,
+        48,
+        [0x4a, 0x5c, 0x86],
+        [0xc7, 0x9a, 0xb4],
+        Style::Strip,
+    ));
+    ui.set_waveform(gradient(
+        1600,
+        40,
+        [0xa4, 0x68, 0xe9],
+        [0xa4, 0x68, 0xe9],
+        Style::Waveform,
+    ));
     ui.set_track_labels(ModelRc::new(VecModel::from(vec![
         "Zoom".to_string(),
         "Clip".into(),
@@ -606,26 +656,48 @@ impl Recorder for RecordingOptions {
 }
 
 fn source_names() -> Vec<String> {
-    ["Built-in Retina Display", "Studio Display", "Safari — SubTake docs", "Xcode", "Figma"]
-        .into_iter()
-        .map(String::from)
-        .collect()
+    [
+        "Built-in Retina Display",
+        "Studio Display",
+        "Safari — SubTake docs",
+        "Xcode",
+        "Figma",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect()
 }
 fn camera_names() -> Vec<String> {
-    ["FaceTime HD Camera", "Studio Display Camera", "iPhone Continuity Camera"]
-        .into_iter()
-        .map(String::from)
-        .collect()
+    [
+        "FaceTime HD Camera",
+        "Studio Display Camera",
+        "iPhone Continuity Camera",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect()
 }
 fn microphone_names() -> Vec<String> {
-    ["MacBook Pro Microphone", "Studio Display Microphone", "Shure MV7"]
-        .into_iter()
-        .map(String::from)
-        .collect()
+    [
+        "MacBook Pro Microphone",
+        "Studio Display Microphone",
+        "Shure MV7",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect()
 }
 
 fn fixture_regions() -> Vec<Region> {
-    fn region(kind: &str, id: &str, label: &str, start: f32, end: f32, row: i32, tint: u32) -> Region {
+    fn region(
+        kind: &str,
+        id: &str,
+        label: &str,
+        start: f32,
+        end: f32,
+        row: i32,
+        tint: u32,
+    ) -> Region {
         Region {
             id: id.into(),
             kind: kind.into(),
@@ -645,14 +717,70 @@ fn fixture_regions() -> Vec<Region> {
         region("clipRegions", "c1", "Intro", 0., 33., 1, 0x357c65),
         region("speedRegions", "s1", "2× Speed", 33., 41., 1, 0xdc922d),
         region("trimRegions", "t1", "Trim", 71., 76., 1, 0xee5261),
-        region("clipRegions", "c2", "Walkthrough", 76., DURATION, 1, 0x357c65),
-        region("annotationRegions", "a1", "Click Save", 14., 22., 2, 0xcbb44f),
+        region(
+            "clipRegions",
+            "c2",
+            "Walkthrough",
+            76.,
+            DURATION,
+            1,
+            0x357c65,
+        ),
+        region(
+            "annotationRegions",
+            "a1",
+            "Click Save",
+            14.,
+            22.,
+            2,
+            0xcbb44f,
+        ),
         region("annotationRegions", "a2", "Arrow", 86., 94., 2, 0xcbb44f),
-        region("audioRegions", "au1", "Voice-over", 0., DURATION, 3, 0xa468e9),
-        region("autoCaptions", "cap1", "Welcome to SubTake", 1., 5.5, 4, 0x6396dc),
-        region("autoCaptions", "cap2", "Let's set up your workspace", 6., 11., 4, 0x6396dc),
-        region("autoCaptions", "cap3", "Choose a wallpaper", 12., 17., 4, 0x6396dc),
-        region("autoCaptions", "cap4", "And export in one click", 120., 126., 4, 0x6396dc),
+        region(
+            "audioRegions",
+            "au1",
+            "Voice-over",
+            0.,
+            DURATION,
+            3,
+            0xa468e9,
+        ),
+        region(
+            "autoCaptions",
+            "cap1",
+            "Welcome to SubTake",
+            1.,
+            5.5,
+            4,
+            0x6396dc,
+        ),
+        region(
+            "autoCaptions",
+            "cap2",
+            "Let's set up your workspace",
+            6.,
+            11.,
+            4,
+            0x6396dc,
+        ),
+        region(
+            "autoCaptions",
+            "cap3",
+            "Choose a wallpaper",
+            12.,
+            17.,
+            4,
+            0x6396dc,
+        ),
+        region(
+            "autoCaptions",
+            "cap4",
+            "And export in one click",
+            120.,
+            126.,
+            4,
+            0x6396dc,
+        ),
     ]
 }
 
@@ -660,27 +788,64 @@ fn fixture_regions() -> Vec<Region> {
 /// 2 toggle, 3 action row, 4 dropdown, 5 section label.
 fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
     let v = |key: &str, default: &str| g.value(key, default).to_owned();
-    let section = |label: &str| Field { key: format!("section.{label}"), label: label.into(), kind: 5, ..Default::default() };
+    let section = |label: &str| Field {
+        key: format!("section.{label}"),
+        label: label.into(),
+        kind: 5,
+        ..Default::default()
+    };
     let slider = |key: &str, label: &str, default: &str, min: f32, max: f32| Field {
-        key: key.into(), label: label.into(), value: v(key, default), kind: 1, minimum: min, maximum: max, ..Default::default()
+        key: key.into(),
+        label: label.into(),
+        value: v(key, default),
+        kind: 1,
+        minimum: min,
+        maximum: max,
+        ..Default::default()
     };
     let text = |key: &str, label: &str, default: &str| Field {
-        key: key.into(), label: label.into(), value: v(key, default), kind: 0, ..Default::default()
+        key: key.into(),
+        label: label.into(),
+        value: v(key, default),
+        kind: 0,
+        ..Default::default()
     };
     let toggle = |key: &str, label: &str, default: bool| Field {
-        key: key.into(), label: label.into(), value: v(key, &default.to_string()), kind: 2, ..Default::default()
+        key: key.into(),
+        label: label.into(),
+        value: v(key, &default.to_string()),
+        kind: 2,
+        ..Default::default()
     };
-    let action = |key: &str, label: &str| Field { key: key.into(), label: label.into(), kind: 3, ..Default::default() };
+    let action = |key: &str, label: &str| Field {
+        key: key.into(),
+        label: label.into(),
+        kind: 3,
+        ..Default::default()
+    };
     let dropdown = |key: &str, label: &str, choices: &[(&str, &str)], default: &str| {
         let value = v(key, default);
-        let choice = choices.iter().position(|(val, _)| *val == value).unwrap_or(0) as i32;
+        let choice = choices
+            .iter()
+            .position(|(val, _)| *val == value)
+            .unwrap_or(0) as i32;
         Field {
             key: key.into(),
             label: label.into(),
             value,
             kind: 4,
-            choices: ModelRc::new(VecModel::from(choices.iter().map(|(_, c)| c.to_string()).collect::<Vec<_>>())),
-            values: ModelRc::new(VecModel::from(choices.iter().map(|(val, _)| val.to_string()).collect::<Vec<_>>())),
+            choices: ModelRc::new(VecModel::from(
+                choices
+                    .iter()
+                    .map(|(_, c)| c.to_string())
+                    .collect::<Vec<_>>(),
+            )),
+            values: ModelRc::new(VecModel::from(
+                choices
+                    .iter()
+                    .map(|(val, _)| val.to_string())
+                    .collect::<Vec<_>>(),
+            )),
             choice,
             ..Default::default()
         }
@@ -695,17 +860,46 @@ fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
             slider("shadow", "Shadow", "0.4", 0., 1.),
             section("Cursor"),
             toggle("showCursor", "Show cursor", true),
-            dropdown("cursorStyle", "Style", &[("arrow", "Arrow"), ("hand", "Hand"), ("dot", "Dot")], "arrow"),
-            dropdown("cursorClickEffect", "Click effect", &[("none", "None"), ("ripple", "Ripple"), ("pulse", "Pulse")], "ripple"),
+            dropdown(
+                "cursorStyle",
+                "Style",
+                &[("arrow", "Arrow"), ("hand", "Hand"), ("dot", "Dot")],
+                "arrow",
+            ),
+            dropdown(
+                "cursorClickEffect",
+                "Click effect",
+                &[("none", "None"), ("ripple", "Ripple"), ("pulse", "Pulse")],
+                "ripple",
+            ),
             slider("cursorSize", "Size", "1.4", 0.5, 3.),
             toggle("cursorSmoothing", "Smooth movement", true),
             section("Zoom"),
             slider("zoomSmoothness", "Smoothness", "60", 0., 100.),
             toggle("connectZooms", "Connect zooms", false),
             section("Camera"),
-            dropdown("webcam.positionPreset", "Position", &[("bottom-right", "Bottom right"), ("bottom-left", "Bottom left"), ("top-right", "Top right"), ("custom", "Custom")], "bottom-right"),
+            dropdown(
+                "webcam.positionPreset",
+                "Position",
+                &[
+                    ("bottom-right", "Bottom right"),
+                    ("bottom-left", "Bottom left"),
+                    ("top-right", "Top right"),
+                    ("custom", "Custom"),
+                ],
+                "bottom-right",
+            ),
             slider("webcam.width", "Width", "24", 8., 60.),
-            dropdown("webcam.shape", "Shape", &[("circle", "Circle"), ("rounded", "Rounded"), ("square", "Square")], "circle"),
+            dropdown(
+                "webcam.shape",
+                "Shape",
+                &[
+                    ("circle", "Circle"),
+                    ("rounded", "Rounded"),
+                    ("square", "Square"),
+                ],
+                "circle",
+            ),
         ],
         "Wallpapers" => vec![
             section("Background"),
@@ -715,9 +909,27 @@ fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
         ],
         "Presets" => vec![
             section("Motion"),
-            dropdown("preset.motion", "Motion", &[("gentle", "Gentle"), ("smooth", "Smooth"), ("snappy", "Snappy")], "smooth"),
+            dropdown(
+                "preset.motion",
+                "Motion",
+                &[
+                    ("gentle", "Gentle"),
+                    ("smooth", "Smooth"),
+                    ("snappy", "Snappy"),
+                ],
+                "smooth",
+            ),
             section("Look"),
-            dropdown("preset.look", "Look", &[("studio", "Studio"), ("minimal", "Minimal"), ("vivid", "Vivid")], "studio"),
+            dropdown(
+                "preset.look",
+                "Look",
+                &[
+                    ("studio", "Studio"),
+                    ("minimal", "Minimal"),
+                    ("vivid", "Vivid"),
+                ],
+                "studio",
+            ),
             action("preset.save", "Save as preset…"),
             action("preset.reset", "Reset to defaults"),
         ],
@@ -725,21 +937,47 @@ fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
             let selected = g.regions.iter().find(|r| r.selected);
             match selected {
                 Some(r) => vec![
-                    section(&format!("{} · {}", r.label, r.kind.trim_end_matches("Regions"))),
+                    section(&format!(
+                        "{} · {}",
+                        r.label,
+                        r.kind.trim_end_matches("Regions")
+                    )),
                     text("region.start", "Start", &format!("{:.2}", r.start)),
                     text("region.end", "End", &format!("{:.2}", r.end)),
                     slider("region.zoom", "Zoom level", "2.0", 1., 4.),
-                    dropdown("region.easing", "Easing", &[("ease", "Ease"), ("linear", "Linear"), ("spring", "Spring")], "ease"),
+                    dropdown(
+                        "region.easing",
+                        "Easing",
+                        &[("ease", "Ease"), ("linear", "Linear"), ("spring", "Spring")],
+                        "ease",
+                    ),
                     action("region.delete", "Delete region"),
                 ],
-                None => vec![section("Nothing selected"), action("select-hint", "Click a region in the timeline")],
+                None => vec![
+                    section("Nothing selected"),
+                    action("select-hint", "Click a region in the timeline"),
+                ],
             }
         }
         "Recording" => vec![
             section("Sources"),
-            dropdown("recording.source", "Screen", &[("0", "Built-in Retina Display"), ("1", "Studio Display"), ("2", "Safari — SubTake docs")], "1"),
+            dropdown(
+                "recording.source",
+                "Screen",
+                &[
+                    ("0", "Built-in Retina Display"),
+                    ("1", "Studio Display"),
+                    ("2", "Safari — SubTake docs"),
+                ],
+                "1",
+            ),
             toggle("recording.camera", "Camera", true),
-            dropdown("recording.camera_device", "Camera device", &[("0", "FaceTime HD Camera"), ("1", "Studio Display Camera")], "0"),
+            dropdown(
+                "recording.camera_device",
+                "Camera device",
+                &[("0", "FaceTime HD Camera"), ("1", "Studio Display Camera")],
+                "0",
+            ),
             toggle("recording.microphone", "Microphone", true),
             toggle("recording.system", "System audio", false),
             section("Behaviour"),
@@ -749,14 +987,33 @@ fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
         ],
         "Preferences" => vec![
             section("Appearance"),
-            dropdown("prefs.appearance", "Appearance", &[("dark", "Dark"), ("light", "Light")], g.appearance),
-            dropdown("prefs.language", "Language", &[("en", "English"), ("de", "Deutsch"), ("fr", "Français"), ("ja", "日本語")], "en"),
+            dropdown(
+                "prefs.appearance",
+                "Appearance",
+                &[("dark", "Dark"), ("light", "Light")],
+                g.appearance,
+            ),
+            dropdown(
+                "prefs.language",
+                "Language",
+                &[
+                    ("en", "English"),
+                    ("de", "Deutsch"),
+                    ("fr", "Français"),
+                    ("ja", "日本語"),
+                ],
+                "en",
+            ),
             section("Editing"),
             toggle("prefs.auto_apply_zooms", "Auto-apply zooms", true),
             toggle("prefs.snap", "Snap to regions", true),
             slider("prefs.countdown_seconds", "Countdown", "3", 0., 10.),
             section("Storage"),
-            text("prefs.library_directory", "Library folder", "~/Movies/SubTake"),
+            text(
+                "prefs.library_directory",
+                "Library folder",
+                "~/Movies/SubTake",
+            ),
             action("prefs.reveal", "Reveal in Finder"),
         ],
         "Shortcuts" => vec![
@@ -779,7 +1036,10 @@ fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
             section("Library"),
             text("library.query", "Search", ""),
         ],
-        _ => vec![section(panel), action("noop", "This panel has no gallery fixtures yet")],
+        _ => vec![
+            section(panel),
+            action("noop", "This panel has no gallery fixtures yet"),
+        ],
     }
 }
 
@@ -833,7 +1093,8 @@ fn gradient(w: u32, h: u32, a: [u8; 3], b: [u8; 3], style: Style) -> Image {
                     (c, 255)
                 }
                 Style::Waveform => {
-                    let amp = 0.15 + 0.8 * (columns[x as usize] * (0.5 + 0.5 * (fx * 12.).sin().abs()));
+                    let amp =
+                        0.15 + 0.8 * (columns[x as usize] * (0.5 + 0.5 * (fx * 12.).sin().abs()));
                     let inside = (fy - 0.5).abs() * 2. < amp;
                     (a, if inside { 255 } else { 0 })
                 }
@@ -842,13 +1103,17 @@ fn gradient(w: u32, h: u32, a: [u8; 3], b: [u8; 3], style: Style) -> Image {
             bytes[i + 3] = alpha;
         }
     }
-    Image::from_rgba8(SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(&bytes, w, h))
+    Image::from_rgba8(SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(
+        &bytes, w, h,
+    ))
 }
 
 fn lerp(a: [u8; 3], b: [u8; 3], t: f32) -> [u8; 3] {
     let mut out = [0u8; 3];
     for i in 0..3 {
-        out[i] = (a[i] as f32 + (b[i] as f32 - a[i] as f32) * t).round().clamp(0., 255.) as u8;
+        out[i] = (a[i] as f32 + (b[i] as f32 - a[i] as f32) * t)
+            .round()
+            .clamp(0., 255.) as u8;
     }
     out
 }

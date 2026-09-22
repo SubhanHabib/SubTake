@@ -1,0 +1,8 @@
+# Formatter-owned layout, per docs/CONVENTIONS.md: four spaces, 100 columns,
+# 2024 style. Only stable options so `cargo fmt` behaves the same everywhere.
+style_edition = "2024"
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+newline_style = "Unix"
+use_small_heuristics = "Default"

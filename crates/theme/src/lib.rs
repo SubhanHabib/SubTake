@@ -368,7 +368,10 @@ mod tests {
         let light = Theme::light();
         assert!(light.bg.a < 1.0, "window background must stay translucent");
         assert!(light.panel.a < 1.0, "panels must stay translucent");
-        assert!(light.surface.a < 1.0, "control plates must stay translucent");
+        assert!(
+            light.surface.a < 1.0,
+            "control plates must stay translucent"
+        );
         assert_eq!(light.text.a, 1.0, "text stays fully opaque");
 
         let dark = Theme::dark();

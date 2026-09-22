@@ -1,12 +1,14 @@
 use anyhow::{Context, Result};
 use std::{path::PathBuf, sync::atomic::AtomicBool};
+use subtake_native::ui_state::{
+    AppTray, EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper,
+};
 use subtake_native::{
     export::{self, ExportSettings},
     media,
     project::Project,
     render::Scene,
 };
-use subtake_native::ui_state::{AppTray, EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
 mod app;
 mod gallery;
 mod inspector;
@@ -148,28 +150,54 @@ fn main() -> Result<()> {
         }
         Some("capture") => {
             use std::io::Write;
-            let id: u64 = args.get(1).context("capture WINDOW_ID OUTPUT.mp4 SECONDS")?.parse()?;
+            let id: u64 = args
+                .get(1)
+                .context("capture WINDOW_ID OUTPUT.mp4 SECONDS")?
+                .parse()?;
             let output = PathBuf::from(args.get(2).context("Missing output path")?);
             let seconds: u64 = args.get(3).context("Missing duration")?.parse()?;
-            anyhow::ensure!((1..=120).contains(&seconds), "Capture duration must be 1–120 seconds");
-            anyhow::ensure!(!output.exists(), "Refusing to overwrite an existing recording");
+            anyhow::ensure!(
+                (1..=120).contains(&seconds),
+                "Capture duration must be 1–120 seconds"
+            );
+            anyhow::ensure!(
+                !output.exists(),
+                "Refusing to overwrite an existing recording"
+            );
             anyhow::ensure!(output.is_absolute(), "Use an absolute capture output path");
-            anyhow::ensure!(output.parent().is_some_and(|p| p.is_dir()), "Output directory does not exist");
-            let source = subtake_native::platform::sources()?.into_iter()
+            anyhow::ensure!(
+                output.parent().is_some_and(|p| p.is_dir()),
+                "Output directory does not exist"
+            );
+            let source = subtake_native::platform::sources()?
+                .into_iter()
                 .find(|s| s["kind"] == "window" && s["nativeId"].as_u64() == Some(id))
                 .context("Window is no longer available; enumerate sources again")?;
             let mut recording = subtake_native::platform::Recording::start(
-                &source, output, false, false, false, &AtomicBool::new(false),
+                &source,
+                output,
+                false,
+                false,
+                false,
+                &AtomicBool::new(false),
             )?;
-            println!("{}", serde_json::json!({"status":"recording", "source":source, "seconds":seconds}));
+            println!(
+                "{}",
+                serde_json::json!({"status":"recording", "source":source, "seconds":seconds})
+            );
             std::io::stdout().flush()?;
             let start = std::time::Instant::now();
             while start.elapsed().as_secs() < seconds {
-                if let Some(error) = recording.error() { anyhow::bail!(error); }
+                if let Some(error) = recording.error() {
+                    anyhow::bail!(error);
+                }
                 std::thread::sleep(std::time::Duration::from_millis(100));
             }
             let output = recording.stop()?;
-            println!("{}", serde_json::json!({"status":"complete", "path":output}));
+            println!(
+                "{}",
+                serde_json::json!({"status":"complete", "path":output})
+            );
         }
         Some("sources") => println!(
             "{}",

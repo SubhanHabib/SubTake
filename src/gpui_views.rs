@@ -74,7 +74,6 @@ pub fn menu_commands(name: &str) -> &'static [&'static [(&'static str, &'static 
     }
 }
 
-
 /// The glyph a numeric field wears in its scrub plate. Keyed on the field so
 /// the inspector reads as a set of labelled dials rather than a list of rows.
 /// How a slider's number should read. The model carries the raw value, so the
@@ -97,10 +96,10 @@ fn field_unit(key: &str) -> (f32, &'static str) {
 use subtake_ui::{
     Button, ButtonVariant, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput,
     button, caps_label, choice_tile, column, composer_footer, context_chip, empty_state,
-    fade_edges, frosted, group_card, icon, icon_button, measure, media_tile, menu_in,
-    menu_list, menu_row, menu_surface, panel, panel_variant, progress_bar, rail_button, row,
-    section_label, segmented_control, setting_card, status_dot, swatch, switch, tile_grid,
-    timeline_scrubber, toggle, tooltip,
+    fade_edges, frosted, group_card, icon, icon_button, measure, media_tile, menu_in, menu_list,
+    menu_row, menu_surface, panel, panel_variant, progress_bar, rail_button, row, section_label,
+    segmented_control, setting_card, status_dot, swatch, switch, tile_grid, timeline_scrubber,
+    toggle, tooltip,
 };
 
 fn macos_cursor_image() -> Arc<gpui::Image> {
@@ -516,10 +515,15 @@ impl RootView {
     ) -> Button {
         let s = self.surface.clone();
         let command = command.to_owned();
-        icon_button(SharedString::from(id.to_owned()), glyph, label.to_owned(), self.theme)
-            .ghost()
-            .enabled(enabled)
-            .on_click(move |_, _, _| s.action(&command))
+        icon_button(
+            SharedString::from(id.to_owned()),
+            glyph,
+            label.to_owned(),
+            self.theme,
+        )
+        .ghost()
+        .enabled(enabled)
+        .on_click(move |_, _, _| s.action(&command))
     }
 
     /// A rail entry: round icon over its caption, accented while active.
@@ -828,14 +832,15 @@ impl RootView {
         match field.kind {
             5 => {
                 // A small muted caption with a rule running out to the edge.
-                return section_label(label, t).mt(px(Theme::GAP_SMALL)).into_any_element();
+                return section_label(label, t)
+                    .mt(px(Theme::GAP_SMALL))
+                    .into_any_element();
             }
             3 => {
                 // An inspector action is a row in a stacked picker, not a
                 // toolbar control, so it carries the recessed field plate.
                 return self
                     .action(SharedString::from(id), field.value, &key, true)
-                    
                     .into_any_element();
             }
             2 => {
@@ -972,7 +977,9 @@ impl RootView {
                     }),
             );
         }
-        heading = heading.child(caps_label(title.to_owned(), t)).child(div().flex_1());
+        heading = heading
+            .child(caps_label(title.to_owned(), t))
+            .child(div().flex_1());
         let mut content = column().gap(px(Theme::GAP));
         if name == "Frame" || name == "Wallpapers" {
             // Scene / Background is one segmented control, not two buttons.
@@ -1014,10 +1021,8 @@ impl RootView {
             for tile in e.get_wallpapers().iter() {
                 let editor = e.clone();
                 let key = tile.key.clone();
-                let mut item = media_tile(
-                    SharedString::from(format!("wallpaper-{key}")),
-                    tile.title,
-                );
+                let mut item =
+                    media_tile(SharedString::from(format!("wallpaper-{key}")), tile.title);
                 if let Some(image) = tile.source.0 {
                     item = item.child(
                         img(image)
@@ -1050,9 +1055,7 @@ impl RootView {
                         e.get_background_value() == value,
                         t,
                     )
-                    .on_click(move |_, _, _| {
-                        editor.defer_field("wallpaper".into(), value.into())
-                    }),
+                    .on_click(move |_, _, _| editor.defer_field("wallpaper".into(), value.into())),
                 );
             }
             let editor = e.clone();
@@ -1088,10 +1091,7 @@ impl RootView {
                     chosen,
                     t,
                     move |index, _, _| {
-                        editor.defer_field(
-                            "prefs.appearance".into(),
-                            appearances[index].to_owned(),
-                        )
+                        editor.defer_field("prefs.appearance".into(), appearances[index].to_owned())
                     },
                 ))
                 .child(caps_label("Zooms", t))
@@ -1191,7 +1191,9 @@ impl RootView {
                         .on_click(move |_, _, _| surface.action(&command)),
                 );
             }
-            content = content.child(caps_label("Motion presets", t)).child(presets);
+            content = content
+                .child(caps_label("Motion presets", t))
+                .child(presets);
             if !e.get_has_video() {
                 content = content.child(
                     div()
@@ -1543,15 +1545,20 @@ impl RootView {
             ("Help", "Question-regular"),
         ] {
             footer = footer.child(
-                icon_button(SharedString::from(format!("palette-menu-{menu}")), glyph, menu, t)
-                    .ghost()
-                    .selected(name == menu)
-                    .on_click(cx.listener(move |s, _, _, cx| {
-                        s.menu = Some(menu.into());
-                        s.menu_filter.clear();
-                        s.menu_focus = true;
-                        cx.notify();
-                    })),
+                icon_button(
+                    SharedString::from(format!("palette-menu-{menu}")),
+                    glyph,
+                    menu,
+                    t,
+                )
+                .ghost()
+                .selected(name == menu)
+                .on_click(cx.listener(move |s, _, _, cx| {
+                    s.menu = Some(menu.into());
+                    s.menu_filter.clear();
+                    s.menu_focus = true;
+                    cx.notify();
+                })),
             );
         }
         footer = footer.child(
@@ -2321,8 +2328,20 @@ impl RootView {
         }
         header = header
             .child(self.brand())
-            .child(self.icon_action("open", "FolderOpen-regular", "Open projects", "Recent", true))
-            .child(self.icon_action("save", "FloppyDisk-regular", "Save", "save", e.get_has_video()))
+            .child(self.icon_action(
+                "open",
+                "FolderOpen-regular",
+                "Open projects",
+                "Recent",
+                true,
+            ))
+            .child(self.icon_action(
+                "save",
+                "FloppyDisk-regular",
+                "Save",
+                "save",
+                e.get_has_video(),
+            ))
             .child(self.icon_action(
                 "undo",
                 "ArrowCounterClockwise-regular",
@@ -2625,13 +2644,7 @@ impl RootView {
                     .child(icon("Question-regular", t.muted))
                     .tooltip(move |_, cx| tooltip(hint.clone(), t, cx)),
             )
-            .child(self.icon_action(
-                "close",
-                "X-regular",
-                "Hide recorder",
-                "hide-launcher",
-                true,
-            ));
+            .child(self.icon_action("close", "X-regular", "Hide recorder", "hide-launcher", true));
         bar.into_any_element()
     }
 
@@ -2684,9 +2697,9 @@ impl RootView {
                         !s.get_busy(),
                     ))
                     .child(div().flex_1())
-                    .child(composer_footer(t).child(
-                        "Choose a display or a visible window to record.",
-                    ));
+                    .child(
+                        composer_footer(t).child("Choose a display or a visible window to record."),
+                    );
             }
             "audio" => {
                 let options = s.clone();
@@ -2858,7 +2871,10 @@ impl Render for RootView {
             window.request_animation_frame();
         }
         subtake_ui::perf::log_took(
-            format_args!("render {} tree built (fading={fading})", surface.kind_name()),
+            format_args!(
+                "render {} tree built (fading={fading})",
+                surface.kind_name()
+            ),
             render_began,
             0.0,
         );

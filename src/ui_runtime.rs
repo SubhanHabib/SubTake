@@ -5,7 +5,7 @@ use crate::{
     ui_state::UiData,
 };
 use anyhow::{Context, Result};
-use gpui::{px, size, AppContext, AsyncApp, Bounds, WindowBounds, WindowOptions};
+use gpui::{AppContext, AsyncApp, Bounds, WindowBounds, WindowOptions, px, size};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use std::{
     cell::{Cell, RefCell},

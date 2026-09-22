@@ -185,13 +185,7 @@ pub fn field_row(theme: Theme, label: impl Into<SharedString>) -> Div {
         .bg(theme.surface)
         .text_size(px(Theme::FONT_CONTROL))
         .text_color(theme.text)
-        .child(
-            div()
-                .flex_1()
-                .min_w_0()
-                .text_ellipsis()
-                .child(label.into()),
-        )
+        .child(div().flex_1().min_w_0().text_ellipsis().child(label.into()))
 }
 
 /// A setting that needs a sentence to explain it: title, detail and the
@@ -249,10 +243,7 @@ pub fn group_card(theme: Theme, label: impl Into<SharedString>) -> Div {
 /// An even grid of tiles `columns` across — a picker reads as a grid or as a
 /// ragged wrap, and the reference's are grids.
 pub fn tile_grid(columns: u16) -> Div {
-    div()
-        .grid()
-        .grid_cols(columns)
-        .gap(px(Theme::GAP_SMALL))
+    div().grid().grid_cols(columns).gap(px(Theme::GAP_SMALL))
 }
 
 pub fn section_label(text: impl Into<SharedString>, theme: Theme) -> Div {
@@ -639,19 +630,20 @@ impl Render for Tooltip {
         frost::frosted(
             Theme::RADIUS_SMALL,
             frost::MENU_BLUR,
-            motion::fade_in("tooltip",
-            div()
-                .max_w(px(320.))
-                .px(px(Theme::GAP))
-                .py(px(Theme::GAP_SMALL))
-                // .bg(t.popup)
-                .border_1()
-                .border_color(t.border)
-                .rounded(px(Theme::RADIUS_SMALL))
-                .shadow_lg()
-                .text_size(px(Theme::FONT_SMALL))
-                .text_color(t.text)
-                .child(self.text.clone()),
+            motion::fade_in(
+                "tooltip",
+                div()
+                    .max_w(px(320.))
+                    .px(px(Theme::GAP))
+                    .py(px(Theme::GAP_SMALL))
+                    // .bg(t.popup)
+                    .border_1()
+                    .border_color(t.border)
+                    .rounded(px(Theme::RADIUS_SMALL))
+                    .shadow_lg()
+                    .text_size(px(Theme::FONT_SMALL))
+                    .text_color(t.text)
+                    .child(self.text.clone()),
             ),
         )
     }
@@ -736,7 +728,12 @@ pub fn progress_bar(fraction: f32, theme: Theme) -> Div {
 
 /// A flat colour sample — the one place a literal colour is the content
 /// rather than the styling, so it carries a full-strength outline when picked.
-pub fn swatch(id: impl Into<ElementId>, colour: Hsla, selected: bool, theme: Theme) -> Stateful<Div> {
+pub fn swatch(
+    id: impl Into<ElementId>,
+    colour: Hsla,
+    selected: bool,
+    theme: Theme,
+) -> Stateful<Div> {
     let id = id.into();
     let pick = motion::state_fade(&motion::tween_key(&id, "fill"), selected);
     div()
@@ -819,11 +816,7 @@ pub fn choice_tile(
         .bg(motion::hover_blend(&hover_key, wash, theme.hover))
         .border_1()
         .border_color(motion::blend(theme.border, theme.accent, pick))
-        .opacity(if enabled {
-            1.
-        } else {
-            Theme::DISABLED_OPACITY
-        })
+        .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
         .tab_index(0)
         .tab_stop(enabled)
         .focus_visible(move |s| s.border_2().border_color(theme.accent))
@@ -860,11 +853,7 @@ pub fn switch(
         .h(px(30.))
         .rounded(px(15.))
         .bg(motion::blend(t.unchecked, t.accent, on))
-        .opacity(if enabled {
-            1.
-        } else {
-            Theme::DISABLED_OPACITY
-        })
+        .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
         .child(
             div()
                 .absolute()
@@ -1027,8 +1016,12 @@ impl Render for Slider {
             .cursor(CursorStyle::ResizeLeftRight)
             .focus_visible(move |s| s.border_1().border_color(t.slider_focus()))
             .on_key_down(cx.listener(|s, e: &KeyDownEvent, w, cx| {
-                let step =
-                    (s.maximum - s.minimum) / if e.keystroke.modifiers.shift { 10. } else { 100. };
+                let step = (s.maximum - s.minimum)
+                    / if e.keystroke.modifiers.shift {
+                        10.
+                    } else {
+                        100.
+                    };
                 let value = match e.keystroke.key.as_str() {
                     "left" | "down" => s.value - step,
                     "right" | "up" => s.value + step,
@@ -1367,18 +1360,22 @@ impl Render for Dropdown {
                                     }
                                 },
                             ))
-                            .child(menu_list("dropdown-choices", Theme::MENU_MAX_HEIGHT).children(
-                                self.items.iter().enumerate().map(|(i, label)| {
-                                    menu_row(
-                                        ("choice", i),
-                                        label.clone(),
-                                        i == self.selected,
-                                        i == self.highlighted,
-                                        t,
-                                        cx.listener(move |this, _, w, cx| this.choose(i, w, cx)),
-                                    )
-                                }),
-                            )),
+                            .child(
+                                menu_list("dropdown-choices", Theme::MENU_MAX_HEIGHT).children(
+                                    self.items.iter().enumerate().map(|(i, label)| {
+                                        menu_row(
+                                            ("choice", i),
+                                            label.clone(),
+                                            i == self.selected,
+                                            i == self.highlighted,
+                                            t,
+                                            cx.listener(move |this, _, w, cx| {
+                                                this.choose(i, w, cx)
+                                            }),
+                                        )
+                                    }),
+                                ),
+                            ),
                     ),
                 ))
                 .with_priority(20),

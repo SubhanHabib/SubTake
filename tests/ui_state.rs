@@ -417,4 +417,3 @@ fn inspector_model_replacement_preserves_old_snapshot_and_raw_choice_values() {
     assert_eq!(ui.get_fields().row_count(), 0);
     assert_eq!(previous.row_data(0), Some(field));
 }
-

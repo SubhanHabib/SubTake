@@ -38,11 +38,18 @@ pub fn helper(name: &str) -> Result<PathBuf> {
 pub fn sources() -> Result<Vec<Value>> {
     sources_cancellable(&std::sync::atomic::AtomicBool::new(false), true)
 }
-pub fn sources_cancellable(cancel: &std::sync::atomic::AtomicBool, request_access: bool) -> Result<Vec<Value>> {
+pub fn sources_cancellable(
+    cancel: &std::sync::atomic::AtomicBool,
+    request_access: bool,
+) -> Result<Vec<Value>> {
     #[cfg(target_os = "macos")]
     {
         let bytes = crate::media::capture_output_cancellable(
-            Command::new(helper("subtake-platform")?).arg(if request_access { "sources" } else { "sources-passive" }),
+            Command::new(helper("subtake-platform")?).arg(if request_access {
+                "sources"
+            } else {
+                "sources-passive"
+            }),
             Duration::from_secs(75),
             8 * 1024 * 1024,
             cancel,
@@ -501,7 +508,9 @@ impl Companion {
 pub fn configure_recording_hud(window: &crate::ui_runtime::Window, movable: bool) -> Result<()> {
     #[cfg(target_os = "macos")]
     {
-        unsafe { subtake_configure_recorder_overlay(native_view(window)?, movable); }
+        unsafe {
+            subtake_configure_recorder_overlay(native_view(window)?, movable);
+        }
     }
     #[cfg(not(target_os = "macos"))]
     let _ = (window, movable);
@@ -547,7 +556,9 @@ pub fn install_status_item(callback: extern "C" fn(*const std::ffi::c_char)) {
 }
 #[cfg(target_os = "macos")]
 fn native_view(window: &crate::ui_runtime::Window) -> Result<*mut std::ffi::c_void> {
-    window.native_view().filter(|view| !view.is_null())
+    window
+        .native_view()
+        .filter(|view| !view.is_null())
         .context("GPUI window has no native AppKit view yet")
 }
 
@@ -555,18 +566,25 @@ pub fn position_launcher(window: &crate::ui_runtime::Window) -> Result<()> {
     configure_recording_hud(window, true)?;
     #[cfg(target_os = "macos")]
     {
-        unsafe { subtake_position_launcher(native_view(window)?); }
+        unsafe {
+            subtake_position_launcher(native_view(window)?);
+        }
     }
     Ok(())
 }
 /// Position the custom options surface above the fixed recorder bar. The two
 /// GPUI render trees remain separate, while AppKit makes the options window a
 /// native child of the overlay host for movement and ordering.
-pub fn position_launcher_options(options: &crate::ui_runtime::Window, launcher: &crate::ui_runtime::Window) -> Result<()> {
+pub fn position_launcher_options(
+    options: &crate::ui_runtime::Window,
+    launcher: &crate::ui_runtime::Window,
+) -> Result<()> {
     configure_recording_hud(options, false)?;
     #[cfg(target_os = "macos")]
     {
-        unsafe { subtake_position_launcher_options(native_view(options)?, native_view(launcher)?); }
+        unsafe {
+            subtake_position_launcher_options(native_view(options)?, native_view(launcher)?);
+        }
     }
     #[cfg(not(target_os = "macos"))]
     let _ = (options, launcher);
@@ -574,10 +592,15 @@ pub fn position_launcher_options(options: &crate::ui_runtime::Window, launcher: 
 }
 /// Check actual native window geometry rather than the runtime's cached logical
 /// coordinates, which can lag behind an AppKit child-window move.
-pub fn launcher_options_are_attached(options: &crate::ui_runtime::Window, launcher: &crate::ui_runtime::Window) -> Result<bool> {
+pub fn launcher_options_are_attached(
+    options: &crate::ui_runtime::Window,
+    launcher: &crate::ui_runtime::Window,
+) -> Result<bool> {
     #[cfg(target_os = "macos")]
     {
-        Ok(unsafe { subtake_launcher_options_are_attached(native_view(options)?, native_view(launcher)?) })
+        Ok(unsafe {
+            subtake_launcher_options_are_attached(native_view(options)?, native_view(launcher)?)
+        })
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -585,11 +608,13 @@ pub fn launcher_options_are_attached(options: &crate::ui_runtime::Window, launch
         let option_size = options.size();
         let launcher_position = launcher.position();
         let launcher_size = launcher.size();
-        Ok(option_position.y + option_size.height as i32 <= launcher_position.y - 12
-            && (option_position.x + option_size.width as i32 / 2
-                - (launcher_position.x + launcher_size.width as i32 / 2))
-                .abs()
-                <= 2)
+        Ok(
+            option_position.y + option_size.height as i32 <= launcher_position.y - 12
+                && (option_position.x + option_size.width as i32 / 2
+                    - (launcher_position.x + launcher_size.width as i32 / 2))
+                    .abs()
+                    <= 2,
+        )
     }
 }
 
@@ -658,12 +683,17 @@ pub unsafe fn ui_window_install_magnify(
 ) -> Result<()> {
     #[cfg(target_os = "macos")]
     {
-        ensure!(unsafe { subtake_window_install_magnify(view, callback) },
-            "Magnify monitor requires a live AppKit window");
+        ensure!(
+            unsafe { subtake_window_install_magnify(view, callback) },
+            "Magnify monitor requires a live AppKit window"
+        );
         Ok(())
     }
     #[cfg(not(target_os = "macos"))]
-    { let _ = (view, callback); bail!("Native magnify monitoring is currently macOS-only") }
+    {
+        let _ = (view, callback);
+        bail!("Native magnify monitoring is currently macOS-only")
+    }
 }
 
 /// Remove this view's registration. Repeated removal and null are harmless.
@@ -673,7 +703,9 @@ pub unsafe fn ui_window_install_magnify(
 /// pass a stale pointer for cleanup; destruction already removes its monitor.
 pub unsafe fn ui_window_remove_magnify(view: *mut std::ffi::c_void) {
     #[cfg(target_os = "macos")]
-    unsafe { subtake_window_remove_magnify(view); }
+    unsafe {
+        subtake_window_remove_magnify(view);
+    }
     #[cfg(not(target_os = "macos"))]
     let _ = view;
 }
@@ -683,9 +715,14 @@ pub unsafe fn ui_window_remove_magnify(view: *mut std::ffi::c_void) {
 /// `view` must be null or a live GPUI-owned AppKit NSView on the UI thread.
 pub unsafe fn ui_window_number(view: *mut std::ffi::c_void) -> u32 {
     #[cfg(target_os = "macos")]
-    unsafe { subtake_window_number(view) }
+    unsafe {
+        subtake_window_number(view)
+    }
     #[cfg(not(target_os = "macos"))]
-    { let _ = view; 0 }
+    {
+        let _ = view;
+        0
+    }
 }
 
 /// Outer frame top-left in logical points, measured from the primary screen's
@@ -696,11 +733,16 @@ pub unsafe fn ui_window_position(view: *mut std::ffi::c_void) -> (i32, i32) {
     #[cfg(target_os = "macos")]
     {
         let (mut x, mut y) = (0., 0.);
-        unsafe { subtake_window_get_position(view, &mut x, &mut y); }
+        unsafe {
+            subtake_window_get_position(view, &mut x, &mut y);
+        }
         (x.round() as i32, y.round() as i32)
     }
     #[cfg(not(target_os = "macos"))]
-    { let _ = view; (0, 0) }
+    {
+        let _ = view;
+        (0, 0)
+    }
 }
 
 /// Uses the same logical coordinate system as `ui_window_position`.
@@ -708,7 +750,9 @@ pub unsafe fn ui_window_position(view: *mut std::ffi::c_void) -> (i32, i32) {
 /// `view` must be null or a live GPUI-owned AppKit NSView on the UI thread.
 pub unsafe fn ui_window_set_position(view: *mut std::ffi::c_void, x: i32, y: i32) {
     #[cfg(target_os = "macos")]
-    unsafe { subtake_window_set_position(view, x as f64, y as f64); }
+    unsafe {
+        subtake_window_set_position(view, x as f64, y as f64);
+    }
     #[cfg(not(target_os = "macos"))]
     let _ = (view, x, y);
 }
@@ -719,17 +763,25 @@ pub unsafe fn ui_window_set_position(view: *mut std::ffi::c_void, x: i32, y: i32
 pub unsafe fn ui_window_drag(view: *mut std::ffi::c_void) -> Result<()> {
     #[cfg(target_os = "macos")]
     {
-        ensure!(unsafe { subtake_window_drag(view) },
-            "Window drag requires a current left mouse event in the GPUI window");
+        ensure!(
+            unsafe { subtake_window_drag(view) },
+            "Window drag requires a current left mouse event in the GPUI window"
+        );
         Ok(())
     }
     #[cfg(not(target_os = "macos"))]
-    { let _ = view; bail!("Native window dragging is currently macOS-only") }
+    {
+        let _ = view;
+        bail!("Native window dragging is currently macOS-only")
+    }
 }
 
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
-    fn subtake_window_install_magnify(view: *mut std::ffi::c_void, callback: UiMagnifyCallback) -> bool;
+    fn subtake_window_install_magnify(
+        view: *mut std::ffi::c_void,
+        callback: UiMagnifyCallback,
+    ) -> bool;
     fn subtake_window_remove_magnify(view: *mut std::ffi::c_void);
     fn subtake_window_number(view: *mut std::ffi::c_void) -> u32;
     fn subtake_window_show(view: *mut std::ffi::c_void);
@@ -748,12 +800,24 @@ unsafe extern "C" {
     fn subtake_install_status_item(callback: extern "C" fn(*const std::ffi::c_char));
     fn subtake_set_app_icon(bytes: *const u8, length: usize);
     fn subtake_position_launcher(view: *mut std::ffi::c_void);
-    fn subtake_position_launcher_options(options: *mut std::ffi::c_void, launcher: *mut std::ffi::c_void);
-    fn subtake_launcher_options_are_attached(options: *mut std::ffi::c_void, launcher: *mut std::ffi::c_void) -> bool;
+    fn subtake_position_launcher_options(
+        options: *mut std::ffi::c_void,
+        launcher: *mut std::ffi::c_void,
+    );
+    fn subtake_launcher_options_are_attached(
+        options: *mut std::ffi::c_void,
+        launcher: *mut std::ffi::c_void,
+    ) -> bool;
 }
 
 /// Native material masked to the two visible recorder cards; margins/text stay clear.
-pub fn update_recorder_glass(window: &crate::ui_runtime::Window, bar: f32, options: f32, height: f32, expanded: bool) {
+pub fn update_recorder_glass(
+    window: &crate::ui_runtime::Window,
+    bar: f32,
+    options: f32,
+    height: f32,
+    expanded: bool,
+) {
     #[cfg(target_os = "macos")]
     {
         // `sync_launcher` runs after every callback, so this is on the path of
@@ -765,14 +829,24 @@ pub fn update_recorder_glass(window: &crate::ui_runtime::Window, bar: f32, optio
                 const { std::cell::Cell::new(None) };
         }
         if let Ok(view) = native_view(window) {
-            let shape = (view, bar.to_bits() as u64, options.to_bits() as u64,
-                         height.to_bits() as u64, expanded);
+            let shape = (
+                view,
+                bar.to_bits() as u64,
+                options.to_bits() as u64,
+                height.to_bits() as u64,
+                expanded,
+            );
             if LAST.with(|last| last.replace(Some(shape))) == Some(shape) {
                 return;
             }
             unsafe {
-                subtake_update_recorder_glass(view, bar as f64,
-                    options as f64, height as f64, expanded);
+                subtake_update_recorder_glass(
+                    view,
+                    bar as f64,
+                    options as f64,
+                    height as f64,
+                    expanded,
+                );
             }
         }
     }
@@ -785,7 +859,9 @@ pub fn update_options_glass(window: &crate::ui_runtime::Window) {
     #[cfg(target_os = "macos")]
     {
         if let Ok(view) = native_view(window) {
-            unsafe { subtake_update_options_glass(view); }
+            unsafe {
+                subtake_update_options_glass(view);
+            }
         }
     }
     #[cfg(not(target_os = "macos"))]
@@ -794,6 +870,12 @@ pub fn update_options_glass(window: &crate::ui_runtime::Window) {
 
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
-    fn subtake_update_recorder_glass(view: *mut std::ffi::c_void, bar: f64, options: f64, height: f64, expanded: bool);
+    fn subtake_update_recorder_glass(
+        view: *mut std::ffi::c_void,
+        bar: f64,
+        options: f64,
+        height: f64,
+        expanded: bool,
+    );
     fn subtake_update_options_glass(view: *mut std::ffi::c_void);
 }

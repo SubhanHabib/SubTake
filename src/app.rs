@@ -1,7 +1,6 @@
 use crate::{AppTray, EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
-use subtake_native::ui_runtime as ui_runtime;
 use std::{
     cell::RefCell,
     path::{Path, PathBuf},
@@ -12,6 +11,7 @@ use std::{
     },
     time::Duration,
 };
+use subtake_native::ui_runtime;
 use subtake_native::{
     export::{self, ExportSettings},
     media::{self, MediaInfo},
@@ -286,7 +286,12 @@ impl App {
         options.set_busy(ui.get_busy());
         options.set_has_project(self.history.is_some());
         options.set_countdown(self.preferences.countdown_seconds as i32);
-        options.set_directory(self.recording_directory().map(|p| p.display().to_string()).unwrap_or_default().into());
+        options.set_directory(
+            self.recording_directory()
+                .map(|p| p.display().to_string())
+                .unwrap_or_default()
+                .into(),
+        );
     }
 
     fn sync_launcher(&self, ui: &EditorWindow) {
@@ -307,13 +312,27 @@ impl App {
         launcher.set_recording(ui.get_recording());
         launcher.set_paused(ui.get_recording_paused());
         launcher.set_has_project(self.history.is_some());
-        launcher.set_cancellable(ui.get_busy() && (ui.get_sources_loading() || self.capture_started.is_none()));
+        launcher.set_cancellable(
+            ui.get_busy() && (ui.get_sources_loading() || self.capture_started.is_none()),
+        );
         launcher.set_countdown(self.preferences.countdown_seconds as i32);
-        launcher.set_directory(self.recording_directory().map(|p| p.display().to_string()).unwrap_or_default().into());
+        launcher.set_directory(
+            self.recording_directory()
+                .map(|p| p.display().to_string())
+                .unwrap_or_default()
+                .into(),
+        );
         launcher.set_status(ui.get_status());
-        let seconds = self.capture_started.map(|start| {
-            self.pause_started.unwrap_or_else(std::time::Instant::now).duration_since(start).saturating_sub(self.paused_total).as_secs()
-        }).unwrap_or(0);
+        let seconds = self
+            .capture_started
+            .map(|start| {
+                self.pause_started
+                    .unwrap_or_else(std::time::Instant::now)
+                    .duration_since(start)
+                    .saturating_sub(self.paused_total)
+                    .as_secs()
+            })
+            .unwrap_or(0);
         launcher.set_elapsed(format!("{:02}:{:02}", seconds / 60, seconds % 60).into());
         // The native glass belongs only to the fixed bar. The option menu owns a separate window.
         platform::update_recorder_glass(launcher.window(), launcher.get_bar_width(), 0., 0., false);
@@ -321,10 +340,14 @@ impl App {
     }
 
     fn set_launcher_options_panel(&mut self, ui: &EditorWindow, panel: &str) -> Result<()> {
-        let Some(launcher) = &self.launcher else { return Ok(()); };
+        let Some(launcher) = &self.launcher else {
+            return Ok(());
+        };
         launcher.set_panel(panel.into());
         self.sync_launcher(ui);
-        let Some(options) = &self.launcher_options else { return Ok(()); };
+        let Some(options) = &self.launcher_options else {
+            return Ok(());
+        };
         if panel.is_empty() {
             options.hide()?;
             return Ok(());
@@ -376,8 +399,12 @@ impl App {
             options.on_panel_change(|_| {
                 post(move |s, ui| report(ui, s.set_launcher_options_panel(ui, "")));
             });
-            launcher.window().on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
-            options.window().on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
+            launcher
+                .window()
+                .on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
+            options
+                .window()
+                .on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
             self.launcher = Some(launcher);
             self.launcher_options = Some(options);
         }
@@ -420,7 +447,8 @@ impl App {
         }
         platform::set_editor_active(true);
         if !self.editor_shown {
-            ui.window().set_size(ui_runtime::LogicalSize::new(1360., 880.));
+            ui.window()
+                .set_size(ui_runtime::LogicalSize::new(1360., 880.));
             self.editor_shown = true;
         }
         ui.show()?;
@@ -629,9 +657,13 @@ impl App {
                 aspect_ratio(&h.project, info)
             };
             let physical_width = STATE.with(|slot| {
-                slot.borrow().as_ref().and_then(|(_, ui)| ui.upgrade()).map(|ui| {
-                    ui.get_preview_pixel_width() as f64 * ui.window().scale_factor() as f64
-                }).unwrap_or(info.width as f64)
+                slot.borrow()
+                    .as_ref()
+                    .and_then(|(_, ui)| ui.upgrade())
+                    .map(|ui| {
+                        ui.get_preview_pixel_width() as f64 * ui.window().scale_factor() as f64
+                    })
+                    .unwrap_or(info.width as f64)
             });
             // Match display pixels, retaining only the renderer's allocation safety bound.
             let width = physical_width.ceil().max(2.).min(8192.).min(8192. * aspect) as u32;
@@ -1966,7 +1998,10 @@ impl App {
                         std::thread::spawn(move || {
                             let result = media::timeline_artwork(&artwork_source, &artwork_info);
                             // Blur the real filmstrip once on the artwork worker, never capture the desktop.
-                            let frosted = result.as_ref().ok().and_then(|(path, _)| image::open(path).ok())
+                            let frosted = result
+                                .as_ref()
+                                .ok()
+                                .and_then(|(path, _)| image::open(path).ok())
                                 .map(|image| image.blur(10.).to_rgba8());
                             post(move |s, ui| {
                                 if s.source.as_ref() != Some(&artwork_source) {
@@ -1974,16 +2009,28 @@ impl App {
                                 }
                                 match result {
                                     Ok((thumbs, wave)) => {
-                                        if let Ok(image) = ui_runtime::Image::load_from_path(&thumbs) {
+                                        if let Ok(image) =
+                                            ui_runtime::Image::load_from_path(&thumbs)
+                                        {
                                             ui.set_thumbnails(image);
                                             if let Some(ref pixels) = frosted {
-                                                ui.set_frosted_thumbnails(ui_runtime::Image::from_rgba8(
-                                                    ui_runtime::SharedPixelBuffer::<ui_runtime::Rgba8Pixel>::clone_from_slice(
-                                                        pixels.as_raw(), pixels.width(), pixels.height())));
+                                                ui.set_frosted_thumbnails(
+                                                    ui_runtime::Image::from_rgba8(
+                                                        ui_runtime::SharedPixelBuffer::<
+                                                            ui_runtime::Rgba8Pixel,
+                                                        >::clone_from_slice(
+                                                            pixels.as_raw(),
+                                                            pixels.width(),
+                                                            pixels.height(),
+                                                        ),
+                                                    ),
+                                                );
                                             }
                                         }
                                         if let Some(wave) = wave {
-                                            if let Ok(image) = ui_runtime::Image::load_from_path(&wave) {
+                                            if let Ok(image) =
+                                                ui_runtime::Image::load_from_path(&wave)
+                                            {
                                                 ui.set_waveform(image);
                                             }
                                         }
@@ -2424,10 +2471,19 @@ impl App {
                 std::thread::spawn(move || {
                     let result = (|| -> anyhow::Result<String> {
                         let output = std::process::Command::new("python3")
-                            .arg(script).args(["launch", "--no-open"]).output()?;
-                        ensure!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+                            .arg(script)
+                            .args(["launch", "--no-open"])
+                            .output()?;
+                        ensure!(
+                            output.status.success(),
+                            "{}",
+                            String::from_utf8_lossy(&output.stderr)
+                        );
                         let result: serde_json::Value = serde_json::from_slice(&output.stdout)?;
-                        Ok(result["url"].as_str().context("Missing workspace URL")?.to_owned())
+                        Ok(result["url"]
+                            .as_str()
+                            .context("Missing workspace URL")?
+                            .to_owned())
                     })();
                     let _ = ui_runtime::invoke_from_event_loop(move || {
                         let result = result.and_then(|url| platform::open_agent_workspace(&url));
@@ -3847,7 +3903,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                                         std::process::exit(1)
                                     }
                                 } else {
-                                    println!("UI_SMOKE_PASSED: controller callbacks and native snapshot; pointer hit testing not exercised")
+                                    println!(
+                                        "UI_SMOKE_PASSED: controller callbacks and native snapshot; pointer hit testing not exercised"
+                                    )
                                 }
                             }
                             Err(e) => {
@@ -3893,8 +3951,11 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             if let Some((state, weak)) = context {
                 if let Some(ui) = weak.upgrade() {
                     when_idle(&state, |s| {
-                        let size = ((ui.get_preview_pixel_width() * ui.window().scale_factor()).ceil() as u32,
-                            (ui.get_preview_aspect() * 10000.) as u32);
+                        let size = (
+                            (ui.get_preview_pixel_width() * ui.window().scale_factor()).ceil()
+                                as u32,
+                            (ui.get_preview_aspect() * 10000.) as u32,
+                        );
                         if size != last_preview_size {
                             last_preview_size = size;
                             s.request();
@@ -4001,14 +4062,18 @@ fn launcher_smoke_step(step: u8) {
                 // Exercise options state and native window placement. This does
                 // not inject pointer events or test source-control hit testing.
                 let launcher = s.launcher.as_ref().unwrap();
-                launcher.window().set_position(ui_runtime::PhysicalPosition::new(210, 500));
+                launcher
+                    .window()
+                    .set_position(ui_runtime::PhysicalPosition::new(210, 500));
                 let anchor_position = launcher.window().position();
                 let anchor_size = launcher.window().size();
                 // Native positions are logical points; sizes are physical pixels.
                 // Compare edges in points, using each window's current scale.
                 let anchor_scale = launcher.window().scale_factor() as f64;
-                let anchor_bottom = anchor_position.y as f64 + anchor_size.height as f64 / anchor_scale;
-                let anchor_center = anchor_position.x as f64 + anchor_size.width as f64 / anchor_scale / 2.;
+                let anchor_bottom =
+                    anchor_position.y as f64 + anchor_size.height as f64 / anchor_scale;
+                let anchor_center =
+                    anchor_position.x as f64 + anchor_size.width as f64 / anchor_scale / 2.;
                 s.set_launcher_options_panel(ui, "sources")?;
                 ensure!(
                     s.launcher.as_ref().unwrap().get_panel() == "sources"
@@ -4026,20 +4091,41 @@ fn launcher_smoke_step(step: u8) {
                             let position = launcher.window().position();
                             let size = launcher.window().size();
                             let scale = launcher.window().scale_factor() as f64;
-                            assert!((position.y as f64 + size.height as f64 / scale - anchor_bottom).abs() <= 1.,
-                                "Opening a recorder menu moved the bar vertically");
-                            assert!((position.x as f64 + size.width as f64 / scale / 2. - anchor_center).abs() <= 1.,
-                                "Opening a recorder menu moved the bar horizontally");
+                            assert!(
+                                (position.y as f64 + size.height as f64 / scale - anchor_bottom)
+                                    .abs()
+                                    <= 1.,
+                                "Opening a recorder menu moved the bar vertically"
+                            );
+                            assert!(
+                                (position.x as f64 + size.width as f64 / scale / 2.
+                                    - anchor_center)
+                                    .abs()
+                                    <= 1.,
+                                "Opening a recorder menu moved the bar horizontally"
+                            );
                             if mode != "idle" {
                                 let options = s.launcher_options.as_ref().unwrap();
-                                assert!(options.window().is_visible(), "Options window did not open");
+                                assert!(
+                                    options.window().is_visible(),
+                                    "Options window did not open"
+                                );
                                 let option_position = options.window().position();
                                 let option_size = options.window().size();
                                 let option_scale = options.window().scale_factor() as f64;
-                                assert!(option_position.y as f64 + option_size.height as f64 / option_scale <= position.y as f64 - 12.,
-                                    "Options window overlaps the fixed recorder bar: menu={option_position:?} size={option_size:?} scale={option_scale}, bar={position:?} size={size:?} scale={scale}");
+                                assert!(
+                                    option_position.y as f64
+                                        + option_size.height as f64 / option_scale
+                                        <= position.y as f64 - 12.,
+                                    "Options window overlaps the fixed recorder bar: menu={option_position:?} size={option_size:?} scale={option_scale}, bar={position:?} size={size:?} scale={scale}"
+                                );
                                 // A native move notification must carry the independent menu.
-                                launcher.window().set_position(ui_runtime::PhysicalPosition::new(position.x + 37, position.y + 31));
+                                launcher
+                                    .window()
+                                    .set_position(ui_runtime::PhysicalPosition::new(
+                                        position.x + 37,
+                                        position.y + 31,
+                                    ));
                                 Timer::single_shot(Duration::from_millis(80), move || {
                                     with_app(|s, _| {
                                         let launcher = s.launcher.as_ref().unwrap();
@@ -4047,10 +4133,14 @@ fn launcher_smoke_step(step: u8) {
                                         let moved_menu = options.window().position();
                                         let moved_bar = launcher.window().position();
                                         let _ = (moved_menu, moved_bar);
-                                        assert!(platform::launcher_options_are_attached(
-                                            options.window(), launcher.window(),
-                                        ).unwrap_or(false),
-                                            "Options menu detached, moved out of alignment, or overlaps the recorder bar");
+                                        assert!(
+                                            platform::launcher_options_are_attached(
+                                                options.window(),
+                                                launcher.window(),
+                                            )
+                                            .unwrap_or(false),
+                                            "Options menu detached, moved out of alignment, or overlaps the recorder bar"
+                                        );
                                     });
                                     launcher_smoke_step(10);
                                 });

@@ -62,7 +62,10 @@ pub enum Curve {
     Bezier(CubicBezier),
     /// A damped harmonic oscillator, as CSS spring easings and SwiftUI
     /// `.spring` describe one. Mass is fixed at 1.
-    Spring { stiffness: f32, damping: f32 },
+    Spring {
+        stiffness: f32,
+        damping: f32,
+    },
 }
 
 impl Curve {
@@ -388,7 +391,10 @@ pub fn hover_listener(
 ) -> impl Fn(&bool, &mut Window, &mut App) + 'static {
     let key = key.into();
     move |hovered, window, _cx| {
-        crate::perf::log(format_args!("hover {} {key}", if *hovered { "in " } else { "out" }));
+        crate::perf::log(format_args!(
+            "hover {} {key}",
+            if *hovered { "in " } else { "out" }
+        ));
         set_hover(&key, *hovered, reduced_motion());
         // Event-dispatch context: `request_animation_frame` is draw-phase only,
         // so mark the whole window dirty and let the render tail keep frames
