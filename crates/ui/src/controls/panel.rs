@@ -3,13 +3,24 @@
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
-use crate::{hairline, row};
+use crate::{frost, hairline, row};
 
-/// Surface planes, matching the original `Panel` variants.
+/// Surface planes.
+///
+/// The split that matters is `Panel` against `Content`. The handoff gives one
+/// rule for which fill a float takes — "`--glass` for controls, `--card` for
+/// content" — and a single `Panel` variant could not express it: the console
+/// is a strip of buttons and belongs on glass, the inspector is a column of
+/// text and belongs on card. Both were glass, so the inspector's labels sat
+/// on the same translucent plane as the desktop behind them.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Surface {
-    /// Inspector / timeline plane.
+    /// A float that holds controls: the console, the player bar.
     Panel,
+    /// A float that holds text: the inspector, a dialog.
+    Content,
+    /// A float that holds nothing but icons: the tool pod, the aspect pod.
+    Pod,
     /// Inline card on a panel.
     Card,
     /// Menu or popover.
@@ -19,18 +30,39 @@ pub enum Surface {
     Overlay,
 }
 
+impl Surface {
+    /// The radius this plane is drawn at. Public because a backdrop blur has
+    /// to be given the same rounding as the plate it sits under, or it paints
+    /// square corners behind round ones.
+    pub fn radius(self) -> f32 {
+        match self {
+            Self::Overlay => Theme::RADIUS_BAR,
+            Self::Pod => Theme::RADIUS_POD,
+            Self::Popup => Theme::RADIUS_MENU,
+            Self::Card => Theme::RADIUS_ROW,
+            Self::Panel | Self::Content => Theme::RADIUS_PANEL,
+        }
+    }
+
+    /// How much of what is behind this plane it takes out. A float's blur is
+    /// chosen by what it is, not by how big it is.
+    pub fn blur(self) -> f32 {
+        match self {
+            Self::Pod => frost::POD_BLUR,
+            Self::Overlay => frost::BAR_BLUR,
+            Self::Popup => frost::MENU_BLUR,
+            Self::Card | Self::Panel | Self::Content => frost::PANEL_BLUR,
+        }
+    }
+}
+
 pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
-    let radius = match variant {
-        Surface::Overlay => Theme::RADIUS_BAR,
-        Surface::Popup => Theme::RADIUS_MENU,
-        Surface::Card => Theme::RADIUS_ROW,
-        Surface::Panel => Theme::RADIUS_PANEL,
-    };
+    let radius = variant.radius();
     let background = match variant {
-        Surface::Popup => theme.card,
+        Surface::Popup | Surface::Content => theme.card,
         Surface::Card => theme.sunk,
         Surface::Overlay => theme.overlay,
-        Surface::Panel => theme.glass,
+        Surface::Panel | Surface::Pod => theme.glass,
     };
     let mut el = div()
         .flex()
@@ -62,9 +94,26 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     el
 }
 
-/// The default plane: an inspector / timeline panel.
+/// The default plane: a console-style panel holding controls.
 pub fn panel(theme: Theme) -> Div {
     panel_variant(theme, Surface::Panel).p(px(Theme::PANEL_PADDING))
+}
+
+/// A panel holding text rather than controls — the inspector, a dialog.
+pub fn content_panel(theme: Theme) -> Div {
+    panel_variant(theme, Surface::Content).p(px(Theme::PANEL_PADDING))
+}
+
+/// A pod: a small float carrying nothing but icons, over the stage. Tight
+/// padding and a wider radius than a panel, so a 40px control inside it very
+/// nearly fills it and the plate reads as a holder rather than a container.
+pub fn pod(theme: Theme) -> Div {
+    panel_variant(theme, Surface::Pod)
+        .flex_row()
+        .items_center()
+        .p(px(Theme::POD_PADDING))
+        .gap(px(Theme::GAP_SMALL))
+        .occlude()
 }
 
 /// A hairline rule.

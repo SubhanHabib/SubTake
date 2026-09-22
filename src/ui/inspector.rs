@@ -861,7 +861,7 @@ impl RootView {
         // the fade ramp sits exactly on the clip line; the panel's vertical
         // padding moves onto the heading and footer instead of stacking with
         // the band and pushing the first row down.
-        let mut el = panel(theme)
+        let mut el = content_panel(theme)
             .py_0()
             .w(px(PANEL_WIDTH))
             .h_full()
@@ -882,6 +882,10 @@ impl RootView {
         if has_footer {
             el = el.child(footer.pb(px(Theme::GAP_LARGE)));
         }
-        el.into_any_element()
+        // The panel takes its backdrop blur here rather than inside
+        // `panel_variant`: the blur is painted by an element that wraps the
+        // whole subtree in one scene layer, and `panel_variant` returns a
+        // builder the caller is still adding children to.
+        frosted(UiSurface::Content.radius(), UiSurface::Content.blur(), el).into_any_element()
     }
 }

@@ -84,24 +84,6 @@ impl RootView {
         let visible = window.get_timeline_visible();
         let offset = window.get_timeline_offset();
         let editor = window.clone();
-        let zoom = self.slider(
-            "timeline-zoom",
-            1.,
-            100.,
-            window.get_timeline_zoom(),
-            ("Zoom", "MagnifyingGlassPlus-regular"),
-            (1.0, "\u{00d7}"),
-            cx,
-            move |v, _, _, _| {
-                editor.set_timeline_zoom(v);
-                editor.set_timeline_offset(
-                    editor
-                        .get_timeline_offset()
-                        .min((editor.get_duration() - editor.get_timeline_visible()).max(0.)),
-                );
-            },
-        );
-        let editor = window.clone();
         let position = self.slider(
             "timeline-position",
             0.,
@@ -181,7 +163,6 @@ impl RootView {
                         editor_in.set_timeline_zoom((editor_in.get_timeline_zoom() * 1.5).min(100.))
                     }),
             );
-        let _ = zoom;
         // The ruler: eight ticks, which is the redesign's every-12.5%, set in
         // Geist Mono so a tick's width does not change with its digits.
         let mut ruler = div().relative().h(px(Theme::RULER_HEIGHT));
@@ -450,7 +431,7 @@ impl RootView {
                     ),
             );
         }
-        panel(theme)
+        let console = panel(theme)
             .id("timeline")
             .h(px(310.))
             .mx(px(Theme::GAP))
@@ -540,6 +521,7 @@ impl RootView {
                     }
                 }
             }))
-            .into_any_element()
+            .into_any_element();
+        frosted(UiSurface::Panel.radius(), UiSurface::Panel.blur(), console).into_any_element()
     }
 }

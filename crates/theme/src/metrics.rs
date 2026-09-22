@@ -141,6 +141,9 @@ impl Theme {
     pub const GAP_BLOCK: f32 = 14.0;
     /// A panel's own padding: the console and the inspector.
     pub const PANEL_PADDING: f32 = 18.0;
+    /// A pod's padding. A pod is a holder for 40px controls, not a container
+    /// with a layout of its own, so it gives them 8 and nothing more.
+    pub const POD_PADDING: f32 = 8.0;
     /// The shell's inset from the window edge, and a float's from the shell.
     pub const INSET: f32 = 24.0;
 
@@ -289,9 +292,6 @@ impl Theme {
     pub const SWATCH_SIZE: f32 = 26.0;
     pub const TILE_WIDTH: f32 = 68.0;
     pub const TILE_HEIGHT: f32 = 48.0;
-    /// Timeline playhead column.
-    pub const SCRUBBER_WIDTH: f32 = 26.0;
-    pub const SCRUBBER_GRIP_HEIGHT: f32 = 62.0;
     /// The strip of tick labels above the lanes. It holds one line of
     /// `FONT_SMALL` and nothing else, so it is that line plus its leading and
     /// not a row's worth of height.

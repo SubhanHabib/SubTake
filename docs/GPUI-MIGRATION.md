@@ -102,6 +102,16 @@ For each completed gate record revision plus local changes, OS/hardware, command
 
 ## SubTake design system on GPUI — 21 September 2026
 
+> Superseded by the "Stage" redesign of 22 September 2026. Every number in this
+> section — the 40px control height, the 16px radius, the `#5b8cff` blue — was
+> replaced by the handoff extracted into
+> [DESIGN-PRIMITIVES.md](DESIGN-PRIMITIVES.md), which is the current reference.
+> [UI-DESIGN.md](UI-DESIGN.md) describes the system as it stands. This section
+> is kept as the record of how the Slint components reached GPUI, not as a
+> description of what they look like now. `timeline_scrubber` in the table below
+> no longer exists: the redesign's playhead is a rule and a dot, so the widget
+> was deleted rather than restyled.
+
 The presentation layer renders SubTake's own design tokens, recovered from the
 pre-GPUI Slint sources in git (`ui/theme.slint`, `ui/components/*.slint`)
 rather than re-derived by eye. An earlier pass had ported the Zeron

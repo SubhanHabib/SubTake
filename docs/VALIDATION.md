@@ -8,7 +8,7 @@ Recorded 12 September 2026 against parent revision `7512ef1518657edc2caae5951368
 
 - Apple M5 Pro, 48 GiB RAM, Apple Silicon.
 - macOS 27.0, build 26A5421a. macOS 14 and current stable macOS were not tested on this host.
-- Optimized Rust build, native Slint UI, Metal/Skia compositor, in-process FFmpeg software decoding.
+- Optimized Rust build, native GPUI interface, Metal compositor, in-process FFmpeg software decoding.
 - Local bundle disk usage after the UI refresh: **119M**, excluding the separately downloaded Whisper model and user projects.
 - Ad-hoc signing: `codesign --verify --deep --strict` passed. Developer ID signing/notarization is not completed.
 - All 28 bundled binaries/libraries were inspected with `otool -L`: no external Homebrew dependency paths remain.
@@ -86,7 +86,7 @@ The source enumeration busy-state bug is fixed. UI regression checks explicitly 
 
 ## Menu-bar recorder acceptance
 
-The recorder entry point is now a separate borderless Slint window. Normal launch uses the Mac accessory policy, with an icon-only Open/Quit menu. The editor stays hidden through setup and recording; completed media opens the editor, and the recorder hides. The same overlay handles countdown, cancellation, elapsed time, pause/resume and stop. Recordings save automatically to Movies/SubTake or a chosen folder.
+The recorder entry point is a separate borderless GPUI window. Normal launch uses the Mac accessory policy, with an icon-only Open/Quit menu. The editor stays hidden through setup and recording; completed media opens the editor, and the recorder hides. The same overlay handles countdown, cancellation, elapsed time, pause/resume and stop. Recordings save automatically to Movies/SubTake or a chosen folder.
 
 `launcher-validation.json` records six setup snapshots plus a complete recording lifecycle test restricted to the generated SubTake Capture Fixture window. It checks source-button pointer events, hidden/reopened overlay lifetime, cancelled countdown, actual capture, pause/resume acknowledgements, stop/finalization and the recorded project opening in the editor. The camera, microphone and system audio were off. User preferences were unchanged. The captured video, generated editor snapshot and detailed media probe are under `test-output/launcher/`.
 

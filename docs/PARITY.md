@@ -10,7 +10,7 @@ Date: 12 September 2026. Reference: parent Electron checkout at `7512ef1518657ed
 
 | Area | Implementation | Evidence / limits |
 |---|---|---|
-| Native UI | Recordly-style Slint header, left rail/inspector, transport, menus, timeline and a separate menu-bar recording overlay; Phosphor icons, typed selectors and wallpaper grid | Packaged pointer-event checks, eleven editor snapshots, six recorder layouts and a complete screen-only recording handoff; accessibility/keyboard/screen-reader acceptance still required |
+| Native UI | GPUI header, left rail/inspector, transport, menus, timeline and a separate menu-bar recording overlay; Phosphor icons, typed selectors and wallpaper grid | Packaged pointer-event checks, eleven editor snapshots, six recorder layouts and a complete screen-only recording handoff; accessibility/keyboard/screen-reader acceptance still required |
 | Documents | Version 1/2, unknown fields, file URLs, relative assets, atomic saves, previous-file backup, undo/redo, missing source relink, recent files, chosen-folder library/search | Automated roundtrip, invalid transaction, backup, path and history checks |
 | Recovery | Background snapshots after edits, recover from Recent, save/discard cleanup, retained failed recording directories | Snapshot and related-file replacement tests; kill/crash recovery UX still needs an end-to-end drill |
 | Timeline | Trim union, clips, speed, split, delete, both-edge resize, group selection/movement, copy/cut/paste/duplicate with clip audio settings, markers, zoom/pan, ruler, snapping, thumbnails and waveform | Mapping/editing tests and native UI smoke; full interaction parity with the existing timeline is not established |

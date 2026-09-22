@@ -1,82 +1,92 @@
 # Shared UI primitives
 
-> GPUI migration notice: UI descriptions and validation evidence below predate the migration and are retained as historical reference. They do not certify current GPUI behavior. See [GPUI-MIGRATION.md](GPUI-MIGRATION.md) for current example coverage and pending acceptance gates.
+Every native screen is built from `crates/ui`. Colour, typography, sizing,
+radius and state tokens are in `crates/theme`. The editor and the recorder use
+the same implementations.
 
-Current boundary check: `python3 scripts/check-ui-primitives.py` inspects GPUI Rust sources and shared crate dependencies. It requires `crates/theme`, `crates/ui`, the runtime/state adapters and editor surface. It no longer scans Slint controls or enforces the historical 40px control height. A pass is a static architecture result only; use the migration checklist for rendered controls and actual input acceptance.
+Boundary check: `python3 scripts/check-ui-primitives.py`. It requires the theme
+and control crates, the runtime/state adapters and the editor surface; it
+rejects a control implementation or a layout factory outside `crates/ui`, a
+palette outside `crates/theme`, a shared crate reaching into application state,
+and a bare numeric literal where a type or icon token belongs. A pass is a
+static architecture result only — it certifies no rendering and no input.
 
-All native screens import app controls from `ui/controls.slint`. That file only re-exports components; the implementations are in `ui/components/`, and shared colour, typography, sizing, radius and state tokens are in `ui/theme.slint`. The editor and recorder use the same implementations.
+## The kit
 
-| Family | Single source | Contract |
+One file per control under `crates/ui/src/controls/`, re-exported by
+`crates/ui/src/controls.rs` so call sites write `subtake_ui::button(..)` and
+never name the file.
+
+| Family | File | Contract |
 | --- | --- | --- |
-| Buttons | `ui/components/button.slint` | `ButtonSurface` owns focus, pointer/keyboard activation and disabled behaviour. `ToolButton`, `IconButton` and `RecordButton` compose it. Named variants: secondary, primary, ghost, outline, danger, record. Named sizes: small, compact, regular, large. Active and round are independent states. |
-| Dropdowns | `ui/components/dropdown.slint` | Owns both trigger and popup rows. Stable index/value mapping, disabled/empty states, scrollable options, keyboard arrows, Home/End, Enter/Space selection and Escape cancellation. |
-| Inputs | `ui/components/input.slint` | Text/numeric value entry, placeholder, focus, disabled/read-only/error states, edit and commit callbacks. |
-| Checkboxes | `ui/components/checkbox.slint` | Checked, unchecked, indeterminate and disabled states; pointer, Space and accessibility activation. |
-| Switches | `ui/components/toggle.slint` | Controlled checked state, disabled/focus treatment and a change callback. |
-| Radio buttons | `ui/components/radio.slint` | Single-choice indicator using shared button interaction; owning group supplies checked state. |
-| Preview viewport | `ui/components/preview-viewport.slint` | View-only pinch magnification, anchored image coordinates, scroll panning and Fit reset. |
-| Timeline scrubber | `ui/components/timeline-scrubber.slint` | Pointed grey cap, continuous line, shaded six-dot grip and drag target. |
-| Filled numeric controls | `ui/components/scrub-field.slint` | Filled slider plus editable number; drag commits on release and text on Enter. |
-| Sliders | `ui/components/slider.slint` | Drag preview, release commit, keyboard arrows, bounds and disabled state. |
-| Segmented controls | `ui/components/segmented-control.slint` | Shared buttons, option model, current index and selection callback. |
-| Selection tiles | `ui/components/choice-tile.slint` | Shared hover/focus/selection and activation for cursor, motion, position, wallpaper and appearance choices. |
-| Navigation | `ui/components/rail-button.slint` | Icon button, caption and active rail indicator. |
-| Panels and dividers | `ui/components/panel.slint` | Panel, card, popup and overlay surfaces plus separators. |
-| Progress | `ui/components/progress.slint` | Bounded progress fill and accessibility value. |
-| Labels | `ui/components/label.slint` | Body, muted, heading and caption defaults. |
-| Field rows | `ui/components/field-row.slint` | Standard label/control row. |
-| Scrolling | `ui/components/scroll-area.slint` | One application boundary around Slint's ScrollView, preserving its scrolling and keyboard behaviour. Scrollbar internals still use the Slint widget style. |
+| Buttons | `button.rs` | `Button` owns every variant — primary, secondary, raised, ghost, danger, record, transport — plus the icon-only and rail forms, focus, hover tweening, the glow under a filled plate and the accent inset a selected control carries. `focus_ring` and `hairline` live here because every other control's edge is built from them. |
+| Dropdowns | `dropdown.rs` | Trigger plus anchored popup. Stable index/value mapping, keyboard arrows, Home/End, Enter/Space, Escape, and a menu that occludes what is behind it. |
+| Menus | `menu.rs` | The plate, the scrolling list, the row and the separator every transient menu is built from. A row is **not** a `Button`: a menu's current item is marked by an accent tick in a fixed gutter over a `sunk` fill, never by an accent pill. |
+| Inputs | `input.rs` | `TextInput`: value entry, placeholder, focus, disabled, edit and commit callbacks. |
+| Sliders | `slider.rs` | The scrub field — a filled slider that *is* the row, with its caption inside the plate and its value in Geist Mono on the right. Track `sunk`, hover `sunk2`, scrubbing fill `accent_soft`. Drag previews, release commits, and the committed number is quantised to the step the display shows. |
+| Switches | `switch.rs` | `toggle` and `switch`: `sunk2` off, `accent` on, thumb travelling 18 in 140ms. |
+| Segmented controls | `segmented_control.rs` | An `ink` pill sliding between positions; inactive segments hover from `muted` to `text` with no fill. |
+| Panels | `panel.rs` | `Surface` — `Panel` (glass, holds controls), `Content` (card, holds text), `Pod` (glass, holds icons), `Card`, `Popup`, `Overlay` — plus each one's radius and blur, the caps labels and the dividers drawn on them. |
+| Tiles | `tile.rs` | Colour swatches, captioned thumbnails, selection cards and the empty-state plane. |
+| Field rows | `field_row.rs` | The label/control row, the group card, the setting card and the tile grid. |
+| Status | `status.rs` | The unsaved dot, the progress rule, the context chip and the composer footer. |
+| Tooltips | `tooltip.rs` | A 28-tall `ink` pill. Only a control whose caption cannot be read gets one. |
 
-`ui/choices.slint` contains product-level compositions of these primitives. Timeline clips, preview handles, waveform graphics and drag regions remain specialised editor interactions. They are not buttons disguised as rectangles. Native OS menus, system title-bar controls, file pickers and tooltips retain their platform/framework implementations; they are not painted by the app's button/input theme.
+Shared, outside `controls/`: `layout.rs` (`row`, `column`, `measure`),
+`icon.rs`, `typography.rs` (`mono`, `title` and the two families nothing else
+names), `frost.rs` (the backdrop-blurred float, the nested scene layer and the
+scroll-edge fade), `motion.rs` (the tween store) and `fonts.rs`.
 
-To redesign a control, edit its component file. To change the common palette, typography or sizing, edit `theme.slint`. A screen supplies data, actions, layout placement and a named variant; it should not introduce another input, dropdown or generic button implementation. Per-screen content graphics (such as wallpaper colours and thumbnail illustrations) are allowed.
+`crates/ui/src/unused/` holds the ten primitives the handoff specifies that the
+app has no call site for. Nothing calls them; the module is public so the
+compiler does not warn about that. Their measurements are module-local consts
+rather than `Theme` tokens — promoting one means moving its numbers into
+`metrics.rs` along with it.
 
-## Gallery and checks
+Timeline regions, preview handles, waveform graphics and drag regions stay
+specialised editor interactions. They are not buttons disguised as rectangles.
+Native OS menus, system title-bar controls and file pickers keep their platform
+implementations.
+
+To redesign a control, edit its file. To change a colour, size or gap, edit
+`crates/theme`. A screen supplies data, actions, layout placement and a named
+variant; it does not introduce another input, dropdown or generic button.
+
+## Frosted glass
+
+gpui at the pinned revision (the `zeronsh/zui` fork) carries destination alpha
+on transparent windows and a macOS blurred view on `UnderWindowBackground`, so
+the window itself is a real material. Blur *inside* the window comes from
+`frost::frosted`, which paints a backdrop blur and then the whole subtree inside
+one scene layer.
+
+The single layer is the point. With per-primitive ordering, a hover repaint
+elsewhere could reassign a card's quads below its own blur, and washes, dividers
+and edges intermittently got snapshotted and blurred away. Inside one layer the
+relationship is structural: blur, then shadow, tint, edge, rows, text.
+
+`frost::layered` restores stacking for an overlay *inside* a frosted card, where
+one shared draw order otherwise groups by primitive kind and puts a close
+button's circle under the thumbnail it sits on.
+
+`frost::fade_edges` fades a scroll region across 16px at its top and bottom.
+A scroll region over glass cannot hide its clip line behind a gradient scrim —
+there is no paintable colour equal to "the blurred desktop behind this window" —
+so the fork's `Window::with_edge_fade` multiplies each primitive's alpha by a
+ramp instead, which composites correctly over anything. Pair it with `FADE_BAND`
+of padding inside the content so a region that fits is never dimmed.
+
+The handoff pairs each blur with a `saturate()`. gpui has no filter for it, so
+only the blur is carried.
+
+## Running the gallery
 
 ```sh
-cargo run --locked --example primitives
-cargo run --locked --example primitives -- --smoke
+python3 scripts/dev.py --gallery        # every control, fixture data, no project
+python3 scripts/dev.py --gallery light  # the same in the light appearance
+python3 scripts/dev.py --once           # build and launch the app, no watching
 python3 scripts/check-ui-primitives.py
-python3 scripts/ui-smoke.py
-python3 scripts/launcher-smoke.py
 ```
 
-The gallery renders light/dark control states and dropdown popups. Its smoke mode injects real Slint pointer/key events to check button activation/disabled behaviour, checkbox Space handling, switches, radios, input commit, dropdown selection/cancellation/empty/disabled states and slider adjustment. Snapshots are saved to `test-output/primitives/`. These are not a complete screen-reader, IME or Windows accessibility acceptance suite.
-
-The boundary check rejects raw standard controls and inline generic button implementations in screen files. It deliberately permits native menus and specialised canvas/timeline pointer handling.
-
-## Transparency and frosted glass
-
-Slint supports alpha backgrounds and transparent windows; the recorder already uses a transparent outer window. Alpha tint alone does not blur what is behind a component.
-
-For desktop blur on macOS, the existing winit backend can request transparent-window blur through `Window::set_blur` / `WindowAttributes::with_blur`. AppKit `NSVisualEffectView` is the platform route for native material integration. These require integration and visual acceptance for our window hierarchy, capture exclusion, rounded edges and accessibility settings. The Mac application now enables transparent-window blur through its winit creation hook. The editor and recorder share translucent material tokens; operating-system blur supplies the desktop backdrop.
-
-The winit 0.30 API documents different platform support: its general blur API is unsupported on Windows and X11, and Wayland requires the KDE blur protocol. Windows needs its own supported backdrop/material integration. A portable opaque fallback remains necessary.
-
-Our pinned Slint 1.17.1 does not expose a general CSS-style backdrop-filter on arbitrary components. Blurring content inside our own window therefore requires additional renderer/compositing work; a blurred drop shadow is not backdrop blur. The timeline grip samples a Gaussian-blurred version of its actual filmstrip artwork, prepared once on the artwork worker. Moving the playhead selects the corresponding portion of that image. This is content-aware filmstrip frosting, not a general-purpose blur of arbitrary overlapping timeline layers.
-
-References: [Slint Rectangle](https://docs.slint.dev/latest/docs/slint/reference/elements/rectangle/), [Slint Window](https://docs.slint.dev/latest/docs/slint/reference/window/window/), [winit blur](https://docs.rs/winit/latest/winit/window/struct.Window.html#method.set_blur), [AppKit visual effects](https://developer.apple.com/documentation/appkit/nsvisualeffectview).
-
-## Comfortable control sizing
-
-`Theme.control-height` is the single 40px height for buttons, icon buttons, dropdown triggers/menu rows, text inputs, filled numeric sliders and plain sliders. The old small/compact/regular/large names are compatibility aliases to that same value. Control widths still follow their content and layout; icon buttons are 40px squares. Compound numeric inputs fill the slider height. Larger choice cards retain their content-driven dimensions. The gallery asserts equal rendered heights, and the boundary checker rejects smaller per-screen height overrides.
-
-Buttons, dropdown triggers, inputs and slider labels share `Theme.control-padding` (12px at the current 40px height), derived from the space around a 16px icon. Plain sliders use a 40px rounded surface, 16px thumb and inset track; their pointer mapping follows the track endpoints. Switches use a 52×30px track with a 24px thumb inside a 40px interaction area, and `FieldRow` shares that height. Numeric slider inputs reserve 70px to preserve value readability with the larger padding.
-
-`ProgressTrack` in `ui/components/progress.slint` owns the reference-style 10px pill track, translucent dark background and soft white gradient fill. `ProgressBar` adds progress accessibility semantics; `FineSlider.progress-style` reuses that visual inside its existing 40px pointer/keyboard control. The timeline position slider uses this variant; zoom and numeric sliders retain their existing styles. This uses translucency, not live backdrop blur.
-
-Filled sliders use a white active surface (translucent white in dark mode), a grey vertical end marker, and a leading icon before their label. Numeric values use a separate inset rounded input. Shared control radius is 16px; endpoint-icon zoom sliders retain the same fill styling and 12px icon padding.
-
-Control geometry is defined by `Theme.control-height` (40px) and `Theme.radius-control` (16px), including buttons previously marked round and slider numeric inputs. The filled slider overlay uses `Theme.slider-fill-inset` (1px) on all edges and `Theme.slider-fill-radius` (outer radius minus inset = 15px); its height is derived as 40 - 2 = 38px.
-
-Recorder frosting now uses a macOS `NSVisualEffectView` with the Popover material,
-BehindWindow blending and Active state. Its mask is the union of the 64px-high
-recording overlay and the current options card, both with 24px corners. It is inserted
-as a sibling behind winit's content view; that view's identity and event handling
-are preserved. The outer window has no background blur or native shadow. Slint
-supplies the translucent tint and individual card shadows. Mask generation is
-cached until card geometry changes. The system controls the material blur radius.
-
-Native regression: `clang -fobjc-arc -framework AppKit -framework QuartzCore scripts/recorder-glass-test.m -o /tmp/subtake-recorder-glass-test && /tmp/subtake-recorder-glass-test`.
-The recording-overlay smoke suite also requires the native material installation marker,
-so successful Slint layout snapshots alone cannot pass a missing-material build.
+The gallery is live: toggles flip, dropdowns pick, sliders move and the playhead
+drags. It is the fastest way to see a control in every state at once.

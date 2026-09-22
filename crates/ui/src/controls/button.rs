@@ -85,7 +85,6 @@ pub struct Button {
     /// Hide the caption and render a round icon-only control.
     icon_only: bool,
     /// Full-width, left-aligned: the shape a control takes as a menu row.
-    menu_item: bool,
     selected: bool,
     enabled: bool,
     stretch: bool,
@@ -102,7 +101,6 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         glyph_size: None,
         height: None,
         icon_only: false,
-        menu_item: false,
         selected: false,
         enabled: true,
         stretch: false,
@@ -148,14 +146,6 @@ impl Button {
     /// The hero size: the one action an otherwise empty screen is asking for.
     pub fn hero(mut self) -> Self {
         self.height = Some(Theme::CONTROL_HEIGHT_HERO);
-        self
-    }
-
-    /// A row in a menu: full width, caption left, ellipsised. Every list of
-    /// choices in the app is built from this, so the dropdown's rows and the
-    /// command palette's rows cannot drift apart.
-    pub fn menu_item(mut self) -> Self {
-        self.menu_item = true;
         self
     }
 
@@ -326,13 +316,7 @@ impl RenderOnce for Button {
             .flex()
             .flex_shrink_0()
             .items_center()
-            .map(|el| {
-                if self.menu_item {
-                    el.w_full().justify_start()
-                } else {
-                    el.justify_center()
-                }
-            })
+            .justify_center()
             .gap(px(if self.variant == ButtonVariant::Record {
                 Theme::ICON_GAP_RECORD
             } else {
@@ -366,11 +350,6 @@ impl RenderOnce for Button {
             el = el.px(px(self.variant.padding()));
             if self.stretch {
                 el = el.flex_1().min_w_0();
-            }
-            // A row is already full-width, and `flex_1` inside the menu's
-            // column would grow it along the wrong axis.
-            if self.menu_item {
-                el = el.flex_none();
             }
         }
 
@@ -438,7 +417,7 @@ impl RenderOnce for Button {
         if !self.icon_only {
             el = el.child(
                 div()
-                    .when(self.stretch || self.menu_item, |s| s.flex_1().min_w_0())
+                    .when(self.stretch, |s| s.flex_1().min_w_0())
                     .text_ellipsis()
                     .child(self.label.clone()),
             );
@@ -447,7 +426,7 @@ impl RenderOnce for Button {
         // it: one with no caption at all, or a stretched one, which is
         // exactly the case that ellipsizes. "Export" hovering to reveal a
         // tooltip that says "Export" is noise.
-        if self.icon_only || self.stretch || self.menu_item {
+        if self.icon_only || self.stretch {
             el = el.tooltip(move |_, cx| tooltip(tip.clone(), theme, cx));
         }
 

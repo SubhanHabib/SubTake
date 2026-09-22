@@ -15,7 +15,7 @@ Date: 12 September 2026. Native implementation: repository root. Legacy referenc
 | Composition and effects | `src/render.rs`, `effects.rs`, `captions.rs` | Shared drawing/effect code; Windows currently uses the CPU composition fallback, requiring GPU integration/performance work below |
 | Decode, audio, export and subtitles | `src/media.rs`, `native_decoder.rs`, `scripts/decoder.c`, `export.rs`, `subtitles.rs` | Shared FFmpeg/audio/MP4/GIF/cancellation logic; platform runtime/codec availability must be supplied and tested |
 | Local transcription and model lifecycle | `src/transcription.rs`, `segmentation.rs`, `caption_editing.rs`, `models.rs` | Shared parsing, audio-source selection, HTTPS download, atomic storage, cancellation; bundle a Windows Whisper runtime |
-| UI, settings, shortcuts and project workflow | `ui/editor.slint`, `src/app.rs`, `preferences.rs`, `library.rs`, `presets.rs`, `localization.rs`, `shortcuts.rs` | Shared Slint UI and controller; tray/global-hotkey code already exists and needs Windows integration testing, not a duplicate implementation |
+| UI, settings, shortcuts and project workflow | `src/ui.rs`, `src/app.rs`, `preferences.rs`, `library.rs`, `presets.rs`, `localization.rs`, `shortcuts.rs` | Shared GPUI interface and controller; tray/global-hotkey code already exists and needs Windows integration testing, not a duplicate implementation |
 
 ## Windows-specific implementation still required
 

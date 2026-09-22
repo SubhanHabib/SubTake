@@ -1,41 +1,90 @@
 # Native editor visual design
 
-> GPUI migration notice: UI descriptions and validation evidence below predate the migration and are retained as historical reference. They do not certify current GPUI behavior. See [GPUI-MIGRATION.md](GPUI-MIGRATION.md) for current example coverage and pending acceptance gates.
+The interface is the "Stage" redesign, delivered as a Claude Design handoff and
+extracted into [DESIGN-PRIMITIVES.md](DESIGN-PRIMITIVES.md), which is the
+reference any question about a number should be settled against. This document
+covers what the redesign means for the app as a whole; the primitive doc covers
+what each control measures.
 
-The September 13 refresh follows the two light video-editor reference screenshots supplied by the user: neutral surfaces, rounded controls, a dotted preview canvas, a right-hand inspector, filled numeric sliders, soft timeline colors and a larger labelled filmstrip. This is a Slint implementation; no web view was added. Existing SubTake actions and project keys remain connected to the native editing core.
+Everything before the GPUI migration — the Slint components under `ui/`, the
+September 13 reference screenshots, the 16px control radius, the six-dot
+timeline grip — is gone. See [GPUI-MIGRATION.md](GPUI-MIGRATION.md) for that
+history.
 
-The header is 56px tall with centered project title, project/save/history controls, recording, presets and a lime Export action. The left rail uses circular icon controls with captions. The inspector is 280px wide and scrolls independently. The timeline has a 240px minimum and 320px preferred/maximum height so its bottom controls stay inside a 980x680 window. Effect lanes scroll, and trim handles retain full-height hit targets around their smaller visible grips. The rounded source strip and neutral playhead share the same time mapping as the tracks.
+## What the design is
 
-`ui/theme.slint` owns light/dark colors and sizing. `ui/components/scrub-field.slint` combines the filled slider with an editable value; dragging commits on release and typed values commit on Enter. Buttons, dropdowns, toggles, checkboxes and other primitives remain in `ui/components/` and are exported through `ui/controls.slint`. Phosphor icon geometry is unchanged. The full component map and gallery workflow are in `UI-COMPONENTS.md`.
+Four nesting materials over the user's desktop: the window shell (`bg`), a
+float that holds controls (`glass`), a float that holds text (`card`), and a
+recess inside either (`sunk`). A float's backdrop blur is chosen by what it is
+rather than by how big it is — 28 for a pod, 34 for the console and the
+inspector, 38 for the recorder bar.
 
-The reference's AI brightness/upscale labels do not introduce new product features. Editor and recorder surfaces are translucent over native Mac window blur. The six-dot timeline handle uses blurred filmstrip artwork plus a translucent dark tint; it has no opaque gradient. The design adapts the supplied reference to SubTake's recording, cursor, caption and effect workflows; it does not claim a pixel-identical clone.
+**There are no real borders anywhere.** Every edge is a `BoxShadow`: inset for
+a hairline, spread for a focus ring. A border adds to what an element measures,
+so an edge appearing or changing width would move the element and everything
+around it. This is the single rule most likely to be broken by a well-meaning
+change.
 
-Visual review uses native Slint window snapshots at 1360x880 and 980x680, light/dark component galleries, and recording-overlay snapshots. Pointer/key checks exercise the rail, shared controls and editing workflows. GUI tests must run sequentially: competing windows can steal focus from a dropdown popup. `docs/ui-validation.json`, `docs/launcher-validation.json` and `docs/primitives-validation.json` hold the latest machine-readable results. An isolated landscape project in `test-output/design-review/` uses a bundled wallpaper for a less distracting live comparison. User projects are not changed by that demo.
+One blue accent marks exactly four things: the playhead, the selected region or
+row, the active tool, and the primary action. A control that is none of those is
+grey, which is what lets the four read at all. Selection on a control is an
+`accent` inset edge over the fill it already has, never a fill swap.
 
-## Recorder entry point
+Red has two jobs and two tokens: `rec` is the only red fill in the app and
+belongs to Record; `danger` is red as text, on a destructive label.
 
-The entry point now follows `legacy-electron/src/components/launch/LaunchWindow.tsx` and its CSS in the reference implementation: a compact rounded floating bar, a source control, microphone/system-audio options, webcam options, countdown, a red Record control, More and Hide. Native option panels expand above the bar. The same overlay displays countdown, recording elapsed time, pause/resume and stop/finalization.
+Three families: Geist for the interface, Geist Mono for anything numeric that
+changes under the user's hand — a timecode, a ruler tick, a slider's value, a
+shortcut — and Space Grotesk for titles only, never inside a control.
 
-macOS starts in accessory mode with an icon-only menu-bar item and Open/Quit. The editor is hidden at startup. Recording saves automatically to Movies/SubTake or a chosen folder; finalized media opens the editor and hides the recorder. Closing/hiding a window does not end the process. The overlay's Slint UI, settings callbacks and lifecycle are shared; macOS activation policy, screen positioning and capture protection live in the platform bridge.
+## Where it lives
 
-The initial macOS window handle is only requested after the event loop starts. Source discovery is independent of that positioning step. This avoids an overlay that appears but never enumerates capture sources.
+`crates/theme` owns every colour, size, radius and gap as a token.
+`crates/ui` owns the controls, built only from those tokens; it may not depend
+on application state. `src/ui/` composes them into screens. The boundary is
+enforced by `python3 scripts/check-ui-primitives.py`, which also rejects a bare
+numeric literal wherever a type or icon token belongs.
 
-## Timeline scrubbing
+`crates/ui/src/unused/` holds ten primitives the handoff specifies that the app
+has no call site for yet — a field, a stepper, a checkbox, a key cap, a toast, a
+dialog, a list row and three menu pieces. They are built to the cards' numbers
+and parked rather than left unbuilt.
 
-The ruler and filmstrip seek on pointer down, continue scrubbing while held, and commit the release position, clamped to the visible time range. The playhead is a single overlay with a 26px hit target above the effect regions, so dragging it does not select an underlying effect. Its reusable `TimelineScrubber` component follows the supplied narrow reference: a pointed grey cap, continuous 2px rule, shaded rounded grip and six white dots. It stays continuous across the filmstrip and visible lanes when the track content scrolls. `cargo run --offline --locked --example timeline_interaction` exercises those pointer paths and the right boundary.
+## The editor
 
-## Timeline pinch zoom
+A titlebar with no fill of its own, a left rail of panel buttons, the stage, and
+a 300px inspector on `card`. Two pods float over the stage: the aspect and crop
+controls at its head, the transport at its foot. Below them the console — the
+timeline — on `glass`.
 
-Pinch over the timeline to zoom between 1x and 100x. The time under the pointer at gesture start stays anchored while the visible range changes; the range clamps at either end of the source. Pinching outside the timeline does not change it. Slint 1.17.1 routes native macOS trackpad pinch events through `ScaleRotateGestureHandler`; the shared handler also follows Slint platform gesture support. Windows/Linux trackpad parity has not been tested. Gesture cancellation keeps the last applied view and allows the next gesture to begin normally. Pinching only changes the viewport, not project content or the playhead time.
+The lane stack is 42 for the source lane and 30 for every other, 4 between them,
+with a 78px label gutter. A region is its lane's tint at four strengths: `22` at
+rest, `2e` under the pointer, `3d` when selected, `66` for the edge. The
+playhead is a 2px accent rule the full height of the stack with a 16px dot and a
+soft accent ring.
 
-The native timeline regression example injects the same core pinch events emitted by the winit backend. Its test-only dependency on `i-slint-core` is pinned to the installed Slint version. These automated checks do not substitute for a physical trackpad test.
+The status strip under the console has no counterpart in the redesign, which
+puts progress on the thing that is progressing. It is carried because export and
+transcription still need somewhere to speak.
 
-## Preview magnification
+## The recorder
 
-Pinching over the preview magnifies the workspace view from Fit (1x) to 8x. The image position under the gesture remains anchored, subject to image-edge bounds. Two-finger scrolling pans the magnified view, and the Fit control resets scale and position. `PreviewViewport` owns this behavior; image and edit-overlay children share the same scaled coordinate system. Opening a project or changing preview aspect resets the view. These transient UI properties are separate from project effects, crop settings, playhead time and exported framing.
+A compact rounded floating bar with a source control, audio and webcam options,
+a countdown, a red Record control, More and Hide. Option panels expand above it.
+The same overlay shows the countdown, the elapsed time in Geist Mono,
+pause/resume and stop.
 
-Native gesture regression checks cover preview anchoring and normalized click coordinates, scroll panning, bounds, Fit and isolation from the timeline. Physical trackpad input remains a manual acceptance check.
+The recorder's windows are borderless and carry no vibrancy material — macOS
+gives a borderless window no corner mask, so a blurred view fills the frame
+square behind a rounded plate. They therefore use an `overlay` tone of their own
+rather than `glass`, and take their shadow from the window server or not at all.
+This is the one place the palette departs from the handoff, and `crates/theme`
+says so where the token is defined.
 
-## Uniform control height
+## Gestures
 
-Buttons, dropdowns and sliders share the filled slider's 40px height in the editor and recorder. Header, inspector and toolbar rows accommodate that height; the rail scrolls in short windows. Recorder option panels are 264px tall inside a 386px expanded window, while the collapsed bar remains 106px tall. The timeline filmstrip can shrink on small windows so its controls remain visible.
+Pinch over the timeline zooms between 1x and 100x, anchoring the time under the
+pointer. Pinch over the stage magnifies from Fit to 8x, anchoring the image
+point under the gesture; two-finger scroll pans, and Fit resets both. All of it
+is viewport state — none of it touches project content, the playhead, or the
+exported framing.

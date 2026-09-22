@@ -181,7 +181,16 @@ impl RootView {
             )
             .child(
                 row()
-                    .child(self.action("open-video", "Open video", "open", !e.get_busy()))
+                    .gap(px(Theme::GAP))
+                    .child(
+                        self.action("open-video", "Open video", "open", !e.get_busy())
+                            .raised()
+                            .hero(),
+                    )
+                    // The hero size exists for exactly this: the one action an
+                    // otherwise empty screen is asking for. It had been built
+                    // and never used, so the emptiest screen in the app wore
+                    // the same 44px button as a dialog's footer.
                     .child(
                         self.action(
                             "new-recording",
@@ -189,7 +198,8 @@ impl RootView {
                             "record",
                             !e.get_busy() && !e.get_recording(),
                         )
-                        .primary(),
+                        .primary()
+                        .hero(),
                     ),
             )
             .into_any_element();
@@ -314,34 +324,53 @@ impl RootView {
                     ),
             );
         }
+        // The two pods. The handoff floats them over the stage rather than
+        // stacking them above and below it: the picture is the thing being
+        // worked on, and a strip of controls in the flow above it steals the
+        // height that would otherwise be picture. They are absolute children
+        // of the viewport, which is already `relative`, so nothing about the
+        // stage's own measurement — the zoom and pan both depend on it —
+        // changes.
+        // A pod is centred by a full-width absolute strip around it rather
+        // than by a half-width offset: gpui at the pinned revision has no
+        // transform, so `left: 50%` would put the pod's left edge at the
+        // middle instead of the pod.
+        let float = |top: bool| {
+            let el = div().absolute().left_0().right_0().flex().justify_center();
+            if top {
+                el.top(px(Theme::GAP_LARGE))
+            } else {
+                el.bottom(px(Theme::GAP_LARGE))
+            }
+        };
+        let aspect_pod = float(true).child(
+            pod(theme)
+                .child(div().w(px(108.)).flex_shrink_0().child(aspect_control))
+                .child(self.action("crop", "Crop", "visual-crop", true))
+                .child(
+                    button(
+                        "fit-preview",
+                        format!("Fit · {}%", (e.get_preview_zoom() * 100.).round()),
+                        theme,
+                    )
+                    .ghost()
+                    .on_click(cx.listener(|s, _, _, cx| {
+                        if let Surface::Editor(e) = &s.surface {
+                            e.set_preview_zoom(1.);
+                        }
+                        s.preview_pan = point(px(0.), px(0.));
+                        s.preview_known_zoom = 1.;
+                        if matches!(s.pinch, Some((false, ..))) {
+                            s.pinch = None;
+                        }
+                        cx.notify();
+                    })),
+                ),
+        );
         column()
             .flex_1()
             .min_w_0()
             .h_full()
-            .child(
-                row()
-                    .justify_center()
-                    .child(div().w(px(108.)).flex_shrink_0().child(aspect_control))
-                    .child(self.action("crop", "Crop", "visual-crop", true))
-                    .child(
-                        button(
-                            "fit-preview",
-                            format!("Fit · {}%", (e.get_preview_zoom() * 100.).round()),
-                            theme,
-                        )
-                        .on_click(cx.listener(|s, _, _, cx| {
-                            if let Surface::Editor(e) = &s.surface {
-                                e.set_preview_zoom(1.);
-                            }
-                            s.preview_pan = point(px(0.), px(0.));
-                            s.preview_known_zoom = 1.;
-                            if matches!(s.pinch, Some((false, ..))) {
-                                s.pinch = None;
-                            }
-                            cx.notify();
-                        })),
-                    ),
-            )
             .child(
                 div()
                     .id("preview-viewport")
@@ -384,62 +413,64 @@ impl RootView {
                             .left(self.preview_pan.x)
                             .top(self.preview_pan.y)
                             .child(picture),
-                    ),
-            )
-            // Transport: the time on the left, a centred icon cluster with a
-            // filled play plate, and the audio panel on the right.
-            .child(
-                row()
-                    .h(px(Theme::CONTROL_HEIGHT))
-                    .child(
-                        // Geist Mono, not Geist. A timecode counts, and
-                        // proportional digits reflow as it does — every glyph
-                        // beside the seconds shifted each time they ticked
-                        // from 9 to 10.
-                        mono(e.get_time_label())
-                            .flex_1()
-                            .text_size(px(Theme::FONT_CONTROL))
-                            .text_color(theme.muted),
                     )
+                    .child(aspect_pod)
+                    // Transport: the timecode, a centred icon cluster with a
+                    // filled play plate, and the audio panel, all on one pod
+                    // floating at the foot of the stage.
                     .child(
-                        row()
-                            .gap(px(Theme::GAP_SMALL))
-                            .flex_none()
-                            .child(self.icon_action(
-                                "previous-frame",
-                                "SkipBack-fill",
-                                "Previous frame",
-                                "previous-frame",
-                                true,
-                            ))
-                            .child(
-                                icon_button(
-                                    "play",
-                                    if e.get_playing() {
-                                        "Pause-fill"
-                                    } else {
-                                        "Play-fill"
-                                    },
-                                    if e.get_playing() { "Pause" } else { "Play" },
-                                    theme,
+                        float(false).child(
+                            pod(theme)
+                                .gap(px(Theme::GAP_LARGE))
+                                .child(
+                                    // Geist Mono, not Geist. A timecode counts, and
+                                    // proportional digits reflow as it does — every glyph
+                                    // beside the seconds shifted each time they ticked
+                                    // from 9 to 10.
+                                    mono(e.get_time_label())
+                                        .flex_none()
+                                        .text_size(px(Theme::FONT_CONTROL))
+                                        .text_color(theme.muted),
                                 )
-                                .transport()
-                                .on_click(self.command("play")),
-                            )
-                            .child(self.icon_action(
-                                "next-frame",
-                                "SkipForward-fill",
-                                "Next frame",
-                                "next-frame",
-                                true,
-                            )),
-                    )
-                    .child(
-                        div().flex_1().flex().justify_end().child(
-                            self.panel_button(e, "Audio", "Audio")
-                                .glyph("SpeakerHigh-regular")
-                                .icon_only()
-                                .ghost(),
+                                .child(
+                                    row()
+                                        .gap(px(Theme::GAP_SMALL))
+                                        .flex_none()
+                                        .child(self.icon_action(
+                                            "previous-frame",
+                                            "SkipBack-fill",
+                                            "Previous frame",
+                                            "previous-frame",
+                                            true,
+                                        ))
+                                        .child(
+                                            icon_button(
+                                                "play",
+                                                if e.get_playing() {
+                                                    "Pause-fill"
+                                                } else {
+                                                    "Play-fill"
+                                                },
+                                                if e.get_playing() { "Pause" } else { "Play" },
+                                                theme,
+                                            )
+                                            .transport()
+                                            .on_click(self.command("play")),
+                                        )
+                                        .child(self.icon_action(
+                                            "next-frame",
+                                            "SkipForward-fill",
+                                            "Next frame",
+                                            "next-frame",
+                                            true,
+                                        )),
+                                )
+                                .child(
+                                    self.panel_button(e, "Audio", "Audio")
+                                        .glyph("SpeakerHigh-regular")
+                                        .icon_only()
+                                        .ghost(),
+                                ),
                         ),
                     ),
             )
