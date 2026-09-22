@@ -10,7 +10,7 @@ impl RootView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let t = self.theme;
+        let theme = self.theme;
         // The unified window titlebar: a translucent strip tall enough for
         // the 40px icon cluster, on the `header` tone so the vibrancy
         // material reads through it.
@@ -21,7 +21,7 @@ impl RootView {
             .h(px(TITLEBAR_HEIGHT))
             .px(px(Theme::GAP_LARGE))
             .flex_shrink_0()
-            .bg(t.header);
+            .bg(theme.header);
         if e.get_mac_titlebar() {
             // Traffic lights sit at {14,15}; the cluster starts at 88px.
             header = header.pl(px(88.));
@@ -66,13 +66,13 @@ impl RootView {
                     .items_center()
                     .justify_center()
                     .gap(px(Theme::GAP_SMALL))
-                    .when(e.get_dirty(), |el| el.child(status_dot(t)))
+                    .when(e.get_dirty(), |el| el.child(status_dot(theme)))
                     .child(
                         div()
                             .min_w_0()
                             .text_ellipsis()
                             .text_size(px(Theme::FONT_BODY))
-                            .text_color(t.text)
+                            .text_color(theme.text)
                             .child(e.get_document_title()),
                     )
                     .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
@@ -81,7 +81,7 @@ impl RootView {
                 button(
                     "record",
                     self.translate(e, if e.get_recording() { "Stop" } else { "Record" }),
-                    t,
+                    theme,
                 )
                 .glyph(if e.get_recording() {
                     "Stop-fill"
@@ -105,7 +105,7 @@ impl RootView {
                     } else {
                         "Pause"
                     },
-                    t,
+                    theme,
                 )
                 .glyph("Pause-regular")
                 .ghost()
@@ -198,14 +198,14 @@ impl RootView {
             .px(px(Theme::GAP_LARGE))
             .text_size(px(Theme::FONT_SMALL));
         let mut status_line = row()
-            .text_color(t.muted)
+            .text_color(theme.muted)
             .child(div().flex_1().text_ellipsis().child(e.get_status()));
         if e.get_busy() {
             status_line = status_line.child(self.action("cancel", "Cancel", "cancel", true));
         }
         status = status.child(status_line);
         if e.get_busy() {
-            status = status.child(progress_bar(e.get_progress(), t));
+            status = status.child(progress_bar(e.get_progress(), theme));
         }
         root.child(status)
             .child(self.menu_overlay(window, cx))

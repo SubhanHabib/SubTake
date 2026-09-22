@@ -15,12 +15,12 @@ impl App {
     pub(super) fn schedule_recovery(&self) {
         self.recovery_timer
             .start(TimerMode::SingleShot, Duration::from_secs(2), || {
-                with_app(|s, _| {
-                    if let Some(h) = &s.history {
+                with_app(|app, _| {
+                    if let Some(h) = &app.history {
                         if h.dirty() {
-                            s.recovery.save(h.project.clone(), s.document.clone());
+                            app.recovery.save(h.project.clone(), app.document.clone());
                         } else {
-                            s.recovery.clear(s.recovery_origin.take());
+                            app.recovery.clear(app.recovery_origin.take());
                         }
                     }
                 })
@@ -74,8 +74,8 @@ impl App {
         self.fresh_recording = None;
         std::thread::spawn(move || {
             let result = media::probe(&source);
-            post(move |s, ui| {
-                if epoch != s.epoch {
+            post(move |app, ui| {
+                if epoch != app.epoch {
                     return;
                 }
                 match result {
@@ -127,8 +127,8 @@ impl App {
                                 .ok()
                                 .and_then(|(path, _)| image::open(path).ok())
                                 .map(|image| image.blur(10.).to_rgba8());
-                            post(move |s, ui| {
-                                if s.source.as_ref() != Some(&artwork_source) {
+                            post(move |app, ui| {
+                                if app.source.as_ref() != Some(&artwork_source) {
                                     return;
                                 }
                                 match result {
@@ -162,34 +162,34 @@ impl App {
                                 }
                             });
                         });
-                        s.source_revision = s.source_revision.wrapping_add(1);
-                        s.history = Some(History::new(project));
+                        app.source_revision = app.source_revision.wrapping_add(1);
+                        app.history = Some(History::new(project));
                         if recovery_origin.is_some() {
-                            s.history.as_mut().unwrap().mark_unsaved();
+                            app.history.as_mut().unwrap().mark_unsaved();
                         }
-                        s.recovery_origin = recovery_origin;
-                        s.schedule_recovery();
-                        s.preferences
+                        app.recovery_origin = recovery_origin;
+                        app.schedule_recovery();
+                        app.preferences
                             .opened(document.clone().unwrap_or_else(|| source.clone()));
-                        if let Err(e) = s.preferences.save() {
+                        if let Err(e) = app.preferences.save() {
                             eprintln!("Recent projects: {e}");
                         }
-                        s.document = document;
-                        s.source = Some(source);
-                        s.info = Some(info);
-                        s.source_time = 0.;
+                        app.document = document;
+                        app.source = Some(source);
+                        app.info = Some(info);
+                        app.source_time = 0.;
                         ui.invoke_reset_preview();
                         ui.set_timeline_zoom(1.);
                         ui.set_timeline_offset(0.);
-                        s.selected = None;
-                        s.extra_selection.clear();
+                        app.selected = None;
+                        app.extra_selection.clear();
                         if auto_zoom {
                             ui.set_panel("Frame".into());
                         }
-                        s.refresh(ui);
-                        s.request();
+                        app.refresh(ui);
+                        app.request();
                         ui.set_status(zoom_warning.unwrap_or_else(|| "Ready".into()));
-                        if let Err(error) = s.show_editor(ui) {
+                        if let Err(error) = app.show_editor(ui) {
                             ui.set_status(format!("Open editor: {error:#}"));
                         }
                     }

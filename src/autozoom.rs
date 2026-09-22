@@ -1,9 +1,9 @@
 //! Explicit-click clustering from timeline/zoomSuggestionUtils.ts.
 use crate::{project::Project, timeline::n};
 use serde_json::{Value, json};
-fn explicit(p: &Value) -> bool {
+fn explicit(value: &Value) -> bool {
     matches!(
-        p["interactionType"].as_str(),
+        value["interactionType"].as_str(),
         Some("click" | "double-click" | "right-click" | "middle-click")
     )
 }

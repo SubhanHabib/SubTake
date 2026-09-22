@@ -79,16 +79,16 @@ impl RootView {
         }
     }
 
-    pub(super) fn timeline(&mut self, e: &EditorWindow, cx: &mut Context<Self>) -> AnyElement {
-        let t = self.theme;
-        let visible = e.get_timeline_visible();
-        let offset = e.get_timeline_offset();
-        let editor = e.clone();
+    pub(super) fn timeline(&mut self, window: &EditorWindow, cx: &mut Context<Self>) -> AnyElement {
+        let theme = self.theme;
+        let visible = window.get_timeline_visible();
+        let offset = window.get_timeline_offset();
+        let editor = window.clone();
         let zoom = self.slider(
             "timeline-zoom",
             1.,
             100.,
-            e.get_timeline_zoom(),
+            window.get_timeline_zoom(),
             ("Zoom", "MagnifyingGlassPlus-regular"),
             (1.0, "\u{00d7}"),
             cx,
@@ -101,20 +101,20 @@ impl RootView {
                 );
             },
         );
-        let editor = e.clone();
+        let editor = window.clone();
         let position = self.slider(
             "timeline-position",
             0.,
-            (e.get_duration() - visible).max(0.001),
+            (window.get_duration() - visible).max(0.001),
             offset,
             ("Position", "ArrowsOutSimple-regular"),
             (1.0, " s"),
             cx,
             move |v, _, _, _| editor.set_timeline_offset(v),
         );
-        let editor = e.clone();
-        let editor_out = e.clone();
-        let editor_in = e.clone();
+        let editor = window.clone();
+        let editor_out = window.clone();
+        let editor_in = window.clone();
         let toolbar = row()
             .gap(px(Theme::GAP_SMALL))
             .child(self.icon_action(
@@ -125,7 +125,7 @@ impl RootView {
                 true,
             ))
             .child(
-                button("auto-zoom", "Suggest zooms", t)
+                button("auto-zoom", "Suggest zooms", theme)
                     .glyph("MagicWand-regular")
                     .ghost()
                     .on_click(self.command("auto-zoom")),
@@ -142,30 +142,40 @@ impl RootView {
             // Snap keeps the accent plate while engaged; the zoom cluster is
             // icon-only so the strip stays quiet.
             .child(
-                icon_button("snap", "Magnet-regular", "Snap", t)
+                icon_button("snap", "Magnet-regular", "Snap", theme)
                     .ghost()
-                    .selected(e.get_snap())
+                    .selected(window.get_snap())
                     .on_click(move |_, _, _| editor.set_snap(!editor.get_snap())),
             )
             .child(
-                icon_button("fit-timeline", "ArrowsOutSimple-regular", "Fit timeline", t)
-                    .ghost()
-                    .on_click(cx.listener(|s, _, _, _| {
-                        if let Surface::Editor(e) = &s.surface {
-                            e.set_timeline_zoom(1.);
-                            e.set_timeline_offset(0.);
-                        }
-                    })),
+                icon_button(
+                    "fit-timeline",
+                    "ArrowsOutSimple-regular",
+                    "Fit timeline",
+                    theme,
+                )
+                .ghost()
+                .on_click(cx.listener(|s, _, _, _| {
+                    if let Surface::Editor(window) = &s.surface {
+                        window.set_timeline_zoom(1.);
+                        window.set_timeline_offset(0.);
+                    }
+                })),
             )
             .child(
-                icon_button("zoom-out", "MagnifyingGlassMinus-regular", "Zoom out", t)
-                    .ghost()
-                    .on_click(move |_, _, _| {
-                        editor_out.set_timeline_zoom((editor_out.get_timeline_zoom() / 1.5).max(1.))
-                    }),
+                icon_button(
+                    "zoom-out",
+                    "MagnifyingGlassMinus-regular",
+                    "Zoom out",
+                    theme,
+                )
+                .ghost()
+                .on_click(move |_, _, _| {
+                    editor_out.set_timeline_zoom((editor_out.get_timeline_zoom() / 1.5).max(1.))
+                }),
             )
             .child(
-                icon_button("zoom-in", "MagnifyingGlassPlus-regular", "Zoom in", t)
+                icon_button("zoom-in", "MagnifyingGlassPlus-regular", "Zoom in", theme)
                     .ghost()
                     .on_click(move |_, _, _| {
                         editor_in.set_timeline_zoom((editor_in.get_timeline_zoom() * 1.5).min(100.))
@@ -178,7 +188,7 @@ impl RootView {
                 div()
                     .absolute()
                     .left(relative(i as f32 / 8.))
-                    .text_color(t.muted)
+                    .text_color(theme.muted)
                     .child(format!("{:.1}s", offset + visible * i as f32 / 8.)),
             );
         }
@@ -187,20 +197,20 @@ impl RootView {
             .h(px(56.))
             .overflow_hidden()
             .rounded_lg()
-            .bg(t.surface)
-            .child(div().px_2().child(e.get_document_title()));
-        if let Some(image) = e.get_thumbnails().0 {
+            .bg(theme.surface)
+            .child(div().px_2().child(window.get_document_title()));
+        if let Some(image) = window.get_thumbnails().0 {
             source = source.child(
                 img(image)
                     .absolute()
                     .top(px(22.))
                     .left(relative(-offset / visible))
-                    .w(relative(e.get_timeline_zoom()))
+                    .w(relative(window.get_timeline_zoom()))
                     .h(px(34.))
                     .object_fit(ObjectFit::Fill),
             );
         }
-        let labels: Vec<String> = e.get_track_labels().iter().collect();
+        let labels: Vec<String> = window.get_track_labels().iter().collect();
         let mut tracks = div().relative().h(px(labels.len() as f32 * TRACK_HEIGHT));
         for i in 0..labels.len() {
             tracks = tracks.child(
@@ -210,22 +220,22 @@ impl RootView {
                     .w_full()
                     .h(px(38.))
                     .rounded_lg()
-                    .bg(t.surface),
+                    .bg(theme.surface),
             );
         }
-        if let Some(image) = e.get_waveform().0 {
+        if let Some(image) = window.get_waveform().0 {
             tracks = tracks.child(
                 img(image)
                     .absolute()
-                    .top(px(e.get_audio_row() as f32 * TRACK_HEIGHT))
+                    .top(px(window.get_audio_row() as f32 * TRACK_HEIGHT))
                     .left(relative(-offset / visible))
-                    .w(relative(e.get_timeline_zoom()))
+                    .w(relative(window.get_timeline_zoom()))
                     .h(px(38.))
                     .opacity(0.3)
                     .object_fit(ObjectFit::Fill),
             );
         }
-        for region in e.get_regions().iter() {
+        for region in window.get_regions().iter() {
             let (mut start, mut end) = (region.start, region.end);
             if let Some(Gesture::Region {
                 region: dragged,
@@ -259,7 +269,7 @@ impl RootView {
                 .overflow_hidden()
                 .bg(tint.opacity(if region.selected { 0.24 } else { 0.11 }))
                 .border_1()
-                .border_color(if region.selected { tint } else { t.border })
+                .border_color(if region.selected { tint } else { theme.border })
                 .cursor(CursorStyle::ClosedHand)
                 .child(
                     div()
@@ -273,8 +283,8 @@ impl RootView {
                 MouseButton::Left,
                 cx.listener(move |s, event: &MouseDownEvent, w, cx| {
                     w.focus(&s.focus, cx);
-                    if let Surface::Editor(e) = &s.surface {
-                        e.invoke_select_region(
+                    if let Surface::Editor(window) = &s.surface {
+                        window.invoke_select_region(
                             drag_region.kind.clone(),
                             drag_region.id.clone(),
                             event.modifiers.shift,
@@ -318,8 +328,8 @@ impl RootView {
                     MouseButton::Left,
                     cx.listener(move |s, event: &MouseDownEvent, w, cx| {
                         w.focus(&s.focus, cx);
-                        if let Surface::Editor(e) = &s.surface {
-                            e.invoke_select_region(
+                        if let Surface::Editor(window) = &s.surface {
+                            window.invoke_select_region(
                                 drag_region.kind.clone(),
                                 drag_region.id.clone(),
                                 event.modifiers.shift,
@@ -338,7 +348,7 @@ impl RootView {
             }
             tracks = tracks.child(block);
         }
-        let playhead = (e.get_playhead() - offset) / visible;
+        let playhead = (window.get_playhead() - offset) / visible;
         let mut timeline = column()
             .id("timeline-content")
             .relative()
@@ -370,10 +380,10 @@ impl RootView {
                     .top_0()
                     .bottom_0()
                     .w(px(Theme::SCRUBBER_WIDTH))
-                    .child(timeline_scrubber(t, 40.0)),
+                    .child(timeline_scrubber(theme, 40.0)),
             );
         }
-        panel(t)
+        panel(theme)
             .id("timeline")
             .h(px(310.))
             .mx(px(Theme::GAP))
@@ -393,13 +403,19 @@ impl RootView {
                             .w(px(74.))
                             .flex_shrink_0()
                             .gap_0()
-                            .child(div().h(px(88.)).pt_8().text_color(t.muted).child("Source"))
+                            .child(
+                                div()
+                                    .h(px(88.))
+                                    .pt_8()
+                                    .text_color(theme.muted)
+                                    .child("Source"),
+                            )
                             .children(labels.into_iter().map(|label| {
                                 div()
                                     .h(px(TRACK_HEIGHT))
                                     .pt_3()
                                     .text_size(px(Theme::FONT_SMALL))
-                                    .text_color(t.muted)
+                                    .text_color(theme.muted)
                                     .child(label)
                             })),
                     )
@@ -407,21 +423,24 @@ impl RootView {
             ))
             .child(div().ml(px(82.)).child(position))
             .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
-                if let Surface::Editor(e) = &s.surface {
+                if let Surface::Editor(window) = &s.surface {
                     let delta = event.delta.pixel_delta(px(20.));
                     if event.modifiers.control || event.modifiers.platform {
                         let b = s.timeline_bounds.get();
                         let fraction = (f32::from(event.position.x - b.left())
                             / f32::from(b.size.width).max(1.))
                         .clamp(0., 1.);
-                        let anchor = e.get_timeline_offset() + fraction * e.get_timeline_visible();
-                        e.set_timeline_zoom(
-                            (e.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
+                        let anchor =
+                            window.get_timeline_offset() + fraction * window.get_timeline_visible();
+                        window.set_timeline_zoom(
+                            (window.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
                                 .clamp(1., 100.),
                         );
-                        e.set_timeline_offset(
-                            (anchor - fraction * e.get_timeline_visible())
-                                .clamp(0., (e.get_duration() - e.get_timeline_visible()).max(0.)),
+                        window.set_timeline_offset(
+                            (anchor - fraction * window.get_timeline_visible()).clamp(
+                                0.,
+                                (window.get_duration() - window.get_timeline_visible()).max(0.),
+                            ),
                         );
                         cx.stop_propagation();
                     } else if delta.x != px(0.) || event.modifiers.shift {
@@ -430,12 +449,15 @@ impl RootView {
                         } else {
                             delta.x
                         };
-                        e.set_timeline_offset(
-                            (e.get_timeline_offset()
+                        window.set_timeline_offset(
+                            (window.get_timeline_offset()
                                 - f32::from(dx)
                                     / f32::from(s.timeline_bounds.get().size.width).max(1.)
-                                    * e.get_timeline_visible())
-                            .clamp(0., (e.get_duration() - e.get_timeline_visible()).max(0.)),
+                                    * window.get_timeline_visible())
+                            .clamp(
+                                0.,
+                                (window.get_duration() - window.get_timeline_visible()).max(0.),
+                            ),
                         );
                         cx.stop_propagation();
                     }

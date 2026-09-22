@@ -77,8 +77,8 @@ impl Preview {
                     );
                     Ok((pixels, bounds))
                 })();
-                post(move |s, ui| {
-                    if s.epoch != request.epoch {
+                post(move |app, ui| {
+                    if app.epoch != request.epoch {
                         return;
                     }
                     match result {
@@ -100,7 +100,7 @@ impl Preview {
                             ui.set_preview(ui_runtime::Image::from_rgba8(buffer));
                         }
                         Err(e) => {
-                            s.stop(ui);
+                            app.stop(ui);
                             ui.set_status(format!("Preview: {e:#}"));
                         }
                     }
@@ -109,9 +109,9 @@ impl Preview {
         });
         Self { slot }
     }
-    fn request(&self, r: FrameRequest) {
+    fn request(&self, frame: FrameRequest) {
         let (lock, wake) = &*self.slot;
-        *lock.lock().unwrap() = Some(r);
+        *lock.lock().unwrap() = Some(frame);
         wake.notify_one();
     }
 }
@@ -380,14 +380,15 @@ impl App {
     }
 }
 
-pub(super) fn aspect_ratio(p: &Project, info: &MediaInfo) -> f64 {
-    if p.text("aspectRatio", "native") == "native" {
-        let crop = p.editor.get("cropRegion").unwrap_or(&Value::Null);
+pub(super) fn aspect_ratio(project: &Project, info: &MediaInfo) -> f64 {
+    if project.text("aspectRatio", "native") == "native" {
+        let crop = project.editor.get("cropRegion").unwrap_or(&Value::Null);
         return (info.width as f64 * n(crop, "width", 1.)
             / (info.height as f64 * n(crop, "height", 1.)))
         .clamp(0.25, 4.);
     }
-    p.text("aspectRatio", "16:9")
+    project
+        .text("aspectRatio", "16:9")
         .split_once(':')
         .and_then(|(a, b)| Some(a.parse::<f64>().ok()? / b.parse::<f64>().ok()?))
         .filter(|v| v.is_finite() && *v >= 0.25 && *v <= 4.)

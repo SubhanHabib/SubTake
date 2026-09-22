@@ -37,7 +37,7 @@ pub fn move_region(
 }
 
 pub fn snap_delta(
-    p: &Project,
+    project: &Project,
     kind: &str,
     id: &str,
     delta: f64,
@@ -46,7 +46,7 @@ pub fn snap_delta(
     duration: f64,
     threshold: f64,
 ) -> f64 {
-    let Some(region) = p.regions(kind).iter().find(|r| r["id"] == id) else {
+    let Some(region) = project.regions(kind).iter().find(|r| r["id"] == id) else {
         return delta;
     };
     let start = n(region, "startMs", 0.);
@@ -68,7 +68,7 @@ pub fn snap_delta(
         "autoCaptions",
         "nativeMarkers",
     ] {
-        for r in p.regions(key) {
+        for r in project.regions(key) {
             if key == kind && r["id"] == id {
                 continue;
             }
@@ -128,8 +128,8 @@ pub fn move_group(
 }
 
 /// A crop that remains inside the source even for malformed imported settings.
-pub fn crop_rect(p: &Project) -> [f64; 4] {
-    let crop = p.editor.get("cropRegion").unwrap_or(&Value::Null);
+pub fn crop_rect(project: &Project) -> [f64; 4] {
+    let crop = project.editor.get("cropRegion").unwrap_or(&Value::Null);
     let x = n(crop, "x", 0.).clamp(0., 0.99);
     let y = n(crop, "y", 0.).clamp(0., 0.99);
     [
@@ -139,12 +139,12 @@ pub fn crop_rect(p: &Project) -> [f64; 4] {
         n(crop, "height", 1.).clamp(0.01, 1. - y),
     ]
 }
-pub fn adjust_crop(p: &mut Project, dx: f64, dy: f64, resize: bool) -> Result<()> {
+pub fn adjust_crop(project: &mut Project, dx: f64, dy: f64, resize: bool) -> Result<()> {
     anyhow::ensure!(
         dx.is_finite() && dy.is_finite(),
         "Crop movement must be finite"
     );
-    let [mut x, mut y, mut width, mut height] = crop_rect(p);
+    let [mut x, mut y, mut width, mut height] = crop_rect(project);
     if resize {
         width = (width + dx).clamp(0.01, 1. - x);
         height = (height + dy).clamp(0.01, 1. - y);
@@ -152,7 +152,7 @@ pub fn adjust_crop(p: &mut Project, dx: f64, dy: f64, resize: bool) -> Result<()
         x = (x + dx).clamp(0., 1. - width);
         y = (y + dy).clamp(0., 1. - height);
     }
-    p.set(
+    project.set(
         "cropRegion",
         json!({"x":x,"y":y,"width":width,"height":height}),
     );

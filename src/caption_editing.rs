@@ -74,8 +74,8 @@ fn spacing(mut ws: Vec<Value>) -> Vec<Value> {
     }
     ws
 }
-fn sorted(p: &Project) -> Vec<Value> {
-    let mut cues = p.regions("autoCaptions").to_vec();
+fn sorted(project: &Project) -> Vec<Value> {
+    let mut cues = project.regions("autoCaptions").to_vec();
     cues.sort_by(|a, b| {
         n(a, "startMs", 0.)
             .total_cmp(&n(b, "startMs", 0.))
@@ -83,9 +83,9 @@ fn sorted(p: &Project) -> Vec<Value> {
     });
     cues
 }
-pub fn split(p: &mut Project, id: &str, time: f64) -> Result<String> {
+pub fn split(project: &mut Project, id: &str, time: f64) -> Result<String> {
     ensure!(time.is_finite(), "Invalid split time");
-    let mut cues = sorted(p);
+    let mut cues = sorted(project);
     let i = cues
         .iter()
         .position(|c| c["id"] == id)
@@ -117,11 +117,11 @@ pub fn split(p: &mut Project, id: &str, time: f64) -> Result<String> {
     second["text"] = json!(text_from_words(&right));
     second["words"] = json!(right);
     cues.splice(i..=i, [first, second]);
-    p.set("autoCaptions", json!(cues));
+    project.set("autoCaptions", json!(cues));
     Ok(right_id)
 }
-pub fn merge_next(p: &mut Project, id: &str) -> Result<()> {
-    let mut cues = sorted(p);
+pub fn merge_next(project: &mut Project, id: &str) -> Result<()> {
+    let mut cues = sorted(project);
     let i = cues
         .iter()
         .position(|c| c["id"] == id)
@@ -134,11 +134,17 @@ pub fn merge_next(p: &mut Project, id: &str) -> Result<()> {
     cues[i]["endMs"] = next["endMs"].clone();
     cues[i]["text"] = json!(text_from_words(&ws));
     cues[i]["words"] = json!(ws);
-    p.set("autoCaptions", json!(cues));
+    project.set("autoCaptions", json!(cues));
     Ok(())
 }
-pub fn edit_word(p: &mut Project, id: &str, index: usize, key: &str, value: &str) -> Result<()> {
-    let cue = p
+pub fn edit_word(
+    project: &mut Project,
+    id: &str,
+    index: usize,
+    key: &str,
+    value: &str,
+) -> Result<()> {
+    let cue = project
         .regions("autoCaptions")
         .iter()
         .find(|c| c["id"] == id)
@@ -165,7 +171,7 @@ pub fn edit_word(p: &mut Project, id: &str, index: usize, key: &str, value: &str
         "Word times must fit inside the caption and end after they start"
     );
     let ws = spacing(ws);
-    p.change_region(
+    project.change_region(
         "autoCaptions",
         id,
         json!({"text":text_from_words(&ws),"words":ws}),

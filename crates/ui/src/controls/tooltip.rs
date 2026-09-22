@@ -12,7 +12,7 @@ struct Tooltip {
 
 impl Render for Tooltip {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        let t = self.theme;
+        let theme = self.theme;
         frost::frosted(
             Theme::RADIUS_SMALL,
             frost::MENU_BLUR,
@@ -22,13 +22,13 @@ impl Render for Tooltip {
                     .max_w(px(320.))
                     .px(px(Theme::GAP))
                     .py(px(Theme::GAP_SMALL))
-                    // .bg(t.popup)
+                    // .bg(theme.popup)
                     .border_1()
-                    .border_color(t.border)
+                    .border_color(theme.border)
                     .rounded(px(Theme::RADIUS_SMALL))
                     .shadow_lg()
                     .text_size(px(Theme::FONT_SMALL))
-                    .text_color(t.text)
+                    .text_color(theme.text)
                     .child(self.text.clone()),
             ),
         )

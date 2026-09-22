@@ -11,8 +11,8 @@ pub struct Spring {
     initialized: bool,
 }
 impl Spring {
-    pub fn step(&mut self, target: f64, ms: f64, k: f64, c: f64, m: f64) -> f64 {
-        self.step_with_rest(target, ms, (k, c, m), (0.0002, 0.01))
+    pub fn step(&mut self, target: f64, ms: f64, stiffness: f64, damping: f64, mass: f64) -> f64 {
+        self.step_with_rest(target, ms, (stiffness, damping, mass), (0.0002, 0.01))
     }
     pub fn step_with_rest(
         &mut self,
@@ -76,8 +76,8 @@ impl Spring {
         self.value
     }
 }
-pub fn cursor_config(p: &Project) -> (f64, f64, f64) {
-    let s = p.number("cursorSmoothing", 0.67).clamp(0., 2.);
+pub fn cursor_config(project: &Project) -> (f64, f64, f64) {
+    let s = project.number("cursorSmoothing", 0.67).clamp(0., 2.);
     let (k, c, m) = if s <= 0. {
         (1000., 100., 1.)
     } else if s <= 0.5 {
@@ -88,17 +88,19 @@ pub fn cursor_config(p: &Project) -> (f64, f64, f64) {
         ((340. - t * 180.) * 1.12, 58. + t * 22., 1.35 + t * 0.45)
     };
     (
-        k * p
+        k * project
             .number("cursorSpringStiffnessMultiplier", 1.)
             .clamp(0.25, 3.),
-        c * p
+        c * project
             .number("cursorSpringDampingMultiplier", 1.)
             .clamp(0.25, 3.),
-        m * p.number("cursorSpringMassMultiplier", 1.).clamp(0.25, 3.),
+        m * project
+            .number("cursorSpringMassMultiplier", 1.)
+            .clamp(0.25, 3.),
     )
 }
-pub fn smooth_cursor(p: &Project, points: &[Value]) -> Vec<(f64, f64)> {
-    let (k, c, m) = cursor_config(p);
+pub fn smooth_cursor(project: &Project, points: &[Value]) -> Vec<(f64, f64)> {
+    let (k, c, m) = cursor_config(project);
     let (mut x, mut y) = (Spring::default(), Spring::default());
     let mut last = 0.;
     points
@@ -111,7 +113,7 @@ pub fn smooth_cursor(p: &Project, points: &[Value]) -> Vec<(f64, f64)> {
                 time - last
             };
             last = time;
-            if p.number("cursorSmoothing", 0.67) == 0. {
+            if project.number("cursorSmoothing", 0.67) == 0. {
                 (n(point, "cx", 0.5), n(point, "cy", 0.5))
             } else {
                 (

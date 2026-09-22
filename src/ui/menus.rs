@@ -128,7 +128,7 @@ impl RootView {
         let Some(name) = self.menu.clone() else {
             return div().into_any_element();
         };
-        let t = self.theme;
+        let theme = self.theme;
         let filter = self.menu_filter.to_lowercase();
         let matches: Vec<_> = Self::menu_commands(&name)
             .iter()
@@ -214,7 +214,7 @@ impl RootView {
                     .flex()
                     .items_center()
                     .px(px(Theme::CONTROL_PADDING))
-                    .text_color(t.muted)
+                    .text_color(theme.muted)
                     .child("No matching command"),
             );
         }
@@ -227,14 +227,14 @@ impl RootView {
                 *label,
                 false,
                 false,
-                t,
+                theme,
                 cx.listener(move |s, _, _, cx| s.run_command(&command, cx)),
             ));
         }
 
         // The footer doubles as the menu switcher, which is what finally
         // gives File, Edit and Help an entry point in the window itself.
-        let mut footer = composer_footer(t);
+        let mut footer = composer_footer(theme);
         for (menu, glyph) in [
             ("File", "FolderOpen-regular"),
             ("Edit", "SlidersHorizontal-regular"),
@@ -246,7 +246,7 @@ impl RootView {
                     SharedString::from(format!("palette-menu-{menu}")),
                     glyph,
                     menu,
-                    t,
+                    theme,
                 )
                 .ghost()
                 .selected(name == menu)
@@ -272,7 +272,7 @@ impl RootView {
             menu_in(
                 "command-menu-in",
                 top,
-                menu_surface(t)
+                menu_surface(theme)
                     .id("command-menu")
                     .absolute()
                     .left(px(left))
@@ -281,7 +281,7 @@ impl RootView {
                         s.menu = None;
                         cx.notify();
                     }))
-                    .child(context_chip(t, &[&name, "Commands"]))
+                    .child(context_chip(theme, &[&name, "Commands"]))
                     .child(search)
                     .child(fade_edges(list))
                     .child(footer),

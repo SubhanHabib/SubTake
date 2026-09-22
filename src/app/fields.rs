@@ -1003,22 +1003,22 @@ impl App {
     }
 }
 
-pub(super) fn get_nested(v: &Value, key: &str) -> Value {
+pub(super) fn get_nested(value: &Value, key: &str) -> Value {
     key.split('.')
-        .fold(v, |v, k| v.get(k).unwrap_or(&Value::Null))
+        .fold(value, |value, k| value.get(k).unwrap_or(&Value::Null))
         .clone()
 }
-pub(super) fn set_nested(v: &mut Value, key: &str, value: Value) {
-    if !v.is_object() {
-        *v = json!({})
+pub(super) fn set_nested(root: &mut Value, key: &str, value: Value) {
+    if !root.is_object() {
+        *root = json!({})
     }
     if let Some((a, b)) = key.split_once('.') {
-        if v.get(a).is_none() {
-            v[a] = json!({})
+        if root.get(a).is_none() {
+            root[a] = json!({})
         }
-        set_nested(&mut v[a], b, value);
+        set_nested(&mut root[a], b, value);
     } else {
-        v[key] = value;
+        root[key] = value;
     }
 }
 

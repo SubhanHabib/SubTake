@@ -5,7 +5,7 @@ use super::*;
 // Explicit opt-in acceptance harness. Capture requires a caller-selected SubTake
 // window; microphone, camera and system audio are always disabled here.
 pub(super) fn launcher_smoke_step(step: u8) {
-    with_app(|s, ui| {
+    with_app(|app, ui| {
         let result = (|| -> Result<()> {
             let mode = std::env::var("SUBTAKE_LAUNCHER_SMOKE")?;
             let output = PathBuf::from(std::env::var("SUBTAKE_LAUNCHER_TEST_DIRECTORY")?);
@@ -16,7 +16,9 @@ pub(super) fn launcher_smoke_step(step: u8) {
                     "Editor appeared before recording"
                 );
                 ensure!(
-                    s.launcher.as_ref().is_some_and(|l| l.window().is_visible()),
+                    app.launcher
+                        .as_ref()
+                        .is_some_and(|l| l.window().is_visible()),
                     "Recorder not visible at launch"
                 );
                 ensure!(
@@ -26,15 +28,15 @@ pub(super) fn launcher_smoke_step(step: u8) {
                 );
                 if mode == "autozoom" {
                     let source = PathBuf::from(std::env::var("SUBTAKE_AUTOZOOM_SOURCE")?);
-                    s.preferences.auto_apply_zooms = true;
-                    s.fresh_recording = Some(source.clone());
-                    s.load(ui, source)?;
+                    app.preferences.auto_apply_zooms = true;
+                    app.fresh_recording = Some(source.clone());
+                    app.load(ui, source)?;
                     Timer::single_shot(Duration::from_secs(4), || launcher_smoke_step(20));
                     return Ok(());
                 }
                 if mode == "capture" {
                     let id = std::env::var("SUBTAKE_CAPTURE_SMOKE_WINDOW")?.parse::<u64>()?;
-                    let index = s
+                    let index = app
                         .sources
                         .iter()
                         .position(|v| {
@@ -50,7 +52,7 @@ pub(super) fn launcher_smoke_step(step: u8) {
                         })?;
                     ui.set_source_index(index as i32);
                 } else {
-                    s.finish_sources(
+                    app.finish_sources(
                         ui,
                         Ok(vec![
                             json!({"kind":"display","nativeId":1,"name":"Built-in display"}),
@@ -59,20 +61,21 @@ pub(super) fn launcher_smoke_step(step: u8) {
                         false,
                     );
                 }
-                s.action(ui, "hide-launcher")?;
+                app.action(ui, "hide-launcher")?;
                 ensure!(
                     !ui.window().is_visible()
-                        && !s.launcher.as_ref().unwrap().window().is_visible(),
+                        && !app.launcher.as_ref().unwrap().window().is_visible(),
                     "Hide overlay opened the editor"
                 );
-                s.action(ui, "show")?;
+                app.action(ui, "show")?;
                 ensure!(
-                    !ui.window().is_visible() && s.launcher.as_ref().unwrap().window().is_visible(),
+                    !ui.window().is_visible()
+                        && app.launcher.as_ref().unwrap().window().is_visible(),
                     "Tray Open did not restore the recorder"
                 );
                 // Exercise options state and native window placement. This does
                 // not inject pointer events or test source-control hit testing.
-                let launcher = s.launcher.as_ref().unwrap();
+                let launcher = app.launcher.as_ref().unwrap();
                 launcher
                     .window()
                     .set_position(ui_runtime::PhysicalPosition::new(210, 500));
@@ -85,20 +88,20 @@ pub(super) fn launcher_smoke_step(step: u8) {
                     anchor_position.y as f64 + anchor_size.height as f64 / anchor_scale;
                 let anchor_center =
                     anchor_position.x as f64 + anchor_size.width as f64 / anchor_scale / 2.;
-                s.set_launcher_options_panel(ui, "sources")?;
+                app.set_launcher_options_panel(ui, "sources")?;
                 ensure!(
-                    s.launcher.as_ref().unwrap().get_panel() == "sources"
-                        && s.launcher_options.as_ref().unwrap().window().is_visible(),
+                    app.launcher.as_ref().unwrap().get_panel() == "sources"
+                        && app.launcher_options.as_ref().unwrap().window().is_visible(),
                     "Source options controller did not open its native window"
                 );
-                s.set_launcher_options_panel(ui, "")?;
+                app.set_launcher_options_panel(ui, "")?;
                 if mode != "capture" {
                     if mode != "idle" {
-                        s.set_launcher_options_panel(ui, &mode)?;
+                        app.set_launcher_options_panel(ui, &mode)?;
                     }
                     Timer::single_shot(Duration::from_millis(600), move || {
-                        with_app(|s, _| {
-                            let launcher = s.launcher.as_ref().unwrap();
+                        with_app(|app, _| {
+                            let launcher = app.launcher.as_ref().unwrap();
                             let position = launcher.window().position();
                             let size = launcher.window().size();
                             let scale = launcher.window().scale_factor() as f64;
@@ -116,7 +119,7 @@ pub(super) fn launcher_smoke_step(step: u8) {
                                 "Opening a recorder menu moved the bar horizontally"
                             );
                             if mode != "idle" {
-                                let options = s.launcher_options.as_ref().unwrap();
+                                let options = app.launcher_options.as_ref().unwrap();
                                 assert!(
                                     options.window().is_visible(),
                                     "Options window did not open"
@@ -138,9 +141,9 @@ pub(super) fn launcher_smoke_step(step: u8) {
                                         position.y + 31,
                                     ));
                                 Timer::single_shot(Duration::from_millis(80), move || {
-                                    with_app(|s, _| {
-                                        let launcher = s.launcher.as_ref().unwrap();
-                                        let options = s.launcher_options.as_ref().unwrap();
+                                    with_app(|app, _| {
+                                        let launcher = app.launcher.as_ref().unwrap();
+                                        let options = app.launcher_options.as_ref().unwrap();
                                         let moved_menu = options.window().position();
                                         let moved_bar = launcher.window().position();
                                         let _ = (moved_menu, moved_bar);
@@ -164,22 +167,22 @@ pub(super) fn launcher_smoke_step(step: u8) {
                 ui.set_capture_mic(false);
                 ui.set_capture_camera(false);
                 ui.set_capture_system(false);
-                s.preferences.recording_directory = Some(output.clone());
-                s.preferences.countdown_seconds = 3;
-                s.action(ui, "start-recording")?;
+                app.preferences.recording_directory = Some(output.clone());
+                app.preferences.countdown_seconds = 3;
+                app.action(ui, "start-recording")?;
                 ensure!(
                     !ui.window().is_visible() && ui.get_busy(),
                     "Countdown must keep editor hidden"
                 );
-                s.action(ui, "cancel")?;
+                app.action(ui, "cancel")?;
                 Timer::single_shot(Duration::from_millis(600), || launcher_smoke_step(1));
             } else if step == 1 {
                 ensure!(
                     !ui.get_busy() && !ui.get_recording() && !ui.window().is_visible(),
                     "Countdown cancellation left capture or editor active"
                 );
-                s.preferences.countdown_seconds = 0;
-                s.action(ui, "start-recording")?;
+                app.preferences.countdown_seconds = 0;
+                app.action(ui, "start-recording")?;
                 let seconds = if std::env::var_os("SUBTAKE_CAPTURE_SMOKE_ZOOMS").is_some() {
                     30
                 } else {
@@ -192,21 +195,21 @@ pub(super) fn launcher_smoke_step(step: u8) {
                     "Recording did not start: {}",
                     ui.get_status()
                 );
-                s.action(ui, "pause-recording")?;
+                app.action(ui, "pause-recording")?;
                 Timer::single_shot(Duration::from_millis(700), || launcher_smoke_step(3));
             } else if step == 3 {
                 ensure!(
                     ui.get_recording_paused() && !ui.get_busy(),
                     "Pause was not acknowledged"
                 );
-                s.action(ui, "pause-recording")?;
+                app.action(ui, "pause-recording")?;
                 Timer::single_shot(Duration::from_millis(700), || launcher_smoke_step(4));
             } else if step == 4 {
                 ensure!(
                     !ui.get_recording_paused() && !ui.get_busy(),
                     "Resume was not acknowledged"
                 );
-                s.action(ui, "stop-recording")?;
+                app.action(ui, "stop-recording")?;
                 Timer::single_shot(Duration::from_secs(3), || launcher_smoke_step(5));
             } else if step == 5 {
                 ensure!(
@@ -215,17 +218,17 @@ pub(super) fn launcher_smoke_step(step: u8) {
                     ui.get_status()
                 );
                 ensure!(
-                    !s.launcher.as_ref().unwrap().window().is_visible(),
+                    !app.launcher.as_ref().unwrap().window().is_visible(),
                     "Recorder remained visible over editor"
                 );
                 ensure!(
-                    ui.get_panel() == "Frame" && s.info.as_ref().is_some_and(|i| i.duration > 1.),
+                    ui.get_panel() == "Frame" && app.info.as_ref().is_some_and(|i| i.duration > 1.),
                     "Recorded project was not loaded"
                 );
                 if std::env::var_os("SUBTAKE_CAPTURE_SMOKE_ZOOMS").is_some() {
-                    verify_automatic_zooms(s, ui, &output)?;
+                    verify_automatic_zooms(app, ui, &output)?;
                 }
-                let report = json!({"status":"passed","scope":"menu-bar launch, hide/Open, source control, countdown cancellation, screen-only capture of selected SubTake window, pause/resume/stop, final editor handoff","microphone":false,"camera":false,"system_audio":false,"source":s.source,"media":s.info});
+                let report = json!({"status":"passed","scope":"menu-bar launch, hide/Open, source control, countdown cancellation, screen-only capture of selected SubTake window, pause/resume/stop, final editor handoff","microphone":false,"camera":false,"system_audio":false,"source":app.source,"media":app.info});
                 std::fs::write(
                     output.join("capture-lifecycle.json"),
                     serde_json::to_vec_pretty(&report)?,
@@ -238,40 +241,40 @@ pub(super) fn launcher_smoke_step(step: u8) {
                     image.height(),
                     image::ColorType::Rgba8,
                 )?;
-                s.discard_recovery();
-                s.recovery.flush();
+                app.discard_recovery();
+                app.recovery.flush();
                 println!("LAUNCHER_SMOKE_PASSED capture");
                 ui_runtime::quit_event_loop()?;
             } else if step == 20 {
-                verify_automatic_zooms(s, ui, &output)?;
+                verify_automatic_zooms(app, ui, &output)?;
                 // Reopening an ordinary video must not silently re-apply zooms.
-                let source = s.source.clone().context("Missing source")?;
-                s.load(ui, source)?;
+                let source = app.source.clone().context("Missing source")?;
+                app.load(ui, source)?;
                 Timer::single_shot(Duration::from_secs(4), || launcher_smoke_step(21));
             } else if step == 21 {
                 ensure!(
-                    s.project()?.regions("zoomRegions").is_empty(),
+                    app.project()?.regions("zoomRegions").is_empty(),
                     "Ordinary reopen applied fresh-recording zooms"
                 );
-                s.preferences.auto_apply_zooms = false;
-                let source = s.source.clone().context("Missing source")?;
-                s.fresh_recording = Some(source.clone());
-                s.load(ui, source)?;
+                app.preferences.auto_apply_zooms = false;
+                let source = app.source.clone().context("Missing source")?;
+                app.fresh_recording = Some(source.clone());
+                app.load(ui, source)?;
                 Timer::single_shot(Duration::from_secs(4), || launcher_smoke_step(22));
             } else if step == 22 {
                 ensure!(
-                    s.project()?.regions("zoomRegions").is_empty(),
+                    app.project()?.regions("zoomRegions").is_empty(),
                     "Disabled preference still applied zooms"
                 );
-                s.discard_recovery();
-                s.recovery.flush();
+                app.discard_recovery();
+                app.recovery.flush();
                 println!(
                     "LAUNCHER_SMOKE_PASSED autozoom: fresh applied, ordinary reopen unchanged, preference off respected"
                 );
                 ui_runtime::quit_event_loop()?;
             } else if step == 10 {
                 ensure!(!ui.window().is_visible(), "Setup opened an empty editor");
-                let image = s.launcher.as_ref().unwrap().window().take_snapshot()?;
+                let image = app.launcher.as_ref().unwrap().window().take_snapshot()?;
                 image::save_buffer(
                     output.join(format!("launcher-{mode}.png")),
                     image.as_bytes(),
@@ -285,7 +288,7 @@ pub(super) fn launcher_smoke_step(step: u8) {
             Ok(())
         })();
         if let Err(error) = result {
-            if let Some(recording) = s.recording.take() {
+            if let Some(recording) = app.recording.take() {
                 let _ = recording.stop();
             }
             eprintln!("LAUNCHER_SMOKE_FAILED step {step}: {error:#}");

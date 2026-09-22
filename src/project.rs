@@ -324,15 +324,15 @@ impl History {
     }
 }
 
-pub fn parse_color(s: &str) -> [u8; 4] {
-    let s = s.trim().trim_start_matches('#');
-    if s.len() == 6
-        && let Ok(n) = u32::from_str_radix(s, 16)
+pub fn parse_color(text: &str) -> [u8; 4] {
+    let text = text.trim().trim_start_matches('#');
+    if text.len() == 6
+        && let Ok(n) = u32::from_str_radix(text, 16)
     {
         return [(n >> 16) as u8, (n >> 8) as u8, n as u8, 255];
     }
-    if s.len() == 3
-        && let Ok(n) = u16::from_str_radix(s, 16)
+    if text.len() == 3
+        && let Ok(n) = u16::from_str_radix(text, 16)
     {
         return [
             ((n >> 8) & 15) as u8 * 17,
@@ -341,15 +341,15 @@ pub fn parse_color(s: &str) -> [u8; 4] {
             255,
         ];
     }
-    if s == "transparent" {
+    if text == "transparent" {
         return [0, 0, 0, 0];
     }
     [23, 28, 53, 255]
 }
 
 pub fn parse_srt(text: &str) -> Result<Vec<Value>> {
-    fn time(s: &str) -> Result<f64> {
-        let numbers: Vec<f64> = s
+    fn time(text: &str) -> Result<f64> {
+        let numbers: Vec<f64> = text
             .trim()
             .replace(',', ".")
             .split(':')

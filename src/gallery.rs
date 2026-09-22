@@ -438,20 +438,20 @@ fn tick_export(editor: EditorWindow, started: std::time::Instant) {
     }
 }
 
-fn follow_playhead(editor: &EditorWindow, t: f32) {
+fn follow_playhead(editor: &EditorWindow, time: f32) {
     let visible = editor.get_timeline_visible();
     let offset = editor.get_timeline_offset();
-    if t < offset || t > offset + visible {
-        editor.set_timeline_offset((t - visible * 0.1).clamp(0., (DURATION - visible).max(0.)));
+    if time < offset || time > offset + visible {
+        editor.set_timeline_offset((time - visible * 0.1).clamp(0., (DURATION - visible).max(0.)));
     }
 }
 
-fn time_label(t: f32) -> String {
-    let frames = ((t - t.floor()) * 30.) as u32;
+fn time_label(time: f32) -> String {
+    let frames = ((time - time.floor()) * 30.) as u32;
     format!(
         "{:02}:{:02}.{:02} / {:02}:{:02}",
-        (t as u32) / 60,
-        (t as u32) % 60,
+        (time as u32) / 60,
+        (time as u32) % 60,
         frames,
         (DURATION as u32) / 60,
         (DURATION as u32) % 60
@@ -786,8 +786,8 @@ fn fixture_regions() -> Vec<Region> {
 
 /// Field kinds as `ui::inspector` renders them: 0 text/number, 1 slider,
 /// 2 toggle, 3 action row, 4 dropdown, 5 section label.
-fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
-    let v = |key: &str, default: &str| g.value(key, default).to_owned();
+fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
+    let v = |key: &str, default: &str| fixture.value(key, default).to_owned();
     let section = |label: &str| Field {
         key: format!("section.{label}"),
         label: label.into(),
@@ -934,7 +934,7 @@ fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
             action("preset.reset", "Reset to defaults"),
         ],
         "Selection" => {
-            let selected = g.regions.iter().find(|r| r.selected);
+            let selected = fixture.regions.iter().find(|r| r.selected);
             match selected {
                 Some(r) => vec![
                     section(&format!(
@@ -991,7 +991,7 @@ fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
                 "prefs.appearance",
                 "Appearance",
                 &[("dark", "Dark"), ("light", "Light")],
-                g.appearance,
+                fixture.appearance,
             ),
             dropdown(
                 "prefs.language",
@@ -1056,8 +1056,8 @@ enum Style {
     Waveform,
 }
 
-fn gradient(w: u32, h: u32, a: [u8; 3], b: [u8; 3], style: Style) -> Image {
-    let mut bytes = vec![0u8; (w * h * 4) as usize];
+fn gradient(width: u32, height: u32, from: [u8; 3], to: [u8; 3], style: Style) -> Image {
+    let mut bytes = vec![0u8; (width * height * 4) as usize];
     let mut seed = 0x9e37_79b9u32;
     let mut noise = || {
         seed ^= seed << 13;
@@ -1065,16 +1065,16 @@ fn gradient(w: u32, h: u32, a: [u8; 3], b: [u8; 3], style: Style) -> Image {
         seed ^= seed << 5;
         (seed % 1000) as f32 / 1000.
     };
-    let columns: Vec<f32> = (0..w).map(|_| noise()).collect();
-    for y in 0..h {
-        for x in 0..w {
-            let i = ((y * w + x) * 4) as usize;
-            let fx = x as f32 / w as f32;
-            let fy = y as f32 / h as f32;
+    let columns: Vec<f32> = (0..width).map(|_| noise()).collect();
+    for y in 0..height {
+        for x in 0..width {
+            let i = ((y * width + x) * 4) as usize;
+            let fx = x as f32 / width as f32;
+            let fy = y as f32 / height as f32;
             let (rgb, alpha) = match style {
                 Style::Preview => {
                     let t = (fx * 0.7 + fy * 0.3).clamp(0., 1.);
-                    let mut c = lerp(a, b, t);
+                    let mut c = lerp(from, to, t);
                     // A pale inset card reads as the recorded window.
                     if (0.12..0.88).contains(&fx) && (0.14..0.86).contains(&fy) {
                         c = lerp(c, [0xf4, 0xf4, 0xf7], 0.85);
@@ -1086,8 +1086,8 @@ fn gradient(w: u32, h: u32, a: [u8; 3], b: [u8; 3], style: Style) -> Image {
                 }
                 Style::Strip => {
                     let cell = (fx * 24.).floor() / 24.;
-                    let mut c = lerp(a, b, cell);
-                    if (x % (w / 24).max(1)) < 2 {
+                    let mut c = lerp(from, to, cell);
+                    if (x % (width / 24).max(1)) < 2 {
                         c = [0x10, 0x10, 0x14];
                     }
                     (c, 255)
@@ -1096,7 +1096,7 @@ fn gradient(w: u32, h: u32, a: [u8; 3], b: [u8; 3], style: Style) -> Image {
                     let amp =
                         0.15 + 0.8 * (columns[x as usize] * (0.5 + 0.5 * (fx * 12.).sin().abs()));
                     let inside = (fy - 0.5).abs() * 2. < amp;
-                    (a, if inside { 255 } else { 0 })
+                    (from, if inside { 255 } else { 0 })
                 }
             };
             bytes[i..i + 3].copy_from_slice(&rgb);
@@ -1104,14 +1104,14 @@ fn gradient(w: u32, h: u32, a: [u8; 3], b: [u8; 3], style: Style) -> Image {
         }
     }
     Image::from_rgba8(SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(
-        &bytes, w, h,
+        &bytes, width, height,
     ))
 }
 
-fn lerp(a: [u8; 3], b: [u8; 3], t: f32) -> [u8; 3] {
+fn lerp(from: [u8; 3], to: [u8; 3], t: f32) -> [u8; 3] {
     let mut out = [0u8; 3];
     for i in 0..3 {
-        out[i] = (a[i] as f32 + (b[i] as f32 - a[i] as f32) * t)
+        out[i] = (from[i] as f32 + (to[i] as f32 - from[i] as f32) * t)
             .round()
             .clamp(0., 255.) as u8;
     }

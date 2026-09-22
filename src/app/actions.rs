@@ -270,12 +270,12 @@ impl App {
                     let result = subtake_native::models::download(&cancel, |progress| {
                         post(move |_, ui| ui.set_progress(progress))
                     });
-                    post(move |s, ui| {
+                    post(move |app, ui| {
                         ui.set_busy(false);
                         match result {
                             Ok(path) => {
-                                s.preferences.whisper_model = Some(path);
-                                let result = s.preferences.save();
+                                app.preferences.whisper_model = Some(path);
+                                let result = app.preferences.save();
                                 report(ui, result);
                                 ui.set_status(
                                     "Whisper Small is ready. Transcription runs locally.".into(),
@@ -615,12 +615,12 @@ impl App {
                         if let Err(e) =
                             export::play_audio(p, source, info, output, cancel.clone(), clock)
                         {
-                            post(move |s, ui| {
-                                if s.epoch == epoch
-                                    && Arc::ptr_eq(&s.audio_cancel, &cancel)
+                            post(move |app, ui| {
+                                if app.epoch == epoch
+                                    && Arc::ptr_eq(&app.audio_cancel, &cancel)
                                     && !cancel.load(Ordering::Relaxed)
                                 {
-                                    s.stop(ui);
+                                    app.stop(ui);
                                     ui.set_status(format!("Audio: {e:#}"))
                                 }
                             })
@@ -629,20 +629,20 @@ impl App {
                     ui.set_playing(true);
                     self.playback
                         .start(TimerMode::Repeated, Duration::from_millis(33), || {
-                            with_app(|s, ui| {
+                            with_app(|app, ui| {
                                 if let (Some((start, at)), Some(info), Some(history)) =
-                                    (s.started.clone(), &s.info, &s.history)
+                                    (app.started.clone(), &app.info, &app.history)
                                 {
                                     let spans = timeline::spans(&history.project, info.duration);
                                     let output =
                                         at + start.load(Ordering::Relaxed) as f64 / 1_000_000.;
                                     if output >= timeline::duration(&spans) {
-                                        s.stop(ui);
+                                        app.stop(ui);
                                         return;
                                     }
-                                    s.source_time = timeline::source_time(&spans, output);
-                                    s.update_time(ui);
-                                    s.request();
+                                    app.source_time = timeline::source_time(&spans, output);
+                                    app.update_time(ui);
+                                    app.request();
                                 }
                             })
                         });
@@ -700,11 +700,11 @@ impl App {
                     let result = export::export(&p, &source, &settings, &path, &cancel, |value| {
                         post(move |_, ui| ui.set_progress(value))
                     });
-                    post(move |s, ui| {
+                    post(move |app, ui| {
                         ui.set_busy(false);
                         match result {
                             Ok(()) => {
-                                s.last_export = Some(path.clone());
+                                app.last_export = Some(path.clone());
                                 ui.set_status(format!("Exported {}", path.display()));
                             }
                             Err(e) => ui.set_status(format!("{e:#}")),
@@ -724,7 +724,7 @@ impl App {
             "devices" => {
                 std::thread::spawn(|| {
                     let result = platform::devices();
-                    post(move |s, ui| match result {
+                    post(move |app, ui| match result {
                         Ok(devices) => {
                             let names = |key: &str| {
                                 let mut names = vec![SharedString::from("System default")];
@@ -737,7 +737,7 @@ impl App {
                             };
                             ui.set_camera_names(names("cameras"));
                             ui.set_microphone_names(names("microphones"));
-                            s.devices = devices;
+                            app.devices = devices;
                         }
                         Err(e) => ui.set_status(format!("Devices: {e:#}")),
                     });
@@ -754,11 +754,11 @@ impl App {
                 let request_access = action == "sources";
                 std::thread::spawn(move || {
                     let result = platform::sources_cancellable(&cancel, request_access);
-                    post(move |s, ui| {
-                        if !Arc::ptr_eq(&s.job_cancel, &cancel) {
+                    post(move |app, ui| {
+                        if !Arc::ptr_eq(&app.job_cancel, &cancel) {
                             return;
                         }
-                        s.finish_sources(ui, result, cancel.load(Ordering::Relaxed));
+                        app.finish_sources(ui, result, cancel.load(Ordering::Relaxed));
                     });
                 });
             }
@@ -837,22 +837,22 @@ impl App {
                         }
                     }
                     let result = Recording::start(&source, path, mic, system, camera, &cancel);
-                    post(move |s, ui| {
+                    post(move |app, ui| {
                         ui.set_busy(false);
                         match result {
                             Ok(recording) => {
-                                s.recording = Some(recording);
+                                app.recording = Some(recording);
                                 ui.set_recording(true);
-                                s.capture_started = Some(std::time::Instant::now());
-                                s.recording_watch.start(
+                                app.capture_started = Some(std::time::Instant::now());
+                                app.recording_watch.start(
                                     TimerMode::Repeated,
                                     Duration::from_millis(250),
                                     || {
-                                        with_app(|s, ui| {
+                                        with_app(|app, ui| {
                                             if let Some(error) =
-                                                s.recording.as_mut().and_then(Recording::error)
+                                                app.recording.as_mut().and_then(Recording::error)
                                             {
-                                                if let Some(recording) = s.recording.take() {
+                                                if let Some(recording) = app.recording.take() {
                                                     std::thread::spawn(move || {
                                                         if let Err(e) = recording.stop() {
                                                             post(move |_, ui| {
@@ -861,7 +861,7 @@ impl App {
                                                         }
                                                     });
                                                 }
-                                                s.recording_watch.stop();
+                                                app.recording_watch.stop();
                                                 ui.set_recording(false);
                                                 ui.set_status(error);
                                             }
@@ -883,15 +883,16 @@ impl App {
                     ui.set_status("Updating recording…".into());
                     std::thread::spawn(move || {
                         let result = recording.pause();
-                        post(move |s, ui| {
+                        post(move |app, ui| {
                             ui.set_busy(false);
                             ui.set_recording_paused(recording.paused);
                             if recording.paused {
-                                s.pause_started.get_or_insert_with(std::time::Instant::now);
-                            } else if let Some(start) = s.pause_started.take() {
-                                s.paused_total += start.elapsed();
+                                app.pause_started
+                                    .get_or_insert_with(std::time::Instant::now);
+                            } else if let Some(start) = app.pause_started.take() {
+                                app.paused_total += start.elapsed();
                             }
-                            s.recording = Some(recording);
+                            app.recording = Some(recording);
                             match result {
                                 Ok(()) => ui.set_status(
                                     if ui.get_recording_paused() {
@@ -915,12 +916,12 @@ impl App {
                     ui.set_status("Finalizing recording…".into());
                     std::thread::spawn(move || {
                         let result = recording.stop();
-                        post(move |s, ui| {
+                        post(move |app, ui| {
                             ui.set_busy(false);
                             match result {
                                 Ok(path) => {
-                                    s.fresh_recording = Some(path.clone());
-                                    let r = s.load(ui, path);
+                                    app.fresh_recording = Some(path.clone());
+                                    let r = app.load(ui, path);
                                     report(ui, r);
                                 }
                                 Err(e) => ui.set_status(format!("{e:#}")),
@@ -1007,11 +1008,11 @@ impl App {
                             post(move |_, ui| ui.set_status(message));
                         },
                     );
-                    post(move |s, ui| {
+                    post(move |app, ui| {
                         ui.set_busy(false);
                         match result {
-                            Ok(cues) if s.epoch == epoch => {
-                                let result = s.edit(ui, |p| {
+                            Ok(cues) if app.epoch == epoch => {
+                                let result = app.edit(ui, |p| {
                                     p.set("autoCaptions", json!(cues));
                                     Ok(())
                                 });

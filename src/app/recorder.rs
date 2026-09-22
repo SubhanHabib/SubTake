@@ -8,8 +8,8 @@ use super::*;
 // first or emitting a spurious handle error.
 pub(super) fn position_launcher_when_ready(attempt: u8) {
     Timer::single_shot(Duration::from_millis(20), move || {
-        with_app(|s, _| {
-            if let Some(launcher) = &s.launcher
+        with_app(|app, _| {
+            if let Some(launcher) = &app.launcher
                 && platform::position_launcher(launcher.window()).is_err()
                 && attempt < 9
             {
@@ -181,22 +181,22 @@ impl App {
             let launcher = RecordingLauncher::new()?;
             let options = RecordingOptions::new()?;
             launcher.on_action(|action| {
-                post(move |s, ui| report(ui, s.action(ui, &action)));
+                post(move |app, ui| report(ui, app.action(ui, &action)));
             });
             launcher.on_panel_change(|panel| {
                 let panel = panel.to_string();
-                post(move |s, ui| report(ui, s.set_launcher_options_panel(ui, &panel)));
+                post(move |app, ui| report(ui, app.set_launcher_options_panel(ui, &panel)));
             });
             options.on_action(|action| {
-                post(move |s, ui| report(ui, s.action(ui, &action)));
+                post(move |app, ui| report(ui, app.action(ui, &action)));
             });
             options.on_option(|key, value| {
                 let key = key.to_string();
                 let value = value.to_string();
-                post(move |s, ui| s.apply_launcher_option(ui, &key, &value));
+                post(move |app, ui| app.apply_launcher_option(ui, &key, &value));
             });
             options.on_panel_change(|_| {
-                post(move |s, ui| report(ui, s.set_launcher_options_panel(ui, "")));
+                post(move |app, ui| report(ui, app.set_launcher_options_panel(ui, "")));
             });
             launcher
                 .window()

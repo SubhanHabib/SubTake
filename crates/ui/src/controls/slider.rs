@@ -68,18 +68,18 @@ impl Slider {
             change: Box::new(change),
         }
     }
-    fn set(&mut self, x: Pixels, commit: bool, w: &mut Window, cx: &mut Context<Self>) {
+    fn set(&mut self, x: Pixels, commit: bool, window: &mut Window, cx: &mut Context<Self>) {
         let b = self.bounds.get();
         let f = (f32::from(x - b.left()) / f32::from(b.size.width).max(1.)).clamp(0., 1.);
         self.value = self.minimum + f * (self.maximum - self.minimum);
-        (self.change)(self.value, commit, w, cx);
+        (self.change)(self.value, commit, window, cx);
         cx.notify();
     }
 }
 
 impl Render for Slider {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = self.theme;
+        let theme = self.theme;
         let fraction =
             ((self.value - self.minimum) / (self.maximum - self.minimum).max(0.001)).clamp(0., 1.);
         let shown = self.value * self.scale;
@@ -103,10 +103,10 @@ impl Render for Slider {
             .h(px(Theme::CONTROL_HEIGHT))
             .w_full()
             .rounded(px(Theme::RADIUS_CONTROL))
-            .bg(t.surface)
+            .bg(theme.surface)
             .overflow_hidden()
             .cursor(CursorStyle::ResizeLeftRight)
-            .focus_visible(move |s| s.border_1().border_color(t.slider_focus()))
+            .focus_visible(move |s| s.border_1().border_color(theme.slider_focus()))
             .on_key_down(cx.listener(|s, e: &KeyDownEvent, w, cx| {
                 let step = (s.maximum - s.minimum)
                     / if e.keystroke.modifiers.shift {
@@ -136,7 +136,7 @@ impl Render for Slider {
                     .h(px(Theme::CONTROL_HEIGHT - 2.0 * Theme::SLIDER_FILL_INSET))
                     .w(relative(fraction))
                     .rounded(px(Theme::SLIDER_FILL_RADIUS))
-                    .bg(t.slider_fill()),
+                    .bg(theme.slider_fill()),
             )
             // Hairline at the fill edge so the exact level stays readable.
             .child(
@@ -148,7 +148,7 @@ impl Render for Slider {
                     .w(px(2.))
                     .h(px(Theme::CONTROL_HEIGHT - 24.0))
                     .rounded(px(1.))
-                    .bg(t.slider_marker()),
+                    .bg(theme.slider_marker()),
             )
             .child(
                 div()
@@ -159,7 +159,7 @@ impl Render for Slider {
                     .gap(px(Theme::GAP))
                     .px(px(Theme::CONTROL_PADDING))
                     .when(!self.glyph.is_empty(), |el| {
-                        el.child(icon(&self.glyph, t.text))
+                        el.child(icon(&self.glyph, theme.text))
                     })
                     .child(
                         div()
@@ -167,7 +167,7 @@ impl Render for Slider {
                             .min_w_0()
                             .text_ellipsis()
                             .text_size(px(Theme::FONT_CONTROL))
-                            .text_color(t.text)
+                            .text_color(theme.text)
                             .child(self.label.clone()),
                     )
                     .child(
@@ -176,7 +176,7 @@ impl Render for Slider {
                             .w(px(Theme::SCRUB_VALUE_WIDTH))
                             .text_right()
                             .text_size(px(Theme::FONT_CONTROL))
-                            .text_color(t.text)
+                            .text_color(theme.text)
                             .child(display),
                     ),
             )

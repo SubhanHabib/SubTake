@@ -40,37 +40,38 @@ impl Default for ExportSettings {
     }
 }
 impl ExportSettings {
-    pub fn from_project(p: &Project) -> Self {
-        let gif = p.text("exportFormat", "mp4") == "gif";
+    pub fn from_project(project: &Project) -> Self {
+        let gif = project.text("exportFormat", "mp4") == "gif";
         Self {
-            width: p.number("nativeExportWidth", 1920.) as u32,
-            height: p.number("nativeExportHeight", 1080.) as u32,
-            fps: p.number(
+            width: project.number("nativeExportWidth", 1920.) as u32,
+            height: project.number("nativeExportHeight", 1080.) as u32,
+            fps: project.number(
                 if gif { "gifFrameRate" } else { "mp4FrameRate" },
                 if gif { 15. } else { 30. },
             ) as u32,
             gif,
-            gif_loop: p.flag("gifLoop", true),
-            quality: p.text("nativeExportQuality", "high").into(),
-            hardware: p.flag("nativeExportHardware", false),
+            gif_loop: project.flag("gifLoop", true),
+            quality: project.text("nativeExportQuality", "high").into(),
+            hardware: project.flag("nativeExportHardware", false),
         }
     }
-    pub fn for_media(p: &Project, info: &MediaInfo) -> Self {
-        let mut settings = Self::from_project(p);
-        if !p.editor.contains_key("nativeExportWidth")
-            || !p.editor.contains_key("nativeExportHeight")
+    pub fn for_media(project: &Project, info: &MediaInfo) -> Self {
+        let mut settings = Self::from_project(project);
+        if !project.editor.contains_key("nativeExportWidth")
+            || !project.editor.contains_key("nativeExportHeight")
         {
-            let (w, h) = legacy_dimensions(p, info.width as f64, info.height as f64, settings.gif);
+            let (w, h) =
+                legacy_dimensions(project, info.width as f64, info.height as f64, settings.gif);
             settings.width = w;
             settings.height = h;
         }
         settings
     }
-    pub fn store(&self, p: &mut Project) {
+    pub fn store(&self, project: &mut Project) {
         use serde_json::json;
-        p.set("nativeExportWidth", json!(self.width));
-        p.set("nativeExportHeight", json!(self.height));
-        p.set(
+        project.set("nativeExportWidth", json!(self.width));
+        project.set("nativeExportHeight", json!(self.height));
+        project.set(
             if self.gif {
                 "gifFrameRate"
             } else {
@@ -78,10 +79,10 @@ impl ExportSettings {
             },
             json!(self.fps),
         );
-        p.set("exportFormat", json!(if self.gif { "gif" } else { "mp4" }));
-        p.set("gifLoop", json!(self.gif_loop));
-        p.set("nativeExportQuality", json!(self.quality));
-        p.set("nativeExportHardware", json!(self.hardware));
+        project.set("exportFormat", json!(if self.gif { "gif" } else { "mp4" }));
+        project.set("gifLoop", json!(self.gif_loop));
+        project.set("nativeExportQuality", json!(self.quality));
+        project.set("nativeExportHardware", json!(self.hardware));
     }
 }
 pub fn legacy_dimensions(
@@ -90,8 +91,8 @@ pub fn legacy_dimensions(
     source_height: f64,
     gif: bool,
 ) -> (u32, u32) {
-    fn even(x: f64) -> u32 {
-        ((x / 2.).floor().max(1.) * 2.) as u32
+    fn even(value: f64) -> u32 {
+        ((value / 2.).floor().max(1.) * 2.) as u32
     }
     if gif {
         let limit = match p.text("gifSizePreset", "medium") {

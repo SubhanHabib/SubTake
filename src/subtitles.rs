@@ -6,10 +6,10 @@ use crate::{
 use anyhow::Result;
 use serde_json::{Value, json};
 use std::{io::Write, path::Path};
-pub fn mapped_cues(p: &Project, spans: &[Span]) -> Vec<Value> {
+pub fn mapped_cues(project: &Project, spans: &[Span]) -> Vec<Value> {
     let mut output = vec![];
     for span in spans {
-        for cue in p.regions("autoCaptions") {
+        for cue in project.regions("autoCaptions") {
             let a = (n(cue, "startMs", 0.) / 1000.).max(span.source_start);
             let b = (n(cue, "endMs", 0.) / 1000.).min(span.source_end);
             let text = cue["text"].as_str().unwrap_or("").trim();
@@ -51,8 +51,8 @@ pub fn format(cues: &[Value], vtt: bool) -> String {
     }
     text
 }
-pub fn write(p: &Project, spans: &[Span], video: &Path) -> Result<()> {
-    let cues = mapped_cues(p, spans);
+pub fn write(project: &Project, spans: &[Span], video: &Path) -> Result<()> {
+    let cues = mapped_cues(project, spans);
     for (extension, vtt) in [("srt", false), ("vtt", true)] {
         let destination = video.with_extension(extension);
         let mut file =

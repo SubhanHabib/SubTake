@@ -133,7 +133,7 @@ impl Button {
 
 impl RenderOnce for Button {
     fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
-        let t = self.theme;
+        let theme = self.theme;
         let tip = self.label.clone();
         let danger = matches!(self.variant, ButtonVariant::Danger | ButtonVariant::Record);
         let link = self.variant == ButtonVariant::Link;
@@ -145,14 +145,14 @@ impl RenderOnce for Button {
         // comes from the desktop behind the glass, never from a control.
         let filled = self.variant == ButtonVariant::Primary || self.selected;
         let (washed, washed_hover) = if danger {
-            (t.danger.opacity(0.10), t.danger.opacity(0.22))
+            (theme.danger.opacity(0.10), theme.danger.opacity(0.22))
         } else if matches!(
             self.variant,
             ButtonVariant::Ghost | ButtonVariant::Outline | ButtonVariant::Link
         ) {
-            (t.hover.opacity(0.0), t.hover)
+            (theme.hover.opacity(0.0), theme.hover)
         } else {
-            (t.surface, t.hover)
+            (theme.surface, theme.hover)
         };
 
         // Selection is a state the control HOLDS, so it tweens from render;
@@ -161,20 +161,20 @@ impl RenderOnce for Button {
         // is switched on cross-fade along both axes at once instead of
         // snapping to whichever the last frame happened to compute.
         let fill = motion::state_fade(&motion::tween_key(&self.id, "fill"), filled);
-        let rest = motion::blend(washed, t.accent, fill);
-        let hover = motion::blend(washed_hover, t.accent_hover, fill);
+        let rest = motion::blend(washed, theme.accent, fill);
+        let hover = motion::blend(washed_hover, theme.accent_hover, fill);
         let hover_key = motion::tween_key(&self.id, "hover");
         let background = motion::hover_blend(&hover_key, rest, hover);
         let resting = if danger {
-            t.danger
+            theme.danger
         } else if link {
-            t.accent
+            theme.accent
         } else {
-            t.text
+            theme.text
         };
-        let content = motion::blend(resting, t.on_accent, fill);
+        let content = motion::blend(resting, theme.on_accent, fill);
         // A ring drawn in the plate colour would vanish on a filled control.
-        let focus_ring = motion::blend(t.accent, t.on_accent, fill);
+        let focus_ring = motion::blend(theme.accent, theme.on_accent, fill);
 
         let radius = if self.round {
             Theme::CONTROL_HEIGHT / 2.0
@@ -234,10 +234,10 @@ impl RenderOnce for Button {
             }
         }
         if self.variant == ButtonVariant::Outline {
-            el = el.border_1().border_color(t.border);
+            el = el.border_1().border_color(theme.border);
         }
         if danger {
-            el = el.border_1().border_color(t.danger.opacity(0.4));
+            el = el.border_1().border_color(theme.danger.opacity(0.4));
         }
 
         if let Some(name) = &self.glyph {
@@ -256,7 +256,7 @@ impl RenderOnce for Button {
         // exactly the case that ellipsizes. "Export" hovering to reveal a
         // tooltip that says "Export" is noise.
         if self.icon_only || self.stretch || self.menu_item {
-            el = el.tooltip(move |_, cx| tooltip(tip.clone(), t, cx));
+            el = el.tooltip(move |_, cx| tooltip(tip.clone(), theme, cx));
         }
 
         if self.enabled {

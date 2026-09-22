@@ -41,15 +41,15 @@ impl<T: Clone> ModelRc<T> {
 }
 pub struct VecModel<T>(Vec<T>);
 impl<T> From<Vec<T>> for VecModel<T> {
-    fn from(v: Vec<T>) -> Self {
-        Self(v)
+    fn from(items: Vec<T>) -> Self {
+        Self(items)
     }
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Color(u32);
 impl Color {
-    pub fn from_rgb_u8(r: u8, g: u8, b: u8) -> Self {
-        Self(((r as u32) << 16) | ((g as u32) << 8) | b as u32)
+    pub fn from_rgb_u8(red: u8, green: u8, blue: u8) -> Self {
+        Self(((red as u32) << 16) | ((green as u32) << 8) | blue as u32)
     }
     pub fn to_gpui(self) -> gpui::Hsla {
         gpui::rgb(self.0).into()
@@ -417,10 +417,10 @@ impl Window {
             })
             .unwrap_or_default()
     }
-    pub fn set_position(&self, p: PhysicalPosition) {
+    pub fn set_position(&self, position: PhysicalPosition) {
         if let Some(v) = self.native_view() {
             unsafe {
-                crate::platform::ui_window_set_position(v, p.x, p.y);
+                crate::platform::ui_window_set_position(v, position.x, position.y);
             }
         }
     }

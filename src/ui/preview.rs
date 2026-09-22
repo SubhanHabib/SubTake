@@ -26,20 +26,20 @@ pub(super) fn macos_cursor_image() -> Arc<gpui::Image> {
 }
 
 impl RootView {
-    pub(super) fn sync_preview_context(&mut self, e: &EditorWindow) {
+    pub(super) fn sync_preview_context(&mut self, editor: &EditorWindow) {
         // The frame image changes during playback; use the source thumbnail strip instead.
         let context = PreviewContext {
-            title: e.get_document_title(),
-            thumbnails: e.get_thumbnails().0,
-            has_video: e.get_has_video(),
-            aspect: e.get_preview_aspect(),
-            aspect_index: e.get_aspect_index(),
+            title: editor.get_document_title(),
+            thumbnails: editor.get_thumbnails().0,
+            has_video: editor.get_has_video(),
+            aspect: editor.get_preview_aspect(),
+            aspect_index: editor.get_aspect_index(),
         };
         let changed = self
             .preview_context
             .as_ref()
             .is_some_and(|old| !old.matches(&context));
-        let controller_reset = e.get_preview_zoom() <= 1. && self.preview_known_zoom > 1.;
+        let controller_reset = editor.get_preview_zoom() <= 1. && self.preview_known_zoom > 1.;
         if changed || controller_reset || !context.has_video {
             self.preview_pan = point(px(0.), px(0.));
             if matches!(self.pinch, Some((false, ..))) {
@@ -49,13 +49,13 @@ impl RootView {
                 self.gesture = None;
             }
             if changed {
-                e.set_preview_zoom(1.);
+                editor.set_preview_zoom(1.);
             }
         }
-        if e.get_preview_zoom() <= 1. {
+        if editor.get_preview_zoom() <= 1. {
             self.preview_pan = point(px(0.), px(0.));
         }
-        self.preview_known_zoom = e.get_preview_zoom();
+        self.preview_known_zoom = editor.get_preview_zoom();
         self.preview_context = Some(context);
     }
 
@@ -171,24 +171,28 @@ impl RootView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let t = self.theme;
+        let theme = self.theme;
         self.sync_preview_context(e);
         if !e.get_has_video() {
-            return empty_state(t, "No Video Loaded", "Open a video or start a recording")
-                .child(
-                    row()
-                        .child(self.action("open-video", "Open video", "open", !e.get_busy()))
-                        .child(
-                            self.action(
-                                "new-recording",
-                                "New recording",
-                                "record",
-                                !e.get_busy() && !e.get_recording(),
-                            )
-                            .primary(),
-                        ),
-                )
-                .into_any_element();
+            return empty_state(
+                theme,
+                "No Video Loaded",
+                "Open a video or start a recording",
+            )
+            .child(
+                row()
+                    .child(self.action("open-video", "Open video", "open", !e.get_busy()))
+                    .child(
+                        self.action(
+                            "new-recording",
+                            "New recording",
+                            "record",
+                            !e.get_busy() && !e.get_recording(),
+                        )
+                        .primary(),
+                    ),
+            )
+            .into_any_element();
         }
         let viewport = self.preview_viewport.get();
         let available_w = if viewport.size.width > px(0.) {
@@ -270,7 +274,7 @@ impl RootView {
                         (e.get_edit_height() + if resize { dy } else { 0. }).max(0.005),
                     ))
                     .border_2()
-                    .border_color(t.accent)
+                    .border_color(theme.accent)
                     .cursor(CursorStyle::ClosedHand)
                     .on_mouse_down(
                         MouseButton::Left,
@@ -291,9 +295,9 @@ impl RootView {
                             .right(px(-5.))
                             .bottom(px(-5.))
                             .size(px(Theme::ICON_SIZE_SMALL))
-                            .bg(t.on_accent)
+                            .bg(theme.on_accent)
                             .border_1()
-                            .border_color(t.accent)
+                            .border_color(theme.accent)
                             .cursor(CursorStyle::ResizeUpLeftDownRight)
                             .on_mouse_down(
                                 MouseButton::Left,
@@ -323,7 +327,7 @@ impl RootView {
                         button(
                             "fit-preview",
                             format!("Fit · {}%", (e.get_preview_zoom() * 100.).round()),
-                            t,
+                            theme,
                         )
                         .on_click(cx.listener(|s, _, _, cx| {
                             if let Surface::Editor(e) = &s.surface {
@@ -391,7 +395,7 @@ impl RootView {
                         div()
                             .flex_1()
                             .text_size(px(Theme::FONT_CONTROL))
-                            .text_color(t.muted)
+                            .text_color(theme.muted)
                             .child(e.get_time_label()),
                     )
                     .child(
@@ -414,7 +418,7 @@ impl RootView {
                                         "Play-fill"
                                     },
                                     if e.get_playing() { "Pause" } else { "Play" },
-                                    t,
+                                    theme,
                                 )
                                 .round()
                                 .glyph_size(Theme::ICON_SIZE_LARGE)

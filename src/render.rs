@@ -47,25 +47,29 @@ fn paint(color: Color) -> Paint {
     p.set_anti_alias(true).set_color(color);
     p
 }
-fn color(s: &str) -> Color {
-    let [r, g, b, a] = parse_color(s);
+fn color(text: &str) -> Color {
+    let [r, g, b, a] = parse_color(text);
     Color::from_argb(a, r, g, b)
 }
-fn image(bytes: Vec<u8>, w: u32, h: u32) -> Result<sk::Image> {
+fn image(bytes: Vec<u8>, width: u32, height: u32) -> Result<sk::Image> {
     sk::images::raster_from_data(
         &ImageInfo::new(
-            (w as i32, h as i32),
+            (width as i32, height as i32),
             ColorType::RGBA8888,
             AlphaType::Unpremul,
             None,
         ),
         Data::new_copy(&bytes),
-        w as usize * 4,
+        width as usize * 4,
     )
     .context("Create decoded frame")
 }
-fn text(v: &Value, key: &str, default: &str) -> String {
-    v.get(key).and_then(Value::as_str).unwrap_or(default).into()
+fn text(value: &Value, key: &str, default: &str) -> String {
+    value
+        .get(key)
+        .and_then(Value::as_str)
+        .unwrap_or(default)
+        .into()
 }
 fn squircle(rect: Rect, radius: f32) -> sk::Path {
     let mut path = sk::PathBuilder::new();
@@ -297,8 +301,8 @@ impl Scene {
         self.assets.insert(name.into(), i.clone());
         Ok(i)
     }
-    pub fn render(&mut self, p: &Project, source_time: f64) -> Result<Vec<u8>> {
-        let font_key = p.editor.get("nativeFonts").unwrap_or(&Value::Null);
+    pub fn render(&mut self, document: &Project, source_time: f64) -> Result<Vec<u8>> {
+        let font_key = document.editor.get("nativeFonts").unwrap_or(&Value::Null);
         if &self.font_key != font_key {
             let mut provider = sk::textlayout::TypefaceFontProvider::new();
             if let Some(fonts) = font_key.as_array() {
@@ -323,7 +327,7 @@ impl Scene {
         let w = self.width as f32;
         let h = self.height as f32;
         let unit = w / 1920.;
-        let bg = p.text("wallpaper", "#171c35");
+        let bg = document.text("wallpaper", "#171c35");
         canvas.clear(color(bg));
         if !bg.starts_with('#') && !bg.is_empty() {
             if bg.starts_with("linear-gradient") {
@@ -386,7 +390,7 @@ impl Scene {
                             resources().join("public").join(bg.trim_start_matches('/')),
                         ]
                         .into_iter()
-                        .find(|p| p.is_file())
+                        .find(|document| document.is_file())
                         .context("Background video is missing")?;
                         let info = crate::media::probe(&path)?;
                         let ratio = (self.width as f64 / info.width as f64).min(1.);
@@ -409,7 +413,7 @@ impl Scene {
                     self.asset(bg)?
                 };
                 let mut fill = Paint::default();
-                let blur = p.number("backgroundBlur", 0.) as f32 * unit;
+                let blur = document.number("backgroundBlur", 0.) as f32 * unit;
                 if blur > 0. {
                     fill.set_image_filter(sk::image_filters::blur((blur, blur), None, None, None));
                 }
@@ -424,11 +428,15 @@ impl Scene {
                 );
             }
         }
-        let crop = p.editor.get("cropRegion").cloned().unwrap_or(Value::Null);
+        let crop = document
+            .editor
+            .get("cropRegion")
+            .cloned()
+            .unwrap_or(Value::Null);
         let cw = n(&crop, "width", 1.).clamp(0.001, 1.) as f32;
         let ch = n(&crop, "height", 1.).clamp(0.001, 1.) as f32;
         let layout = crate::geometry::frame(
-            p,
+            document,
             w as f64,
             h as f64,
             self.info.width as f64,
@@ -442,7 +450,7 @@ impl Scene {
         );
         let radius = layout.radius as f32;
         let cam = self.camera.at(
-            p,
+            document,
             &self.cursor,
             source_time * 1000.,
             w as f64,
@@ -450,7 +458,7 @@ impl Scene {
             &layout,
         );
         let previous = self.camera.at(
-            p,
+            document,
             &self.cursor,
             (source_time * 1000. - 1000. / self.frame_rate).max(0.),
             w as f64,
@@ -458,7 +466,7 @@ impl Scene {
             &layout,
         );
         let blur = crate::effects::camera(
-            p,
+            document,
             previous,
             cam,
             &layout,
@@ -474,7 +482,7 @@ impl Scene {
         let ty = cam.y;
         canvas.translate((tx as f32, ty as f32));
         canvas.scale((cam.scale as f32, cam.scale as f32));
-        let shadow = p.number("shadowIntensity", 0.3).clamp(0., 1.) as f32;
+        let shadow = document.number("shadowIntensity", 0.3).clamp(0., 1.) as f32;
         if shadow > 0. {
             let mut s = paint(Color::from_argb((shadow * 180.) as u8, 0, 0, 0));
             s.set_image_filter(sk::image_filters::blur(
@@ -507,13 +515,13 @@ impl Scene {
             frame,
             &Paint::default(),
         );
-        if p.flag("showCursor", true) {
-            self.draw_cursor(canvas, p, source_time * 1000., frame, &crop)?;
+        if document.flag("showCursor", true) {
+            self.draw_cursor(canvas, document, source_time * 1000., frame, &crop)?;
         }
         canvas.restore();
         canvas.restore();
         canvas.restore();
-        if let Some(webcam) = p
+        if let Some(webcam) = document
             .editor
             .get("webcam")
             .filter(|v| v["enabled"].as_bool() == Some(true))
@@ -528,7 +536,7 @@ impl Scene {
             if self
                 .webcam
                 .as_ref()
-                .is_none_or(|(p, _, _, _, _)| *p != path)
+                .is_none_or(|(document, _, _, _, _)| *document != path)
             {
                 let info = crate::media::probe(&path)?;
                 let height = (640. * info.height as f64 / info.width as f64)
@@ -625,7 +633,7 @@ impl Scene {
             );
             canvas.restore();
         }
-        let mut annotations: Vec<_> = p
+        let mut annotations: Vec<_> = document
             .regions("annotationRegions")
             .iter()
             .filter(|r| {
@@ -718,15 +726,16 @@ impl Scene {
             }
             canvas.restore();
         }
-        if p.editor
+        if document
+            .editor
             .get("autoCaptionSettings")
             .and_then(|s| s["enabled"].as_bool())
             .unwrap_or(false)
         {
-            let settings = &p.editor["autoCaptionSettings"];
+            let settings = &document.editor["autoCaptionSettings"];
             self.draw_captions(
                 canvas,
-                p.regions("autoCaptions"),
+                document.regions("autoCaptions"),
                 settings,
                 source_time * 1000.,
             );

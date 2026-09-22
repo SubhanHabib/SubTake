@@ -9,28 +9,28 @@ pub struct Silence {
     pub start_ms: f64,
     pub end_ms: f64,
 }
-fn number(v: &Value, key: &str) -> f64 {
-    v[key].as_f64().unwrap_or(0.)
+fn number(value: &Value, key: &str) -> f64 {
+    value[key].as_f64().unwrap_or(0.)
 }
-fn start(v: &Value) -> f64 {
-    number(v, "startMs")
+fn start(value: &Value) -> f64 {
+    number(value, "startMs")
 }
-fn end(v: &Value) -> f64 {
-    number(v, "endMs")
+fn end(value: &Value) -> f64 {
+    number(value, "endMs")
 }
-fn text(v: &Value) -> &str {
-    v["text"].as_str().unwrap_or("")
+fn text(value: &Value) -> &str {
+    value["text"].as_str().unwrap_or("")
 }
-fn words(v: &Value) -> Vec<Value> {
-    v["words"].as_array().cloned().unwrap_or_default()
+fn words(value: &Value) -> Vec<Value> {
+    value["words"].as_array().cloned().unwrap_or_default()
 }
-fn order(a: &Value, b: &Value) -> std::cmp::Ordering {
-    start(a)
-        .total_cmp(&start(b))
-        .then(end(a).total_cmp(&end(b)))
+fn order(left: &Value, right: &Value) -> std::cmp::Ordering {
+    start(left)
+        .total_cmp(&start(right))
+        .then(end(left).total_cmp(&end(right)))
 }
-fn utf16_len(s: &str) -> usize {
-    s.encode_utf16().count()
+fn utf16_len(text: &str) -> usize {
+    text.encode_utf16().count()
 }
 
 pub fn parse_silences(log: &str) -> Vec<Silence> {
@@ -69,15 +69,15 @@ pub fn parse_silences(log: &str) -> Vec<Silence> {
     intervals.sort_by(|a, b| a.start_ms.total_cmp(&b.start_ms));
     intervals
 }
-pub fn ends_sentence(s: &str) -> bool {
-    let s = s
+pub fn ends_sentence(text: &str) -> bool {
+    let text = text
         .trim()
         .trim_end_matches(|c: char| ")] }\"'”’»」』）】］｝>".contains(c))
         .trim();
-    if !s.ends_with(['.', '?', '!', '…', '。', '！', '？']) {
+    if !text.ends_with(['.', '?', '!', '…', '。', '！', '？']) {
         return false;
     }
-    if let Some(core) = s.strip_suffix('.') {
+    if let Some(core) = text.strip_suffix('.') {
         let core = core.to_lowercase();
         if [
             "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "etc",

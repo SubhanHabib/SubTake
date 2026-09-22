@@ -65,22 +65,25 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     global_hotkey::GlobalHotKeyEvent::set_event_handler(Some(
         |event: global_hotkey::GlobalHotKeyEvent| {
             if event.state == global_hotkey::HotKeyState::Pressed {
-                post(move |s, ui| {
-                    let action = s
+                post(move |app, ui| {
+                    let action = app
                         .hotkey_ids
                         .iter()
                         .find(|(id, _)| *id == event.id)
                         .map(|(_, a)| a.clone());
                     if let Some(mut action) = action {
-                        if action == "record" && s.recording.is_some() {
+                        if action == "record" && app.recording.is_some() {
                             action = "stop-recording".into();
                         } else if action == "record"
-                            && s.launcher.as_ref().is_some_and(|l| l.window().is_visible())
-                            && !s.sources.is_empty()
+                            && app
+                                .launcher
+                                .as_ref()
+                                .is_some_and(|l| l.window().is_visible())
+                            && !app.sources.is_empty()
                         {
                             action = "start-recording".into();
                         }
-                        let result = s.action(ui, &action);
+                        let result = app.action(ui, &action);
                         report(ui, result);
                     }
                 });
@@ -92,9 +95,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         subtake_install_document_events(open_document_event);
     }
     ui.window().on_drop_file(|path| {
-        post(move |s, ui| {
-            if !ui.get_busy() && s.recording.is_none() && s.can_replace(ui) {
-                let result = s.load(ui, path);
+        post(move |app, ui| {
+            if !ui.get_busy() && app.recording.is_none() && app.can_replace(ui) {
+                let result = app.load(ui, path);
                 report(ui, result);
             }
         });
@@ -103,42 +106,42 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     #[cfg(not(target_os = "macos"))]
     tray.show()?;
     tray.on_action(|action| {
-        with_app(|s, ui| {
-            let result = s.action(ui, &action);
+        with_app(|app, ui| {
+            let result = app.action(ui, &action);
             report(ui, result);
         })
     });
     state.borrow_mut().tray = Some(tray);
     ui.on_action(|a| {
-        with_app(|s, ui| {
-            let result = s.action(ui, &a);
+        with_app(|app, ui| {
+            let result = app.action(ui, &a);
             report(ui, result);
         })
     });
-    ui.on_seek(|time| with_app(|s, ui| s.seek(ui, time as f64)));
+    ui.on_seek(|time| with_app(|app, ui| app.seek(ui, time as f64)));
     ui.on_panel_change(|panel| {
-        with_app(|s, ui| {
+        with_app(|app, ui| {
             ui.set_panel(panel.clone());
             if panel == "Recent" {
-                s.recoveries = subtake_native::recovery::list().unwrap_or_default();
-                let result = s.reload_library();
+                app.recoveries = subtake_native::recovery::list().unwrap_or_default();
+                let result = app.reload_library();
                 report(ui, result);
             }
-            s.refresh(ui);
-            s.epoch += 1;
-            s.request();
+            app.refresh(ui);
+            app.epoch += 1;
+            app.request();
         })
     });
     ui.on_field_change(|key, value| {
-        with_app(|s, ui| {
-            let result = s.field(ui, &key, &value);
+        with_app(|app, ui| {
+            let result = app.field(ui, &key, &value);
             report(ui, result);
         })
     });
     ui.on_select_region(|kind, id, extend| {
-        with_app(|s, ui| {
+        with_app(|app, ui| {
             let key = (kind.to_string(), id.to_string());
-            let mut keys = s.selected_keys();
+            let mut keys = app.selected_keys();
             if extend {
                 if keys.contains(&key) {
                     keys.retain(|k| k != &key);
@@ -148,30 +151,30 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             } else if !keys.contains(&key) {
                 keys = vec![key.clone()];
             }
-            s.selected = if keys.contains(&key) {
+            app.selected = if keys.contains(&key) {
                 Some(key)
             } else {
                 keys.last().cloned()
             };
-            s.extra_selection = keys;
+            app.extra_selection = keys;
             ui.set_panel("Selection".into());
-            s.refresh(ui);
-            s.epoch += 1;
-            s.request();
+            app.refresh(ui);
+            app.epoch += 1;
+            app.request();
         })
     });
     ui.on_move_region(|kind, id, delta, mode| {
-        with_app(|s, ui| {
+        with_app(|app, ui| {
             if delta.abs() < 0.005 {
                 return;
             }
-            let duration = s.info.as_ref().map(|i| i.duration * 1000.).unwrap_or(0.);
-            let mut snapping = match s.project() {
+            let duration = app.info.as_ref().map(|i| i.duration * 1000.).unwrap_or(0.);
+            let mut snapping = match app.project() {
                 Ok(p) => p.clone(),
                 Err(_) => return,
             };
             if mode == 0 {
-                for (other_kind, other_id) in s.selected_keys() {
+                for (other_kind, other_id) in app.selected_keys() {
                     if other_kind != kind.as_str() || other_id != id.as_str() {
                         let _ = snapping.remove_region(&other_kind, &other_id);
                     }
@@ -184,7 +187,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     &id,
                     delta as f64 * 1000.,
                     mode,
-                    s.source_time * 1000.,
+                    app.source_time * 1000.,
                     duration,
                     ui.get_timeline_visible() as f64 * 5.,
                 ) / 1000.
@@ -192,11 +195,11 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                 delta as f64
             };
             let keys = if mode == 0 {
-                s.selected_keys()
+                app.selected_keys()
             } else {
                 vec![(kind.to_string(), id.to_string())]
             };
-            let result = s.edit(ui, |p| {
+            let result = app.edit(ui, |p| {
                 subtake_native::editing::move_group(p, &keys, delta * 1000., mode, duration)
             });
             report(ui, result);
@@ -234,16 +237,16 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         })
     });
     ui.on_preview_click(|x, y| {
-        with_app(|s, ui| {
+        with_app(|app, ui| {
             if ui.get_panel() == "Crop" {
                 return;
             }
-            if let Some((kind, id)) = s.selected.clone()
+            if let Some((kind, id)) = app.selected.clone()
                 && kind == "zoomRegions"
             {
                 let result = (|| -> Result<()> {
-                    let p = s.project()?;
-                    let info = s.info.as_ref().context("Open a video first")?;
+                    let p = app.project()?;
+                    let info = app.info.as_ref().context("Open a video first")?;
                     let width = 960.;
                     let height = (width / aspect_ratio(p, info)).round().clamp(100., 1920.);
                     let frame = subtake_native::geometry::frame(
@@ -253,7 +256,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                         info.width as f64,
                         info.height as f64,
                     );
-                    let mut sidecar = s.source.as_ref().unwrap().as_os_str().to_os_string();
+                    let mut sidecar = app.source.as_ref().unwrap().as_os_str().to_os_string();
                     sidecar.push(".cursor.json");
                     let telemetry: Value = std::fs::read(PathBuf::from(sidecar))
                         .ok()
@@ -267,7 +270,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     let camera = subtake_native::motion::CameraTrack::default().at(
                         p,
                         samples,
-                        s.source_time * 1000.,
+                        app.source_time * 1000.,
                         width,
                         height,
                         &frame,
@@ -278,7 +281,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     let cy = (((y as f64 * height - camera.y) / camera.scale - frame.y)
                         / frame.height)
                         .clamp(0., 1.);
-                    s.edit(ui, |p| {
+                    app.edit(ui, |p| {
                         p.change_region(&kind, &id, json!({"focus":{"cx":cx,"cy":cy}}))
                     })
                 })();
@@ -288,9 +291,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     });
     ui.on_keyboard(|key, command, shift, alt| {
         let mut handled = false;
-        with_app(|s, ui| {
+        with_app(|app, ui| {
             let configured = subtake_native::shortcuts::action(
-                &s.preferences.editor_shortcuts,
+                &app.preferences.editor_shortcuts,
                 &key,
                 command,
                 shift,
@@ -320,7 +323,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             };
             if let Some(action) = action {
                 handled = true;
-                let result = s.action(ui, action);
+                let result = app.action(ui, action);
                 report(ui, result);
             }
         });
@@ -328,15 +331,15 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     });
     ui.window().on_close_requested(|| {
         let mut close = false;
-        with_app(|s, ui| {
-            if s.recording.is_some() || ui.get_busy() {
+        with_app(|app, ui| {
+            if app.recording.is_some() || ui.get_busy() {
                 ui.set_status(
                     "Finish or cancel the current operation before closing SubTake.".into(),
                 );
                 return;
             }
             close = true;
-            s.stop(ui);
+            app.stop(ui);
             platform::set_editor_active(false);
         });
         if close {
@@ -366,9 +369,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     }
                 }
             }
-            with_app(|s, ui| {
+            with_app(|app, ui| {
                 let result = (|| -> Result<()> {
-                    ensure!(s.history.is_some(), "UI fixture did not load");
+                    ensure!(app.history.is_some(), "UI fixture did not load");
                     if let Some(size) = std::env::var("SUBTAKE_UI_SIZE").ok().and_then(|v| {
                         v.split_once('x').and_then(|(a, b)| {
                             Some((a.parse::<f32>().ok()?, b.parse::<f32>().ok()?))
@@ -391,63 +394,63 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     ] {
                         ui.set_busy(true);
                         ui.set_sources_loading(true);
-                        s.finish_sources(ui, result, cancelled);
+                        app.finish_sources(ui, result, cancelled);
                         ensure!(
                             !ui.get_busy() && !ui.get_sources_loading(),
                             "Source discovery left recording disabled"
                         );
                     }
                     ui.set_source_index(1);
-                    s.finish_sources(ui, Ok(fixtures.clone()), false);
+                    app.finish_sources(ui, Ok(fixtures.clone()), false);
                     ensure!(
                         ui.get_source_index() == 1,
                         "Refresh changed selected recording source"
                     );
-                    s.action(ui, "record")?;
+                    app.action(ui, "record")?;
                     ensure!(
-                        ui.get_panel() == "Recording" && s.recording.is_none() && !ui.get_busy(),
+                        ui.get_panel() == "Recording" && app.recording.is_none() && !ui.get_busy(),
                         "Record must open ready configuration without starting capture"
                     );
                     ensure!(!ui.window().is_visible(), "Record should hide the editor");
-                    s.show_editor(ui)?;
+                    app.show_editor(ui)?;
                     ui.set_panel("Frame".into());
-                    s.refresh(ui);
-                    let snapshot_project = s.project()?.clone();
-                    let count = s.project()?.regions("zoomRegions").len();
-                    s.action(ui, "add-zoom")?;
+                    app.refresh(ui);
+                    let snapshot_project = app.project()?.clone();
+                    let count = app.project()?.regions("zoomRegions").len();
+                    app.action(ui, "add-zoom")?;
                     ensure!(
-                        s.project()?.regions("zoomRegions").len() == count + 1,
+                        app.project()?.regions("zoomRegions").len() == count + 1,
                         "Add zoom callback failed"
                     );
-                    s.action(ui, "undo")?;
+                    app.action(ui, "undo")?;
                     ensure!(
-                        s.project()?.regions("zoomRegions").len() == count,
+                        app.project()?.regions("zoomRegions").len() == count,
                         "Undo failed"
                     );
-                    s.action(ui, "redo")?;
+                    app.action(ui, "redo")?;
                     ensure!(
-                        s.project()?.regions("zoomRegions").len() == count + 1,
+                        app.project()?.regions("zoomRegions").len() == count + 1,
                         "Redo failed"
                     );
-                    s.action(ui, "copy")?;
-                    s.seek(ui, 0.8);
-                    s.action(ui, "paste")?;
+                    app.action(ui, "copy")?;
+                    app.seek(ui, 0.8);
+                    app.action(ui, "paste")?;
                     ensure!(
-                        s.project()?.regions("zoomRegions").len() == count + 2,
+                        app.project()?.regions("zoomRegions").len() == count + 2,
                         "Paste failed"
                     );
-                    s.action(ui, "cut")?;
+                    app.action(ui, "cut")?;
                     ensure!(
-                        s.project()?.regions("zoomRegions").len() == count + 1,
+                        app.project()?.regions("zoomRegions").len() == count + 1,
                         "Cut failed"
                     );
-                    s.action(ui, "split-clip")?;
+                    app.action(ui, "split-clip")?;
                     ensure!(
-                        s.project()?.regions("clipRegions").len() >= 2,
+                        app.project()?.regions("clipRegions").len() >= 2,
                         "Split clip failed"
                     );
-                    s.action(ui, "undo")?;
-                    let caption = s
+                    app.action(ui, "undo")?;
+                    let caption = app
                         .project()?
                         .regions("autoCaptions")
                         .first()
@@ -455,42 +458,42 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                         .as_str()
                         .unwrap()
                         .to_owned();
-                    s.extra_selection.clear();
-                    s.selected = Some(("autoCaptions".into(), caption.clone()));
-                    let captions = s.project()?.regions("autoCaptions").len();
-                    s.action(ui, "split-caption")?;
+                    app.extra_selection.clear();
+                    app.selected = Some(("autoCaptions".into(), caption.clone()));
+                    let captions = app.project()?.regions("autoCaptions").len();
+                    app.action(ui, "split-caption")?;
                     ensure!(
-                        s.project()?.regions("autoCaptions").len() == captions + 1,
+                        app.project()?.regions("autoCaptions").len() == captions + 1,
                         "Caption split failed"
                     );
-                    s.action(ui, "merge-caption")?;
+                    app.action(ui, "merge-caption")?;
                     ensure!(
-                        s.project()?.regions("autoCaptions").len() == captions,
+                        app.project()?.regions("autoCaptions").len() == captions,
                         "Caption merge failed"
                     );
-                    s.field(ui, "word.0.text", "Edited")?;
+                    app.field(ui, "word.0.text", "Edited")?;
                     ensure!(
-                        s.project()?.regions("autoCaptions")[0]["text"]
+                        app.project()?.regions("autoCaptions")[0]["text"]
                             .as_str()
                             .unwrap()
                             .starts_with("Edited"),
                         "Word edit failed"
                     );
-                    s.action(ui, "undo")?;
-                    s.action(ui, "undo")?;
-                    s.action(ui, "undo")?;
-                    s.action(ui, "select-all")?;
-                    let selections = s.selected_keys().len();
+                    app.action(ui, "undo")?;
+                    app.action(ui, "undo")?;
+                    app.action(ui, "undo")?;
+                    app.action(ui, "select-all")?;
+                    let selections = app.selected_keys().len();
                     ensure!(selections > 3, "Group selection failed");
-                    s.action(ui, "copy")?;
-                    ensure!(s.clipboard.len() == selections, "Group copy failed");
-                    s.action(ui, "delete")?;
-                    ensure!(s.selected_keys().is_empty(), "Group delete failed");
-                    s.action(ui, "undo")?;
-                    s.extra_selection.clear();
-                    s.selected = None;
-                    s.field(ui, "cursorStyle", "figma")?;
-                    let style = s
+                    app.action(ui, "copy")?;
+                    ensure!(app.clipboard.len() == selections, "Group copy failed");
+                    app.action(ui, "delete")?;
+                    ensure!(app.selected_keys().is_empty(), "Group delete failed");
+                    app.action(ui, "undo")?;
+                    app.extra_selection.clear();
+                    app.selected = None;
+                    app.field(ui, "cursorStyle", "figma")?;
+                    let style = app
                         .fields("Cursor")
                         .into_iter()
                         .find(|f| f.key == "cursorStyle")
@@ -499,58 +502,58 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                         style.choice == 4 && style.value == "figma",
                         "Cursor style selector lost its value"
                     );
-                    s.action(ui, "undo")?;
-                    s.field(ui, "padding.all", "32")?;
+                    app.action(ui, "undo")?;
+                    app.field(ui, "padding.all", "32")?;
                     ensure!(
-                        s.project()?.editor["padding"]["right"] == 32.,
+                        app.project()?.editor["padding"]["right"] == 32.,
                         "Linked padding failed"
                     );
-                    s.field(ui, "padding.linked", "false")?;
-                    s.field(ui, "padding.left", "12")?;
+                    app.field(ui, "padding.linked", "false")?;
+                    app.field(ui, "padding.left", "12")?;
                     ensure!(
-                        s.project()?.editor["padding"]["right"] == 32.,
+                        app.project()?.editor["padding"]["right"] == 32.,
                         "Independent padding changed the opposite side"
                     );
-                    s.action(ui, "undo")?;
-                    s.action(ui, "undo")?;
-                    s.action(ui, "undo")?;
-                    let original_crop = s.project()?.editor.get("cropRegion").cloned();
-                    s.action(ui, "visual-crop")?;
+                    app.action(ui, "undo")?;
+                    app.action(ui, "undo")?;
+                    app.action(ui, "undo")?;
+                    let original_crop = app.project()?.editor.get("cropRegion").cloned();
+                    app.action(ui, "visual-crop")?;
                     ensure!(
                         ui.get_panel_index() == 11,
                         "Crop inspector selection failed"
                     );
-                    s.field(ui, "cropRegion.width", "0.8")?;
-                    let info = s.info.as_ref().unwrap();
+                    app.field(ui, "cropRegion.width", "0.8")?;
+                    let info = app.info.as_ref().unwrap();
                     ensure!(
                         (ui.get_preview_aspect() as f64 - info.width as f64 / info.height as f64)
                             .abs()
                             < 0.001,
                         "Crop must show the whole source"
                     );
-                    s.action(ui, "finish-crop")?;
+                    app.action(ui, "finish-crop")?;
                     ensure!(ui.get_panel_index() == 0, "Finish crop failed");
-                    s.action(ui, "undo")?;
+                    app.action(ui, "undo")?;
                     ensure!(
-                        s.project()?.editor.get("cropRegion").cloned() == original_crop,
+                        app.project()?.editor.get("cropRegion").cloned() == original_crop,
                         "Crop undo failed"
                     );
                     let folder = tempfile::tempdir()?;
                     std::fs::write(folder.path().join("Library Test.recordly"), "{}")?;
-                    s.preferences.library_directory = Some(folder.path().to_owned());
-                    s.field(ui, "library.query", "Library Test")?;
-                    ensure!(s.library.len() == 1, "Folder library search failed");
-                    s.preferences.library_directory = None;
-                    s.library_query.clear();
-                    s.reload_library()?;
-                    s.history = Some(History::new(snapshot_project));
+                    app.preferences.library_directory = Some(folder.path().to_owned());
+                    app.field(ui, "library.query", "Library Test")?;
+                    ensure!(app.library.len() == 1, "Folder library search failed");
+                    app.preferences.library_directory = None;
+                    app.library_query.clear();
+                    app.reload_library()?;
+                    app.history = Some(History::new(snapshot_project));
                     ui.set_panel("Cursor".into());
-                    s.refresh(ui);
-                    s.seek(ui, 0.0);
+                    app.refresh(ui);
+                    app.seek(ui, 0.0);
                     // Settings callbacks must persist outside the project and never dirty it.
-                    let original_project = s.project()?.clone();
+                    let original_project = app.project()?.clone();
                     for appearance in ["light", "dark", "system"] {
-                        s.field(ui, "prefs.appearance", appearance)?;
+                        app.field(ui, "prefs.appearance", appearance)?;
                         ensure!(
                             ui.get_appearance() == appearance,
                             "Appearance did not reach UI"
@@ -561,15 +564,15 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             "Appearance did not persist"
                         );
                     }
-                    s.field(ui, "prefs.auto_apply_zooms", "false")?;
+                    app.field(ui, "prefs.auto_apply_zooms", "false")?;
                     ensure!(
                         !ui.get_auto_apply_zooms()
                             && !subtake_native::preferences::Preferences::load()?.auto_apply_zooms,
                         "Automatic zoom preference did not persist"
                     );
-                    s.field(ui, "prefs.auto_apply_zooms", "true")?;
+                    app.field(ui, "prefs.auto_apply_zooms", "true")?;
                     ensure!(
-                        s.project()? == &original_project,
+                        app.project()? == &original_project,
                         "Application preferences altered project content"
                     );
                     for (key, value) in [
@@ -578,38 +581,38 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                         ("nativeCaptionLanguage", "fr"),
                         ("autoCaptionSettings.fontFamily", "Georgia"),
                     ] {
-                        s.field(ui, key, value)?;
-                        s.action(ui, "undo")?;
+                        app.field(ui, key, value)?;
+                        app.action(ui, "undo")?;
                         ensure!(
-                            s.project()? == &original_project,
+                            app.project()? == &original_project,
                             "Visual choice failed to undo: {key}"
                         );
                     }
                     if let Ok(appearance) = std::env::var("SUBTAKE_UI_APPEARANCE") {
-                        s.field(ui, "prefs.appearance", &appearance)?;
+                        app.field(ui, "prefs.appearance", &appearance)?;
                     }
                     if let Ok(panel) = std::env::var("SUBTAKE_UI_PANEL") {
                         if panel == "Crop" {
-                            s.action(ui, "visual-crop")?;
-                            s.field(ui, "cropRegion.width", "0.8")?;
-                            s.field(ui, "cropRegion.height", "0.8")?;
+                            app.action(ui, "visual-crop")?;
+                            app.field(ui, "cropRegion.width", "0.8")?;
+                            app.field(ui, "cropRegion.height", "0.8")?;
                         } else {
                             ui.set_panel(panel);
-                            s.refresh(ui);
-                            s.epoch += 1;
-                            s.request();
+                            app.refresh(ui);
+                            app.epoch += 1;
+                            app.request();
                         }
                     }
                     if std::env::var_os("SUBTAKE_UI_EMPTY").is_some() {
-                        s.stop(ui);
-                        s.epoch += 1;
-                        s.source_time = 0.;
-                        s.history = None;
-                        s.info = None;
-                        s.source = None;
-                        s.document = None;
-                        s.selected = None;
-                        s.refresh(ui);
+                        app.stop(ui);
+                        app.epoch += 1;
+                        app.source_time = 0.;
+                        app.history = None;
+                        app.info = None;
+                        app.source = None;
+                        app.document = None;
+                        app.selected = None;
+                        app.refresh(ui);
                         ui.set_preview(ui_runtime::Image::default());
                         ui.set_status("Choose a source and press Start recording".into());
                     }
@@ -620,7 +623,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     std::process::exit(1);
                 }
                 Timer::single_shot(Duration::from_secs(2), move || {
-                    with_app(|s, ui| {
+                    with_app(|app, ui| {
                         let panel = std::env::var("SUBTAKE_UI_PANEL").unwrap_or("Cursor".into());
                         let expected = [
                             "Frame",
@@ -651,8 +654,8 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             eprintln!("UI_SMOKE_FAILED: wallpaper thumbnails were not loaded");
                             std::process::exit(1);
                         }
-                        s.discard_recovery();
-                        s.recovery.flush();
+                        app.discard_recovery();
+                        app.recovery.flush();
                         match ui.window().take_snapshot() {
                             Ok(buffer) => {
                                 if let Err(e) = image::save_buffer(
@@ -735,11 +738,11 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             if !request.is_file() {
                 return;
             }
-            with_app(|s, ui| {
-                if s.recording.is_some() || ui.get_busy() {
+            with_app(|app, ui| {
+                if app.recording.is_some() || ui.get_busy() {
                     return;
                 }
-                let result = s.action(ui, "quit");
+                let result = app.action(ui, "quit");
                 report(ui, result);
                 // Leave the request present while a save dialog is open.
                 let _ = std::fs::remove_file(&request);
@@ -768,13 +771,13 @@ extern "C" fn open_document_event(path: *const std::ffi::c_char) {
     let path = unsafe { std::ffi::CStr::from_ptr(path) }
         .to_string_lossy()
         .to_string();
-    post(move |s, ui| {
-        if ui.get_busy() || s.recording.is_some() {
+    post(move |app, ui| {
+        if ui.get_busy() || app.recording.is_some() {
             ui.set_status("Finish the current operation before opening another project.".into());
             return;
         }
-        if s.can_replace(ui) {
-            let result = s.load(ui, PathBuf::from(path));
+        if app.can_replace(ui) {
+            let result = app.load(ui, PathBuf::from(path));
             report(ui, result);
         }
     });
@@ -788,8 +791,8 @@ extern "C" fn status_menu_action(action: *const std::ffi::c_char) {
     let action = unsafe { std::ffi::CStr::from_ptr(action) }
         .to_string_lossy()
         .to_string();
-    post(move |s, ui| {
-        let result = s.action(ui, &action);
+    post(move |app, ui| {
+        let result = app.action(ui, &action);
         report(ui, result);
     });
 }

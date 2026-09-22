@@ -62,7 +62,7 @@ impl Render for Dropdown {
         // actually unique per instance, so the tween keys hang off that.
         let menu_key = format!("dropdown-{:?}", cx.entity_id());
         let trigger_key = format!("{menu_key}-trigger");
-        let t = self.theme;
+        let theme = self.theme;
         let open = self.open;
         let label = self
             .items
@@ -121,12 +121,12 @@ impl Render for Dropdown {
                     .rounded(px(Theme::RADIUS_CONTROL))
                     .bg(motion::hover_blend(
                         &trigger_key,
-                        if open { t.hover } else { t.surface },
-                        t.hover,
+                        if open { theme.hover } else { theme.surface },
+                        theme.hover,
                     ))
                     .text_size(px(Theme::FONT_CONTROL))
                     .font_weight(FontWeight::MEDIUM)
-                    .text_color(t.text)
+                    .text_color(theme.text)
                     .opacity(if self.enabled {
                         1.
                     } else {
@@ -141,7 +141,7 @@ impl Render for Dropdown {
                     .child(icon_sized(
                         "CaretDown-regular",
                         Theme::ICON_SIZE_SMALL,
-                        t.muted,
+                        theme.muted,
                     ))
                     .on_click(cx.listener(|this, _, w, cx| {
                         if !this.enabled {
@@ -162,7 +162,7 @@ impl Render for Dropdown {
                     menu_in(
                         "dropdown-menu",
                         Theme::CONTROL_HEIGHT + Theme::GAP_SMALL,
-                        menu_surface(t)
+                        menu_surface(theme)
                             .id("choices")
                             .absolute()
                             .left_0()
@@ -188,7 +188,7 @@ impl Render for Dropdown {
                                             label.clone(),
                                             i == self.selected,
                                             i == self.highlighted,
-                                            t,
+                                            theme,
                                             cx.listener(move |this, _, w, cx| {
                                                 this.choose(i, w, cx)
                                             }),

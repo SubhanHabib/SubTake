@@ -16,11 +16,12 @@ impl Span {
     }
 }
 
-pub fn n(v: &Value, key: &str, d: f64) -> f64 {
-    v.get(key)
+pub fn n(value: &Value, key: &str, default: f64) -> f64 {
+    value
+        .get(key)
         .and_then(Value::as_f64)
-        .filter(|v| v.is_finite())
-        .unwrap_or(d)
+        .filter(|value| value.is_finite())
+        .unwrap_or(default)
 }
 
 /// Output clock is contiguous; trim gaps disappear. Region times remain on the source clock.

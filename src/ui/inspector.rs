@@ -187,7 +187,7 @@ impl RootView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let t = self.theme;
+        let theme = self.theme;
         let key = field.key.clone();
         let id = format!("{}:{}", e.get_panel(), key);
         let label = e.invoke_translate(field.label.clone(), e.get_language());
@@ -234,22 +234,22 @@ impl RootView {
                     svg()
                         .path(asset)
                         .size(px(28.))
-                        .text_color(t.text)
+                        .text_color(theme.text)
                         .into_any_element()
                 };
                 choices = choices.child(
-                    choice_tile(value, field.value == value, true, t)
+                    choice_tile(value, field.value == value, true, theme)
                         .items_center()
                         .justify_center()
                         .h(px(Theme::TILE_HEIGHT + Theme::GAP_LARGE))
                         .child(cursor)
-                        .tooltip(move |_, cx| tooltip(label, t, cx))
+                        .tooltip(move |_, cx| tooltip(label, theme, cx))
                         .on_click(move |_, _, _| {
                             editor.defer_field("cursorStyle".into(), value.into())
                         }),
                 );
             }
-            body = body.child(caps_label(label, t)).child(choices);
+            body = body.child(caps_label(label, theme)).child(choices);
             if field.choice >= 5 {
                 body = body.child(format!("Current: {}", field.value));
             }
@@ -277,7 +277,7 @@ impl RootView {
                 let editor = e.clone();
                 let value = *value;
                 choices = choices.child(
-                    choice_tile(value, field.value == value, true, t)
+                    choice_tile(value, field.value == value, true, theme)
                         .h(px(Theme::CONTROL_HEIGHT))
                         .items_center()
                         .justify_center()
@@ -301,13 +301,15 @@ impl RootView {
                                         .size(px(Theme::DOT_SIZE + 2.0))
                                         .rounded(px(Theme::RADIUS_SMALL / 2.0))
                                         .bg(if field.value == value {
-                                            t.accent
+                                            theme.accent
                                         } else {
-                                            t.muted
+                                            theme.muted
                                         }),
                                 ),
                         )
-                        .tooltip(move |_, cx| tooltip(format!("Webcam position {value}"), t, cx))
+                        .tooltip(move |_, cx| {
+                            tooltip(format!("Webcam position {value}"), theme, cx)
+                        })
                         .on_click(move |_, _, _| {
                             editor.defer_field("webcam.positionPreset".into(), value.into())
                         }),
@@ -315,10 +317,10 @@ impl RootView {
             }
             let editor = e.clone();
             return body
-                .child(caps_label(label, t))
+                .child(caps_label(label, theme))
                 .child(choices)
                 .child(
-                    button("custom-position", "Custom position", t)
+                    button("custom-position", "Custom position", theme)
                         .selected(field.value == "custom")
                         .on_click(move |_, _, _| {
                             editor.defer_field("webcam.positionPreset".into(), "custom".into())
@@ -329,7 +331,7 @@ impl RootView {
         match field.kind {
             5 => {
                 // A small muted caption with a rule running out to the edge.
-                return section_label(label, t)
+                return section_label(label, theme)
                     .mt(px(Theme::GAP_SMALL))
                     .into_any_element();
             }
@@ -347,7 +349,7 @@ impl RootView {
                     label,
                     field.value == "true",
                     true,
-                    t,
+                    theme,
                     move |v, _, _| e.defer_field(key.clone(), v.to_string()),
                 )
                 .into_any_element();
@@ -378,7 +380,7 @@ impl RootView {
                                 .flex_none()
                                 .max_w(px(PANEL_WIDTH / 3.0))
                                 .text_ellipsis()
-                                .text_color(t.text)
+                                .text_color(theme.text)
                                 .child(label),
                         )
                         .child(div().flex_1().min_w_0().child(control)),
@@ -425,7 +427,7 @@ impl RootView {
                                 .flex_none()
                                 .max_w(px(PANEL_WIDTH / 3.0))
                                 .text_ellipsis()
-                                .text_color(t.text)
+                                .text_color(theme.text)
                                 .child(label),
                         )
                         .child(div().flex_1().min_w_0().child(input)),
@@ -441,7 +443,7 @@ impl RootView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let t = self.theme;
+        let theme = self.theme;
         let name = e.get_panel();
         let title = match name.as_str() {
             "Frame" => "Scene",
@@ -466,7 +468,7 @@ impl RootView {
                 "Frame"
             };
             heading = heading.child(
-                icon_button("inspector-back", "CaretLeft-regular", "Back", t)
+                icon_button("inspector-back", "CaretLeft-regular", "Back", theme)
                     .ghost()
                     .on_click(move |_, _, _| {
                         editor.set_panel(back.into());
@@ -475,7 +477,7 @@ impl RootView {
             );
         }
         heading = heading
-            .child(caps_label(title.to_owned(), t))
+            .child(caps_label(title.to_owned(), theme))
             .child(div().flex_1());
         let mut content = column().gap(px(Theme::GAP));
         if name == "Frame" || name == "Wallpapers" {
@@ -486,7 +488,7 @@ impl RootView {
                 "scene-background",
                 &["Scene", "Background"],
                 if name == "Wallpapers" { 1 } else { 0 },
-                t,
+                theme,
                 move |index, _, _| {
                     if index == 0 {
                         editor.set_panel("Frame".into());
@@ -532,7 +534,7 @@ impl RootView {
                     .child(item.on_click(move |_, _, _| editor.defer_action(key.clone())));
             }
             content = content
-                .child(caps_label("Choose a background", t))
+                .child(caps_label("Choose a background", theme))
                 .child(wallpapers)
                 .child(self.action(
                     "upload-background",
@@ -550,7 +552,7 @@ impl RootView {
                         value,
                         rgb(u32::from_str_radix(&value[1..], 16).unwrap()).into(),
                         e.get_background_value() == value,
-                        t,
+                        theme,
                     )
                     .on_click(move |_, _, _| editor.defer_field("wallpaper".into(), value.into())),
                 );
@@ -564,7 +566,7 @@ impl RootView {
                 move |v, _, _| editor.defer_field("wallpaper".into(), v),
             );
             content = content.child(
-                group_card(t, "Background color or gradient")
+                group_card(theme, "Background color or gradient")
                     .child(swatches)
                     .child(input),
             );
@@ -581,23 +583,23 @@ impl RootView {
             let e1 = e.clone();
             let e2 = e.clone();
             content = content
-                .child(caps_label("Appearance", t))
+                .child(caps_label("Appearance", theme))
                 .child(segmented_control(
                     "appearance",
                     &["Light", "Dark", "System"],
                     chosen,
-                    t,
+                    theme,
                     move |index, _, _| {
                         editor.defer_field("prefs.appearance".into(), appearances[index].to_owned())
                     },
                 ))
-                .child(caps_label("Zooms", t))
+                .child(caps_label("Zooms", theme))
                 // A setting and the sentence that explains it are one thing,
                 // so they share one plate. Loose muted lines under a control
                 // read as unattached commentary.
                 .child(
                     setting_card(
-                        t,
+                        theme,
                         "Automatic recording zooms",
                         "Suggest zooms when a new recording opens.",
                     )
@@ -605,7 +607,7 @@ impl RootView {
                         "auto-zooms",
                         e.get_auto_apply_zooms(),
                         true,
-                        t,
+                        theme,
                         move |v, _, _| {
                             e1.defer_field("prefs.auto_apply_zooms".into(), v.to_string())
                         },
@@ -613,7 +615,7 @@ impl RootView {
                 )
                 .child(
                     setting_card(
-                        t,
+                        theme,
                         "Connect zooms",
                         "Join nearby zooms into a continuous camera move.",
                     )
@@ -621,7 +623,7 @@ impl RootView {
                         "connect-zooms",
                         e.get_connect_zooms(),
                         e.get_has_video(),
-                        t,
+                        theme,
                         move |v, _, _| e2.defer_field("connectZooms".into(), v.to_string()),
                     )),
                 );
@@ -638,7 +640,9 @@ impl RootView {
                         .selected(e.get_look_choice() == value),
                 );
             }
-            content = content.child(caps_label("Choose a look", t)).child(looks);
+            content = content
+                .child(caps_label("Choose a look", theme))
+                .child(looks);
         }
         if matches!(name.as_str(), "Cursor" | "Preferences" | "Presets") {
             // A preset is a choice you make once and live with, so it states
@@ -661,40 +665,45 @@ impl RootView {
                 let surface = self.surface.clone();
                 let command = format!("motion-{value}");
                 presets = presets.child(
-                    choice_tile(value, e.get_motion_choice() == value, e.get_has_video(), t)
-                        .child(
-                            div()
-                                .flex()
-                                .items_center()
-                                .justify_center()
-                                .flex_none()
-                                .size(px(Theme::CONTROL_HEIGHT))
-                                .rounded(px(Theme::RADIUS_SMALL))
-                                .bg(t.surface)
-                                .child(icon(glyph, t.text)),
-                        )
-                        .child(
-                            div()
-                                .font_weight(FontWeight::MEDIUM)
-                                .text_color(t.text)
-                                .child(title),
-                        )
-                        .child(
-                            div()
-                                .text_size(px(Theme::FONT_SMALL))
-                                .text_color(t.muted)
-                                .child(detail),
-                        )
-                        .on_click(move |_, _, _| surface.action(&command)),
+                    choice_tile(
+                        value,
+                        e.get_motion_choice() == value,
+                        e.get_has_video(),
+                        theme,
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .flex_none()
+                            .size(px(Theme::CONTROL_HEIGHT))
+                            .rounded(px(Theme::RADIUS_SMALL))
+                            .bg(theme.surface)
+                            .child(icon(glyph, theme.text)),
+                    )
+                    .child(
+                        div()
+                            .font_weight(FontWeight::MEDIUM)
+                            .text_color(theme.text)
+                            .child(title),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(Theme::FONT_SMALL))
+                            .text_color(theme.muted)
+                            .child(detail),
+                    )
+                    .on_click(move |_, _, _| surface.action(&command)),
                 );
             }
             content = content
-                .child(caps_label("Motion presets", t))
+                .child(caps_label("Motion presets", theme))
                 .child(presets);
             if !e.get_has_video() {
                 content = content.child(
                     div()
-                        .text_color(t.muted)
+                        .text_color(theme.muted)
                         .child("Open a project to adjust its motion."),
                 );
             }
@@ -731,7 +740,7 @@ impl RootView {
             let e2 = e.clone();
             let e3 = e.clone();
             content = content
-                .child(caps_label("Capture source", t))
+                .child(caps_label("Capture source", theme))
                 .child(source)
                 .child(self.action(
                     "sources",
@@ -746,25 +755,25 @@ impl RootView {
                 // Eight controls in one flat stack gave no clue which
                 // dropdown belonged to which switch. They are groups now.
                 .child(
-                    group_card(t, "Camera")
+                    group_card(theme, "Camera")
                         .child(toggle(
                             "capture-camera",
                             "Record camera",
                             e.get_capture_camera(),
                             true,
-                            t,
+                            theme,
                             move |v, _, _| e1.set_capture_camera(v),
                         ))
                         .child(camera),
                 )
                 .child(
-                    group_card(t, "Audio")
+                    group_card(theme, "Audio")
                         .child(toggle(
                             "capture-mic",
                             "Microphone",
                             e.get_capture_mic(),
                             true,
-                            t,
+                            theme,
                             move |v, _, _| e2.set_capture_mic(v),
                         ))
                         .child(microphone)
@@ -773,7 +782,7 @@ impl RootView {
                             "System audio",
                             e.get_capture_system(),
                             true,
-                            t,
+                            theme,
                             move |v, _, _| e3.set_capture_system(v),
                         )),
                 );
@@ -849,7 +858,7 @@ impl RootView {
         // the fade ramp sits exactly on the clip line; the panel's vertical
         // padding moves onto the heading and footer instead of stacking with
         // the band and pushing the first row down.
-        let mut el = panel(t)
+        let mut el = panel(theme)
             .py_0()
             .w(px(PANEL_WIDTH))
             .h_full()
