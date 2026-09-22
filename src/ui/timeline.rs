@@ -192,34 +192,49 @@ impl RootView {
                     .left(relative(i as f32 / 8.)),
             );
         }
+        // The source lane: 42, against 30 for every other lane. It is the
+        // only lane that carries a picture rather than blocks, and the strip
+        // fills it below the title.
         let mut source = div()
             .relative()
-            .h(px(56.))
+            .h(px(Theme::LANE_SOURCE_HEIGHT))
             .overflow_hidden()
-            .rounded_lg()
+            .rounded(px(Theme::RADIUS_REGION))
             .bg(theme.sunk)
-            .child(div().px_2().child(window.get_document_title()));
+            .child(
+                div()
+                    .px(px(Theme::REGION_PADDING))
+                    .text_size(px(Theme::FONT_SMALL))
+                    .text_color(theme.muted)
+                    .child(window.get_document_title()),
+            );
         if let Some(image) = window.get_thumbnails().0 {
+            let strip = Theme::LANE_SOURCE_HEIGHT - Theme::RULER_HEIGHT;
             source = source.child(
                 img(image)
                     .absolute()
-                    .top(px(22.))
+                    .top(px(Theme::RULER_HEIGHT))
                     .left(relative(-offset / visible))
                     .w(relative(window.get_timeline_zoom()))
-                    .h(px(34.))
+                    .h(px(strip))
                     .object_fit(ObjectFit::Fill),
             );
         }
         let labels: Vec<String> = window.get_track_labels().iter().collect();
-        let mut tracks = div().relative().h(px(labels.len() as f32 * TRACK_HEIGHT));
+        // One pitch per lane: the lane itself plus the air under it. Every
+        // `top` below is a multiple of it, so a lane, its waveform and the
+        // blocks on it cannot drift apart.
+        let mut tracks = div()
+            .relative()
+            .h(px(labels.len() as f32 * Theme::LANE_PITCH));
         for i in 0..labels.len() {
             tracks = tracks.child(
                 div()
                     .absolute()
-                    .top(px(i as f32 * TRACK_HEIGHT))
+                    .top(px(i as f32 * Theme::LANE_PITCH))
                     .w_full()
-                    .h(px(38.))
-                    .rounded_lg()
+                    .h(px(Theme::LANE_HEIGHT))
+                    .rounded(px(Theme::RADIUS_REGION))
                     .bg(theme.sunk),
             );
         }
@@ -227,10 +242,10 @@ impl RootView {
             tracks = tracks.child(
                 img(image)
                     .absolute()
-                    .top(px(window.get_audio_row() as f32 * TRACK_HEIGHT))
+                    .top(px(window.get_audio_row() as f32 * Theme::LANE_PITCH))
                     .left(relative(-offset / visible))
                     .w(relative(window.get_timeline_zoom()))
-                    .h(px(38.))
+                    .h(px(Theme::LANE_HEIGHT))
                     .opacity(0.3)
                     .object_fit(ObjectFit::Fill),
             );
@@ -254,27 +269,49 @@ impl RootView {
                 }
             }
             let tint = region.tint.to_gpui();
+            // Fill and edge are the lane's own tint at four strengths. The
+            // edge is an inset shadow rather than a border: a border adds to
+            // what the block measures, so a region would have grown by two
+            // pixels the moment it was selected and shifted its own label.
+            let fill = tint.opacity(if region.selected {
+                Theme::REGION_FILL_SELECTED
+            } else {
+                Theme::REGION_FILL
+            });
+            let edge = if region.selected {
+                tint
+            } else {
+                tint.opacity(Theme::REGION_EDGE)
+            };
             let mut block = div()
                 .id(SharedString::from(format!(
                     "region-{}-{}",
                     region.kind, region.id
                 )))
+                .group("region")
                 .absolute()
                 .left(relative((start - offset) / visible))
-                .top(px(region.row as f32 * TRACK_HEIGHT + 1.))
+                .top(px(region.row as f32 * Theme::LANE_PITCH))
                 .w(relative(((end - start) / visible).max(0.001)))
-                .min_w(px(8.))
-                .h(px(36.))
-                .rounded_lg()
+                .min_w(px(Theme::GAP))
+                .h(px(Theme::LANE_HEIGHT))
+                .rounded(px(Theme::RADIUS_REGION))
                 .overflow_hidden()
-                .bg(tint.opacity(if region.selected { 0.24 } else { 0.11 }))
-                .border_1()
-                .border_color(if region.selected { tint } else { theme.line })
+                .bg(fill)
+                .when(!region.selected, |el| {
+                    el.hover(move |s| s.bg(tint.opacity(Theme::REGION_FILL_HOVER)))
+                })
+                .shadow(vec![hairline(edge, Theme::BORDER_WIDTH)])
                 .cursor(CursorStyle::ClosedHand)
                 .child(
                     div()
-                        .px_3()
-                        .py_2()
+                        .size_full()
+                        .flex()
+                        .items_center()
+                        .px(px(Theme::REGION_PADDING))
+                        .text_size(px(Theme::FONT_SMALL))
+                        .text_color(theme.text)
+                        .overflow_hidden()
                         .text_ellipsis()
                         .child(region.label.clone()),
                 );
@@ -302,22 +339,34 @@ impl RootView {
             );
             for (mode, right) in [(2, false), (1, true)] {
                 let drag_region = region.clone();
+                // The grab area is wide; the mark inside it is 3px. The mark
+                // is only drawn when the region is selected or under the
+                // pointer — a timeline of twenty regions showing forty
+                // handles is a texture, not a set of controls.
+                let selected = region.selected;
                 let mut handle = div()
                     .id(("resize", mode as usize))
                     .absolute()
                     .top_0()
-                    .w(px(10.))
+                    .w(px(Theme::REGION_HANDLE_TARGET))
                     .h_full()
                     .cursor(CursorStyle::ResizeLeftRight)
                     .child(
                         div()
                             .absolute()
-                            .left(px(3.))
-                            .top(px(10.))
-                            .w(px(3.))
-                            .h(px(16.))
-                            .rounded_full()
-                            .bg(tint.opacity(0.55)),
+                            .left(px(Theme::REGION_HANDLE_INSET))
+                            .top(px(Theme::REGION_HANDLE_MARGIN))
+                            .w(px(Theme::REGION_HANDLE_WIDTH))
+                            .h(px(Theme::LANE_HEIGHT - Theme::REGION_HANDLE_MARGIN * 2.0))
+                            .rounded(px(Theme::REGION_HANDLE_RADIUS))
+                            .bg(tint.opacity(if selected {
+                                Theme::REGION_HANDLE_ALPHA
+                            } else {
+                                0.
+                            }))
+                            .group_hover("region", move |s| {
+                                s.bg(tint.opacity(Theme::REGION_HANDLE_ALPHA))
+                            }),
                     );
                 handle = if right {
                     handle.right_0()
@@ -370,17 +419,35 @@ impl RootView {
                 }),
             );
         if (0. ..=1.).contains(&playhead) {
-            // Cap, continuous rule and six-dot grip — the product's scrubber,
-            // centred on the playhead so the rule sits on the exact frame.
+            // A 2px accent rule the full height of the stack, with a dot at
+            // its head. The dot carries a soft accent ring so it stays
+            // legible where it crosses a region painted in its lane's tint.
+            let dot = Theme::PLAYHEAD_DOT;
             timeline = timeline.child(
                 div()
                     .absolute()
                     .left(relative(playhead))
-                    .ml(px(-Theme::SCRUBBER_WIDTH / 2.0))
+                    .ml(px(-Theme::PLAYHEAD_WIDTH / 2.0))
                     .top_0()
                     .bottom_0()
-                    .w(px(Theme::SCRUBBER_WIDTH))
-                    .child(timeline_scrubber(theme, 40.0)),
+                    .w(px(Theme::PLAYHEAD_WIDTH))
+                    .bg(theme.accent)
+                    .child(
+                        div()
+                            .absolute()
+                            .top(px(-dot / 2.0))
+                            .left(px((Theme::PLAYHEAD_WIDTH - dot) / 2.0))
+                            .size(px(dot))
+                            .rounded_full()
+                            .bg(theme.accent)
+                            .shadow(vec![BoxShadow {
+                                color: theme.accent_soft,
+                                offset: point(px(0.), px(0.)),
+                                blur_radius: px(0.),
+                                spread_radius: px(Theme::PLAYHEAD_RING),
+                                inset: false,
+                            }]),
+                    ),
             );
         }
         panel(theme)
@@ -400,20 +467,26 @@ impl RootView {
                     .pb(px(FADE_BAND))
                     .child(
                         column()
-                            .w(px(74.))
+                            .w(px(Theme::LANE_GUTTER))
                             .flex_shrink_0()
                             .gap_0()
+                            // The gutter's first entry has to clear the ruler
+                            // and then name the source lane, so it is the
+                            // ruler plus that lane plus the gap the column
+                            // below it uses.
                             .child(
                                 div()
-                                    .h(px(88.))
-                                    .pt_8()
+                                    .h(px(Theme::RULER_HEIGHT
+                                        + Theme::LANE_SOURCE_HEIGHT
+                                        + Theme::LANE_GAP))
+                                    .pt(px(Theme::RULER_HEIGHT + Theme::LANE_GAP))
+                                    .text_size(px(Theme::FONT_SMALL))
                                     .text_color(theme.muted)
                                     .child("Source"),
                             )
                             .children(labels.into_iter().map(|label| {
                                 div()
-                                    .h(px(TRACK_HEIGHT))
-                                    .pt_3()
+                                    .h(px(Theme::LANE_PITCH))
                                     .text_size(px(Theme::FONT_SMALL))
                                     .text_color(theme.muted)
                                     .child(label)
@@ -421,7 +494,11 @@ impl RootView {
                     )
                     .child(timeline),
             ))
-            .child(div().ml(px(82.)).child(position))
+            .child(
+                div()
+                    .ml(px(Theme::LANE_GUTTER + Theme::LANE_GUTTER_GAP))
+                    .child(position),
+            )
             .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
                 if let Surface::Editor(window) = &s.surface {
                     let delta = event.delta.pixel_delta(px(20.));

@@ -198,6 +198,39 @@ impl Theme {
     /// The column of lane names, and its gap to the tracks.
     pub const LANE_GUTTER: f32 = 78.0;
     pub const LANE_GUTTER_GAP: f32 = 14.0;
+    /// One lane's share of the stack: the lane plus the air under it, which
+    /// is the step from one lane's top to the next one's.
+    pub const LANE_PITCH: f32 = Self::LANE_HEIGHT + Self::LANE_GAP;
+
+    // ---- timeline regions ------------------------------------------------
+    //
+    // A region is painted in its lane's tint at four strengths, which the
+    // handoff gives as hex suffixes on that tint: `22` at rest, `2e` under
+    // the pointer, `3d` when selected, `66` for the edge and `cc` for a trim
+    // handle. They are alphas of one colour rather than five colours, which
+    // is what keeps seven lane tints from becoming thirty-five.
+    pub const REGION_FILL: f32 = 0x22 as f32 / 255.0;
+    pub const REGION_FILL_HOVER: f32 = 0x2e as f32 / 255.0;
+    pub const REGION_FILL_SELECTED: f32 = 0x3d as f32 / 255.0;
+    pub const REGION_EDGE: f32 = 0x66 as f32 / 255.0;
+    pub const REGION_HANDLE_ALPHA: f32 = 0xcc as f32 / 255.0;
+    pub const REGION_PADDING: f32 = 12.0;
+    /// A trim handle: a bar 3 wide, inset 3 from the region's end, running
+    /// the lane's height less 6 of air at each end.
+    pub const REGION_HANDLE_WIDTH: f32 = 3.0;
+    pub const REGION_HANDLE_RADIUS: f32 = 2.0;
+    pub const REGION_HANDLE_INSET: f32 = 3.0;
+    pub const REGION_HANDLE_MARGIN: f32 = 6.0;
+    /// The grab area around a handle — wider than the mark, because a 3px
+    /// target is not a target.
+    pub const REGION_HANDLE_TARGET: f32 = 10.0;
+
+    /// The playhead: a rule the full height of the lane stack with a dot at
+    /// its head, and a soft ring around the dot so it reads on a lane painted
+    /// in its own tint.
+    pub const PLAYHEAD_WIDTH: f32 = 2.0;
+    pub const PLAYHEAD_DOT: f32 = 16.0;
+    pub const PLAYHEAD_RING: f32 = 4.0;
 
     /// The filled slider's fill is inset by a hair so the plate's radius still
     /// reads at the edges.
@@ -312,5 +345,3 @@ pub const SPACE_GROTESK_FACES: [&str; 1] = ["SpaceGrotesk-Medium.ttf"];
 pub const RAIL_WIDTH: f32 = 64.0;
 /// Inspector column.
 pub const PANEL_WIDTH: f32 = 300.0;
-/// Timeline track row height.
-pub const TRACK_HEIGHT: f32 = 44.0;
