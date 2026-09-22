@@ -38,7 +38,8 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
         .rounded(px(radius))
         .bg(background);
     if variant == Surface::Overlay {
-        el.shadow_lg()
+        // el.shadow_lg()
+        el
     } else {
         el.border_1().border_color(theme.border)
     }

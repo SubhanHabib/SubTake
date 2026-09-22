@@ -189,6 +189,20 @@ pub fn run() -> Result<()> {
     editor.show()?;
     show_recorder(&launcher, &options);
 
+    // The dev supervisor asks for a restart by touching this file. The gallery
+    // holds no project, so there is nothing to save: quit as soon as it appears.
+    let dev_restart_timer = Timer::default();
+    if let Some(request) = std::env::var_os("SUBTAKE_DEV_RESTART_FILE") {
+        let request = std::path::PathBuf::from(request);
+        dev_restart_timer.start(TimerMode::Repeated, Duration::from_millis(300), move || {
+            if !request.is_file() {
+                return;
+            }
+            let _ = std::fs::remove_file(&request);
+            let _ = ui_runtime::quit_event_loop();
+        });
+    }
+
     ui_runtime::run_event_loop_until_quit()
 }
 
