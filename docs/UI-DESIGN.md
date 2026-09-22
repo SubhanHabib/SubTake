@@ -138,14 +138,24 @@ The bar keeps its size and shape in every state; only its controls change.
 - **Stopping** — a spinner, "Finishing your recording" over how much was
   captured, and a plate (not a button) saying it opens in the editor.
 
+While the count runs it is also drawn on the display being recorded (a window
+source counts on the display its centre is on): the screen dims, the number
+sits in the middle in 96 white Geist Mono, shrinking to 0.86 and fading over
+each second, with a "Press esc to cancel" chip under it and a white frame 8 in
+from the edges. That window takes no clicks and sits just under the bar. Esc
+cancels from anywhere: SubTake holds it as a global shortcut only while the
+count runs, and gives it back when it ends. Palette churn: the numeral has no
+shadow and the chip no blur — gpui has no text shadow, and a click-through
+sheet has no material to blur.
+
 Not drawn by the design: the other waits — finding displays, starting
 capture, holding or resuming it — take the Stopping layout with the status
 line, and Cancel when there is something to cancel. Palette churn: PAUSED is
 not tracked out, because gpui sets no letter spacing.
 
 `SUBTAKE_GALLERY_SCREEN=rec-counting` (or `rec-recording`, `rec-paused`,
-`rec-stopping`) opens the gallery with the bar in that state; Record in the
-gallery runs the whole sequence.
+`rec-stopping`) opens the gallery with the bar in that state — `rec-counting`
+with the on-screen count too; Record in the gallery runs the whole sequence.
 
 The recorder's windows are borderless, and macOS gives a borderless window no
 corner mask, so the editor's window material would fill the frame square behind

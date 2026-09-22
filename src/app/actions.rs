@@ -818,6 +818,10 @@ impl App {
                 ui.set_busy(true);
                 ui.set_status("Preparing recording…".into());
                 let countdown = self.preferences.countdown_seconds;
+                if countdown > 0 {
+                    self.place_countdown(&source);
+                    self.hold_escape(true);
+                }
                 self.job_cancel = Arc::new(AtomicBool::new(false));
                 let cancel = self.job_cancel.clone();
                 std::thread::spawn(move || {
@@ -830,6 +834,7 @@ impl App {
                             if cancel.load(Ordering::Relaxed) {
                                 post(|app, ui| {
                                     app.counting = 0;
+                                    app.hold_escape(false);
                                     ui.set_busy(false);
                                     ui.set_status("Recording cancelled".into());
                                 });
@@ -840,6 +845,7 @@ impl App {
                     }
                     post(|app, ui| {
                         app.counting = 0;
+                        app.hold_escape(false);
                         ui.set_status("Starting capture…".into());
                     });
                     let result = Recording::start(&source, path, mic, system, camera, &cancel);

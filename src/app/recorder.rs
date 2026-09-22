@@ -116,6 +116,16 @@ impl App {
         launcher.set_countdown(self.preferences.countdown_seconds as i32);
         launcher.set_counting(self.counting as i32);
         launcher.set_stopping(self.stopping);
+        if let Some(overlay) = &self.countdown_overlay {
+            overlay.set_appearance(self.preferences.appearance.as_str().into());
+            overlay.set_counting(self.counting as i32);
+            let shown = overlay.window().is_visible();
+            if self.counting > 0 && !shown {
+                let _ = overlay.show();
+            } else if self.counting == 0 && shown {
+                let _ = overlay.hide();
+            }
+        }
         launcher.set_directory(
             self.recording_directory()
                 .map(|p| p.display().to_string())
@@ -206,8 +216,13 @@ impl App {
             options
                 .window()
                 .on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
+            let overlay = RecordingCountdown::new()?;
+            overlay
+                .window()
+                .on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
             self.launcher = Some(launcher);
             self.launcher_options = Some(options);
+            self.countdown_overlay = Some(overlay);
         }
         self.sync_launcher(ui);
         if !ui.window().is_visible() {
@@ -342,7 +357,55 @@ impl App {
             self.hotkey_ids.push((key.id(), action.into()));
         }
         self.hotkeys = Some(manager);
+        self.escape_hotkey = None;
         Ok(())
+    }
+
+    /// Take Esc from every app while the countdown runs, and give it back
+    /// when the count ends. It is only a convenience — Cancel on the bar
+    /// still works — so a refused registration is not an error.
+    pub(super) fn hold_escape(&mut self, hold: bool) {
+        use global_hotkey::hotkey::{Code, HotKey};
+        let Some(manager) = &self.hotkeys else {
+            return;
+        };
+        if hold && self.escape_hotkey.is_none() {
+            let key = HotKey::new(None, Code::Escape);
+            if manager.register(key).is_ok() {
+                self.hotkey_ids.push((key.id(), "cancel".into()));
+                self.escape_hotkey = Some(key);
+            }
+        } else if !hold && let Some(key) = self.escape_hotkey.take() {
+            let _ = manager.unregister(key);
+            self.hotkey_ids.retain(|(id, _)| *id != key.id());
+        }
+    }
+
+    /// Put the on-screen count over the display this source records: the
+    /// display itself, or the one a window's centre is on.
+    pub(super) fn place_countdown(&self, source: &Value) {
+        let number = |v: &Value, key: &str| v[key].as_f64().unwrap_or(0.);
+        let display = if source["kind"] == "display" {
+            source["nativeId"].as_u64()
+        } else {
+            let (x, y) = (
+                number(source, "x") + number(source, "width") / 2.,
+                number(source, "y") + number(source, "height") / 2.,
+            );
+            self.sources
+                .iter()
+                .filter(|s| s["kind"] == "display")
+                .find(|d| {
+                    (number(d, "x")..number(d, "x") + number(d, "width")).contains(&x)
+                        && (number(d, "y")..number(d, "y") + number(d, "height")).contains(&y)
+                })
+                .and_then(|d| d["nativeId"].as_u64())
+        };
+        let display = display.unwrap_or(0) as u32;
+        // AppKit reports the move synchronously; make it outside this borrow.
+        ui_runtime::Timer::single_shot(Duration::ZERO, move || {
+            platform::set_countdown_display(display)
+        });
     }
 }
 

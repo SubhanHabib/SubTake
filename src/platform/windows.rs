@@ -18,6 +18,31 @@ pub fn configure_recording_hud(window: &crate::ui_runtime::Window, movable: bool
     Ok(())
 }
 
+/// Make the countdown window a click-through sheet over the display the
+/// capture will record, just under the recorder bar.
+pub fn configure_countdown_overlay(window: &crate::ui_runtime::Window) -> Result<()> {
+    #[cfg(target_os = "macos")]
+    unsafe {
+        subtake_configure_countdown_overlay(native_view(window)?);
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = window;
+    Ok(())
+}
+
+/// Which display the countdown covers, by its CoreGraphics id; an id no
+/// screen has puts it on the recorder bar's screen. Moves an open overlay at
+/// once, so the same borrow rule as `set_launcher_options_anchor` applies.
+pub fn set_countdown_display(display: u32) {
+    #[cfg(target_os = "macos")]
+    unsafe {
+        subtake_set_countdown_display(display)
+    };
+    #[cfg(not(target_os = "macos"))]
+    let _ = display;
+}
+
 pub fn open_feedback() -> Result<()> {
     let url = "https://github.com/SubhanHabib/SubTake/issues";
     #[cfg(target_os = "macos")]
@@ -338,6 +363,8 @@ unsafe extern "C" {
         launcher: *mut std::ffi::c_void,
     );
     pub(super) fn subtake_set_launcher_options_anchor(anchor: f64);
+    pub(super) fn subtake_configure_countdown_overlay(view: *mut std::ffi::c_void);
+    pub(super) fn subtake_set_countdown_display(display: u32);
     pub(super) fn subtake_launcher_options_are_attached(
         options: *mut std::ffi::c_void,
         launcher: *mut std::ffi::c_void,

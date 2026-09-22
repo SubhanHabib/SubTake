@@ -8,6 +8,9 @@ pub enum WindowKind {
     Editor,
     Launcher,
     Options,
+    /// The count before a capture, full screen over the display it will
+    /// record: nothing to press, so it takes no clicks and no focus.
+    Countdown,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -83,6 +86,8 @@ impl Window {
                 WindowKind::Options => {
                     LogicalSize::new(subtake_theme::Theme::RECORDER_CARD_WIDTH, 264.)
                 }
+                // The native side gives it the display's frame once open.
+                WindowKind::Countdown => LogicalSize::new(640., 400.),
             }),
             resize: Cell::new(false),
             scale: Cell::new(1.),
@@ -263,6 +268,7 @@ pub(super) fn surface_window(surface: &Surface) -> &Window {
         Surface::Editor(s) => s.window(),
         Surface::Launcher(s) => s.window(),
         Surface::Options(s) => s.window(),
+        Surface::Countdown(s) => s.window(),
     }
 }
 
@@ -278,6 +284,7 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
             ),
             Surface::Launcher(_) => "SubTake recorder".into(),
             Surface::Options(_) => "SubTake recorder options".into(),
+            Surface::Countdown(_) => "SubTake countdown".into(),
         };
         if let Surface::Options(ui) = &surface {
             let wanted = LogicalSize::new(ui.get_options_width(), ui.get_options_height());
@@ -328,7 +335,7 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 },
                 window_min_size: is_editor.then_some(size(px(980.), px(680.))),
                 is_resizable: is_editor,
-                focus: true,
+                focus: runtime.0.kind != WindowKind::Countdown,
                 show: true,
                 ..Default::default()
             };
@@ -369,6 +376,10 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 let runtime = runtime.clone();
                 Timer::single_shot(Duration::ZERO, move || {
                     if !runtime.is_visible() {
+                        return;
+                    }
+                    if runtime.0.kind == WindowKind::Countdown {
+                        let _ = crate::platform::configure_countdown_overlay(&runtime);
                         return;
                     }
                     let _ = crate::platform::configure_recording_hud(

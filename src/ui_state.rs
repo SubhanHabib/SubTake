@@ -1414,6 +1414,11 @@ surface!(
     ui_runtime::WindowKind::Launcher
 );
 surface!(RecordingOptions, Options, ui_runtime::WindowKind::Options);
+surface!(
+    RecordingCountdown,
+    Countdown,
+    ui_runtime::WindowKind::Countdown
+);
 /// The macOS status item is retained by AppKit and dispatches existing controller actions.
 #[derive(Clone, Default)]
 pub struct AppTray {

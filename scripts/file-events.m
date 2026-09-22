@@ -111,10 +111,12 @@ void subtake_activate_launcher(void) {
     // options child, and AppKit preserves that child’s ordering and focus.
     [NSApp activateIgnoringOtherApps:YES];
 }
+static NSWindow *subtake_launcher_window = nil;
 void subtake_position_launcher(void *rawView) {
     NSView *view = (__bridge NSView *)rawView;
     NSWindow *window = view.window;
     if (!window) return;
+    subtake_launcher_window = window;
     NSRect screen = (window.screen ?: NSScreen.mainScreen).visibleFrame;
     NSRect frame = window.frame;
     [window setFrameOrigin:NSMakePoint(NSMidX(screen) - frame.size.width / 2, NSMinY(screen) + 28)];
@@ -123,6 +125,52 @@ static NSWindow *subtake_follow_launcher = nil;
 static NSWindow *subtake_follow_options = nil;
 static id subtake_follow_observer = nil;
 static id subtake_options_resize_observer = nil;
+
+// The on-screen countdown covers the display the capture will record. It
+// sits just under the bar so the bar stays pressable, and lets every click
+// through: nothing on it is a control.
+static NSWindow *subtake_countdown_window = nil;
+static uint32_t subtake_countdown_display = 0;
+
+static void subtake_place_countdown(void) {
+    NSWindow *window = subtake_countdown_window;
+    if (!window) return;
+    NSScreen *target = nil;
+    for (NSScreen *screen in NSScreen.screens) {
+        NSNumber *number = screen.deviceDescription[@"NSScreenNumber"];
+        if (number && number.unsignedIntValue == subtake_countdown_display) {
+            target = screen;
+            break;
+        }
+    }
+    if (!target) target = subtake_launcher_window.screen ?: NSScreen.mainScreen;
+    if (target) [window setFrame:target.frame display:YES];
+}
+
+void subtake_configure_countdown_overlay(void *rawView) {
+    NSView *view = (__bridge NSView *)rawView;
+    NSWindow *window = view.window;
+    if (!window) return;
+    window.styleMask = NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel;
+    window.level = NSFloatingWindowLevel - 1;
+    window.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                NSWindowCollectionBehaviorFullScreenAuxiliary |
+                                NSWindowCollectionBehaviorIgnoresCycle |
+                                NSWindowCollectionBehaviorStationary;
+    window.hidesOnDeactivate = NO;
+    window.ignoresMouseEvents = YES;
+    window.hasShadow = NO;
+    window.opaque = NO;
+    window.backgroundColor = NSColor.clearColor;
+    window.animationBehavior = NSWindowAnimationBehaviorNone;
+    subtake_countdown_window = window;
+    subtake_place_countdown();
+}
+
+void subtake_set_countdown_display(uint32_t display) {
+    subtake_countdown_display = display;
+    subtake_place_countdown();
+}
 
 // Where on the bar the open card belongs: the centre of the control that
 // opened it, in points from the bar's left edge. Negative centres the card

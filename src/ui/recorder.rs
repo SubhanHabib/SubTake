@@ -10,6 +10,74 @@ thread_local! {
 }
 
 impl RootView {
+    /// The count over the display the capture will record. The design fixes
+    /// its colours — white on a dimmed screen — in both themes: it sits on
+    /// the user's own desktop, not on the app's chrome.
+    pub(super) fn countdown_overlay(&self, state: &RecordingCountdown) -> AnyElement {
+        let count = state.get_counting();
+        if count <= 0 {
+            return div().into_any_element();
+        }
+        let white = white();
+        // Keyed by the number, so each second starts its own shrink and fade.
+        let numeral = mono(count.to_string())
+            .font_weight(FontWeight::MEDIUM)
+            .text_color(white)
+            .line_height(relative(1.))
+            .text_size(px(Theme::FONT_COUNTDOWN))
+            // Palette churn: the design sets a soft shadow under the numeral;
+            // gpui has no text shadow.
+            .with_animation(
+                SharedString::from(format!("count-{count}")),
+                Animation::new(std::time::Duration::from_secs(1)),
+                |numeral, t| {
+                    let scale = 1. - (1. - Theme::COUNTDOWN_END_SCALE) * t;
+                    numeral
+                        .text_size(px(Theme::FONT_COUNTDOWN * scale))
+                        .opacity(1. - (1. - Theme::COUNTDOWN_END_OPACITY) * t)
+                },
+            );
+        // Palette churn: the design blurs what is under the chip; a
+        // click-through overlay has no material of its own, so it is only
+        // the tint.
+        let chip = row()
+            .h(px(Theme::COUNTDOWN_CHIP_HEIGHT))
+            .gap(px(Theme::COUNTDOWN_CHIP_GAP))
+            .px(px(Theme::COUNTDOWN_CHIP_PADDING))
+            .rounded_full()
+            .bg(hsla(225. / 360., 0.25, 0.063, 0.55))
+            .text_color(white)
+            .text_size(px(Theme::FONT_SECONDARY))
+            .whitespace_nowrap()
+            .child("Press")
+            .child(mono("esc"))
+            .child("to cancel");
+        div()
+            .relative()
+            .size_full()
+            .bg(hsla(225. / 360., 0.286, 0.055, 0.42))
+            .child(
+                column()
+                    .size_full()
+                    .items_center()
+                    .justify_center()
+                    .gap(px(Theme::COUNTDOWN_GAP))
+                    .child(numeral)
+                    .child(chip),
+            )
+            .child(
+                div()
+                    .absolute()
+                    .inset(px(Theme::COUNTDOWN_FRAME_INSET))
+                    .rounded(px(Theme::COUNTDOWN_FRAME_RADIUS))
+                    .shadow(vec![hairline(
+                        hsla(0., 0., 1., 0.55),
+                        Theme::COUNTDOWN_FRAME_WIDTH,
+                    )]),
+            )
+            .into_any_element()
+    }
+
     pub(super) fn launcher(&self, state: &RecordingLauncher) -> AnyElement {
         let theme = self.theme;
         // The bar IS the window's plate — the window itself is transparent and

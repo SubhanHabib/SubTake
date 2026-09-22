@@ -374,6 +374,25 @@ impl Theme {
     /// shrink round a short caption.
     pub const STOPPING_TEXT_WIDTH: f32 = 190.0;
 
+    // ---- on-screen countdown -----------------------------------------------
+
+    /// The numeral centred on the display the capture will record.
+    pub const FONT_COUNTDOWN: f32 = 96.0;
+    /// What the numeral shrinks to over its second.
+    pub const COUNTDOWN_END_SCALE: f32 = 0.86;
+    /// What the numeral fades to over its second.
+    pub const COUNTDOWN_END_OPACITY: f32 = 0.35;
+    /// Between the numeral and the chip under it.
+    pub const COUNTDOWN_GAP: f32 = 12.0;
+    /// The "Press esc to cancel" chip, and the gap between its words.
+    pub const COUNTDOWN_CHIP_HEIGHT: f32 = 34.0;
+    pub const COUNTDOWN_CHIP_GAP: f32 = 9.0;
+    pub const COUNTDOWN_CHIP_PADDING: f32 = 16.0;
+    /// The white inset that frames the capture area.
+    pub const COUNTDOWN_FRAME_INSET: f32 = 8.0;
+    pub const COUNTDOWN_FRAME_WIDTH: f32 = 2.0;
+    pub const COUNTDOWN_FRAME_RADIUS: f32 = 14.0;
+
     // ---- recorder option cards ---------------------------------------------
 
     /// Each bar control's card, a window of its own floating over the bar.

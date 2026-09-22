@@ -15,10 +15,10 @@
 //! the titlebar's Presets button, or ⌘⇧P, opens the Presets dialog.
 //! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either; `=card-<panel>`
 //! opens that recorder card; `=rec-counting`, `=rec-recording`, `=rec-paused` or
-//! `=rec-stopping` shows the bar mid-capture.
+//! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
 use crate::{
-    CaptureSource, EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions, Region,
-    Wallpaper,
+    CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
+    RecordingOptions, Region, Wallpaper,
 };
 use anyhow::Result;
 use std::{
@@ -47,6 +47,7 @@ struct Gallery {
     editor: EditorWindow,
     launcher: RecordingLauncher,
     options: RecordingOptions,
+    countdown: RecordingCountdown,
     playhead: f32,
     playing: bool,
     appearance: &'static str,
@@ -62,10 +63,12 @@ pub fn run() -> Result<()> {
     let editor = EditorWindow::new()?;
     let launcher = RecordingLauncher::new()?;
     let options = RecordingOptions::new()?;
+    let countdown = RecordingCountdown::new()?;
     let gallery = Rc::new(RefCell::new(Gallery {
         editor: editor.clone(),
         launcher: launcher.clone(),
         options: options.clone(),
+        countdown,
         playhead: 37.5,
         playing: false,
         // `SUBTAKE_GALLERY=light` starts in light mode; anything else is dark.
@@ -110,7 +113,7 @@ pub fn run() -> Result<()> {
                 match state.as_str() {
                     "counting" => {
                         l.set_busy(true);
-                        l.set_counting(3);
+                        g.count(3);
                     }
                     "stopping" => {
                         l.set_busy(true);
@@ -315,14 +318,14 @@ impl Gallery {
                 let count = self.launcher.get_countdown();
                 if count > 0 {
                     self.launcher.set_busy(true);
-                    self.launcher.set_counting(count);
+                    self.count(count);
                     let me = self.me.clone();
                     self.playback
                         .start(TimerMode::Repeated, Duration::from_secs(1), move || {
                             if let Some(g) = me.upgrade() {
                                 let g = g.borrow();
                                 let left = g.launcher.get_counting() - 1;
-                                g.launcher.set_counting(left.max(0));
+                                g.count(left.max(0));
                                 if left <= 0 {
                                     g.launcher.set_busy(false);
                                     start_capture(&g.launcher, &g.playback, 0);
@@ -335,7 +338,7 @@ impl Gallery {
             }
             "cancel" => {
                 self.playback.stop();
-                self.launcher.set_counting(0);
+                self.count(0);
                 self.launcher.set_busy(false);
             }
             "discard-recording" => {
@@ -475,11 +478,27 @@ impl Gallery {
             .unwrap_or(default)
     }
 
+    /// The count on the bar and over the screen, as the app runs both.
+    fn count(&self, left: i32) {
+        self.launcher.set_counting(left);
+        self.countdown.set_counting(left);
+        if left > 0 && !self.countdown.window().is_visible() {
+            let _ = self.countdown.show();
+            // Over the bar's screen, once the bar has been placed on it.
+            Timer::single_shot(Duration::from_millis(60), || {
+                platform::set_countdown_display(0)
+            });
+        } else if left <= 0 {
+            let _ = self.countdown.hide();
+        }
+    }
+
     fn apply_appearance(&self) {
         for window in [
             &self.editor as &dyn Appearance,
             &self.launcher,
             &self.options,
+            &self.countdown,
         ] {
             window.theme(self.appearance);
         }
@@ -560,6 +579,12 @@ impl Appearance for EditorWindow {
 }
 
 impl Appearance for RecordingLauncher {
+    fn theme(&self, value: &str) {
+        self.set_appearance(value.into());
+    }
+}
+
+impl Appearance for RecordingCountdown {
     fn theme(&self, value: &str) {
         self.set_appearance(value.into());
     }

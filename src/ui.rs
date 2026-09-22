@@ -1,7 +1,9 @@
 //! Native editor and recorder surfaces, one `RootView` per window kind.
 //! Business commands stay behind the `ui_state` callbacks; this module and
 //! its children only present state and forward intent.
-use crate::ui_state::{EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions, Region};
+use crate::ui_state::{
+    EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher, RecordingOptions, Region,
+};
 use base64::Engine;
 use gpui::{prelude::*, *};
 use std::{
@@ -38,6 +40,7 @@ pub enum Surface {
     Editor(EditorWindow),
     Launcher(RecordingLauncher),
     Options(RecordingOptions),
+    Countdown(RecordingCountdown),
 }
 
 impl Surface {
@@ -48,6 +51,7 @@ impl Surface {
             Self::Editor(s) => s.invoke_action(command),
             Self::Launcher(s) => s.invoke_action(command),
             Self::Options(s) => s.invoke_action(command),
+            Self::Countdown(s) => s.invoke_action(command),
         });
     }
     /// Which window this is, for a perf timeline line.
@@ -56,6 +60,7 @@ impl Surface {
             Self::Editor(_) => "editor",
             Self::Launcher(_) => "recorder",
             Self::Options(_) => "options",
+            Self::Countdown(_) => "countdown",
         }
     }
 
@@ -64,6 +69,7 @@ impl Surface {
             Self::Editor(s) => s.get_appearance(),
             Self::Launcher(s) => s.get_appearance(),
             Self::Options(s) => s.get_appearance(),
+            Self::Countdown(s) => s.get_appearance(),
         }
     }
 }
@@ -338,6 +344,7 @@ impl Render for RootView {
             Surface::Editor(e) => self.editor(e, window, cx),
             Surface::Launcher(s) => self.launcher(s),
             Surface::Options(s) => self.options(s, cx),
+            Surface::Countdown(s) => self.countdown_overlay(s),
         };
         // Keep frames coming while any wash or switch is mid-fade. This has
         // to run AFTER the tree is built, not before: hover fades are kicked
@@ -405,6 +412,14 @@ impl Render for RootView {
                     && matches!(event.keystroke.key.as_str(), "space" | "enter")
                 {
                     return;
+                }
+                // Esc cancels a running count from the bar as well as from
+                // the global shortcut the app holds while it runs.
+                if event.keystroke.key == "escape"
+                    && let Surface::Launcher(l) = &s.surface
+                    && l.get_counting() > 0
+                {
+                    l.defer_action("cancel".into());
                 }
                 if event.keystroke.key == "escape" {
                     s.gesture = None;

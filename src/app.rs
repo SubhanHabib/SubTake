@@ -1,6 +1,6 @@
 use crate::{
-    AppTray, CaptureSource, EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions,
-    Region, Wallpaper,
+    AppTray, CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
+    RecordingOptions, Region, Wallpaper,
 };
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
@@ -103,6 +103,8 @@ pub struct App {
     devices: Value,
     launcher: Option<RecordingLauncher>,
     launcher_options: Option<RecordingOptions>,
+    /// The count drawn over the display being recorded, beside the bar's.
+    countdown_overlay: Option<RecordingCountdown>,
     tray: Option<AppTray>,
     editor_shown: bool,
     capture_started: Option<std::time::Instant>,
@@ -116,6 +118,9 @@ pub struct App {
     recording: Option<Recording>,
     hotkeys: Option<global_hotkey::GlobalHotKeyManager>,
     hotkey_ids: Vec<(u32, String)>,
+    /// Esc, held as a global shortcut only while the countdown runs: the
+    /// count is over whatever app is in front, so the bar has no focus.
+    escape_hotkey: Option<global_hotkey::hotkey::HotKey>,
     last_export: Option<PathBuf>,
 }
 
@@ -156,6 +161,7 @@ impl App {
             devices: Value::Null,
             launcher: None,
             launcher_options: None,
+            countdown_overlay: None,
             tray: None,
             editor_shown: false,
             capture_started: None,
@@ -167,6 +173,7 @@ impl App {
             recording: None,
             hotkeys: None,
             hotkey_ids: vec![],
+            escape_hotkey: None,
             last_export: None,
         }
     }
