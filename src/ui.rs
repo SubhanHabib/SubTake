@@ -229,6 +229,9 @@ pub struct RootView {
     /// A finished export's auto-dismiss, held from when its pill first
     /// shows until it goes; stopped, not dropped, once hovered.
     export_dismiss: Option<crate::ui_runtime::Timer>,
+    /// Each inspector panel's scroll position, so its edges fade by how much
+    /// of it is scrolled out of sight.
+    inspector_scroll: HashMap<String, ScrollHandle>,
     theme: Theme,
 }
 
@@ -267,6 +270,7 @@ impl RootView {
             presets: None,
             mic_clipped: None,
             export_dismiss: None,
+            inspector_scroll: HashMap::new(),
             theme,
         }
     }

@@ -14,7 +14,7 @@
 
 use gpui::{
     AnyElement, App, Bounds, Corners, EdgeFade, Element, GlobalElementId, InspectorElementId,
-    IntoElement, LayoutId, Pixels, Window, px,
+    IntoElement, LayoutId, Pixels, ScrollHandle, Window, px,
 };
 
 use subtake_theme::Theme;
@@ -221,18 +221,28 @@ pub const FADE_BAND: f32 = Theme::FADE_BAND;
 pub fn fade_edges(child: impl IntoElement) -> FadeEdges {
     FadeEdges {
         band: FADE_BAND,
+        scroll: None,
         child: child.into_any_element(),
     }
 }
 
 pub struct FadeEdges {
     band: f32,
+    scroll: Option<ScrollHandle>,
     child: AnyElement,
 }
 
 impl FadeEdges {
     pub fn band(mut self, band: f32) -> Self {
         self.band = band;
+        self
+    }
+
+    /// Fade each edge only by as much as is scrolled out past it, up to the
+    /// band: nothing at rest, and nothing under the end once it is reached.
+    /// `handle` must be the one the scrolled child tracks.
+    pub fn tracking(mut self, handle: &ScrollHandle) -> Self {
+        self.scroll = Some(handle.clone());
         self
     }
 }
@@ -283,13 +293,23 @@ impl Element for FadeEdges {
     ) {
         // A band taller than half the region would cross-fade the middle.
         let band = self.band.min(f32::from(bounds.size.height) / 2.0).max(0.0);
-        let fade = (band > 0.0).then_some(EdgeFade {
+        // The child's prepaint has run, so the handle holds this frame's
+        // offset and extent.
+        let (above, below) = match &self.scroll {
+            Some(handle) => {
+                let above = -f32::from(handle.offset().y);
+                (above, f32::from(handle.max_offset().y) - above)
+            }
+            None => (band, band),
+        };
+        let (top, bottom) = (above.clamp(0.0, band), below.clamp(0.0, band));
+        let fade = (top > 0.5 || bottom > 0.5).then_some(EdgeFade {
             bounds,
             band: px(band),
-            band_top: None,
-            band_bottom: None,
-            top: true,
-            bottom: true,
+            band_top: Some(px(top)),
+            band_bottom: Some(px(bottom)),
+            top: top > 0.5,
+            bottom: bottom > 0.5,
             left: false,
             right: false,
         });

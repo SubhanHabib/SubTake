@@ -935,6 +935,11 @@ impl RootView {
         // The band is the handoff's 12 between a title and the first row, and
         // between the last row and the footer, so the panel's own block gap
         // is taken out rather than added to it.
+        let scroll = self
+            .inspector_scroll
+            .entry(name.to_string())
+            .or_default()
+            .clone();
         let mut el = content_panel(theme)
             .py_0()
             .gap_0()
@@ -942,20 +947,22 @@ impl RootView {
             .min_h_0()
             .child(heading.pt(px(Theme::PANEL_PADDING)))
             .child(
+                // Each edge fades only by what is scrolled out past it: a
+                // panel that fits is never dimmed, and a row the edge cuts
+                // dissolves over the longer band instead of hanging there as
+                // a half-faded copy of itself.
                 fade_edges(
                     div()
                         .id(SharedString::from(format!("inspector-{name}")))
                         .flex_1()
                         .min_h_0()
                         .overflow_y_scroll()
-                        // A band's worth of padding: at rest the ramp lands
-                        // here, so a panel that fits is never dimmed, and one
-                        // that overflows dissolves instead of slicing a row in
-                        // half.
+                        .track_scroll(&scroll)
                         .py(px(Theme::GAP_LARGE))
                         .child(content),
                 )
-                .band(Theme::GAP_LARGE),
+                .band(Theme::SCROLL_FADE_BAND)
+                .tracking(&scroll),
             );
         // Without a footer the band is the bottom edge, and the rest of the
         // panel's padding makes it up to the sides'.

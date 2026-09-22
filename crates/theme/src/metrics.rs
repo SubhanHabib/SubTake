@@ -499,6 +499,11 @@ impl Theme {
     /// height for a scroller has to budget this with it, or the region starts
     /// one band short and fades its own last row for good.
     pub const FADE_BAND: f32 = 16.0;
+    /// The deeper ramp of a scroller that knows how far it is scrolled. It
+    /// grows with what is hidden past an edge, so it needs no padding to rest
+    /// on, and it is long enough that a row cut by the edge dissolves rather
+    /// than showing as a faded copy of itself.
+    pub const SCROLL_FADE_BAND: f32 = 32.0;
 
     /// The lane region's height: the stack the handoff draws — a ruler, the
     /// source lane and five lanes — plus the fade band the scroller rests on.
