@@ -170,17 +170,29 @@ impl RootView {
             .w_full()
             .min_h_0()
             .overflow_y_scroll();
-        // Icons only; the active panel takes the accent fill.
+        // Icons only; the active panel takes the accent fill. The pod offers
+        // tools — modes that change what the stage does — and stays at six:
+        // Selection is not one (it follows the timeline's selection), and
+        // Presets and Export are the titlebar's.
+        //
+        // Not drawn by the design: the Zoom tool. The round-2 handoff puts a
+        // Sparkle "Zoom" first and moves Scene onto the aspect pod, but draws
+        // neither the Zoom inspector nor the aspect pod's way into Scene, so
+        // the Sparkle keeps opening Scene until both are.
         for (label, name, glyph) in [
             ("Scene", "Frame", "Sparkle-regular"),
             ("Cursor", "Cursor", "Cursor-regular"),
-            ("Webcam", "Webcam", "Camera-regular"),
+            ("Camera", "Webcam", "Camera-regular"),
             ("Captions", "Captions", "ClosedCaptioning-regular"),
             ("Audio", "Audio", "SpeakerHigh-regular"),
         ] {
             panels = panels.child(self.rail_panel_button(e, label, name, glyph));
         }
         // A hairline before the two that are not tools, as the pod is drawn.
+        //
+        // Not drawn by the design: Help. The round-2 pod stops at six with
+        // Settings, but Help is the only way to the shortcut reference until
+        // the menus and the reference (3e, 3f) are drawn, so it stays.
         let rail = pod(theme)
             .flex_col()
             .w(px(Theme::POD_WIDTH))

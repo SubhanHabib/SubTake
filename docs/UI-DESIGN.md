@@ -60,7 +60,15 @@ pill centred on the window, and Record / Presets / Export at the right. Then
 one stage filling the rest, with three floats over it: the tool pod at the left
 (60 wide, inset 24, centred on the stage's height), the aspect and crop
 controls at the stage's top left, and the 340-wide inspector on `card` at the
-right. The stage keeps each float's width clear at its side, so the picture
+right.
+
+The pod offers tools — Scene, Cursor, Camera, Captions, Audio — then a hairline
+and Settings. Selection has no button: clicking a region opens it in place of
+whatever panel was showing. Not drawn by the
+design: the round-2 pod starts with a Sparkle "Zoom" and moves Scene onto the
+aspect pod, but neither the Zoom inspector nor that way into Scene is drawn
+yet, so the Sparkle still opens Scene; and Help stays under Settings, because
+it is the only way to the shortcut reference until the menus are drawn. The stage keeps each float's width clear at its side, so the picture
 runs under nothing; the preview centres in what is left and therefore reads
 slightly left of the window's true centre. That is the handoff's own answer to
 its own open question — the alternative was a larger frame with its right edge
