@@ -79,7 +79,12 @@ impl RootView {
         }
     }
 
-    pub(super) fn timeline(&mut self, window: &EditorWindow, cx: &mut Context<Self>) -> AnyElement {
+    pub(super) fn timeline(
+        &mut self,
+        window: &EditorWindow,
+        status: Option<AnyElement>,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
         let theme = self.theme;
         let visible = window.get_timeline_visible();
         let offset = window.get_timeline_offset();
@@ -521,6 +526,10 @@ impl RootView {
                     }
                 }
             }))
+            // The export/transcription line, when there is one. It sits
+            // inside the console rather than under it so the console keeps
+            // the shell's own inset on all three of its edges.
+            .when_some(status, |el, status| el.child(divider(theme)).child(status))
             .into_any_element();
         frosted(UiSurface::Panel.radius(), UiSurface::Panel.blur(), console).into_any_element()
     }

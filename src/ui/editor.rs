@@ -182,41 +182,55 @@ impl RootView {
                     .child(preview)
                     .child(inspector),
             );
+        let status = self.status_strip(e);
         if e.get_has_video() {
-            root = root.child(self.timeline(e, cx));
+            root = root.child(self.timeline(e, status, cx));
+        } else if let Some(status) = status {
+            root = root.child(
+                div()
+                    .px(px(Theme::GAP_LARGE))
+                    .pb(px(Theme::GAP))
+                    .child(status),
+            );
         }
-        // Reserved status strip under the content outlet (reference
-        // `Theme::CONTROL_HEIGHT`): reserving it keeps the timeline from
-        // shifting when a status line appears.
-        //
-        // TODO(redesign): the handoff has no status strip. Its four screens
-        // put progress on the thing that is progressing — a bar inside the
-        // export dialog, a spinner on the region being rendered — and leave
-        // the shell's bottom edge to the console. This strip is carried on
-        // the new tokens because export and transcription still need to say
-        // something, and there is nowhere else drawn to say it. It is the
-        // one piece of shell chrome with no counterpart in the redesign.
+        root.child(self.menu_overlay(window, cx)).into_any_element()
+    }
+
+    /// The export and transcription line. `None` when there is nothing to
+    /// say, so the console keeps the shell's own bottom margin instead of
+    /// reserving a strip under it — the console's inset from the bottom edge
+    /// now matches its inset from the left and right.
+    ///
+    /// TODO(redesign): the handoff has no status strip at all. Its four
+    /// screens put progress on the thing that is progressing — a bar inside
+    /// the export dialog, a spinner on the region being rendered — and leave
+    /// the shell's bottom edge to the console. This is carried because export
+    /// and transcription still need somewhere to speak, but it now lives
+    /// inside the console rather than under it, and only while it has
+    /// something to report.
+    fn status_strip(&mut self, e: &EditorWindow) -> Option<AnyElement> {
+        let theme = self.theme;
+        let busy = e.get_busy();
+        let text = e.get_status();
+        if !busy && text.is_empty() {
+            return None;
+        }
+        let mut line = row()
+            .text_size(px(Theme::FONT_SMALL))
+            .text_color(theme.muted)
+            .child(div().flex_1().text_ellipsis().child(text));
+        if busy {
+            line = line.child(self.action("cancel", "Cancel", "cancel", true));
+        }
         let mut status = div()
             .flex()
             .flex_col()
-            .justify_center()
             .gap(px(Theme::GAP_SMALL))
-            .min_h(px(Theme::CONTROL_HEIGHT))
-            .px(px(Theme::GAP_LARGE))
-            .text_size(px(Theme::FONT_SMALL));
-        let mut status_line = row()
-            .text_color(theme.muted)
-            .child(div().flex_1().text_ellipsis().child(e.get_status()));
-        if e.get_busy() {
-            status_line = status_line.child(self.action("cancel", "Cancel", "cancel", true));
-        }
-        status = status.child(status_line);
-        if e.get_busy() {
+            .child(line);
+        if busy {
             status = status.child(progress_bar(e.get_progress(), theme));
         }
-        root.child(status)
-            .child(self.menu_overlay(window, cx))
-            .into_any_element()
+        Some(status.into_any_element())
     }
 
     pub(super) fn brand(&self) -> impl IntoElement {
