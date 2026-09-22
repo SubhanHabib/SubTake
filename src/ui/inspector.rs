@@ -443,14 +443,17 @@ impl RootView {
                     },
                 );
                 // One row, not two: a label stacked over its control reads
-                // as a heading plus a thing, when it is one setting.
+                // as a heading plus a thing, when it is one setting. The
+                // label takes a fixed third, so a stack of these starts its
+                // controls in one column rather than wherever each label
+                // happens to end.
                 body = body.child(
                     row()
                         .h(px(Theme::CONTROL_HEIGHT))
                         .child(
                             div()
                                 .flex_none()
-                                .max_w(px(PANEL_WIDTH / 3.0))
+                                .w(px(PANEL_WIDTH / 3.0))
                                 .text_ellipsis()
                                 .text_color(theme.text)
                                 .child(label),
@@ -497,7 +500,7 @@ impl RootView {
                         .child(
                             div()
                                 .flex_none()
-                                .max_w(px(PANEL_WIDTH / 3.0))
+                                .w(px(PANEL_WIDTH / 3.0))
                                 .text_ellipsis()
                                 .text_color(theme.text)
                                 .child(label),
