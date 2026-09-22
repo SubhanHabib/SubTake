@@ -164,7 +164,7 @@ impl RenderOnce for Button {
         ) {
             (theme.hover.opacity(0.0), theme.hover)
         } else {
-            (theme.surface, theme.hover)
+            (theme.sunk, theme.hover)
         };
 
         // Selection is a state the control HOLDS, so it tweens from render;
@@ -246,7 +246,7 @@ impl RenderOnce for Button {
             }
         }
         if self.variant == ButtonVariant::Outline {
-            el = el.border_1().border_color(theme.border);
+            el = el.border_1().border_color(theme.line);
         }
         if danger {
             el = el.border_1().border_color(theme.danger.opacity(0.4));

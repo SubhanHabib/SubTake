@@ -26,10 +26,10 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
         Surface::Panel => Theme::RADIUS_PANEL,
     };
     let background = match variant {
-        Surface::Popup => theme.popup,
-        Surface::Card => theme.surface,
+        Surface::Popup => theme.card,
+        Surface::Card => theme.sunk,
         Surface::Overlay => theme.overlay,
-        Surface::Panel => theme.panel,
+        Surface::Panel => theme.glass,
     };
     let el = div()
         .flex()
@@ -41,7 +41,7 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
         // el.shadow_lg()
         el
     } else {
-        el.border_1().border_color(theme.border)
+        el.border_1().border_color(theme.line)
     }
 }
 
@@ -52,7 +52,7 @@ pub fn panel(theme: Theme) -> Div {
 
 /// A hairline rule.
 pub fn divider(theme: Theme) -> Div {
-    div().h(px(Theme::BORDER_WIDTH)).flex_1().bg(theme.border)
+    div().h(px(Theme::BORDER_WIDTH)).flex_1().bg(theme.line)
 }
 
 /// A small muted section caption ("Frame", "Padding", "Animation").

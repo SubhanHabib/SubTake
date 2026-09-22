@@ -11,17 +11,16 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.theme;
-        // The unified window titlebar: a translucent strip tall enough for
-        // the 40px icon cluster, on the `header` tone so the vibrancy
-        // material reads through it.
+        // The unified window titlebar: a strip tall enough for the 40px icon
+        // cluster, carrying no fill of its own — the redesign has the shell's
+        // `bg` run unbroken behind it rather than a second tone on top.
         let mut header = div()
             .flex()
             .items_center()
             .gap(px(Theme::GAP_SMALL))
             .h(px(TITLEBAR_HEIGHT))
             .px(px(Theme::GAP_LARGE))
-            .flex_shrink_0()
-            .bg(theme.header);
+            .flex_shrink_0();
         if e.get_mac_titlebar() {
             // Traffic lights sit at {14,15}; the cluster starts at 88px.
             header = header.pl(px(88.));

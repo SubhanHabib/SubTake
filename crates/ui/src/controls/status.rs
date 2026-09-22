@@ -26,7 +26,7 @@ pub fn context_chip(theme: Theme, parts: &[&str]) -> Div {
         .h(px(Theme::CHIP_HEIGHT))
         .px(px(Theme::GAP_LARGE))
         .rounded(px(Theme::RADIUS_SMALL))
-        .bg(theme.surface)
+        .bg(theme.sunk)
         .text_size(px(Theme::FONT_SMALL))
         .text_color(theme.muted)
         // A separator between the parts, or "Recorder More" reads as one
@@ -63,7 +63,7 @@ pub fn progress_bar(fraction: f32, theme: Theme) -> Div {
         .h(px(Theme::PROGRESS_HEIGHT))
         .rounded_full()
         .overflow_hidden()
-        .bg(theme.unchecked)
+        .bg(theme.sunk2)
         .child(
             div()
                 .h_full()

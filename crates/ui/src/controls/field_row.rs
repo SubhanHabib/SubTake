@@ -16,7 +16,7 @@ pub fn field_row(theme: Theme, label: impl Into<SharedString>) -> Div {
         .px(px(Theme::CONTROL_PADDING))
         .gap(px(Theme::GAP))
         .rounded(px(Theme::RADIUS_CONTROL))
-        .bg(theme.surface)
+        .bg(theme.sunk)
         .text_size(px(Theme::FONT_CONTROL))
         .text_color(theme.text)
         .child(div().flex_1().min_w_0().text_ellipsis().child(label.into()))
@@ -36,7 +36,7 @@ pub fn setting_card(
         .p(px(Theme::GAP_LARGE))
         .gap(px(Theme::GAP))
         .rounded(px(Theme::RADIUS_CARD))
-        .bg(theme.surface)
+        .bg(theme.sunk)
         .child(
             column()
                 .flex_1()
@@ -65,7 +65,7 @@ pub fn group_card(theme: Theme, label: impl Into<SharedString>) -> Div {
         .gap(px(Theme::GAP))
         .p(px(Theme::GAP_LARGE))
         .rounded(px(Theme::RADIUS_CARD))
-        .bg(theme.surface)
+        .bg(theme.sunk)
         .child(
             div()
                 .text_size(px(Theme::FONT_SMALL))

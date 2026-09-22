@@ -641,7 +641,7 @@ impl Element for TextElement {
                             bounds.bottom(),
                         ),
                     ),
-                    input.theme.selection,
+                    input.theme.accent_soft,
                 )),
                 None,
             )
@@ -741,7 +741,7 @@ impl Render for TextInput {
                     .px(px(Theme::INPUT_PADDING))
                     .flex()
                     .items_center()
-                    .bg(self.theme.input)
+                    .bg(self.theme.sunk)
                     .rounded(px(Theme::RADIUS_CONTROL))
                     .overflow_hidden()
                     .child(TextElement { input: cx.entity() }),

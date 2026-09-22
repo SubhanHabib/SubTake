@@ -679,7 +679,7 @@ impl RootView {
                             .flex_none()
                             .size(px(Theme::CONTROL_HEIGHT))
                             .rounded(px(Theme::RADIUS_SMALL))
-                            .bg(theme.surface)
+                            .bg(theme.sunk)
                             .child(icon(glyph, theme.text)),
                     )
                     .child(

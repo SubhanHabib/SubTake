@@ -124,7 +124,7 @@ impl Render for Dropdown {
                     .rounded(px(Theme::RADIUS_CONTROL))
                     .bg(motion::hover_blend(
                         &trigger_key,
-                        if open { theme.hover } else { theme.surface },
+                        if open { theme.hover } else { theme.sunk },
                         theme.hover,
                     ))
                     .text_size(px(Theme::FONT_CONTROL))

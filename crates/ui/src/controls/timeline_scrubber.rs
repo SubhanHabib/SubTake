@@ -13,7 +13,7 @@ pub fn timeline_scrubber(theme: Theme, grip_top: f32) -> impl IntoElement {
             .top(px(22.0 + row as f32 * 7.0))
             .size(px(3.))
             .rounded(px(1.5))
-            .bg(theme.toggle_thumb)
+            .bg(theme.thumb())
     };
     div()
         .w(px(Theme::SCRUBBER_WIDTH))
@@ -27,7 +27,7 @@ pub fn timeline_scrubber(theme: Theme, grip_top: f32) -> impl IntoElement {
                 .top(px(17.))
                 .bottom_0()
                 .w(px(2.))
-                .bg(theme.playhead),
+                .bg(theme.accent),
         )
         // Rounded cap.
         .child(
@@ -38,7 +38,7 @@ pub fn timeline_scrubber(theme: Theme, grip_top: f32) -> impl IntoElement {
                 .w(px(14.))
                 .h(px(17.))
                 .rounded(px(6.))
-                .bg(theme.playhead)
+                .bg(theme.accent)
                 .shadow_sm(),
         )
         // Grip: the handle the pointer takes hold of.
@@ -50,9 +50,9 @@ pub fn timeline_scrubber(theme: Theme, grip_top: f32) -> impl IntoElement {
                 .w(px(Theme::SCRUBBER_WIDTH))
                 .h(px(Theme::SCRUBBER_GRIP_HEIGHT))
                 .rounded(px(13.))
-                .bg(theme.playhead.opacity(0.55))
+                .bg(theme.accent.opacity(0.55))
                 .border_1()
-                .border_color(theme.toggle_thumb.opacity(0.35))
+                .border_color(theme.thumb().opacity(0.35))
                 .shadow_lg()
                 .children((0..3).map(|r| dot(r, 8.0)))
                 .children((0..3).map(|r| dot(r, 15.0))),

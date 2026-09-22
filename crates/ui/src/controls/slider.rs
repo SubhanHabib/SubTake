@@ -108,7 +108,7 @@ impl Render for Slider {
             .h(px(Theme::CONTROL_HEIGHT))
             .w_full()
             .rounded(px(Theme::RADIUS_CONTROL))
-            .bg(theme.surface)
+            .bg(theme.sunk)
             .overflow_hidden()
             .cursor(CursorStyle::ResizeLeftRight)
             .focus_visible(move |s| s.border_1().border_color(theme.slider_focus()))

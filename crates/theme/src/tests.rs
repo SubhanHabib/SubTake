@@ -6,16 +6,21 @@ fn surfaces_keep_the_alpha_they_were_authored_with() {
     // the vibrancy material the whole palette is designed to sit on.
     let light = Theme::light();
     assert!(light.bg.a < 1.0, "window background must stay translucent");
-    assert!(light.panel.a < 1.0, "panels must stay translucent");
     assert!(
-        light.surface.a < 1.0,
-        "control plates must stay translucent"
+        light.glass.a < 1.0,
+        "floating controls must stay translucent"
     );
+    assert!(
+        light.card.a < 1.0,
+        "floating text surfaces must stay translucent"
+    );
+    assert!(light.sunk.a < 1.0, "recesses must stay translucent");
     assert_eq!(light.text.a, 1.0, "text stays fully opaque");
 
     let dark = Theme::dark();
     assert!(dark.bg.a < 1.0);
-    assert!(dark.panel.a < 1.0);
+    assert!(dark.glass.a < 1.0);
+    assert!(dark.card.a < 1.0);
 }
 
 #[test]
@@ -50,35 +55,57 @@ fn control_geometry_is_unified() {
 }
 
 #[test]
-fn every_control_colour_is_achromatic() {
-    // The interface takes its colour from the desktop behind the glass,
-    // so no control may introduce a hue of its own.
+fn the_accent_is_the_only_hue_in_the_interface() {
+    // Everything that is not the accent, the record red or the glyph on
+    // one of them takes its colour from the desktop behind the glass. The
+    // greys carry a trace of blue so they sit on that glass rather than
+    // fighting it, which is what the loose bound below allows for.
     for t in [Theme::light(), Theme::dark()] {
         for (name, colour) in [
-            ("accent", t.accent),
-            ("accent_hover", t.accent_hover),
-            ("accent_text", t.accent_text),
-            ("on_accent", t.on_accent),
-            ("selection", t.selection),
-            ("unchecked", t.unchecked),
-            ("toggle_thumb", t.toggle_thumb),
+            ("bg", t.bg),
+            ("glass", t.glass),
+            ("card", t.card),
+            ("sunk", t.sunk),
+            ("sunk2", t.sunk2),
+            ("raise", t.raise),
+            ("text", t.text),
+            ("muted", t.muted),
+            ("line", t.line),
+            ("ink", t.ink),
         ] {
-            assert_eq!(colour.s, 0.0, "{name} must be grey, not tinted");
+            assert!(colour.s < 0.2, "{name} must read as grey, not as a colour");
+        }
+        for (name, colour) in [("accent", t.accent), ("rec", t.rec)] {
+            assert!(colour.s > 0.6, "{name} must read as a colour, not as grey");
         }
     }
 }
 
 #[test]
 fn the_filled_plate_inverts_with_the_appearance() {
-    // Filled means near-black on light and near-white on dark, with the
-    // glyph on it taking the opposite end.
+    // `ink` is the achromatic filled plate — the transport button, the
+    // active segment — so filled means near-black on light and near-white
+    // on dark, with the glyph on it taking the opposite end.
     let light = Theme::light();
-    assert!(light.accent.l < 0.2 && light.on_accent.l > 0.9);
+    assert!(light.ink.l < 0.2 && light.on_ink.l > 0.9);
     let dark = Theme::dark();
-    assert!(dark.accent.l > 0.9 && dark.on_accent.l < 0.2);
-    // Hover lifts the plate away from the background in both.
-    assert!(light.accent_hover.l > light.accent.l);
+    assert!(dark.ink.l > 0.9 && dark.on_ink.l < 0.2);
+}
+
+#[test]
+fn the_accent_steps_away_from_the_surface_it_sits_on() {
+    // Hover and press deepen the blue on light and lift it on dark, so in
+    // both appearances the plate separates further from its background
+    // rather than sliding towards it.
+    let light = Theme::light();
+    assert!(light.accent_press.l < light.accent_hover.l);
+    assert!(light.accent_hover.l < light.accent.l);
+    let dark = Theme::dark();
+    assert!(dark.accent_press.l > dark.accent_hover.l);
     assert!(dark.accent_hover.l > dark.accent.l);
+    // The glyph on the accent contrasts with it in both.
+    assert!(light.on_accent.l > light.accent.l);
+    assert!(dark.on_accent.l < dark.accent.l);
 }
 
 #[test]

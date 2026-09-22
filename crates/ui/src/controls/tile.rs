@@ -22,7 +22,7 @@ pub fn swatch(
         .rounded(px(Theme::RADIUS_SMALL))
         .bg(colour)
         .border_2()
-        .border_color(motion::blend(theme.border, theme.accent, pick))
+        .border_color(motion::blend(theme.line, theme.accent, pick))
         .cursor_pointer()
         .active(|s| s.opacity(Theme::PRESSED_OPACITY))
 }
@@ -81,7 +81,7 @@ pub fn choice_tile(
     let id = id.into();
     let pick = motion::state_fade(&motion::tween_key(&id, "fill"), selected);
     let hover_key = motion::tween_key(&id, "hover");
-    let wash = motion::blend(theme.surface, theme.selection, pick);
+    let wash = motion::blend(theme.sunk, theme.accent_soft, pick);
     div()
         .flex()
         .flex_col()
@@ -95,7 +95,7 @@ pub fn choice_tile(
         // of the same filled/outlined language the buttons use.
         .bg(motion::hover_blend(&hover_key, wash, theme.hover))
         .border_1()
-        .border_color(motion::blend(theme.border, theme.accent, pick))
+        .border_color(motion::blend(theme.line, theme.accent, pick))
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
         .tab_index(0)
         .tab_stop(enabled)

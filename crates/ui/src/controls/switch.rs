@@ -26,7 +26,7 @@ pub fn switch(
         .w(px(52.))
         .h(px(30.))
         .rounded(px(15.))
-        .bg(motion::blend(t.unchecked, t.accent, on))
+        .bg(motion::blend(t.sunk2, t.accent, on))
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
         .child(
             div()
@@ -35,9 +35,18 @@ pub fn switch(
                 .left(px(motion::lerp(3., 25., on)))
                 .size(px(24.))
                 .rounded(px(12.))
-                // On a filled track the thumb takes the glyph colour, or it
-                // would be white-on-white in the dark appearance.
-                .bg(motion::blend(t.toggle_thumb, t.on_accent, on)),
+                // White on both tracks, as the redesign specifies. On the
+                // off track that is white on a near-white `sunk2` in the
+                // light appearance, so the thumb's own drop shadow is what
+                // separates it — not a second fill.
+                .bg(t.thumb())
+                .shadow(vec![BoxShadow {
+                    color: hsla(0., 0., 0., 0.3),
+                    offset: point(px(0.), px(1.)),
+                    blur_radius: px(3.),
+                    spread_radius: px(0.),
+                    inset: false,
+                }]),
         );
     if enabled {
         switch = switch

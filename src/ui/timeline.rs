@@ -197,7 +197,7 @@ impl RootView {
             .h(px(56.))
             .overflow_hidden()
             .rounded_lg()
-            .bg(theme.surface)
+            .bg(theme.sunk)
             .child(div().px_2().child(window.get_document_title()));
         if let Some(image) = window.get_thumbnails().0 {
             source = source.child(
@@ -220,7 +220,7 @@ impl RootView {
                     .w_full()
                     .h(px(38.))
                     .rounded_lg()
-                    .bg(theme.surface),
+                    .bg(theme.sunk),
             );
         }
         if let Some(image) = window.get_waveform().0 {
@@ -269,7 +269,7 @@ impl RootView {
                 .overflow_hidden()
                 .bg(tint.opacity(if region.selected { 0.24 } else { 0.11 }))
                 .border_1()
-                .border_color(if region.selected { tint } else { theme.border })
+                .border_color(if region.selected { tint } else { theme.line })
                 .cursor(CursorStyle::ClosedHand)
                 .child(
                     div()
