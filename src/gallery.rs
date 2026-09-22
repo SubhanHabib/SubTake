@@ -25,7 +25,8 @@
 //! model name (`=panel-Preferences`); `=inspector-open` slides the folded
 //! inspector in, with `SUBTAKE_GALLERY_WIDTH=1100` (any width under 1280)
 //! folding it; `=rec-counting`, `=rec-recording`, `=rec-paused` or
-//! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
+//! `=rec-stopping` shows the bar mid-capture (counting also covers the screen);
+//! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
 use crate::{
     CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
     RecordingOptions, Region, Wallpaper,
@@ -43,6 +44,7 @@ use subtake_native::ui_runtime::{
 
 mod fixtures;
 mod images;
+mod tour;
 
 use fixtures::*;
 use images::*;
@@ -192,6 +194,7 @@ pub fn run() -> Result<()> {
                 }
             });
         }
+        Ok("tour") => tour::start(gallery.clone()),
         _ => {}
     }
     tick_meter(options.clone(), 0);
