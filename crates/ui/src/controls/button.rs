@@ -10,7 +10,7 @@
 use gpui::{prelude::*, *};
 use subtake_theme::{FONT_MONO, Theme};
 
-use crate::{icon_sized, motion, perf, tooltip};
+use crate::{icon_sized, layered, motion, perf, pill_edge, tooltip};
 
 /// Private on purpose: every variant has a named builder, so a caller says
 /// `.primary()` rather than naming an enum, and there is one way to ask for
@@ -503,18 +503,25 @@ impl RenderOnce for Button {
 
         // Shadows, in the order the redesign layers them: a raised control's
         // hairline always, a glow only while the plate is filled and enabled.
-        let mut shadows = Vec::new();
+        //
+        // The two edges are an `edge` child rather than shadows on the
+        // control itself: at one draw order gpui draws every shadow before
+        // every fill, so inside a frosted float an inset edge set here went
+        // under the control's own plate and a selected pill showed a trace of
+        // its ring at best.
+        let mut edges = Vec::new();
         if self.variant == ButtonVariant::Raised {
-            shadows.push(hairline(theme.raise_line, Theme::BORDER_WIDTH));
+            edges.push(hairline(theme.raise_line, Theme::BORDER_WIDTH));
         }
         // The mark a selected control carries: an inset edge, so gaining or
         // losing it cannot change what the control measures.
         if marked {
-            shadows.push(hairline(theme.accent, Theme::SELECTED_WIDTH));
+            edges.push(hairline(theme.accent, Theme::SELECTED_WIDTH));
         }
         // Only the accent and Record glow. The transport is filled too, but
         // it is `ink` — a glow would make the quietest control in the player
         // bar look like the loudest.
+        let mut shadows = Vec::new();
         if self.enabled && filled {
             match self.variant {
                 ButtonVariant::Transport => {}
@@ -528,9 +535,9 @@ impl RenderOnce for Button {
                 _ => shadows.push(glow(theme.accent_soft, 20., 8.)),
             }
         }
-        // A raised control lifts under the pointer: the same hairline plus a
-        // `0 2 6`, whose shadow fades in with the hover wash rather than
-        // landing at once.
+        // A raised control lifts under the pointer: a `0 2 6` under whatever
+        // it already casts, whose shadow fades in with the hover wash rather
+        // than landing at once.
         if self.variant == ButtonVariant::Raised && self.enabled {
             let mut lift = theme.lift_shadow();
             lift.color = motion::hover_blend(&hover_key, lift.color.opacity(0.), lift.color);
@@ -538,6 +545,9 @@ impl RenderOnce for Button {
         }
         if !shadows.is_empty() {
             el = el.shadow(shadows);
+        }
+        if !edges.is_empty() {
+            el = el.child(pill_edge(edges));
         }
 
         // Record wears its state: a white dot ahead of whatever the caption
@@ -635,7 +645,12 @@ impl RenderOnce for Button {
                 });
             }
         }
-        el
+        // The control paints on a layer of its own, for what it casts past
+        // its own edge: the glow, the lift and the focus ring. Inside a
+        // frosted float they would otherwise share a draw order with the
+        // float's fill, and at one order shadows go under fills — Apply's
+        // glow and a focused control's ring drew under the card they sit on.
+        layered(el)
     }
 }
 
