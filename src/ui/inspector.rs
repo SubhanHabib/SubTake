@@ -798,6 +798,12 @@ impl RootView {
             "Preferences" | "Recording" | "Selection" | "Export" | "Captions"
         );
         let mut footer = column();
+        // TODO(redesign): every arm below belongs to a panel the handoff does
+        // not draw (see the panel list in `src/app/playback.rs`). The action
+        // strip is the one piece of per-panel layout in the inspector, so
+        // this match is where an answer about those panels will land — the
+        // rest of a panel is whatever fields the model hands over. Until
+        // then each arm keeps the strip it has, on the new tokens.
         match name.as_str() {
             "Preferences" => {
                 footer =

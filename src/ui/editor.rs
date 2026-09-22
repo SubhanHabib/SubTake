@@ -188,6 +188,14 @@ impl RootView {
         // Reserved status strip under the content outlet (reference
         // `Theme::CONTROL_HEIGHT`): reserving it keeps the timeline from
         // shifting when a status line appears.
+        //
+        // TODO(redesign): the handoff has no status strip. Its four screens
+        // put progress on the thing that is progressing — a bar inside the
+        // export dialog, a spinner on the region being rendered — and leave
+        // the shell's bottom edge to the console. This strip is carried on
+        // the new tokens because export and transcription still need to say
+        // something, and there is nowhere else drawn to say it. It is the
+        // one piece of shell chrome with no counterpart in the redesign.
         let mut status = div()
             .flex()
             .flex_col()

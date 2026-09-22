@@ -21,7 +21,7 @@ use subtake_theme::Theme;
 
 /// Shared backdrop-blur sigma for floating menus, popovers and palettes.
 /// Keep these on the same surface as Cmd+K and the composer.
-pub const MENU_BLUR: f32 = 16.0;
+pub const MENU_BLUR: f32 = 0.0;
 
 /// Frost `child` (a popover card): backdrop-blurred on glass, pass-through on
 /// opaque platforms. `corner_radius` must match the card's rounding.

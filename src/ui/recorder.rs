@@ -150,6 +150,14 @@ impl RootView {
             _ => "More",
         };
         let options = state.clone();
+        // TODO(redesign): the "Stage" handoff draws the recorder bar and
+        // stops there — this sheet, and every panel in the match below, has
+        // no counterpart in it. Deferred deliberately: the sheet keeps its
+        // current 40px control geometry until the designer draws it, so the
+        // one surface that is still on the old shapes is the one nobody has
+        // redrawn rather than one that was missed. It is on the new tokens,
+        // so it does not look foreign beside the rest — only denser.
+        //
         // Composer structure: a context chip naming the surface, the controls
         // beneath it, and a quiet footer row. The close control is an icon at
         // the shared geometry rather than a button whose caption was the

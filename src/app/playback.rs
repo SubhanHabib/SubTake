@@ -246,22 +246,33 @@ impl App {
                 .unwrap_or("#17171c")
                 .into(),
         );
+        // The inspector's panels, in the order the rail lists them.
+        //
+        // TODO(redesign): the "Stage" handoff draws four of these — Frame,
+        // Presets, Recent and Wallpapers — and says nothing about the other
+        // ten, marked below. They are carried into the new design by the
+        // generic field renderer rather than left on the old one, so they
+        // are correct but undesigned: their grouping, their density and
+        // which of them the rail should still offer are open questions for
+        // the designer. The order is load-bearing — `panel_index` is a
+        // position in this list, mirrored in `src/ui_state.rs` — so the
+        // marking is per line rather than a regrouping.
         ui.set_panel_index(
             [
-                "Frame",
-                "Cursor",
-                "Webcam",
-                "Captions",
-                "Selection",
-                "Recording",
-                "Export",
-                "Audio",
-                "Preferences",
-                "Recent",
-                "Wallpapers",
-                "Crop",
-                "Presets",
-                "Shortcuts",
+                "Frame",       // drawn
+                "Cursor",      // not drawn
+                "Webcam",      // not drawn
+                "Captions",    // not drawn
+                "Selection",   // not drawn
+                "Recording",   // not drawn
+                "Export",      // not drawn
+                "Audio",       // not drawn
+                "Preferences", // not drawn
+                "Recent",      // drawn
+                "Wallpapers",  // drawn
+                "Crop",        // not drawn
+                "Presets",     // drawn
+                "Shortcuts",   // not drawn
             ]
             .iter()
             .position(|p| *p == ui.get_panel().as_str())
