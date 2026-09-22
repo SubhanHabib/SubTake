@@ -21,7 +21,8 @@
 //! nothing selected (clicking any region opens it too); `=cursor` and
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
-//! opens that recorder card; `=rec-counting`, `=rec-recording`, `=rec-paused` or
+//! opens that recorder card; `=panel-<name>` opens any other panel by its
+//! model name (`=panel-Preferences`); `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
 use crate::{
     CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
@@ -117,6 +118,8 @@ pub fn run() -> Result<()> {
             gallery.borrow_mut().set_value("webcam.enabled", "false");
             editor.set_panel("Webcam".into());
         }
+        // Any other panel by its name, `panel-Frame` through `panel-Recent`.
+        Ok(screen) if screen.starts_with("panel-") => editor.set_panel(screen[6..].into()),
         Ok("cursor-hidden") => {
             gallery.borrow_mut().set_value("showCursor", "false");
             editor.set_panel("Cursor".into());
