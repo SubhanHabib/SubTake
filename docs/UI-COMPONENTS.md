@@ -70,6 +70,25 @@ relationship is structural: blur, then shadow, tint, edge, rows, text.
 one shared draw order otherwise groups by primitive kind and puts a close
 button's circle under the thumbnail it sits on.
 
+At one order gpui also draws every shadow before every fill, so an inset edge
+or a glow set on the element it belongs to goes under that element's own fill
+and under the card's. Two rules follow, and the shared controls keep both so a
+call site never has to:
+
+- An edge — a hairline, a selection ring — is a child, not a `.shadow()` on
+  its owner: `frost::edge(radius, shadows)`, or `pill_edge` for a
+  `rounded_full` owner, covers the owner exactly on a layer of its own and
+  takes no part in layout. `panel_variant`'s hairline, `Button`'s raised edge
+  and selected ring, the `SegmentedControl` pill's hairline, the Presets
+  selection rings, and the timeline's lane headers and ruler are all drawn
+  this way.
+- A control whose drop shadow or focus ring falls outside it — `Button`,
+  `Switch` (and its thumb), each `SegmentedControl` segment, the slider — is
+  `layered` itself, so the glow and the ring land over the plate it sits on.
+
+A layer lands above whatever it overlaps that was painted *before* it; a plain
+primitive painted after it in the same enclosing layer goes under it.
+
 `frost::fade_edges` fades a scroll region across 16px at its top and bottom.
 A scroll region over glass cannot hide its clip line behind a gradient scrim —
 there is no paintable colour equal to "the blurred desktop behind this window" —
