@@ -130,6 +130,15 @@ impl Theme {
     /// second cycle while capture is running.
     pub const RECORD_HEIGHT: f32 = 60.0;
     pub const RECORD_DOT: f32 = 12.0;
+
+    /// The recorder bar. The floating window IS the bar — there is no plate
+    /// around a plate — so these are the window's own figures, and the bar
+    /// is one row of `RECORD_HEIGHT` controls with its padding either side.
+    pub const RECORDER_HEIGHT: f32 = Self::RECORD_HEIGHT + Self::RECORDER_PADDING * 2.0;
+    pub const RECORDER_PADDING: f32 = 10.0;
+    /// The grip at the bar's left. Narrower than a control, because it is a
+    /// texture to take hold of rather than a target to hit.
+    pub const RECORDER_HANDLE: f32 = 28.0;
     /// The unified titlebar, and what it keeps clear at each end: the traffic
     /// lights sit at {14,15} and the first control clears them, while the
     /// right end is a hair tighter than a float's inset because the buttons

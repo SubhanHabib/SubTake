@@ -8,7 +8,7 @@
 //! itself.
 
 use gpui::{prelude::*, *};
-use subtake_theme::Theme;
+use subtake_theme::{FONT_MONO, Theme};
 
 use crate::{icon_sized, motion, perf, tooltip};
 
@@ -84,6 +84,14 @@ pub struct Button {
     height: Option<f32>,
     /// Hide the caption and render a round icon-only control.
     icon_only: bool,
+    /// A quieter second line under the caption: a display's resolution, a
+    /// device's subtitle.
+    detail: Option<SharedString>,
+    /// A trailing caret: this control opens something.
+    caret: bool,
+    /// Set the caption in the mono face — a duration, a count, anything whose
+    /// digits must not shove the glyph beside them as they change.
+    mono: bool,
     /// Full-width, left-aligned: the shape a control takes as a menu row.
     selected: bool,
     enabled: bool,
@@ -101,6 +109,9 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         glyph_size: None,
         height: None,
         icon_only: false,
+        detail: None,
+        caret: false,
+        mono: false,
         selected: false,
         enabled: true,
         stretch: false,
@@ -138,6 +149,40 @@ impl Button {
 
     /// The dense size — a control in a packed row, a menu item, a pill inside
     /// a pod.
+    /// A second line under the caption, muted and a step down, so the pill
+    /// reads as one thing with a name and a detail rather than two labels.
+    pub fn detail(mut self, detail: impl Into<SharedString>) -> Self {
+        self.detail = Some(detail.into());
+        self
+    }
+
+    /// A trailing caret. The control opens a list, a panel or a menu.
+    pub fn caret(mut self) -> Self {
+        self.caret = true;
+        self
+    }
+
+    /// The caption in the mono face: a countdown, an elapsed clock, a count.
+    pub fn mono(mut self) -> Self {
+        self.mono = true;
+        self
+    }
+
+    /// The recorder bar's height. The bar is one row of the app's largest
+    /// controls, so its pills and its round buttons stand as tall as the
+    /// Record button beside them.
+    pub fn bar(mut self) -> Self {
+        self.height = Some(Theme::RECORD_HEIGHT);
+        self
+    }
+
+    /// The 44 step: the height a Secondary control already takes, for a
+    /// variant that would otherwise sit at 40.
+    pub fn large(mut self) -> Self {
+        self.height = Some(Theme::CONTROL_HEIGHT_LARGE);
+        self
+    }
+
     pub fn small(mut self) -> Self {
         self.height = Some(Theme::CONTROL_HEIGHT_SMALL);
         self
@@ -415,12 +460,40 @@ impl RenderOnce for Button {
             el = el.child(icon_sized(name, glyph_size, content));
         }
         if !self.icon_only {
-            el = el.child(
-                div()
+            let caption = div()
+                .when(self.mono, |s| s.font_family(FONT_MONO))
+                .text_ellipsis()
+                .child(self.label.clone());
+            el = el.child(match self.detail {
+                // Two lines in one pill. The detail stays `muted` rather than
+                // following the caption onto a filled plate: a pill that
+                // carries a detail is a `sunk` one by construction — it is a
+                // thing you pick, not the action you take.
+                Some(detail) => div()
+                    .flex()
+                    .flex_col()
+                    .min_w_0()
+                    .when(self.stretch, |s| s.flex_1())
+                    .child(caption)
+                    .child(
+                        div()
+                            .text_size(px(Theme::FONT_SMALL))
+                            .text_color(theme.muted)
+                            .text_ellipsis()
+                            .child(detail),
+                    )
+                    .into_any_element(),
+                None => caption
                     .when(self.stretch, |s| s.flex_1().min_w_0())
-                    .text_ellipsis()
-                    .child(self.label.clone()),
-            );
+                    .into_any_element(),
+            });
+        }
+        if self.caret {
+            el = el.child(icon_sized(
+                "CaretDown-regular",
+                Theme::ICON_SIZE_CARET,
+                theme.muted,
+            ));
         }
         // Only a control whose caption cannot be read needs a tooltip to name
         // it: one with no caption at all, or a stretched one, which is

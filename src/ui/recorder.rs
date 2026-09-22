@@ -8,73 +8,106 @@ impl RootView {
         // The bar IS the window's plate — the window itself is transparent and
         // borderless, so there is nothing behind this to tint. An outer plate
         // around it only drew a second, square box.
+        //
+        // It is one row of `RECORD_HEIGHT` controls: the handoff draws the
+        // bar as a single line of the app's largest controls, so a 40px or
+        // 44px control anywhere on it reads as a control that shrank.
         let mut bar = panel_variant(theme, UiSurface::Overlay)
             .flex_row()
             .items_center()
             .size_full()
             .min_w_0()
             .overflow_hidden()
-            .p(px(Theme::GAP))
-            .gap(px(Theme::GAP_SMALL))
+            .rounded_full()
+            .p(px(Theme::RECORDER_PADDING))
+            .gap(px(Theme::GAP))
             .child(
-                // Was a bare "⠿" text character: no size token, no colour
-                // token and no control geometry, so it sat misaligned beside
-                // the 40px controls. Same glyph, on the scale everything
-                // else uses.
                 div()
                     .id("launcher-drag")
                     .flex()
                     .flex_none()
                     .items_center()
                     .justify_center()
-                    .w(px(Theme::CONTROL_HEIGHT / 2.0))
-                    .h(px(Theme::CONTROL_HEIGHT))
+                    .w(px(Theme::RECORDER_HANDLE))
+                    .h(px(Theme::RECORD_HEIGHT))
                     .cursor(CursorStyle::ClosedHand)
                     .child(icon("DotsSixVertical-regular", theme.muted))
                     .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
             );
         if !state.get_recording() && !state.get_busy() {
-            bar = bar.child(self.brand());
-            for (id, label, selected) in [
-                (
-                    "sources",
-                    state
-                        .get_source_names()
-                        .row_data(state.get_source_index().max(0) as usize)
-                        .unwrap_or_else(|| "Choose a source".into()),
-                    state.get_panel() == "sources",
-                ),
+            // The source pill. The platform layer composes a display's name
+            // as "<name> · <width>×<height>"; the handoff sets the name and
+            // the resolution on two lines, so the pill splits it back apart.
+            // A window source carries no separator and takes no second line.
+            let name = state
+                .get_source_names()
+                .row_data(state.get_source_index().max(0) as usize)
+                .unwrap_or_else(|| "Choose a source".into());
+            let (name, detail) = match name.split_once(" · ") {
+                Some((name, detail)) => (name.to_owned(), Some(detail.to_owned())),
+                None => (name.to_string(), None),
+            };
+            let launcher = state.clone();
+            let mut sources = button("sources", name, theme)
+                .bar()
+                .glyph("Monitor-regular")
+                .caret()
+                .stretch()
+                .on_click(move |_, _, _| Self::toggle_panel(&launcher, "sources"));
+            if let Some(detail) = detail {
+                sources = sources.detail(detail);
+            }
+            bar = bar.child(sources);
+            // Audio and camera say their state with the glyph and the plate,
+            // not with an accent edge: a struck-through microphone on no
+            // plate is off, a microphone on `sunk` is on. The accent has four
+            // jobs in this design and "the mic is live" is not one of them.
+            for (id, glyph, label, on) in [
                 (
                     "audio",
-                    "Audio".into(),
+                    if state.get_microphone() || state.get_system_audio() {
+                        "Microphone-regular"
+                    } else {
+                        "MicrophoneSlash-regular"
+                    },
+                    "Audio",
                     state.get_microphone() || state.get_system_audio(),
                 ),
-                ("camera", "Webcam".into(), state.get_camera()),
                 (
-                    "countdown",
-                    format!("{}s", state.get_countdown()),
-                    state.get_countdown() > 0,
+                    "camera",
+                    if state.get_camera() {
+                        "VideoCamera-regular"
+                    } else {
+                        "VideoCameraSlash-regular"
+                    },
+                    "Webcam",
+                    state.get_camera(),
                 ),
-                ("more", "More".into(), state.get_panel() == "more"),
             ] {
                 let launcher = state.clone();
-                let control =
-                    button(id, label, theme)
-                        .selected(selected)
-                        .on_click(move |_, _, _| {
-                            let value = if launcher.get_panel() == id { "" } else { id };
-                            launcher.set_panel(value.into());
-                            launcher.defer_panel(value.into());
-                        });
-                // The source name is the only variable-width control, so it
-                // takes the slack and ellipsizes; a fixed width pushed the
-                // rest of the bar past the window on long display names.
-                bar = bar.child(if id == "sources" {
-                    control.stretch()
-                } else {
-                    control
-                });
+                let mut control = button(id, label, theme).bar().glyph(glyph).icon_only();
+                if !on {
+                    control = control.ghost();
+                }
+                bar = bar.child(control.on_click(move |_, _, _| Self::toggle_panel(&launcher, id)));
             }
+            let launcher = state.clone();
+            bar = bar.child(
+                button("countdown", format!("{}s", state.get_countdown()), theme)
+                    .bar()
+                    .glyph("Timer-regular")
+                    .mono()
+                    .on_click(move |_, _, _| Self::toggle_panel(&launcher, "countdown")),
+            );
+            let launcher = state.clone();
+            bar = bar.child(
+                button("more", "More", theme)
+                    .bar()
+                    .glyph("DotsThree-regular")
+                    .icon_only()
+                    .ghost()
+                    .on_click(move |_, _, _| Self::toggle_panel(&launcher, "more")),
+            );
             let launcher = state.clone();
             // Red, not accent. `rec` is the only red fill in the app and this
             // is the control it exists for; a blue Record button would make
@@ -123,24 +156,27 @@ impl RootView {
                 bar = bar.child(self.action("cancel", "Cancel", "cancel", true));
             }
         }
-        // The quiet end of the bar. These were a bare "?" with no hit target
-        // and a full button plate whose caption was the literal character
-        // "×"; both are now icon controls at the shared geometry.
-        let hint = state.get_status();
-        bar = bar
-            .child(
-                div()
-                    .id("recorder-status")
-                    .flex()
-                    .flex_none()
-                    .items_center()
-                    .justify_center()
-                    .size(px(Theme::CONTROL_HEIGHT))
-                    .child(icon("Question-regular", theme.muted))
-                    .tooltip(move |_, cx| tooltip(hint.clone(), theme, cx)),
-            )
-            .child(self.icon_action("close", "X-regular", "Hide recorder", "hide-launcher", true));
+        // The bar's last control. The handoff draws a 44 close button and
+        // nothing else after Record.
+        //
+        // What used to sit here as well: the app's own mark, and a "?" whose
+        // only job was to hold the status text in a tooltip. Neither is
+        // drawn — a logo on a five-control bar is a sixth thing to read, and
+        // the status has the bar itself to speak in while a capture runs.
+        bar = bar.child(
+            icon_button("close", "X-regular", "Hide recorder", theme)
+                .large()
+                .ghost()
+                .on_click(self.command("hide-launcher")),
+        );
         bar.into_any_element()
+    }
+
+    /// A bar control that opens its panel, or closes it if it is the open one.
+    fn toggle_panel(state: &RecordingLauncher, id: &str) {
+        let value = if state.get_panel() == id { "" } else { id };
+        state.set_panel(value.into());
+        state.defer_panel(value.into());
     }
 
     pub(super) fn options(

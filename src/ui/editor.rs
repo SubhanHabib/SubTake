@@ -244,12 +244,4 @@ impl RootView {
         }
         Some(status.into_any_element())
     }
-
-    pub(super) fn brand(&self) -> impl IntoElement {
-        svg()
-            .path("assets/branding/menu-bar.svg")
-            .size(px(Theme::ICON_SIZE_LARGE))
-            .flex_none()
-            .text_color(self.theme.text)
-    }
 }

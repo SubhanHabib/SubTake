@@ -73,7 +73,11 @@ impl Window {
             handle: Cell::new(None),
             size: Cell::new(match kind {
                 WindowKind::Editor => LogicalSize::new(1360., 880.),
-                WindowKind::Launcher => LogicalSize::new(724., 80.),
+                // The recorder window IS the bar, so its height is the
+                // bar's — the two cannot be allowed to drift apart.
+                WindowKind::Launcher => {
+                    LogicalSize::new(724., subtake_theme::Theme::RECORDER_HEIGHT)
+                }
                 WindowKind::Options => LogicalSize::new(430., 264.),
             }),
             resize: Cell::new(false),
