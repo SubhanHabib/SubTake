@@ -90,17 +90,6 @@ pub struct Theme {
     pub rec: Hsla,
     /// Destructive text.
     pub danger: Hsla,
-
-    // ---- carried: no counterpart in the redesign ------------------------
-    //
-    // TODO(redesign): the handoff has no token for this, because it draws the
-    // recorder bar on `glass` like every other float. That cannot work on the
-    // window we actually have: the recorder's borderless windows carry no
-    // vibrancy material — macOS gives a borderless window no corner mask, so
-    // a blurred view fills the frame square behind a rounded plate — so this
-    // tone stays near-opaque rather than a tint over glass. Revisit with the
-    // designer when the recorder bar is rebuilt.
-    pub overlay: Hsla,
 }
 
 impl Theme {

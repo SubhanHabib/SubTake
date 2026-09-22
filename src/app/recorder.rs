@@ -128,8 +128,6 @@ impl App {
             })
             .unwrap_or(0);
         launcher.set_elapsed(format!("{:02}:{:02}", seconds / 60, seconds % 60));
-        // The native glass belongs only to the fixed bar. The option menu owns a separate window.
-        platform::update_recorder_glass(launcher.window(), launcher.get_bar_width(), 0., 0., false);
         self.sync_launcher_options(ui);
     }
 
@@ -151,7 +149,6 @@ impl App {
             return Ok(());
         }
         options.show()?;
-        platform::update_options_glass(options.window());
         options.window().set_blur(false);
         options.window().set_transparent(true);
         // Existing windows can move immediately. First-show placement belongs

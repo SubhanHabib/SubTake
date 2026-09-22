@@ -315,7 +315,8 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 // content view rectangularly and a borderless window gets no
                 // system corner mask, so the material paints a grey square
                 // around the rounded recorder plate. They stay transparent and
-                // their plates carry the near-opaque `overlay` tone instead.
+                // get their material from `update_recorder_glass`, which masks
+                // it to the plate.
                 window_background: if is_editor {
                     gpui::WindowBackgroundAppearance::Blurred
                 } else {
@@ -370,10 +371,17 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                         &runtime,
                         runtime.0.kind == WindowKind::Launcher,
                     );
+                    // Both recorder plates are drawn at the overlay radius
+                    // and fill their windows, so the material takes the
+                    // window's shape at that radius and the two are one
+                    // surface.
+                    crate::platform::update_recorder_glass(
+                        &runtime,
+                        subtake_theme::Theme::RADIUS_BAR,
+                    );
                     if runtime.0.kind == WindowKind::Launcher {
                         let _ = crate::platform::position_launcher(&runtime);
                     } else {
-                        crate::platform::update_options_glass(&runtime);
                         let launcher = SURFACES.with(|surfaces| {
                             surfaces.borrow().iter().find_map(|surface| match surface {
                                 Surface::Launcher(ui) => Some(ui.window().clone()),

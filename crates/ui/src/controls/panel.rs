@@ -25,8 +25,9 @@ pub enum Surface {
     Card,
     /// Menu or popover.
     Popup,
-    /// Floating overlay: the plate a borderless recorder window draws, which
-    /// has no material behind it and so carries its own near-opaque tone.
+    /// Floating overlay: the plate a borderless recorder window draws. It is
+    /// the `glass` tint over a native material masked to exactly this plate,
+    /// so it must be drawn at `radius()` and fill its window.
     Overlay,
 }
 
@@ -61,8 +62,7 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     let background = match variant {
         Surface::Popup | Surface::Content => theme.card,
         Surface::Card => theme.sunk,
-        Surface::Overlay => theme.overlay,
-        Surface::Panel | Surface::Pod => theme.glass,
+        Surface::Panel | Surface::Pod | Surface::Overlay => theme.glass,
     };
     let mut el = div()
         .flex()

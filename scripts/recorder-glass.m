@@ -3,35 +3,26 @@
 #import <objc/runtime.h>
 
 // This view never receives events. GPUI remains the topmost content view.
+//
+// The material is masked to exactly the plate GPUI paints over it — the whole
+// window at the plate's radius — so the glass and the tint read as one
+// surface. Any other shape shows the material's grey wherever the two
+// disagree.
 @interface SubTakeRecorderGlass : NSVisualEffectView
-@property CGFloat barWidth;
-@property CGFloat optionsWidth;
-@property CGFloat optionsHeight;
-@property BOOL expanded;
-@property BOOL fullSurface;
+@property CGFloat radius;
 - (void)updateMask;
 @end
 @implementation SubTakeRecorderGlass
 - (NSView *)hitTest:(NSPoint)point { return nil; }
 - (void)setFrameSize:(NSSize)size { [super setFrameSize:size]; [self updateMask]; }
 - (void)updateMask {
-    CGFloat width = self.bounds.size.width, height = self.bounds.size.height;
-    if (width <= 0 || height <= 0 || (!self.fullSurface && self.barWidth <= 0)) return;
-    NSImage *mask = [[NSImage alloc] initWithSize:self.bounds.size];
+    NSSize size = self.bounds.size;
+    if (size.width <= 0 || size.height <= 0) return;
+    CGFloat radius = MIN(self.radius, MIN(size.width, size.height) / 2);
+    NSImage *mask = [[NSImage alloc] initWithSize:size];
     [mask lockFocus];
     [[NSColor whiteColor] setFill];
-    if (self.fullSurface) {
-        [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:24 yRadius:24] fill];
-    } else {
-        CGFloat barY = self.expanded ? self.optionsHeight + 14 : 8;
-        NSRect bar = NSMakeRect((width-self.barWidth)/2, height-barY-64, self.barWidth, 64);
-        [[NSBezierPath bezierPathWithRoundedRect:bar xRadius:24 yRadius:24] fill];
-        if (self.expanded) {
-            NSRect options = NSMakeRect((width-self.optionsWidth)/2, height-8-self.optionsHeight,
-                                       self.optionsWidth, self.optionsHeight);
-            [[NSBezierPath bezierPathWithRoundedRect:options xRadius:24 yRadius:24] fill];
-        }
-    }
+    [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:radius yRadius:radius] fill];
     [mask unlockFocus];
     self.maskImage = mask;
 }
@@ -63,8 +54,7 @@ void subtake_window_set_blur(void *pointer, bool enabled) {
     // and GPUI's rendered background are controlled independently by the caller.
     blur.frame = view.frame;
 }
-void subtake_update_recorder_glass(void *pointer, double barWidth, double optionsWidth,
-                                  double optionsHeight, bool expanded) {
+void subtake_update_recorder_glass(void *pointer, double radius) {
     NSCAssert([NSThread isMainThread], @"Recorder material must run on the UI thread");
     NSView *gpuiView = (__bridge NSView *)pointer;
     NSWindow *window = gpuiView.window;
@@ -81,7 +71,6 @@ void subtake_update_recorder_glass(void *pointer, double barWidth, double option
         glass.material = NSVisualEffectMaterialUnderWindowBackground;
         glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
         glass.state = NSVisualEffectStateActive;
-        glass.alphaValue = 0.72;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
         // Preserve GPUI's content view and responder identity.
         [parent addSubview:glass positioned:NSWindowBelow relativeTo:gpuiView];
@@ -89,45 +78,12 @@ void subtake_update_recorder_glass(void *pointer, double barWidth, double option
         window.opaque = NO;
         window.backgroundColor = NSColor.clearColor;
         if (getenv("SUBTAKE_LAUNCHER_SMOKE")) fprintf(stderr, "RECORDER_NATIVE_GLASS_INSTALLED\n");
-        window.hasShadow = NO; // GPUI draws the shadows for each card, not the envelope.
-
     }
+    // The window server's shadow traces the window's alpha and rings it with
+    // a dark rim; on a plate that fills its window, that rim is the plate's
+    // outline. The plate's own hairline is its only edge.
+    window.hasShadow = NO;
     glass.frame = gpuiView.frame;
-    if (glass.barWidth == barWidth && glass.optionsWidth == optionsWidth &&
-        glass.optionsHeight == optionsHeight && glass.expanded == expanded &&
-        NSEqualSizes(glass.maskImage.size, glass.bounds.size)) return;
-    glass.barWidth = barWidth;
-    glass.optionsWidth = optionsWidth;
-    glass.optionsHeight = optionsHeight;
-    glass.expanded = expanded;
-    [glass updateMask];
-}
-
-
-void subtake_update_options_glass(void *pointer) {
-    NSCAssert([NSThread isMainThread], @"Options material must run on the UI thread");
-    NSView *gpuiView = (__bridge NSView *)pointer;
-    NSWindow *window = gpuiView.window;
-    if (!window) return;
-    SubTakeRecorderGlass *glass = objc_getAssociatedObject(gpuiView, &glassKey);
-    if (!glass) {
-        NSView *parent = gpuiView.superview;
-        if (!parent) return;
-        glass = [[SubTakeRecorderGlass alloc] initWithFrame:gpuiView.frame];
-        // Use the lightest system material for translucent glass rather than
-        // Popover, whose high-contrast backing reads as a solid white sheet.
-        glass.material = NSVisualEffectMaterialUnderWindowBackground;
-        glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-        glass.state = NSVisualEffectStateActive;
-        glass.alphaValue = 0.72;
-        glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-        [parent addSubview:glass positioned:NSWindowBelow relativeTo:gpuiView];
-        objc_setAssociatedObject(gpuiView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        window.opaque = NO;
-        window.backgroundColor = NSColor.clearColor;
-        window.hasShadow = NO;
-    }
-    glass.frame = gpuiView.frame;
-    glass.fullSurface = YES;
+    glass.radius = radius;
     [glass updateMask];
 }

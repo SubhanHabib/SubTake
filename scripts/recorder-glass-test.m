@@ -10,32 +10,27 @@ static CGFloat alphaAt(NSImage *image, double x, double y) {
 int main(void) {
     @autoreleasepool {
         [NSApplication sharedApplication];
-        NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(100,100,644,106)
+        NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(100,100,724,80)
             styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO];
         NSView *content = window.contentView;
-        subtake_update_recorder_glass((__bridge void *)content,612,420,264,false);
+        subtake_update_recorder_glass((__bridge void *)content,40);
         assert(window.contentView == content);
         assert(content.superview.subviews.count == 2);
         assert(content.superview.subviews.lastObject == content);
         SubTakeRecorderGlass *glass = (id)content.superview.subviews.firstObject;
         assert([glass isKindOfClass:NSVisualEffectView.class]);
-        assert(glass.blendingMode == NSVisualEffectBlendingModeBehindWindow);
-        assert(glass.state == NSVisualEffectStateActive);
-        assert(alphaAt(glass.maskImage,322,40) > .99); // bar
-        assert(alphaAt(glass.maskImage,2,40) < .01); // margin
-        assert(alphaAt(glass.maskImage,322,90) < .01); // status text
-        assert(alphaAt(glass.maskImage,16,8) < .01); // rounded corner
-        [window setContentSize:NSMakeSize(644,378)];
-        subtake_update_recorder_glass((__bridge void *)content,612,420,264,true);
-        assert(window.contentView == content);
+        assert(!window.hasShadow);
+        assert(alphaAt(glass.maskImage,362,40) > .99); // plate
+        assert(alphaAt(glass.maskImage,40,2) > .99); // top edge where the pill straightens
+        assert(alphaAt(glass.maskImage,4,4) < .01); // outside the pill's end
+        [window setContentSize:NSMakeSize(430,264)];
+        subtake_update_recorder_glass((__bridge void *)content,40);
         assert(content.superview.subviews.count == 2); // no duplicate backgrounds
-        assert(alphaAt(glass.maskImage,322,100) > .99); // options
-        assert(alphaAt(glass.maskImage,50,100) < .01); // outside narrow options
-        assert(alphaAt(glass.maskImage,322,275) < .01); // between cards
-        assert(alphaAt(glass.maskImage,322,310) > .99); // bar
-        assert(alphaAt(glass.maskImage,322,365) < .01); // status
+        assert(alphaAt(glass.maskImage,215,132) > .99); // card
+        assert(alphaAt(glass.maskImage,6,6) < .01); // outside the card's corner
+        assert(alphaAt(glass.maskImage,40,2) > .99); // card edge past the corner
         assert([glass hitTest:NSMakePoint(100,100)] == nil);
-        puts("RECORDER_GLASS_MASK_PASSED: native material, clear margins/status, rounded cards, resize, no duplicates, input pass-through");
+        puts("RECORDER_GLASS_MASK_PASSED: one plate-shaped material, no window shadow, resize, no duplicates, input pass-through");
     }
     return 0;
 }

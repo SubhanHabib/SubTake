@@ -55,8 +55,6 @@ impl Theme {
             // stays at 4.7:1 either way.
             rec: css("#d73240"),
             danger: css("#b30023"),
-
-            overlay: css("#fcfcfcf7"),
         }
     }
 
@@ -93,8 +91,6 @@ impl Theme {
 
             rec: css("#d73240"),
             danger: css("#ff6b7f"),
-
-            overlay: css("#1e1f24f7"),
         }
     }
 }

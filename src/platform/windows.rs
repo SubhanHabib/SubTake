@@ -329,74 +329,24 @@ unsafe extern "C" {
     ) -> bool;
 }
 
-/// Native material masked to the two visible recorder cards; margins/text stay clear.
-pub fn update_recorder_glass(
-    window: &crate::ui_runtime::Window,
-    bar: f32,
-    options: f32,
-    height: f32,
-    expanded: bool,
-) {
+/// Put the native frosted material under a recorder window's plate, masked
+/// to the plate's own shape: the whole window at `radius`. Installed once;
+/// the mask follows the window through every resize on its own.
+pub fn update_recorder_glass(window: &crate::ui_runtime::Window, radius: f32) {
     #[cfg(target_os = "macos")]
     {
-        // `sync_launcher` runs after every callback, so this is on the path of
-        // every click and keystroke; the mask itself changes only when the
-        // recorder is resized. Re-sending an identical geometry still costs an
-        // objc dispatch and makes AppKit redo the layer mask, so skip it.
-        thread_local! {
-            static LAST: std::cell::Cell<Option<(*mut std::ffi::c_void, u64, u64, u64, bool)>> =
-                const { std::cell::Cell::new(None) };
-        }
         if let Ok(view) = native_view(window) {
-            let shape = (
-                view,
-                bar.to_bits() as u64,
-                options.to_bits() as u64,
-                height.to_bits() as u64,
-                expanded,
-            );
-            if LAST.with(|last| last.replace(Some(shape))) == Some(shape) {
-                return;
-            }
             unsafe {
-                subtake_update_recorder_glass(
-                    view,
-                    bar as f64,
-                    options as f64,
-                    height as f64,
-                    expanded,
-                );
+                subtake_update_recorder_glass(view, radius as f64);
             }
         }
     }
 
     #[cfg(not(target_os = "macos"))]
-    let _ = (window, bar, options, height, expanded);
-}
-
-/// Apply the same native frosted material to an independent recorder options window.
-pub fn update_options_glass(window: &crate::ui_runtime::Window) {
-    #[cfg(target_os = "macos")]
-    {
-        if let Ok(view) = native_view(window) {
-            unsafe {
-                subtake_update_options_glass(view);
-            }
-        }
-    }
-
-    #[cfg(not(target_os = "macos"))]
-    let _ = window;
+    let _ = (window, radius);
 }
 
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
-    pub(super) fn subtake_update_recorder_glass(
-        view: *mut std::ffi::c_void,
-        bar: f64,
-        options: f64,
-        height: f64,
-        expanded: bool,
-    );
-    pub(super) fn subtake_update_options_glass(view: *mut std::ffi::c_void);
+    pub(super) fn subtake_update_recorder_glass(view: *mut std::ffi::c_void, radius: f64);
 }

@@ -91,12 +91,13 @@ a countdown, a red Record control, More and Hide. Option panels expand above it.
 The same overlay shows the countdown, the elapsed time in Geist Mono,
 pause/resume and stop.
 
-The recorder's windows are borderless and carry no vibrancy material — macOS
-gives a borderless window no corner mask, so a blurred view fills the frame
-square behind a rounded plate. They therefore use an `overlay` tone of their own
-rather than `glass`, and take their shadow from the window server or not at all.
-This is the one place the palette departs from the handoff, and `crates/theme`
-says so where the token is defined.
+The recorder's windows are borderless, and macOS gives a borderless window no
+corner mask, so the editor's window material would fill the frame square behind
+a rounded plate. Instead each recorder window gets a native material masked to
+exactly its plate — the whole window at `RADIUS_BAR` — and the plate paints the
+handoff's `glass` tint over it, so glass and tint are one surface. The window
+server's shadow is off: it rings a transparent window with a dark rim, which on
+a plate that fills its window reads as an outline.
 
 ## Gestures
 

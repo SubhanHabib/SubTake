@@ -93,7 +93,6 @@ struct Properties {
     capture_system: bool,
     panel: String,
     panel_index: i32,
-    bar_width: f32,
     camera: bool,
     microphone: bool,
     system_audio: bool,
@@ -172,7 +171,6 @@ impl Default for Properties {
             capture_system: true,
             panel: "Frame".into(),
             panel_index: 0,
-            bar_width: 692.,
             camera: false,
             microphone: false,
             system_audio: false,
@@ -957,18 +955,6 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.panel_index != value {
             props.panel_index = value;
-            self.window().invalidate();
-        }
-    }
-
-    pub fn get_bar_width(&self) -> f32 {
-        self.0.props.borrow().bar_width
-    }
-
-    pub fn set_bar_width(&self, value: f32) {
-        let mut props = self.0.props.borrow_mut();
-        if props.bar_width != value {
-            props.bar_width = value;
             self.window().invalidate();
         }
     }

@@ -6,8 +6,10 @@ impl RootView {
     pub(super) fn launcher(&self, state: &RecordingLauncher) -> AnyElement {
         let theme = self.theme;
         // The bar IS the window's plate — the window itself is transparent and
-        // borderless, so there is nothing behind this to tint. An outer plate
-        // around it only drew a second, square box.
+        // borderless, and the native material under it is masked to this
+        // plate's shape (`update_recorder_glass`), so the plate is only the
+        // tint over that glass. An outer plate around it only drew a second,
+        // square box.
         //
         // It is one row of `RECORD_HEIGHT` controls: the handoff draws the
         // bar as a single line of the app's largest controls, so a 40px or
@@ -18,7 +20,6 @@ impl RootView {
             .size_full()
             .min_w_0()
             .overflow_hidden()
-            .rounded_full()
             .p(px(Theme::RECORDER_PADDING))
             .gap(px(Theme::GAP))
             .child(
