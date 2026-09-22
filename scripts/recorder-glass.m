@@ -66,9 +66,11 @@ void subtake_update_recorder_glass(void *pointer, double radius) {
         NSView *parent = gpuiView.superview;
         if (!parent) return;
         glass = [[SubTakeRecorderGlass alloc] initWithFrame:gpuiView.frame];
-        // Use the lightest system material for translucent glass rather than
-        // Popover, whose high-contrast backing reads as a solid white sheet.
-        glass.material = NSVisualEffectMaterialUnderWindowBackground;
+        // The HUD material is the one that blurs the desktop and keeps its
+        // colour, which is what frosted glass is. Under-window-background
+        // blurs so hard it is a flat grey sheet, and Popover is a solid
+        // white one.
+        glass.material = NSVisualEffectMaterialHUDWindow;
         glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
         glass.state = NSVisualEffectStateActive;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
