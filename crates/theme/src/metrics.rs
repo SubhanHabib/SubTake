@@ -411,6 +411,12 @@ impl Theme {
     pub const SELECTION_EMPTY_ICON: f32 = 22.0;
     pub const SELECTION_EMPTY_TEXT_WIDTH: f32 = 210.0;
 
+    // ---- cursor style picker ----------------------------------------------
+
+    /// A cursor-style tile: three across, the last row centred under them.
+    pub const CURSOR_TILE_HEIGHT: f32 = 68.0;
+    pub const CURSOR_TILE_COLUMNS: f32 = 3.0;
+
     // ---- camera panel ------------------------------------------------------
 
     /// A position tile: 60 tall at radius 20, 8 apart, two across.

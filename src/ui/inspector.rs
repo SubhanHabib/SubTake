@@ -22,6 +22,102 @@ pub(super) fn field_unit(key: &str) -> (f32, &'static str) {
     }
 }
 
+/// A cursor style as its tile draws it.
+struct CursorTile {
+    value: &'static str,
+    label: &'static str,
+    asset: &'static str,
+    /// The file's canvas, and the box inside it the cursor is actually
+    /// drawn in. The files pad their cursors very differently — the Windows
+    /// arrow fills a third of its canvas, the Tahoe one nearly all of it —
+    /// so a tile sizes and centres the drawn box, not the canvas.
+    canvas: (f32, f32),
+    ink: (f32, f32, f32, f32),
+    /// How tall the drawn cursor is in its tile. Close together, so the row
+    /// reads as one set, but the styles that are smaller on screen stay a
+    /// little smaller here.
+    height: f32,
+}
+
+const CURSOR_STYLES: [CursorTile; 5] = [
+    CursorTile {
+        value: "tahoe",
+        label: "Tahoe",
+        asset: "legacy-electron/src/assets/cursors/tahoe/pointer-1__14-6.svg",
+        canvas: (618., 958.),
+        ink: (35., 24., 544., 895.),
+        height: 30.,
+    },
+    CursorTile {
+        value: "macos",
+        label: "macOS",
+        asset: "",
+        canvas: (768., 746.),
+        ink: (252., 179., 259., 413.),
+        height: 26.,
+    },
+    CursorTile {
+        value: "windows11",
+        label: "Windows",
+        asset: "legacy-electron/src/assets/cursors/windows11/arrow__31-22.svg",
+        canvas: (32., 32.),
+        ink: (0.76, 0.21, 13.18, 19.04),
+        height: 26.,
+    },
+    CursorTile {
+        value: "dot",
+        label: "Dot",
+        asset: "assets/icons/Record-fill.svg",
+        canvas: (24., 24.),
+        ink: (2.25, 2.25, 19.5, 19.5),
+        height: 20.,
+    },
+    CursorTile {
+        value: "figma",
+        label: "Minimal",
+        asset: "legacy-electron/src/assets/cursors/custom/minimal-cursor.svg",
+        canvas: (396., 433.),
+        ink: (35., 10., 335., 378.),
+        height: 28.,
+    },
+];
+
+impl CursorTile {
+    /// The drawn cursor at its tile height: the whole canvas scaled, offset
+    /// so the drawn box sits at the origin, and clipped to that box.
+    fn glyph(&self, theme: Theme) -> Div {
+        let scale = self.height / self.ink.3;
+        let (w, h) = (self.canvas.0 * scale, self.canvas.1 * scale);
+        let picture = if self.value == "macos" {
+            img(macos_cursor_image())
+                .w(px(w))
+                .h(px(h))
+                .object_fit(ObjectFit::Fill)
+                .into_any_element()
+        } else {
+            svg()
+                .path(self.asset)
+                .w(px(w))
+                .h(px(h))
+                .text_color(theme.text)
+                .into_any_element()
+        };
+        div()
+            .relative()
+            .flex_none()
+            .overflow_hidden()
+            .w(px(self.ink.2 * scale))
+            .h(px(self.height))
+            .child(
+                div()
+                    .absolute()
+                    .left(px(-self.ink.0 * scale))
+                    .top(px(-self.ink.1 * scale))
+                    .child(picture),
+            )
+    }
+}
+
 impl RootView {
     /// A tool-pod entry: one round button, accent-filled while its panel is
     /// the open one.
@@ -202,56 +298,31 @@ impl RootView {
         };
         let mut body = column().gap(px(Theme::GAP_SMALL));
         if key == "cursorStyle" {
-            // Five even tiles, four across: the reference's pickers are grids,
-            // and a wrap puts a ragged last row under an even first one.
-            let mut choices = tile_grid(4);
-            for (value, label, asset) in [
-                (
-                    "tahoe",
-                    "Tahoe",
-                    "legacy-electron/src/assets/cursors/tahoe/pointer-1__14-6.svg",
-                ),
-                (
-                    "macos",
-                    "macOS",
-                    "legacy-electron/src/assets/cursors/macos/pointer-1__34-24.svg",
-                ),
-                (
-                    "windows11",
-                    "Windows",
-                    "legacy-electron/src/assets/cursors/windows11/arrow__31-22.svg",
-                ),
-                ("dot", "Dot", "assets/icons/Record-fill.svg"),
-                (
-                    "figma",
-                    "Minimal",
-                    "legacy-electron/src/assets/cursors/custom/minimal-cursor.svg",
-                ),
-            ] {
+            // Three across, the last row centred: five in a grid of four left
+            // a lone tile hanging under an even row. Each tile spans two of
+            // six columns, so the last row can start half a tile in.
+            let columns = Theme::CURSOR_TILE_COLUMNS as u16;
+            let full_rows = CURSOR_STYLES.len() / columns as usize * columns as usize;
+            let short = (CURSOR_STYLES.len() - full_rows) as i16;
+            let mut choices = tile_grid(columns * 2);
+            for (index, style) in CURSOR_STYLES.iter().enumerate() {
                 let editor = e.clone();
-                let cursor = if value == "macos" {
-                    img(macos_cursor_image())
-                        .size(px(28.))
-                        .object_fit(ObjectFit::Contain)
-                        .into_any_element()
-                } else {
-                    svg()
-                        .path(asset)
-                        .size(px(28.))
-                        .text_color(theme.text)
-                        .into_any_element()
-                };
-                choices = choices.child(
-                    choice_tile(value, field.value == value, true, theme)
-                        .items_center()
-                        .justify_center()
-                        .h(px(Theme::TILE_HEIGHT + Theme::GAP_LARGE))
-                        .child(cursor)
-                        .tooltip(move |_, cx| tooltip(label, theme, cx))
-                        .on_click(move |_, _, _| {
-                            editor.defer_field("cursorStyle".into(), value.into())
-                        }),
-                );
+                let value = style.value;
+                let label = style.label;
+                let mut tile = choice_tile(value, field.value == value, true, theme)
+                    .items_center()
+                    .justify_center()
+                    .col_span(2)
+                    .h(px(Theme::CURSOR_TILE_HEIGHT))
+                    .child(style.glyph(theme))
+                    .tooltip(move |_, cx| tooltip(label, theme, cx))
+                    .on_click(move |_, _, _| {
+                        editor.defer_field("cursorStyle".into(), value.into())
+                    });
+                if index == full_rows {
+                    tile = tile.col_start(columns as i16 - short + 1);
+                }
+                choices = choices.child(tile);
             }
             body = body.child(caps_label(label, theme)).child(choices);
             if field.choice >= 5 {
