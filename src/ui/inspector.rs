@@ -528,7 +528,7 @@ impl RootView {
         // rather than a heading that competes with the controls under it. A
         // sub-panel keeps its way back, now as a caret rather than a button
         // whose caption was a single guillemet character.
-        let mut heading = row().h(px(Theme::CONTROL_HEIGHT)).flex_none();
+        let mut heading = row().h(px(Theme::CONTROL_HEIGHT_SMALL)).flex_none();
         if matches!(name.as_str(), "Crop" | "Wallpapers" | "Shortcuts") {
             let editor = e.clone();
             let back = if name == "Shortcuts" {
@@ -539,6 +539,7 @@ impl RootView {
             heading = heading.child(
                 icon_button("inspector-back", "CaretLeft-regular", "Back", theme)
                     .ghost()
+                    .small()
                     .on_click(move |_, _, _| {
                         editor.set_panel(back.into());
                         editor.defer_panel(back.into());
@@ -555,6 +556,7 @@ impl RootView {
             heading = heading.child(
                 icon_button("inspector-close", "X-regular", "Close", theme)
                     .ghost()
+                    .small()
                     .on_click(move |_, _, _| {
                         editor.set_panel("Frame".into());
                         editor.defer_panel("Frame".into());
@@ -919,26 +921,39 @@ impl RootView {
         // the fade ramp sits exactly on the clip line; the panel's vertical
         // padding moves onto the heading and footer instead of stacking with
         // the band and pushing the first row down.
+        //
+        // The band is the handoff's 12 between a title and the first row, and
+        // between the last row and the footer, so the panel's own block gap
+        // is taken out rather than added to it.
         let mut el = content_panel(theme)
             .py_0()
+            .gap_0()
             .size_full()
             .min_h_0()
-            .child(heading.pt(px(Theme::GAP_LARGE)))
-            .child(fade_edges(
-                div()
-                    .id(SharedString::from(format!("inspector-{name}")))
-                    .flex_1()
-                    .min_h_0()
-                    .overflow_y_scroll()
-                    // A band's worth of padding: at rest the ramp lands here,
-                    // so a panel that fits is never dimmed, and one that
-                    // overflows dissolves instead of slicing a row in half.
-                    .py(px(FADE_BAND))
-                    .child(content),
-            ));
-        if has_footer {
-            el = el.child(footer.pb(px(Theme::GAP_LARGE)));
-        }
+            .child(heading.pt(px(Theme::PANEL_PADDING)))
+            .child(
+                fade_edges(
+                    div()
+                        .id(SharedString::from(format!("inspector-{name}")))
+                        .flex_1()
+                        .min_h_0()
+                        .overflow_y_scroll()
+                        // A band's worth of padding: at rest the ramp lands
+                        // here, so a panel that fits is never dimmed, and one
+                        // that overflows dissolves instead of slicing a row in
+                        // half.
+                        .py(px(Theme::GAP_LARGE))
+                        .child(content),
+                )
+                .band(Theme::GAP_LARGE),
+            );
+        // Without a footer the band is the bottom edge, and the rest of the
+        // panel's padding makes it up to the sides'.
+        el = if has_footer {
+            el.child(footer.pb(px(Theme::PANEL_PADDING)))
+        } else {
+            el.pb(px(Theme::PANEL_PADDING - Theme::GAP_LARGE))
+        };
         // The panel takes its backdrop blur here rather than inside
         // `panel_variant`: the blur is painted by an element that wraps the
         // whole subtree in one scene layer, and `panel_variant` returns a
