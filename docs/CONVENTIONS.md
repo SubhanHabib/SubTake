@@ -15,7 +15,10 @@ rest is judgement, and this document is the reference for that judgement.
   and a reader should be able to guess the file from the symbol.
 - **Façade plus folder.** A module that outgrows one file becomes `foo.rs` next
   to a `foo/` directory. The façade declares the children, re-exports what the
-  rest of the crate needs, and holds the shared types. No `mod.rs`.
+  rest of the crate needs, and holds the shared types and state. Children start
+  with `use super::*;` and mark what siblings need `pub(super)`. No `mod.rs`.
+  The trigger is "several things in one file", not a line count: a single
+  component or a single `match` stays in one file however long it is.
 - **Names carry meaning; the formatter carries layout.** Nothing is aligned by
   hand, and no name is shortened to a letter unless it is in the vocabulary
   table below.
@@ -39,7 +42,8 @@ src/
 │   ├── playback.rs        # preview decoder thread, seek, refresh
 │   ├── recorder.rs        # launcher and options windows, hotkeys, tray
 │   ├── run.rs             # run(): event loop, macOS glue, status menu
-│   └── smoke.rs           # scripted UI smoke run and its tests
+│   ├── smoke.rs           # scripted UI smoke run
+│   └── smoke/tests.rs     # its tests
 ├── ui.rs                  # RootView, Surface, gestures, preview geometry
 ├── ui/
 │   ├── editor.rs          # editor window chrome and brand
@@ -49,11 +53,23 @@ src/
 │   ├── recorder.rs        # launcher bar and options sheet
 │   └── timeline.rs        # timeline rows, seek and drag gestures
 ├── ui_state.rs            # window property/callback surface (surface! macro)
-├── ui_runtime.rs          # timers, models, images, event-loop helpers
-├── gallery.rs             # --gallery: every window with fixture data
-└── <domain>.rs            # project, editing, render, export, timeline, …
+├── ui_runtime.rs          # shared runtime state and the public surface
+├── ui_runtime/            # models, weak, dispatch, timer, window, event_loop, menus, assets, tests
+├── gallery.rs             # --gallery: the windows, echo callbacks and Gallery state
+├── gallery/               # fixtures.rs (fake data), images.rs (generated imagery)
+├── render.rs              # Scene and Scene::render
+├── render/                # captions.rs, cursor.rs, backend.rs
+├── platform.rs            # helper lookup, sources, devices, reveal
+├── platform/              # recording.rs, companion.rs, windows.rs (unsafe FFI)
+└── <domain>.rs            # project, editing, export, timeline, …
 crates/
-├── theme/src/lib.rs       # Theme tokens: colours, type and icon scales
+├── theme/src/
+│   ├── lib.rs             # Theme struct, constructors, derived colours
+│   ├── appearance.rs      # Appearance and preference resolution
+│   ├── css.rs             # css("hsla(…)") token parser
+│   ├── palette.rs         # the light and dark colour tokens
+│   ├── metrics.rs         # sizes, radii, type scale, fonts, layout columns
+│   └── tests.rs
 └── ui/
     ├── src/lib.rs         # façade: pub use of every control and helper
     ├── src/controls.rs    # declares one child per component
@@ -159,7 +175,13 @@ Within a file:
 4. the primary public API;
 5. `impl` blocks;
 6. private helpers;
-7. `#[cfg(test)] mod tests`.
+7. `#[cfg(test)] mod tests;` as the last line.
+
+Tests live in a sibling file, never inline. A module `foo.rs` declares
+`#[cfg(test)] mod tests;` and keeps the bodies in `foo/tests.rs`, which starts
+with `use super::*;` and so sees the module's private items without anything
+being made public for the test's sake. A crate root does the same with
+`src/tests.rs`.
 
 Method chains that express a sequence of transforms break vertically. GPUI
 element builders are such chains: one `.child()`, `.on_click()` or style call
@@ -183,8 +205,8 @@ closure with more than one conceptual step gets a block.
   trait per struct.
 - No `utils` module. A helper lives next to its only caller; a shared concept
   gets a precisely named module.
-- `unsafe` stays in `platform.rs` and `ui_runtime.rs` behind small safe
-  functions, each with a `// SAFETY:` comment.
+- `unsafe` stays under `src/platform/` and `src/ui_runtime/` behind small
+  safe functions, each with a `// SAFETY:` comment.
 
 ## GPUI specifics
 
