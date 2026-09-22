@@ -138,6 +138,40 @@ impl Theme {
         self.accent_soft
     }
 
+    /// The shadow under anything that floats: the console, the inspector, a
+    /// dialog, a pod, a menu. Two layers — a wide soft one that lifts the
+    /// surface off the desktop and a tight one that seats its edge — and both
+    /// go deeper on dark, where there is less contrast to do the lifting.
+    pub fn panel_shadow(&self) -> Vec<gpui::BoxShadow> {
+        let (tint, far, near) = match self.appearance {
+            Appearance::Light => (
+                gpui::hsla(0.65, 0.33, 0.12, 1.),
+                (24., 60., 0.18),
+                (2., 6., 0.08),
+            ),
+            Appearance::Dark => (gpui::hsla(0., 0., 0., 1.), (28., 70., 0.5), (2., 8., 0.3)),
+        };
+        [far, near]
+            .into_iter()
+            .map(|(offset, blur, alpha)| gpui::BoxShadow {
+                color: tint.opacity(alpha),
+                offset: gpui::point(gpui::px(0.), gpui::px(offset)),
+                blur_radius: gpui::px(blur),
+                spread_radius: gpui::px(0.),
+                inset: false,
+            })
+            .collect()
+    }
+
+    /// A raised control, hovered: its own tone one step up the fill scale.
+    /// The redesign spells this `white .16`, which is the dark value — the
+    /// factor below reproduces it exactly and does the right thing on light,
+    /// where `raise` is already a near-opaque white and a fixed `.16` would
+    /// make the control fainter on hover instead of firmer.
+    pub fn raise_hover(&self) -> Hsla {
+        self.raise.opacity((self.raise.a * 1.6).min(1.))
+    }
+
     /// A toggle's thumb and the scrubber's dots. White in both appearances —
     /// the redesign specifies `#ffffff` for the thumb on an accent track and
     /// on a `sunk2` one alike, so this is not a palette entry.

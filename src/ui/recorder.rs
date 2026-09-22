@@ -76,17 +76,22 @@ impl RootView {
                 });
             }
             let launcher = state.clone();
-            bar = bar.child(button("record", "Record", theme).primary().on_click(
-                move |_, _, _| {
-                    if launcher.get_source_names().row_count() == 0 {
-                        launcher.set_panel("sources".into());
-                        launcher.defer_panel("sources".into());
-                        launcher.defer_action("sources".into());
-                    } else {
-                        launcher.defer_action("start-recording".into());
-                    }
-                },
-            ));
+            // Red, not accent. `rec` is the only red fill in the app and this
+            // is the control it exists for; a blue Record button would make
+            // the one destructive-adjacent action look like Export.
+            bar = bar.child(
+                button("record", "Record", theme)
+                    .record()
+                    .on_click(move |_, _, _| {
+                        if launcher.get_source_names().row_count() == 0 {
+                            launcher.set_panel("sources".into());
+                            launcher.defer_panel("sources".into());
+                            launcher.defer_action("sources".into());
+                        } else {
+                            launcher.defer_action("start-recording".into());
+                        }
+                    }),
+            );
         } else {
             bar = bar.child(div().flex_1().child(if state.get_recording() {
                 format!(

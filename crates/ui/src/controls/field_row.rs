@@ -11,11 +11,11 @@ use crate::{column, row};
 /// takes — a bare label above a bare control reads as two things, not one.
 pub fn field_row(theme: Theme, label: impl Into<SharedString>) -> Div {
     row()
-        .h(px(Theme::CONTROL_HEIGHT))
+        .h(px(Theme::CONTROL_HEIGHT_LARGE))
         .flex_none()
-        .px(px(Theme::CONTROL_PADDING))
+        .px(px(Theme::CONTROL_PADDING_LARGE))
         .gap(px(Theme::GAP))
-        .rounded(px(Theme::RADIUS_CONTROL))
+        .rounded_full()
         .bg(theme.sunk)
         .text_size(px(Theme::FONT_CONTROL))
         .text_color(theme.text)
@@ -35,7 +35,7 @@ pub fn setting_card(
         .flex_none()
         .p(px(Theme::GAP_LARGE))
         .gap(px(Theme::GAP))
-        .rounded(px(Theme::RADIUS_CARD))
+        .rounded(px(Theme::RADIUS_ROW))
         .bg(theme.sunk)
         .child(
             column()
@@ -64,7 +64,7 @@ pub fn group_card(theme: Theme, label: impl Into<SharedString>) -> Div {
         .flex_none()
         .gap(px(Theme::GAP))
         .p(px(Theme::GAP_LARGE))
-        .rounded(px(Theme::RADIUS_CARD))
+        .rounded(px(Theme::RADIUS_ROW))
         .bg(theme.sunk)
         .child(
             div()

@@ -1,9 +1,14 @@
-//! The frosted hover tip a control shows when its caption cannot be read.
+//! The hover tip a control shows when its caption cannot be read.
+//!
+//! An `ink` plate, not a frosted one. A tooltip is the one surface with no
+//! business showing the desktop through it: it appears for 400ms over
+//! whatever the pointer is on, so it has to be legible immediately, and the
+//! redesign gives it the same achromatic fill the transport button uses.
 
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
-use crate::{frost, motion};
+use crate::motion;
 
 struct Tooltip {
     text: SharedString,
@@ -13,24 +18,19 @@ struct Tooltip {
 impl Render for Tooltip {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         let theme = self.theme;
-        frost::frosted(
-            Theme::RADIUS_SMALL,
-            frost::MENU_BLUR,
-            motion::fade_in(
-                "tooltip",
-                div()
-                    .max_w(px(320.))
-                    .px(px(Theme::GAP))
-                    .py(px(Theme::GAP_SMALL))
-                    // .bg(theme.card)
-                    .border_1()
-                    .border_color(theme.line)
-                    .rounded(px(Theme::RADIUS_SMALL))
-                    .shadow_lg()
-                    .text_size(px(Theme::FONT_SMALL))
-                    .text_color(theme.text)
-                    .child(self.text.clone()),
-            ),
+        motion::fade_in(
+            "tooltip",
+            div()
+                .flex()
+                .items_center()
+                .max_w(px(320.))
+                .h(px(Theme::TOOLTIP_HEIGHT))
+                .px(px(Theme::ICON_GAP_ROW))
+                .rounded(px(Theme::RADIUS_REGION))
+                .bg(theme.ink)
+                .text_size(px(Theme::FONT_SECONDARY))
+                .text_color(theme.on_ink)
+                .child(self.text.clone()),
         )
     }
 }

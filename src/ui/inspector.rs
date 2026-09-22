@@ -296,16 +296,13 @@ impl RootView {
                                     1 => el.items_center(),
                                     _ => el.items_end(),
                                 })
-                                .child(
-                                    div()
-                                        .size(px(Theme::DOT_SIZE + 2.0))
-                                        .rounded(px(Theme::RADIUS_SMALL / 2.0))
-                                        .bg(if field.value == value {
-                                            theme.accent
-                                        } else {
-                                            theme.muted
-                                        }),
-                                ),
+                                .child(div().size(px(Theme::DOT_SIZE + 2.0)).rounded_full().bg(
+                                    if field.value == value {
+                                        theme.accent
+                                    } else {
+                                        theme.muted
+                                    },
+                                )),
                         )
                         .tooltip(move |_, cx| {
                             tooltip(format!("Webcam position {value}"), theme, cx)
@@ -678,7 +675,7 @@ impl RootView {
                             .justify_center()
                             .flex_none()
                             .size(px(Theme::CONTROL_HEIGHT))
-                            .rounded(px(Theme::RADIUS_SMALL))
+                            .rounded(px(Theme::RADIUS_LANE))
                             .bg(theme.sunk)
                             .child(icon(glyph, theme.text)),
                     )

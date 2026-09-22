@@ -3,9 +3,17 @@
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
-use crate::{field_row, motion, perf};
+use crate::{field_row, focus_ring, motion, perf};
 
 /// The bare switch, with no label and no plate of its own.
+///
+/// A 46 × 28 track with a 22px thumb inset 3, so the thumb travels 18 — the
+/// geometry the redesign specifies, and the reason none of these numbers are
+/// written here: they are derived from each other in the token set.
+///
+/// The redesign also widens the thumb to 26 while it is held. gpui at the
+/// pinned revision cannot restyle a child from its parent's active state, so
+/// that one state is not carried; everything else is.
 pub fn switch(
     id: impl Into<ElementId>,
     checked: bool,
@@ -18,23 +26,27 @@ pub fn switch(
     // plate is never briefly filled under a thumb that has not moved yet.
     let on = motion::state_fade(&motion::tween_key(&id, "switch"), checked);
     let click_id = id.clone();
-    // A 30px pill inside the 40px control slot, with a 24px thumb.
+    let ring = focus_ring(t);
     let mut switch = div()
         .id(id)
         .relative()
         .flex_none()
-        .w(px(52.))
-        .h(px(30.))
-        .rounded(px(15.))
+        .w(px(Theme::TOGGLE_WIDTH))
+        .h(px(Theme::TOGGLE_HEIGHT))
+        .rounded_full()
         .bg(motion::blend(t.sunk2, t.accent, on))
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
         .child(
             div()
                 .absolute()
-                .top(px(3.))
-                .left(px(motion::lerp(3., 25., on)))
-                .size(px(24.))
-                .rounded(px(12.))
+                .top(px(Theme::TOGGLE_INSET))
+                .left(px(motion::lerp(
+                    Theme::TOGGLE_INSET,
+                    Theme::TOGGLE_INSET + Theme::TOGGLE_TRAVEL,
+                    on,
+                )))
+                .size(px(Theme::TOGGLE_THUMB))
+                .rounded_full()
                 // White on both tracks, as the redesign specifies. On the
                 // off track that is white on a near-white `sunk2` in the
                 // light appearance, so the thumb's own drop shadow is what
@@ -51,7 +63,7 @@ pub fn switch(
     if enabled {
         switch = switch
             .tab_index(0)
-            .focus_visible(move |s| s.border_2().border_color(t.accent))
+            .focus_visible(move |s| s.shadow(vec![ring]))
             .cursor_pointer()
             .on_click(move |_, w, cx| {
                 perf::log(format_args!("click switch {click_id:?} -> {}", !checked));

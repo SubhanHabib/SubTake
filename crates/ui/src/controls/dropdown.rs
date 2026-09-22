@@ -121,7 +121,7 @@ impl Render for Dropdown {
                     .gap(px(Theme::GAP))
                     .h(px(Theme::CONTROL_HEIGHT))
                     .px(px(Theme::CONTROL_PADDING))
-                    .rounded(px(Theme::RADIUS_CONTROL))
+                    .rounded_full()
                     .bg(motion::hover_blend(
                         &trigger_key,
                         if open { theme.hover } else { theme.sunk },
@@ -160,7 +160,7 @@ impl Render for Dropdown {
         if open {
             root = root.child(
                 deferred(frost::frosted(
-                    Theme::RADIUS_CARD,
+                    Theme::RADIUS_MENU,
                     frost::MENU_BLUR,
                     menu_in(
                         "dropdown-menu",

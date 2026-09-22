@@ -1,21 +1,74 @@
 //! The button and its variants, plus the editor rail's icon action.
+//!
+//! Every labelled button in the redesign is a full pill and every icon button
+//! is a circle, so no variant sets a radius: the shape follows from whether
+//! there is a caption. What a variant chooses is its fill, its height and how
+//! much air sits around the label — and the height then picks the glyph size,
+//! because a glyph tracks the control it sits in rather than deciding for
+//! itself.
 
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
 use crate::{icon_sized, motion, perf, row, tooltip};
 
+/// Private on purpose: every variant has a named builder, so a caller says
+/// `.primary()` rather than naming an enum, and there is one way to ask for
+/// each shape instead of two.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum ButtonVariant {
+enum ButtonVariant {
     Secondary,
     Primary,
+    /// A control sitting directly on glass, with a hairline of its own so it
+    /// separates from the material rather than from a plate.
+    Raised,
     Ghost,
-    Outline,
     Danger,
     Record,
-    /// Text-only accent action — the reference's "Reset" and "Advanced".
-    /// It carries no plate, so it never competes with the row it labels.
-    Link,
+    /// Play and pause — the one circular `ink` button. Achromatic on purpose:
+    /// the accent already marks four things, and "the video is playing" is
+    /// not one of them.
+    Transport,
+}
+
+impl ButtonVariant {
+    /// The height a variant takes unless the caller asks for another. Record
+    /// is the tallest control in the app because it is the one that must
+    /// never be hit by accident.
+    fn height(self) -> f32 {
+        match self {
+            Self::Primary | Self::Secondary | Self::Danger => Theme::CONTROL_HEIGHT_LARGE,
+            Self::Raised | Self::Ghost => Theme::CONTROL_HEIGHT,
+            Self::Transport => Theme::TRANSPORT_SIZE,
+            Self::Record => Theme::RECORD_HEIGHT,
+        }
+    }
+
+    /// Side padding. A pill has no plate edge to speak of, so its padding is
+    /// what gives it its width.
+    fn padding(self) -> f32 {
+        match self {
+            Self::Primary => Theme::CONTROL_PADDING_PRIMARY,
+            Self::Secondary | Self::Danger => Theme::CONTROL_PADDING_LARGE,
+            Self::Raised => Theme::CONTROL_PADDING,
+            Self::Ghost => Theme::CONTROL_PADDING_SMALL,
+            Self::Transport | Self::Record => Theme::CONTROL_PADDING_HERO,
+        }
+    }
+}
+
+/// The glyph size for a control of this height — the pairing the icon scale
+/// is built around. Anything taller than a hero button is transport-sized.
+fn glyph_for(height: f32) -> f32 {
+    if height <= Theme::CONTROL_HEIGHT_SMALL {
+        Theme::ICON_SIZE_SMALL
+    } else if height <= Theme::CONTROL_HEIGHT {
+        Theme::ICON_SIZE
+    } else if height <= Theme::CONTROL_HEIGHT_LARGE {
+        Theme::ICON_SIZE_MEDIUM
+    } else {
+        Theme::ICON_SIZE_LARGE
+    }
 }
 
 #[derive(IntoElement)]
@@ -25,11 +78,10 @@ pub struct Button {
     theme: Theme,
     variant: ButtonVariant,
     glyph: Option<SharedString>,
-    glyph_size: f32,
-    /// Hide the caption and render a square icon-only control.
+    glyph_size: Option<f32>,
+    height: Option<f32>,
+    /// Hide the caption and render a round icon-only control.
     icon_only: bool,
-    /// Pill the control fully (the rail's round actions).
-    round: bool,
     /// Full-width, left-aligned: the shape a control takes as a menu row.
     menu_item: bool,
     selected: bool,
@@ -45,9 +97,9 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         theme,
         variant: ButtonVariant::Secondary,
         glyph: None,
-        glyph_size: Theme::ICON_SIZE,
+        glyph_size: None,
+        height: None,
         icon_only: false,
-        round: false,
         menu_item: false,
         selected: false,
         enabled: true,
@@ -56,7 +108,8 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
     }
 }
 
-/// A square icon-only control at the shared 40px height.
+/// A round icon-only control. It takes its variant's height as its diameter,
+/// so an icon button beside a labelled one is the same size as it is tall.
 pub fn icon_button(
     id: impl Into<ElementId>,
     glyph: &str,
@@ -72,8 +125,9 @@ impl Button {
         self
     }
 
+    /// Override the glyph size. Rarely wanted: the height already picks one.
     pub fn glyph_size(mut self, size: f32) -> Self {
-        self.glyph_size = size;
+        self.glyph_size = Some(size);
         self
     }
 
@@ -82,10 +136,19 @@ impl Button {
         self
     }
 
-    pub fn round(mut self) -> Self {
-        self.round = true;
+    /// The dense size — a control in a packed row, a menu item, a pill inside
+    /// a pod.
+    pub fn small(mut self) -> Self {
+        self.height = Some(Theme::CONTROL_HEIGHT_SMALL);
         self
     }
+
+    /// The hero size: the one action an otherwise empty screen is asking for.
+    pub fn hero(mut self) -> Self {
+        self.height = Some(Theme::CONTROL_HEIGHT_HERO);
+        self
+    }
+
     /// A row in a menu: full width, caption left, ellipsised. Every list of
     /// choices in the app is built from this, so the dropdown's rows and the
     /// command palette's rows cannot drift apart.
@@ -94,23 +157,29 @@ impl Button {
         self
     }
 
-    pub fn variant(mut self, variant: ButtonVariant) -> Self {
-        self.variant = variant;
-        self
-    }
-
     pub fn primary(mut self) -> Self {
         self.variant = ButtonVariant::Primary;
         self
     }
 
-    pub fn ghost(mut self) -> Self {
-        self.variant = ButtonVariant::Ghost;
+    /// Starts capture. The one red fill in the app.
+    pub fn record(mut self) -> Self {
+        self.variant = ButtonVariant::Record;
         self
     }
 
-    pub fn link(mut self) -> Self {
-        self.variant = ButtonVariant::Link;
+    pub fn transport(mut self) -> Self {
+        self.variant = ButtonVariant::Transport;
+        self
+    }
+
+    pub fn raised(mut self) -> Self {
+        self.variant = ButtonVariant::Raised;
+        self
+    }
+
+    pub fn ghost(mut self) -> Self {
+        self.variant = ButtonVariant::Ghost;
         self
     }
 
@@ -143,28 +212,65 @@ impl Button {
     }
 }
 
+/// The focus ring: a 3px spread of `accent_soft` drawn as a shadow, not a
+/// border, so gaining focus cannot move the control or its neighbours. This
+/// is what the redesign means by "there are no real borders anywhere".
+pub fn focus_ring(theme: Theme) -> BoxShadow {
+    BoxShadow {
+        color: theme.accent_soft,
+        offset: point(px(0.), px(0.)),
+        blur_radius: px(0.),
+        spread_radius: px(Theme::FOCUS_WIDTH),
+        inset: false,
+    }
+}
+
+/// A glow under a filled control. Only the accent and Record carry one — it
+/// is how those two say they are the action, without another colour.
+fn glow(color: Hsla, blur: f32, offset: f32) -> BoxShadow {
+    BoxShadow {
+        color,
+        offset: point(px(0.), px(offset)),
+        blur_radius: px(blur),
+        spread_radius: px(0.),
+        inset: false,
+    }
+}
+
+/// A hairline drawn inside the control's own edge.
+pub fn hairline(color: Hsla, width: f32) -> BoxShadow {
+    BoxShadow {
+        color,
+        offset: point(px(0.), px(0.)),
+        blur_radius: px(0.),
+        spread_radius: px(width),
+        inset: true,
+    }
+}
+
 impl RenderOnce for Button {
     fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
         let theme = self.theme;
         let tip = self.label.clone();
-        let danger = matches!(self.variant, ButtonVariant::Danger | ButtonVariant::Record);
-        let link = self.variant == ButtonVariant::Link;
+        let height = self.height.unwrap_or_else(|| self.variant.height());
+        let glyph_size = self.glyph_size.unwrap_or_else(|| glyph_for(height));
 
-        // Two states, no hues: a control is either FILLED — the solid
-        // achromatic plate with its glyph inverted on top — or a translucent
-        // wash of the same grey. Primary actions and anything switched on
-        // take the fill; everything else washes. Colour in the interface
-        // comes from the desktop behind the glass, never from a control.
-        let filled = self.variant == ButtonVariant::Primary || self.selected;
-        let (washed, washed_hover) = if danger {
-            (theme.danger.opacity(0.10), theme.danger.opacity(0.22))
-        } else if matches!(
+        // A control is either FILLED — a solid plate with its glyph inverted
+        // on top — or a wash. Only three things fill: the primary action,
+        // Record, and whatever is switched on. The accent marks exactly four
+        // things in this interface, and "the button you are looking at" is
+        // not one of them, so everything else washes.
+        let filled = matches!(
             self.variant,
-            ButtonVariant::Ghost | ButtonVariant::Outline | ButtonVariant::Link
-        ) {
-            (theme.hover.opacity(0.0), theme.hover)
-        } else {
-            (theme.sunk, theme.hover)
+            ButtonVariant::Primary | ButtonVariant::Record | ButtonVariant::Transport
+        ) || self.selected;
+        let (fill_rest, fill_hover) = match self.variant {
+            ButtonVariant::Transport => (theme.ink, theme.ink),
+            ButtonVariant::Record => (theme.rec, theme.rec),
+            ButtonVariant::Danger => (theme.danger.opacity(0.10), theme.danger.opacity(0.22)),
+            ButtonVariant::Ghost => (theme.hover.opacity(0.0), theme.hover),
+            ButtonVariant::Raised => (theme.raise, theme.raise_hover()),
+            _ => (theme.sunk, theme.sunk2),
         };
 
         // Selection is a state the control HOLDS, so it tweens from render;
@@ -173,28 +279,24 @@ impl RenderOnce for Button {
         // is switched on cross-fade along both axes at once instead of
         // snapping to whichever the last frame happened to compute.
         let fill = motion::state_fade(&motion::tween_key(&self.id, "fill"), filled);
-        let rest = motion::blend(washed, theme.accent, fill);
-        let hover = motion::blend(washed_hover, theme.accent_hover, fill);
+        let (accent, accent_hover, on_plate) = match self.variant {
+            ButtonVariant::Record => (theme.rec, theme.rec, theme.thumb()),
+            ButtonVariant::Transport => (theme.ink, theme.ink, theme.on_ink),
+            _ => (theme.accent, theme.accent_hover, theme.on_accent),
+        };
+        let rest = motion::blend(fill_rest, accent, fill);
+        let hover = motion::blend(fill_hover, accent_hover, fill);
         let hover_key = motion::tween_key(&self.id, "hover");
         let background = motion::hover_blend(&hover_key, rest, hover);
-        let resting = if danger {
-            theme.danger
-        } else if link {
-            theme.accent
-        } else {
-            theme.text
+        // Idle icon-only controls sit at `muted` so a pod of six of them
+        // reads as one object; anything with a caption is at full strength.
+        let resting = match self.variant {
+            ButtonVariant::Danger => theme.danger,
+            ButtonVariant::Ghost => theme.muted,
+            _ if self.icon_only => theme.muted,
+            _ => theme.text,
         };
-        let content = motion::blend(resting, theme.on_accent, fill);
-        // A ring drawn in the plate colour would vanish on a filled control.
-        let focus_ring = motion::blend(theme.accent, theme.on_accent, fill);
-
-        let radius = if self.round {
-            Theme::CONTROL_HEIGHT / 2.0
-        } else if link {
-            Theme::RADIUS_SMALL
-        } else {
-            Theme::RADIUS_CONTROL
-        };
+        let content = motion::blend(resting, on_plate, fill);
 
         let click_id = self.id.clone();
         let mut el = div()
@@ -209,21 +311,23 @@ impl RenderOnce for Button {
                     el.justify_center()
                 }
             })
-            .gap(px(Theme::GAP))
-            .h(px(if link {
-                Theme::CHIP_HEIGHT
-            } else {
-                Theme::CONTROL_HEIGHT
-            }))
-            .rounded(px(radius))
+            .gap(px(Theme::ICON_GAP))
+            .h(px(height))
+            .rounded_full()
             .bg(background)
             .text_color(content)
-            .text_size(px(if link {
-                Theme::FONT_SMALL
+            .text_size(px(if self.variant == ButtonVariant::Record {
+                Theme::FONT_ACTION
             } else {
-                Theme::FONT_CONTROL
+                Theme::FONT_BODY
             }))
-            .font_weight(FontWeight::MEDIUM)
+            // 500 on a filled control and on Record, 400 elsewhere: weight is
+            // the quiet half of what marks the primary action.
+            .font_weight(if filled {
+                FontWeight::MEDIUM
+            } else {
+                FontWeight::NORMAL
+            })
             .opacity(if self.enabled {
                 1.
             } else {
@@ -231,11 +335,9 @@ impl RenderOnce for Button {
             });
 
         if self.icon_only {
-            el = el.w(px(Theme::CONTROL_HEIGHT));
-        } else if link {
-            el = el.px(px(Theme::GAP_SMALL));
+            el = el.w(px(height));
         } else {
-            el = el.px(px(Theme::CONTROL_PADDING));
+            el = el.px(px(self.variant.padding()));
             if self.stretch {
                 el = el.flex_1().min_w_0();
             }
@@ -245,15 +347,40 @@ impl RenderOnce for Button {
                 el = el.flex_none();
             }
         }
-        if self.variant == ButtonVariant::Outline {
-            el = el.border_1().border_color(theme.line);
+
+        // Shadows, in the order the redesign layers them: a raised control's
+        // hairline always, a glow only while the plate is filled and enabled.
+        let mut shadows = Vec::new();
+        if self.variant == ButtonVariant::Raised {
+            shadows.push(hairline(theme.raise_line, Theme::BORDER_WIDTH));
         }
-        if danger {
-            el = el.border_1().border_color(theme.danger.opacity(0.4));
+        // Only the accent and Record glow. The transport is filled too, but
+        // it is `ink` — a glow would make the quietest control in the player
+        // bar look like the loudest.
+        if self.enabled && filled {
+            match self.variant {
+                ButtonVariant::Transport => {}
+                ButtonVariant::Record => shadows.push(glow(theme.rec.opacity(0.32), 26., 10.)),
+                _ => shadows.push(glow(theme.accent_soft, 20., 8.)),
+            }
+        }
+        if !shadows.is_empty() {
+            el = el.shadow(shadows);
         }
 
+        // Record wears its state: a white dot that becomes the pulse while
+        // capture is running, ahead of whatever the caption says.
+        if self.variant == ButtonVariant::Record {
+            el = el.child(
+                div()
+                    .flex_none()
+                    .size(px(Theme::RECORD_DOT))
+                    .rounded_full()
+                    .bg(theme.thumb()),
+            );
+        }
         if let Some(name) = &self.glyph {
-            el = el.child(icon_sized(name, self.glyph_size, content));
+            el = el.child(icon_sized(name, glyph_size, content));
         }
         if !self.icon_only {
             el = el.child(
@@ -273,6 +400,8 @@ impl RenderOnce for Button {
 
         if self.enabled {
             // GPUI synthesizes ClickEvent::Keyboard for Enter/Space on focused divs.
+            let ring = focus_ring(theme);
+            let press = theme.press;
             el = el
                 .cursor_pointer()
                 .tab_index(0)
@@ -280,10 +409,13 @@ impl RenderOnce for Button {
                 // `last_input_was_keyboard`, exactly like CSS
                 // `:focus-visible`. With plain `focus` every click left a
                 // ring behind on the control it just pressed.
-                .focus_visible(move |s| s.border_2().border_color(focus_ring))
-                // A press should land the instant the finger does, so it
-                // stays an immediate style; only the release fades back.
-                .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                .focus_visible(move |s| s.shadow(vec![ring]))
+                // The redesign presses with `scale(.97)`, which gpui at this
+                // revision cannot do to a div, so the press is the `press`
+                // fill plus a dim. Both land immediately rather than through
+                // the tween store: the feedback has to arrive with the
+                // finger, and only the release fades back.
+                .active(move |s| s.bg(press).opacity(Theme::PRESSED_OPACITY))
                 .on_hover(motion::hover_listener(hover_key));
             if let Some(handler) = self.handler {
                 let id = click_id;
@@ -331,7 +463,7 @@ pub fn rail_button(
             div()
                 .flex_none()
                 .size(px(Theme::DOT_SIZE))
-                .rounded(px(Theme::DOT_SIZE / 2.0))
+                .rounded_full()
                 .bg(motion::blend(theme.accent.opacity(0.), theme.accent, lit)),
         )
 }

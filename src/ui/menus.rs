@@ -267,7 +267,7 @@ impl RootView {
         );
 
         deferred(frosted(
-            Theme::RADIUS_CARD,
+            Theme::RADIUS_MENU,
             MENU_BLUR,
             menu_in(
                 "command-menu-in",

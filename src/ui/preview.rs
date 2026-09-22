@@ -420,9 +420,7 @@ impl RootView {
                                     if e.get_playing() { "Pause" } else { "Play" },
                                     theme,
                                 )
-                                .round()
-                                .glyph_size(Theme::ICON_SIZE_LARGE)
-                                .variant(ButtonVariant::Primary)
+                                .transport()
                                 .on_click(self.command("play")),
                             )
                             .child(self.icon_action(

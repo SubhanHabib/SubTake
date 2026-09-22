@@ -3,7 +3,7 @@
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
-use crate::row;
+use crate::{hairline, row};
 
 /// Surface planes, matching the original `Panel` variants.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -21,8 +21,9 @@ pub enum Surface {
 
 pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     let radius = match variant {
-        Surface::Overlay => Theme::RADIUS_OVERLAY,
-        Surface::Card | Surface::Popup => Theme::RADIUS_CARD,
+        Surface::Overlay => Theme::RADIUS_BAR,
+        Surface::Popup => Theme::RADIUS_MENU,
+        Surface::Card => Theme::RADIUS_ROW,
         Surface::Panel => Theme::RADIUS_PANEL,
     };
     let background = match variant {
@@ -31,23 +32,30 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
         Surface::Overlay => theme.overlay,
         Surface::Panel => theme.glass,
     };
-    let el = div()
+    let mut el = div()
         .flex()
         .flex_col()
-        .gap(px(Theme::GAP))
+        .gap(px(Theme::GAP_BLOCK))
         .rounded(px(radius))
         .bg(background);
-    if variant == Surface::Overlay {
-        // el.shadow_lg()
-        el
-    } else {
-        el.border_1().border_color(theme.line)
+    // Every edge in the redesign is an inset shadow, never a border: a border
+    // would add to what the panel measures, so a hairline appearing or
+    // changing width would move everything inside it. A card is nested inside
+    // something that already has an edge, so it gets none of its own.
+    let mut shadows = Vec::new();
+    if variant != Surface::Card {
+        shadows.push(hairline(theme.line, Theme::HAIRLINE_WIDTH));
+        shadows.extend(theme.panel_shadow());
     }
+    if !shadows.is_empty() {
+        el = el.shadow(shadows);
+    }
+    el
 }
 
 /// The default plane: an inspector / timeline panel.
 pub fn panel(theme: Theme) -> Div {
-    panel_variant(theme, Surface::Panel).p(px(Theme::GAP_LARGE))
+    panel_variant(theme, Surface::Panel).p(px(Theme::PANEL_PADDING))
 }
 
 /// A hairline rule.
@@ -78,14 +86,9 @@ pub fn panel_header(theme: Theme, title: impl Into<SharedString>) -> Div {
         .child(caps_label(title, theme))
 }
 
+/// A section's caption with a rule running out from it. The caption is the
+/// same caps label a panel heading uses — the redesign draws "FRAME",
+/// "BACKGROUND" and "MOTION" in one style, not two.
 pub fn section_label(text: impl Into<SharedString>, theme: Theme) -> Div {
-    row()
-        .child(
-            div()
-                .flex_none()
-                .text_size(px(Theme::FONT_SMALL))
-                .text_color(theme.muted)
-                .child(text.into()),
-        )
-        .child(divider(theme))
+    row().child(caps_label(text, theme)).child(divider(theme))
 }

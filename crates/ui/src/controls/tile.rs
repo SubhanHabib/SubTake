@@ -19,7 +19,7 @@ pub fn swatch(
     div()
         .id(id)
         .size(px(Theme::SWATCH_SIZE))
-        .rounded(px(Theme::RADIUS_SMALL))
+        .rounded(px(Theme::RADIUS_LANE))
         .bg(colour)
         .border_2()
         .border_color(motion::blend(theme.line, theme.accent, pick))
@@ -36,7 +36,7 @@ pub fn media_tile(id: impl Into<ElementId>, title: impl Into<SharedString>) -> S
         .id(id.into())
         .w(px(Theme::TILE_WIDTH))
         .overflow_hidden()
-        .rounded(px(Theme::RADIUS_SMALL))
+        .rounded(px(Theme::RADIUS_LANE))
         .cursor_pointer()
         .active(|s| s.opacity(Theme::PRESSED_OPACITY))
         .child(
@@ -89,7 +89,7 @@ pub fn choice_tile(
         .id(id)
         .min_w_0()
         .p(px(Theme::GAP))
-        .rounded(px(Theme::RADIUS_CARD))
+        .rounded(px(Theme::RADIUS_MENU))
         // A tile is too big to invert wholesale, so "selected" reads as the
         // deeper grey wash plus a full-strength outline — the outlined half
         // of the same filled/outlined language the buttons use.

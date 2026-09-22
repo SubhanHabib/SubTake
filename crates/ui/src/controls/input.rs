@@ -742,7 +742,7 @@ impl Render for TextInput {
                     .flex()
                     .items_center()
                     .bg(self.theme.sunk)
-                    .rounded(px(Theme::RADIUS_CONTROL))
+                    .rounded_full()
                     .overflow_hidden()
                     .child(TextElement { input: cx.entity() }),
             )

@@ -25,7 +25,7 @@ pub fn context_chip(theme: Theme, parts: &[&str]) -> Div {
         .gap(px(Theme::GAP_SMALL))
         .h(px(Theme::CHIP_HEIGHT))
         .px(px(Theme::GAP_LARGE))
-        .rounded(px(Theme::RADIUS_SMALL))
+        .rounded_full()
         .bg(theme.sunk)
         .text_size(px(Theme::FONT_SMALL))
         .text_color(theme.muted)

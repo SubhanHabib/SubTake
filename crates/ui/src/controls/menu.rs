@@ -39,11 +39,12 @@ pub fn menu_row(
     div()
         .flex()
         .flex_none()
-        .rounded(px(Theme::RADIUS_CONTROL))
+        .rounded(px(Theme::RADIUS_LANE))
         .when(highlighted && !selected, |el| el.bg(theme.hover))
         .child(
             button(id, label, theme)
                 .ghost()
+                .small()
                 .menu_item()
                 .selected(selected)
                 .on_click(on_click),

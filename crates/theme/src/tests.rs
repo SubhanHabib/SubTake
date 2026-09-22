@@ -28,30 +28,87 @@ fn the_type_and_icon_scales_are_closed() {
     // Every size the interface may use, and nothing between them.
     let fonts = [
         Theme::FONT_SMALL,
-        Theme::FONT_CONTROL,
+        Theme::FONT_SECONDARY,
         Theme::FONT_BODY,
+        Theme::FONT_ACTION,
         Theme::FONT_HEADING,
+        Theme::FONT_PANEL,
         Theme::FONT_DISPLAY,
     ];
-    assert!(fonts.windows(2).all(|w| w[0] <= w[1]), "scale must ascend");
+    assert!(fonts.windows(2).all(|w| w[0] < w[1]), "scale must ascend");
     assert_eq!(Theme::FONT_BODY, Theme::FONT_CONTROL, "one reading size");
     let icons = [
         Theme::ICON_SIZE_SMALL,
         Theme::ICON_SIZE,
+        Theme::ICON_SIZE_MEDIUM,
         Theme::ICON_SIZE_LARGE,
     ];
     assert!(icons.windows(2).all(|w| w[0] < w[1]));
     // A glyph has to leave room inside the control it sits in.
-    assert!(Theme::ICON_SIZE_LARGE < Theme::CONTROL_HEIGHT);
+    assert!(Theme::ICON_SIZE_LARGE < Theme::CONTROL_HEIGHT_SMALL);
 }
 
 #[test]
-fn control_geometry_is_unified() {
-    assert_eq!(Theme::CONTROL_HEIGHT, 40.0);
-    assert_eq!(Theme::RADIUS_CONTROL, 16.0);
-    assert_eq!(Theme::ICON_SIZE, 16.0);
-    // A 16px glyph centred in a 40px control.
-    assert_eq!(Theme::CONTROL_PADDING, 12.0);
+fn the_radius_ladder_leaves_its_gap() {
+    // Nothing lands between 14 and 20: that gap is what keeps a container
+    // and its contents readable as separate layers.
+    let ladder = [
+        Theme::RADIUS_REGION,
+        Theme::RADIUS_LANE,
+        Theme::RADIUS_INNER,
+        Theme::RADIUS_MENU,
+        Theme::RADIUS_ROW,
+        Theme::RADIUS_FRAME,
+        Theme::RADIUS_PLATE,
+        Theme::RADIUS_PANEL,
+        Theme::RADIUS_POD,
+        Theme::RADIUS_BAR,
+    ];
+    assert!(ladder.windows(2).all(|w| w[0] < w[1]), "ladder must ascend");
+    assert!(
+        !ladder
+            .iter()
+            .any(|r| *r > Theme::RADIUS_INNER && *r < Theme::RADIUS_MENU),
+        "the 14-to-20 gap must stay empty"
+    );
+}
+
+#[test]
+fn a_control_height_picks_its_own_glyph_and_padding() {
+    // The four button heights ascend, and each leaves room for the glyph
+    // that pairs with it. Nothing sets a glyph size or a padding directly.
+    let heights = [
+        Theme::CONTROL_HEIGHT_SMALL,
+        Theme::CONTROL_HEIGHT,
+        Theme::CONTROL_HEIGHT_LARGE,
+        Theme::CONTROL_HEIGHT_HERO,
+    ];
+    assert!(heights.windows(2).all(|w| w[0] < w[1]));
+    for (height, glyph) in heights.iter().zip([
+        Theme::ICON_SIZE_SMALL,
+        Theme::ICON_SIZE,
+        Theme::ICON_SIZE_MEDIUM,
+        Theme::ICON_SIZE_LARGE,
+    ]) {
+        assert!(glyph * 2.0 < *height, "a glyph must sit inside its control");
+    }
+    // Record is the tallest thing in the app, and the transport the largest
+    // round one: neither may be mistaken for an ordinary button.
+    assert!(Theme::RECORD_HEIGHT > Theme::CONTROL_HEIGHT_HERO);
+    assert!(Theme::TRANSPORT_SIZE > Theme::CONTROL_HEIGHT_LARGE);
+}
+
+#[test]
+fn the_toggle_thumb_travels_the_width_it_is_given() {
+    // The track, the inset and the thumb derive one from the other, so the
+    // travel cannot drift away from the geometry that produces it.
+    assert_eq!(Theme::TOGGLE_TRAVEL, 18.0);
+    assert_eq!(
+        Theme::TOGGLE_INSET * 2.0 + Theme::TOGGLE_THUMB,
+        Theme::TOGGLE_HEIGHT,
+        "the thumb must fit its track exactly"
+    );
+    assert!(Theme::TOGGLE_THUMB_HELD > Theme::TOGGLE_THUMB);
 }
 
 #[test]

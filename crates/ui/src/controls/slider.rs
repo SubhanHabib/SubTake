@@ -4,7 +4,7 @@ use gpui::{prelude::*, *};
 use std::{cell::Cell, rc::Rc};
 use subtake_theme::Theme;
 
-use crate::{icon, measure};
+use crate::{focus_ring, icon, measure};
 
 /// A filled slider that *is* the row: glyph and label on the left, the level
 /// painted as a fill across the whole 40px plate, a hairline at the fill edge,
@@ -105,13 +105,13 @@ impl Render for Slider {
             .id("scrub")
             .relative()
             .tab_index(0)
-            .h(px(Theme::CONTROL_HEIGHT))
+            .h(px(Theme::CONTROL_HEIGHT_LARGE))
             .w_full()
-            .rounded(px(Theme::RADIUS_CONTROL))
+            .rounded_full()
             .bg(theme.sunk)
             .overflow_hidden()
             .cursor(CursorStyle::ResizeLeftRight)
-            .focus_visible(move |s| s.border_1().border_color(theme.slider_focus()))
+            .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
             .on_key_down(cx.listener(|s, e: &KeyDownEvent, w, cx| {
                 let step = (s.maximum - s.minimum)
                     / if e.keystroke.modifiers.shift {
@@ -138,21 +138,23 @@ impl Render for Slider {
                     .absolute()
                     .top(px(Theme::SLIDER_FILL_INSET))
                     .left(px(Theme::SLIDER_FILL_INSET))
-                    .h(px(Theme::CONTROL_HEIGHT - 2.0 * Theme::SLIDER_FILL_INSET))
+                    .h(px(
+                        Theme::CONTROL_HEIGHT_LARGE - 2.0 * Theme::SLIDER_FILL_INSET
+                    ))
                     .w(relative(fraction))
-                    .rounded(px(Theme::SLIDER_FILL_RADIUS))
+                    .rounded_full()
                     .bg(theme.slider_fill()),
             )
             // Hairline at the fill edge so the exact level stays readable.
             .child(
                 div()
                     .absolute()
-                    .top(px(12.))
+                    .top(px(Theme::GAP_LARGE))
                     .left(relative(fraction))
-                    .ml(px(-1.))
-                    .w(px(2.))
-                    .h(px(Theme::CONTROL_HEIGHT - 24.0))
-                    .rounded(px(1.))
+                    .ml(px(-Theme::BORDER_WIDTH))
+                    .w(px(Theme::BORDER_WIDTH * 2.0))
+                    .h(px(Theme::CONTROL_HEIGHT_LARGE - Theme::GAP_LARGE * 2.0))
+                    .rounded_full()
                     .bg(theme.slider_marker()),
             )
             .child(

@@ -25,60 +25,169 @@ impl Theme {
     /// applied as an immediate style rather than through the tween store.
     pub const PRESSED_OPACITY: f32 = 0.7;
 
-    /// The whole type scale. Nothing in the interface may set a size that is
-    /// not one of these four — `FONT_BODY` is the root default that every
-    /// element inherits, so most elements set nothing at all.
-    pub const FONT_SMALL: f32 = 10.0;
-    pub const FONT_CONTROL: f32 = 12.0;
-    pub const FONT_BODY: f32 = 12.0;
-    pub const FONT_HEADING: f32 = 14.0;
-    /// Empty-state headlines — the one step above the interface scale.
-    pub const FONT_DISPLAY: f32 = 22.0;
+    // ---- type scale ------------------------------------------------------
+    //
+    // Seven sizes, and nothing between them. `FONT_BODY` is the root default
+    // that every element inherits, so most elements set no size at all. The
+    // three above it are title sizes and belong to `FONT_TITLE`, never to a
+    // control.
 
-    pub const RADIUS_SMALL: f32 = 8.0;
-    pub const RADIUS_CONTROL: f32 = 16.0;
-    pub const RADIUS_CARD: f32 = 16.0;
-    pub const RADIUS_PANEL: f32 = 20.0;
-    pub const RADIUS_OVERLAY: f32 = 24.0;
+    /// Section labels, and Geist Mono metadata.
+    pub const FONT_SMALL: f32 = 11.0;
+    /// Descriptions and metadata — the step below body, always `muted`.
+    pub const FONT_SECONDARY: f32 = 12.0;
+    /// Every label, row and button.
+    pub const FONT_BODY: f32 = 13.0;
+    pub const FONT_CONTROL: f32 = Self::FONT_BODY;
+    /// Record's caption — the one control allowed to be louder than body
+    /// without being a title.
+    pub const FONT_ACTION: f32 = 15.0;
+    /// An inspector's own heading.
+    pub const FONT_HEADING: f32 = 19.0;
+    /// A panel or dialog title.
+    pub const FONT_PANEL: f32 = 22.0;
+    /// Empty-state headlines — the one size that is allowed to be loud.
+    pub const FONT_DISPLAY: f32 = 40.0;
 
-    pub const BORDER_WIDTH: f32 = 1.0;
-    pub const FOCUS_WIDTH: f32 = 2.0;
-    pub const SLIDER_FOCUS_WIDTH: f32 = 1.0;
+    // ---- icon scale ------------------------------------------------------
+    //
+    // A glyph tracks the control it sits in rather than choosing for itself,
+    // so the four sizes pair with the four control heights below.
 
-    /// One comfortable control height everywhere — the "unified control
-    /// geometry" the product settled on.
-    pub const CONTROL_HEIGHT: f32 = 40.0;
-    /// The quiet strips that frame a composer: the context chip above its
-    /// input and the affordance row beneath it. Both sit below the control
-    /// height so the input stays the only full-weight element on the card.
-    pub const CHIP_HEIGHT: f32 = 24.0;
-    pub const FOOTER_HEIGHT: f32 = 28.0;
-    /// The whole icon scale, matching the type scale: `ICON_SIZE` is the
-    /// default a control's glyph takes, `SMALL` is for marks inside a control
-    /// (a dropdown caret, a resize grip) and `LARGE` for the transport and
-    /// the brand mark. Bespoke sizes belong to artwork, not to icons.
-    pub const ICON_SIZE_SMALL: f32 = 12.0;
+    /// In a 34px control: a caret, a resize grip, a menu item's tick.
+    pub const ICON_SIZE_SMALL: f32 = 14.0;
+    /// In a 40px control — the default a glyph takes.
     pub const ICON_SIZE: f32 = 16.0;
-    pub const ICON_SIZE_LARGE: f32 = 20.0;
+    /// In a 44px control: the tool pod, a primary button, the titlebar.
+    pub const ICON_SIZE_MEDIUM: f32 = 17.0;
+    /// In a 52–60px control: the transport, Record, the brand mark.
+    pub const ICON_SIZE_LARGE: f32 = 19.0;
+
+    // ---- radius ----------------------------------------------------------
+    //
+    // The ladder, smallest first. Nothing lands between 14 and 20: that gap
+    // is what keeps a container and its contents readable as separate
+    // layers. Anything labelled — button, chip, segment, toggle — is a full
+    // pill and takes no radius from here, and every icon button is a circle.
+
+    /// A timeline region, a tooltip.
+    pub const RADIUS_REGION: f32 = 10.0;
+    /// A lane, a small thumbnail, a menu item.
+    pub const RADIUS_LANE: f32 = 12.0;
+    /// The screen inside the preview, a large thumbnail.
+    pub const RADIUS_INNER: f32 = 14.0;
+    /// A preset tile, a menu's container.
+    pub const RADIUS_MENU: f32 = 20.0;
+    /// A list row, a recent card.
+    pub const RADIUS_ROW: f32 = 22.0;
+    /// The preview frame, the player bar.
+    pub const RADIUS_FRAME: f32 = 24.0;
+    /// A list's plate — the recess its rows sit in.
+    pub const RADIUS_PLATE: f32 = 26.0;
+    /// The window shell, the console, the inspector, a dialog.
+    pub const RADIUS_PANEL: f32 = 28.0;
+    /// The tool pod.
+    pub const RADIUS_POD: f32 = 30.0;
+    /// The recorder bar.
+    pub const RADIUS_BAR: f32 = 40.0;
+
+    // ---- control heights -------------------------------------------------
+    //
+    // Four for buttons and three for the fixed shapes. A control's height
+    // picks its glyph size and its padding; nothing sets those separately.
+
+    /// An icon button in a dense row, a menu item, an aspect pill.
+    pub const CONTROL_HEIGHT_SMALL: f32 = 34.0;
+    /// A raised control — one sitting directly on glass.
+    pub const CONTROL_HEIGHT: f32 = 40.0;
+    /// A primary or secondary button, and the round buttons beside them.
+    pub const CONTROL_HEIGHT_LARGE: f32 = 44.0;
+    /// A hero button: the one action an empty screen is asking for.
+    pub const CONTROL_HEIGHT_HERO: f32 = 52.0;
+    /// The transport button — the largest round control.
+    pub const TRANSPORT_SIZE: f32 = 56.0;
+    /// Record. Taller than anything else because it is the one control that
+    /// must never be hit by accident, and its dot, which pulses on a one
+    /// second cycle while capture is running.
+    pub const RECORD_HEIGHT: f32 = 60.0;
+    pub const RECORD_DOT: f32 = 12.0;
+    /// The unified titlebar.
+    pub const TITLEBAR_HEIGHT: f32 = 64.0;
+
+    /// A chip: a context label, a piece of metadata on a plate.
+    pub const CHIP_HEIGHT: f32 = 26.0;
+    pub const TOOLTIP_HEIGHT: f32 = 28.0;
+    pub const FOOTER_HEIGHT: f32 = 28.0;
+
+    // ---- horizontal rhythm -----------------------------------------------
+
     pub const GAP_SMALL: f32 = 4.0;
     pub const GAP: f32 = 8.0;
     pub const GAP_LARGE: f32 = 12.0;
-    /// Centres a 16px glyph in a 40px control.
-    pub const CONTROL_PADDING: f32 = (Self::CONTROL_HEIGHT - Self::ICON_SIZE) / 2.0;
+    /// Between blocks inside a panel — one step above the control gap.
+    pub const GAP_BLOCK: f32 = 14.0;
+    /// A panel's own padding: the console and the inspector.
+    pub const PANEL_PADDING: f32 = 18.0;
+    /// The shell's inset from the window edge, and a float's from the shell.
+    pub const INSET: f32 = 24.0;
+
+    /// Side padding by control height. A labelled control is a pill, so its
+    /// padding is what gives it its width.
+    pub const CONTROL_PADDING_SMALL: f32 = 12.0;
+    pub const CONTROL_PADDING: f32 = 16.0;
+    pub const CONTROL_PADDING_LARGE: f32 = 18.0;
+    pub const CONTROL_PADDING_PRIMARY: f32 = 22.0;
+    pub const CONTROL_PADDING_HERO: f32 = 26.0;
     pub const INPUT_PADDING: f32 = Self::CONTROL_PADDING;
+    /// Between a glyph and the label beside it: on a button, in a row, in a
+    /// pod. Three values because the gap has to grow with the control.
+    pub const ICON_GAP_POD: f32 = 8.0;
+    pub const ICON_GAP: f32 = 9.0;
+    pub const ICON_GAP_ROW: f32 = 10.0;
+
+    // ---- edges -----------------------------------------------------------
+    //
+    // There are no real borders in the redesign: every edge is an inset
+    // shadow, so an edge can never change what a control measures.
+
+    pub const BORDER_WIDTH: f32 = 1.0;
+    /// A selected row, region or tile, and a focused unfilled control.
+    pub const SELECTED_WIDTH: f32 = 1.5;
+    /// The focus ring's spread. Keyboard only.
+    pub const FOCUS_WIDTH: f32 = 3.0;
+    pub const SLIDER_FOCUS_WIDTH: f32 = 1.0;
+    /// The window shell's hairline.
+    pub const HAIRLINE_WIDTH: f32 = 0.5;
+
+    // ---- fixed shapes ----------------------------------------------------
+
+    /// The toggle: a 46-wide track with a 22 thumb inset 3, so the thumb
+    /// travels 18. Held, the thumb stretches to `TOGGLE_THUMB_HELD`.
+    pub const TOGGLE_WIDTH: f32 = 46.0;
+    pub const TOGGLE_HEIGHT: f32 = 28.0;
+    pub const TOGGLE_INSET: f32 = 3.0;
+    pub const TOGGLE_THUMB: f32 = Self::TOGGLE_HEIGHT - Self::TOGGLE_INSET * 2.0;
+    pub const TOGGLE_THUMB_HELD: f32 = 26.0;
+    pub const TOGGLE_TRAVEL: f32 =
+        Self::TOGGLE_WIDTH - Self::TOGGLE_INSET * 2.0 - Self::TOGGLE_THUMB;
+
+    /// The lane stack: the source lane is taller than the rest.
+    pub const LANE_HEIGHT: f32 = 30.0;
+    pub const LANE_SOURCE_HEIGHT: f32 = 42.0;
+    pub const LANE_GAP: f32 = 4.0;
+    /// The column of lane names, and its gap to the tracks.
+    pub const LANE_GUTTER: f32 = 78.0;
+    pub const LANE_GUTTER_GAP: f32 = 14.0;
 
     /// The filled slider's fill is inset by a hair so the plate's radius still
     /// reads at the edges.
     pub const SLIDER_FILL_INSET: f32 = 1.0;
-    pub const SLIDER_FILL_RADIUS: f32 = Self::RADIUS_CONTROL - Self::SLIDER_FILL_INSET;
 
     /// Value input inside a scrub field.
     pub const SCRUB_VALUE_WIDTH: f32 = 70.0;
-    /// Rail button footprint: the 40px action plus the marker that shows
-    /// which panel it has open.
-    pub const RAIL_BUTTON_HEIGHT: f32 = Self::CONTROL_HEIGHT;
-    /// Small marks: the unsaved dot, a progress rule, a colour sample and a
-    /// picker thumbnail. Named here so no view invents its own.
+    /// Rail button footprint: the action plus the marker that shows which
+    /// panel it has open.
+    pub const RAIL_BUTTON_HEIGHT: f32 = Self::CONTROL_HEIGHT_LARGE;
     /// A transient menu's list box: how tall it grows before it scrolls, and
     /// the width it will not shrink below when its trigger is narrower than
     /// its rows. Shared by the dropdown and the command palette so one is
@@ -86,7 +195,9 @@ impl Theme {
     pub const MENU_MAX_HEIGHT: f32 = 280.0;
     pub const MENU_MIN_WIDTH: f32 = 180.0;
 
-    pub const DOT_SIZE: f32 = 6.0;
+    /// Small marks: the unsaved dot, a progress rule, a colour sample and a
+    /// picker thumbnail. Named here so no view invents its own.
+    pub const DOT_SIZE: f32 = 7.0;
     pub const PROGRESS_HEIGHT: f32 = 4.0;
     pub const SWATCH_SIZE: f32 = 26.0;
     pub const TILE_WIDTH: f32 = 68.0;
