@@ -521,18 +521,20 @@ impl RootView {
     ) -> AnyElement {
         let theme = self.theme;
         let name = e.get_panel();
-        let title = match name.as_str() {
+        let shown = match name.as_str() {
             "Frame" => "Scene",
             "Preferences" => "Settings",
             "Recent" => "Projects",
             "Wallpapers" => "Background",
             _ => &name,
         };
-        // The panel names itself the way the reference does: small caps
-        // rather than a heading that competes with the controls under it. A
-        // sub-panel keeps its way back, now as a caret rather than a button
-        // whose caption was a single guillemet character.
-        let mut heading = row().h(px(Theme::CONTROL_HEIGHT_SMALL)).flex_none();
+        // Every panel names itself as round 2 draws Scene: the name in Space
+        // Grotesk 19 and a close control. A sub-panel keeps its way back, a
+        // caret before the name.
+        let mut heading = row()
+            .h(px(Theme::CONTROL_HEIGHT_SMALL))
+            .flex_none()
+            .gap(px(Theme::ICON_GAP_ROW));
         if matches!(name.as_str(), "Crop" | "Wallpapers" | "Shortcuts") {
             let editor = e.clone();
             let back = if name == "Shortcuts" {
@@ -550,16 +552,16 @@ impl RootView {
                     }),
             );
         }
-        heading = heading
-            .child(caps_label(title.to_owned(), theme))
-            .child(div().flex_1());
-        // Not drawn by the design: the inspector over the empty state. With
-        // no rail to pick another panel from, it needs its own way out.
-        if !e.get_has_video() {
+        heading = heading.child(title(shown.to_owned(), Theme::FONT_HEADING).flex_1());
+        // Not wired: the handoff's close on Scene. The inspector always
+        // shows a panel and Scene is where closing lands, so with a video
+        // open Scene and Background have no close. Over the empty state,
+        // with no rail to pick another panel from, every panel keeps one.
+        let root = matches!(name.as_str(), "Frame" | "Wallpapers");
+        if !root || !e.get_has_video() {
             let editor = e.clone();
             heading = heading.child(
                 icon_button("inspector-close", "X-regular", "Close", theme)
-                    .ghost()
                     .small()
                     .on_click(move |_, _, _| {
                         editor.set_panel("Frame".into());
@@ -858,6 +860,10 @@ impl RootView {
         }
         if !matches!(name.as_str(), "Export" | "Selection" | "Cursor" | "Webcam") {
             for field in e.get_fields().iter() {
+                // A section named after the panel only repeats its title.
+                if field.kind == 5 && field.label.eq_ignore_ascii_case(shown) {
+                    continue;
+                }
                 content = content.child(self.field(e, field, window, cx));
             }
         }
