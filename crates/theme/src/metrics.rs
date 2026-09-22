@@ -100,10 +100,16 @@ impl Theme {
 // typography
 // ---------------------------------------------------------------------------
 
-/// Interface family, as the product's own tokens name it. The bundled Geist
-/// faces stay registered so a theme can opt into them.
-pub const FONT_SANS: &str = "Helvetica Neue";
+/// The three families, and the one rule that separates them: Geist for the
+/// interface, Geist Mono for anything numeric that changes under the user's
+/// hand, and Space Grotesk for titles only — never inside a control.
+///
+/// `FONT_SANS` was `"Helvetica Neue"` until the redesign, so the bundled
+/// Geist faces were registered and then never asked for; the app rendered in
+/// the system face while claiming otherwise.
+pub const FONT_SANS: &str = "Geist";
 pub const FONT_MONO: &str = "Geist Mono";
+pub const FONT_TITLE: &str = "Space Grotesk";
 
 /// The eight bundled Geist faces, in the order gpui should register them.
 pub const GEIST_FACES: [&str; 8] = [
@@ -123,6 +129,11 @@ pub const GEIST_MONO_FACES: [&str; 4] = [
     "GeistMono-SemiBold.ttf",
     "GeistMono-Bold.ttf",
 ];
+
+/// Space Grotesk, weight 500 only: it is a title face, and every title the
+/// redesign draws is at 500. Bundling the other weights would ship four
+/// faces to serve one.
+pub const SPACE_GROTESK_FACES: [&str; 1] = ["SpaceGrotesk-Medium.ttf"];
 
 // ---------------------------------------------------------------------------
 // layout metrics

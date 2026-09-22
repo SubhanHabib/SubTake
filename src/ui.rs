@@ -219,9 +219,9 @@ impl RootView {
         subtake_ui::init(cx);
         // A silent fallback to the system face still renders legible text and
         // would pass every other check, so surface it loudly instead.
-        let (sans, mono) = subtake_ui::families_available(cx);
-        if !sans || !mono {
-            eprintln!("SUBTAKE_FONTS_MISSING: Geist={sans} GeistMono={mono}");
+        let (sans, mono, title) = subtake_ui::families_available(cx);
+        if !sans || !mono || !title {
+            eprintln!("SUBTAKE_FONTS_MISSING: Geist={sans} GeistMono={mono} SpaceGrotesk={title}");
         }
         let focus = cx.focus_handle();
         window.focus(&focus, cx);

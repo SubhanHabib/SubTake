@@ -7,7 +7,10 @@
 //! installed, and needs no resource-bundle step.
 //!
 //! Geist and Geist Mono are © 2024 The Geist Project Authors, SIL Open Font
-//! License 1.1 — see `assets/fonts/licenses/Geist-OFL.txt`.
+//! License 1.1 — see `assets/fonts/licenses/Geist-OFL.txt`. Space Grotesk is
+//! © 2020 The Space Grotesk Project Authors, same licence — see
+//! `assets/fonts/licenses/SpaceGrotesk-OFL.txt`. The redesign uses it for
+//! titles only and only at weight 500, so that is the one face bundled.
 
 use gpui::App;
 use std::borrow::Cow;
@@ -30,12 +33,17 @@ const GEIST_MONO: [&[u8]; 4] = [
     include_bytes!("../../../assets/fonts/GeistMono-Bold.ttf"),
 ];
 
+const SPACE_GROTESK: [&[u8]; 1] = [include_bytes!(
+    "../../../assets/fonts/SpaceGrotesk-Medium.ttf"
+)];
+
 /// Register the bundled faces. Safe to call more than once; gpui's text system
 /// treats a repeat registration of the same face as a no-op.
 pub fn register(cx: &App) {
     let faces = GEIST
         .iter()
         .chain(GEIST_MONO.iter())
+        .chain(SPACE_GROTESK.iter())
         .map(|face| Cow::Borrowed(*face))
         .collect();
     if let Err(error) = cx.text_system().add_fonts(faces) {
@@ -44,11 +52,15 @@ pub fn register(cx: &App) {
 }
 
 /// Whether the bundled families resolved — used by the UI smoke checks so a
-/// silent fallback to the system face cannot pass as fidelity.
-pub fn families_available(cx: &App) -> (bool, bool) {
+/// silent fallback to the system face cannot pass as fidelity. This passed
+/// vacuously while `FONT_SANS` named a system face: it asked whether the host
+/// had Helvetica, which it always does.
+pub fn families_available(cx: &App) -> (bool, bool, bool) {
     let names = cx.text_system().all_font_names();
+    let has = |family: &str| names.iter().any(|n| n == family);
     (
-        names.iter().any(|n| n == subtake_theme::FONT_SANS),
-        names.iter().any(|n| n == subtake_theme::FONT_MONO),
+        has(subtake_theme::FONT_SANS),
+        has(subtake_theme::FONT_MONO),
+        has(subtake_theme::FONT_TITLE),
     )
 }
