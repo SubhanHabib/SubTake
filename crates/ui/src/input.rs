@@ -603,13 +603,18 @@ impl Element for TextElement {
             .max(cursor_pos - bounds.size.width + px(8.))
             .min(cursor_pos)
             .max(px(0.));
+        // The caret is the height of the text line, centred in the control,
+        // not the control's full 40px: the field's line height is inflated
+        // to centre the text, and a caret that tall reads as a divider.
+        let caret_height = font_size * 1.3;
+        let caret_top = bounds.top() + (bounds.size.height - caret_height) / 2.;
         let (selection, cursor) = if selected_range.is_empty() {
             (
                 None,
                 Some(fill(
                     Bounds::new(
-                        point(bounds.left() + cursor_pos - scroll_offset, bounds.top()),
-                        size(px(2.), bounds.bottom() - bounds.top()),
+                        point(bounds.left() + cursor_pos - scroll_offset, caret_top),
+                        size(px(2.), caret_height),
                     ),
                     input.theme.accent,
                 )),

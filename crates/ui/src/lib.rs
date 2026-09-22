@@ -644,7 +644,7 @@ impl Render for Tooltip {
                 .max_w(px(320.))
                 .px(px(Theme::GAP))
                 .py(px(Theme::GAP_SMALL))
-                .bg(t.popup)
+                // .bg(t.popup)
                 .border_1()
                 .border_color(t.border)
                 .rounded(px(Theme::RADIUS_SMALL))

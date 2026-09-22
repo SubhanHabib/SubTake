@@ -73,9 +73,11 @@ pub struct Theme {
     /// Floating overlay plate. The recorder's borderless windows carry no
     /// vibrancy material — macOS gives a borderless window no corner mask, so
     /// a blurred view fills the frame square behind a rounded plate — so this
-    /// tone is near-opaque like `popup` rather than a tint over glass.
+    /// tone is near-opaque rather than a tint over glass.
     pub overlay: Hsla,
-    /// Menu / popover plate, near-opaque so its rows stay legible.
+    /// Menu / popover plate. A translucent tint: every menu is painted over
+    /// its own backdrop blur (`frosted`), so the frost shows through while
+    /// the rows stay legible against a softened, not raw, background.
     pub popup: Hsla,
     pub overlay_shadow: Hsla,
 
@@ -225,7 +227,7 @@ impl Theme {
             panel: c(0xffffff48),
             surface: c(0xe7e7e766),
             overlay: c(0xfcfcfcf7),
-            popup: c(0xfafafaf5),
+            popup: c(0xfafafacc),
             overlay_shadow: c(0x00000018),
             border: c(0x2222221c),
             text: c(0x292a2dff),
@@ -255,7 +257,7 @@ impl Theme {
             panel: c(0x16161855),
             surface: c(0x20202466),
             overlay: c(0x1c1d21f7),
-            popup: c(0x202126f5),
+            popup: c(0x202126cc),
             overlay_shadow: c(0x00000055),
             border: c(0xffffff22),
             text: c(0xf5f5f6ff),

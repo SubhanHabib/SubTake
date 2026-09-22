@@ -147,7 +147,7 @@ def close_old_instances():
     raise RuntimeError(f"Previous instances still running: {sorted(remaining)}. Close them and retry.")
 
 
-def install_and_launch(resources):
+def install_and_launch(resources, gallery=False):
     import shutil
     macos = APP / "Contents/MacOS"
     macos.mkdir(exist_ok=True)
@@ -158,6 +158,8 @@ def install_and_launch(resources):
     REQUEST.unlink(missing_ok=True)
     environment = dict(os.environ, SUBTAKE_RESOURCES=str(resources),
                        SUBTAKE_DEV_RESTART_FILE=str(REQUEST))
+    if gallery:
+        environment["SUBTAKE_GALLERY"] = gallery
     child = subprocess.Popen([str(executable)], cwd=ROOT, env=environment,
                              start_new_session=True)
     log(f"Running fresh build — PID {child.pid} — {APP}")
@@ -192,6 +194,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--stop", action="store_true")
+    parser.add_argument("--gallery", nargs="?", const="1", default=None,
+                        metavar="APPEARANCE",
+                        help="launch the UI-only gallery (fixture data, no project); "
+                             "pass 'light' to start in light mode")
     args = parser.parse_args()
     WORK.mkdir(parents=True, exist_ok=True)
     with LOCK.open("a+") as lock:
@@ -226,7 +232,7 @@ def main():
             baseline = snapshot()
             resources = prepare()
             close_old_instances()
-            child = install_and_launch(resources)
+            child = install_and_launch(resources, args.gallery)
             log("Watching src/, crates/theme/, crates/ui/, scripts/, assets/ and Cargo files. Ctrl+C stops. Compile errors keep the last working app.")
             while not stopping:
                 if child.poll() is not None:
@@ -248,7 +254,7 @@ def main():
                 if stopping:
                     break
                 if graceful_stop(child):
-                    child = install_and_launch(resources)
+                    child = install_and_launch(resources, args.gallery)
         finally:
             if child is not None and child.poll() is None:
                 if not graceful_stop(child):

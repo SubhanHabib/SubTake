@@ -8,10 +8,17 @@ use subtake_native::{
 };
 use subtake_native::ui_state::{AppTray, EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
 mod app;
+mod gallery;
 mod inspector;
 fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
     let args: Vec<String> = std::env::args().skip(1).collect();
+    // The UI gallery skips `App` entirely: fixture data, no project, no media.
+    if std::env::var_os("SUBTAKE_GALLERY").is_some()
+        || args.first().map(String::as_str) == Some("--gallery")
+    {
+        return gallery::run();
+    }
     match args.first().map(String::as_str) {
         Some("benchmark") => {
             let path = PathBuf::from(
