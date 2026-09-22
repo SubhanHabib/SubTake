@@ -1,11 +1,17 @@
 //! Native GPUI controls on SubTake's own design system.
 //!
-//! Geometry is carried over from the pre-GPUI Slint components
-//! (`ui/components/*.slint`): one 40px control height everywhere, a 16px
-//! radius, 16px glyphs inset 12px, and translucent plates that let the
-//! window's vibrancy material read through. The distinctive pieces are the
-//! scrub field (a filled slider that *is* the row, with its value shown in
-//! place) and the timeline scrubber (cap, rule and six-dot grip).
+//! Every number here comes from the "Stage" redesign handoff, extracted into
+//! `docs/DESIGN-PRIMITIVES.md`: four nesting materials over the user's
+//! desktop, a control ladder of 26 / 28 / 34 / 40 / 44 / 52 / 56 / 60, a
+//! radius ladder with a deliberate gap between 14 and 20, and one blue accent
+//! that marks exactly four things. There are no real borders anywhere — every
+//! edge is an inset shadow, so an edge can never change what a control
+//! measures.
+//!
+//! The distinctive pieces are the scrub field (a filled slider that *is* the
+//! row, with its value shown in place) and the frosted float, which paints a
+//! whole popover subtree inside one scene layer so a hover repaint elsewhere
+//! cannot reorder its quads under its own backdrop blur.
 
 mod controls;
 mod fonts;
@@ -14,13 +20,17 @@ mod icon;
 mod layout;
 pub mod motion;
 pub mod perf;
+mod typography;
 
 pub use controls::*;
 pub use fonts::{families_available, register as register_fonts};
-pub use frost::{FADE_BAND, MENU_BLUR, fade_edges, frosted, layered};
+pub use frost::{
+    BAR_BLUR, FADE_BAND, MENU_BLUR, PANEL_BLUR, POD_BLUR, fade_edges, frosted, layered,
+};
 pub use icon::{icon, icon_sized};
 pub use layout::{column, measure, row};
 pub use motion::{
     HOVER_FADE_MS, MENU_IN_MS, blend, fade_in, hover_blend, hover_listener, menu_in, state_fade,
     tick_hover_fades, tween_key,
 };
+pub use typography::{heading, mono, mono_small, panel_title, title};

@@ -182,14 +182,14 @@ impl RootView {
                     }),
             );
         let _ = zoom;
-        let mut ruler = div().relative().h(px(24.));
+        // The ruler: eight ticks, which is the redesign's every-12.5%, set in
+        // Geist Mono so a tick's width does not change with its digits.
+        let mut ruler = div().relative().h(px(Theme::RULER_HEIGHT));
         for i in 0..8 {
             ruler = ruler.child(
-                div()
+                mono_small(format!("{:.1}s", offset + visible * i as f32 / 8.), theme)
                     .absolute()
-                    .left(relative(i as f32 / 8.))
-                    .text_color(theme.muted)
-                    .child(format!("{:.1}s", offset + visible * i as f32 / 8.)),
+                    .left(relative(i as f32 / 8.)),
             );
         }
         let mut source = div()

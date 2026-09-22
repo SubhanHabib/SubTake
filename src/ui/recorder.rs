@@ -93,15 +93,18 @@ impl RootView {
                     }),
             );
         } else {
-            bar = bar.child(div().flex_1().child(if state.get_recording() {
-                format!(
-                    "{}  {}",
-                    if state.get_paused() { "PAUSED" } else { "REC" },
-                    state.get_elapsed()
-                )
+            // While recording, the word and the clock are two children, not
+            // one formatted string: the clock is Geist Mono so its digits do
+            // not shove the word beside them every time the seconds tick.
+            bar = bar.child(if state.get_recording() {
+                row()
+                    .flex_1()
+                    .gap(px(Theme::ICON_GAP))
+                    .child(if state.get_paused() { "PAUSED" } else { "REC" })
+                    .child(mono(state.get_elapsed()))
             } else {
-                state.get_status()
-            }));
+                row().flex_1().child(state.get_status())
+            });
             if state.get_recording() {
                 bar = bar
                     .child(self.action(

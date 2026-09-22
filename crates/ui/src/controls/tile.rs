@@ -59,12 +59,10 @@ pub fn empty_state(
         .items_center()
         .justify_center()
         .gap(px(Theme::GAP_LARGE))
-        .child(
-            div()
-                .text_size(px(Theme::FONT_DISPLAY))
-                .font_weight(FontWeight::SEMIBOLD)
-                .child(headline.into()),
-        )
+        // Space Grotesk at 40, the one place the redesign is loud. It was
+        // Geist SemiBold: the face was bundled and registered and nothing had
+        // ever asked for it.
+        .child(crate::title(headline, Theme::FONT_DISPLAY))
         .child(div().text_color(theme.muted).child(detail.into()))
 }
 

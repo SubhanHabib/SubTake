@@ -392,11 +392,14 @@ impl RootView {
                 row()
                     .h(px(Theme::CONTROL_HEIGHT))
                     .child(
-                        div()
+                        // Geist Mono, not Geist. A timecode counts, and
+                        // proportional digits reflow as it does — every glyph
+                        // beside the seconds shifted each time they ticked
+                        // from 9 to 10.
+                        mono(e.get_time_label())
                             .flex_1()
                             .text_size(px(Theme::FONT_CONTROL))
-                            .text_color(theme.muted)
-                            .child(e.get_time_label()),
+                            .text_color(theme.muted),
                     )
                     .child(
                         row()

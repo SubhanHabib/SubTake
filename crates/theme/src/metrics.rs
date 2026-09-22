@@ -259,6 +259,10 @@ impl Theme {
     /// Timeline playhead column.
     pub const SCRUBBER_WIDTH: f32 = 26.0;
     pub const SCRUBBER_GRIP_HEIGHT: f32 = 62.0;
+    /// The strip of tick labels above the lanes. It holds one line of
+    /// `FONT_SMALL` and nothing else, so it is that line plus its leading and
+    /// not a row's worth of height.
+    pub const RULER_HEIGHT: f32 = 16.0;
 }
 
 // ---------------------------------------------------------------------------

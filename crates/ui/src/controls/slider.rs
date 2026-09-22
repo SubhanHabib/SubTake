@@ -177,14 +177,22 @@ impl Render for Slider {
                             .text_color(theme.text)
                             .child(self.label.clone()),
                     )
+                    // The value in Geist Mono at `muted`, as the Slider row
+                    // card gives it: the label names the setting and the
+                    // number is what it currently is, so the number is the
+                    // quieter of the two and must not reflow while scrubbing.
                     .child(
-                        div()
+                        crate::mono(display)
                             .flex_none()
                             .w(px(Theme::SCRUB_VALUE_WIDTH))
                             .text_right()
                             .text_size(px(Theme::FONT_CONTROL))
-                            .text_color(theme.text)
-                            .child(display),
+                            .text_color(if self.dragging {
+                                theme.text
+                            } else {
+                                theme.muted
+                            })
+                            .when(self.dragging, |el| el.font_weight(FontWeight::MEDIUM)),
                     ),
             )
             .on_mouse_down(

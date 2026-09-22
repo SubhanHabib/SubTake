@@ -16,9 +16,9 @@ use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
     caps_label, choice_tile, column, composer_footer, context_chip, empty_state, fade_edges,
     frosted, group_card, icon, icon_button, measure, media_tile, menu_in, menu_list, menu_row,
-    menu_surface, panel, panel_variant, progress_bar, rail_button, row, section_label,
-    segmented_control, setting_card, status_dot, swatch, switch, tile_grid, timeline_scrubber,
-    toggle, tooltip,
+    menu_surface, mono, mono_small, panel, panel_variant, progress_bar, rail_button, row,
+    section_label, segmented_control, setting_card, status_dot, swatch, switch, tile_grid,
+    timeline_scrubber, toggle, tooltip,
 };
 
 /// Title bar strip: tall enough to seat the 40px icon cluster with air.
