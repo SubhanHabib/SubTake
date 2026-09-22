@@ -8,10 +8,12 @@ use crate::{Surface, button, column, panel_variant};
 /// The plate a transient menu lands on: the dropdown's choices, the command
 /// palette. One definition, so no menu can drift from another.
 pub fn menu_surface(theme: Theme) -> Div {
+    // No `shadow_lg` of its own: `shadow` replaces the whole stack rather
+    // than adding to it, so the preset was quietly dropping the hairline and
+    // the designed float shadow that `panel_variant` had just set.
     panel_variant(theme, Surface::Popup)
         .p(px(Theme::GAP_SMALL))
         .gap(px(Theme::GAP_SMALL))
-        .shadow_lg()
 }
 
 /// The scrolling column of rows inside a menu surface. Rows sit closer than

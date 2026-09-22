@@ -42,10 +42,19 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     // would add to what the panel measures, so a hairline appearing or
     // changing width would move everything inside it. A card is nested inside
     // something that already has an edge, so it gets none of its own.
+    //
+    // An Overlay gets the hairline and nothing else. It is the one surface
+    // that IS its window — the recorder's borderless windows are sized to the
+    // plate and the plate is `size_full()` — so a drop shadow has nowhere to
+    // fall: it is clipped to the window frame and paints as a grey rectangle
+    // in the plate's corners. Its shadow has to come from the window server
+    // or not at all.
     let mut shadows = Vec::new();
     if variant != Surface::Card {
         shadows.push(hairline(theme.line, Theme::HAIRLINE_WIDTH));
-        shadows.extend(theme.panel_shadow());
+        if variant != Surface::Overlay {
+            shadows.extend(theme.panel_shadow());
+        }
     }
     if !shadows.is_empty() {
         el = el.shadow(shadows);
