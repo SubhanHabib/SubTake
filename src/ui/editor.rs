@@ -36,7 +36,18 @@ impl RootView {
         // Record and Open are the empty state's own two buttons, and there is
         // no document to name, preset or export.
         if e.get_has_video() || e.get_recording() {
-            header = header.child(div().flex_1()).child(
+            // Not drawn by the design: where the export pill sits. The
+            // handoff draws it filling a titlebar of its own, so it stands in
+            // for the document pill while it shows, centred in the space the
+            // buttons leave — in the flow rather than on the window's centre,
+            // so a narrow window squeezes it instead of running it under them.
+            let export = self.export_pill(e, cx);
+            let showing_export = export.is_some();
+            header = header.child(div().flex_1());
+            if let Some(pill) = export {
+                header = header.child(pill).child(div().flex_1());
+            }
+            header = header.child(
                 button(
                     "record",
                     self.translate(e, if e.get_recording() { "Stop" } else { "Record" }),
@@ -88,17 +99,25 @@ impl RootView {
                     self.panel_button(e, "Export", "Export")
                         .glyph("Export-regular")
                         .primary()
-                        .enabled(e.get_has_video() && !e.get_busy()),
-                )
-                // The document pill, centred on the window rather than on the gap
-                // between the two clusters: a `flex_1` between them centres it in
-                // whatever they leave, which moves every time a button appears.
-                // gpui at the pinned revision has no transform, so it is a
-                // full-width absolute strip with the pill centred inside it.
-                //
-                // The strip itself takes no pointer events — only the pill has a
-                // listener — so the buttons underneath it stay clickable.
-                .child(
+                        // Not wired: a second export queued behind the first.
+                        // The handoff moves progress out of the panel so one
+                        // can be; until there is a queue, Export waits.
+                        .enabled(
+                            e.get_has_video()
+                                && !e.get_busy()
+                                && e.get_export_state() != "exporting",
+                        ),
+                );
+            // The document pill, centred on the window rather than on the gap
+            // between the two clusters: a `flex_1` between them centres it in
+            // whatever they leave, which moves every time a button appears.
+            // gpui at the pinned revision has no transform, so it is a
+            // full-width absolute strip with the pill centred inside it.
+            //
+            // The strip itself takes no pointer events — only the pill has a
+            // listener — so the buttons underneath it stay clickable.
+            header = header.when(!showing_export, |header| {
+                header.child(
                     div()
                         .absolute()
                         .left_0()
@@ -129,7 +148,8 @@ impl RootView {
                                 )
                                 .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
                         ),
-                );
+                )
+            });
         }
         // The tool pod. The handoff docks nothing: the rail is a 60-wide
         // float 24 from the window's left edge, vertically centred, and the
@@ -228,18 +248,15 @@ impl RootView {
             .into_any_element()
     }
 
-    /// The export and transcription line. `None` when there is nothing to
-    /// say, so the console keeps the shell's own bottom margin instead of
-    /// reserving a strip under it — the console's inset from the bottom edge
-    /// now matches its inset from the left and right.
+    /// The transcription and background-job line. `None` when there is
+    /// nothing to say, so the console keeps the shell's own bottom margin
+    /// instead of reserving a strip under it.
     ///
-    /// TODO(redesign): the handoff has no status strip at all. Its four
-    /// screens put progress on the thing that is progressing — a bar inside
-    /// the export dialog, a spinner on the region being rendered — and leave
-    /// the shell's bottom edge to the console. This is carried because export
-    /// and transcription still need somewhere to speak, but it now lives
-    /// inside the console rather than under it, and only while it has
-    /// something to report.
+    /// Not drawn by the design: the handoff has no status strip at all.
+    /// Export has left it for the titlebar pill; transcription, captions and
+    /// the other jobs still need somewhere to speak until the round that
+    /// draws toasts gives them one, so it stays, inside the console and only
+    /// while it has something to report.
     fn status_strip(&mut self, e: &EditorWindow) -> Option<AnyElement> {
         let theme = self.theme;
         let busy = e.get_busy();

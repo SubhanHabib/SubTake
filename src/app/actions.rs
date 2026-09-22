@@ -711,50 +711,71 @@ impl App {
                 if let Some(dir) = path.parent() {
                     std::fs::create_dir_all(dir)?;
                 }
+                let name = path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .into_owned();
+                // The export runs beside the editor rather than in front of
+                // it: the titlebar pill reports it, and nothing is locked.
+                ui.set_export_name(name);
+                ui.set_export_progress(0.);
+                ui.set_export_detail("0%".into());
+                ui.set_export_state("exporting".into());
+                self.export_cancel = Arc::new(AtomicBool::new(false));
+                let cancel = self.export_cancel.clone();
+                let written = path.clone();
+                let finish = move |result: Result<()>| {
+                    post(move |app, ui| {
+                        if !Arc::ptr_eq(&app.export_cancel, &cancel) {
+                            return;
+                        }
+                        match result {
+                            Ok(()) => {
+                                app.last_export = Some(written);
+                                ui.set_export_state("done".into());
+                            }
+                            // Cancelling is the user's choice, not a failure
+                            // to report: the pill just goes.
+                            Err(_) if cancel.load(Ordering::Relaxed) => {
+                                ui.set_export_state(String::new())
+                            }
+                            Err(e) => {
+                                ui.set_export_detail(format!("{e:#}"));
+                                ui.set_export_state("failed".into());
+                            }
+                        }
+                    })
+                };
                 if self.export_frame {
                     let time = self.source_time;
-                    ui.set_status("Exporting frame…".into());
                     std::thread::spawn(move || {
-                        let result = (|| -> Result<()> {
+                        finish((|| -> Result<()> {
                             let pixels = Scene::new(source, info, settings.width, settings.height)?
                                 .render(&p, time)?;
                             image::RgbaImage::from_raw(settings.width, settings.height, pixels)
                                 .context("Rendered frame has the wrong size")?
                                 .save(&path)?;
                             Ok(())
-                        })();
-                        post(move |app, ui| match result {
-                            Ok(()) => {
-                                app.last_export = Some(path.clone());
-                                ui.set_status(format!("Exported {}", path.display()));
-                            }
-                            Err(e) => ui.set_status(format!("{e:#}")),
-                        });
+                        })())
                     });
                     return Ok(());
                 }
                 self.stop(ui);
-                ui.set_busy(true);
-                ui.set_progress(0.);
-                ui.set_status("Exporting…".into());
-                self.job_cancel = Arc::new(AtomicBool::new(false));
-                let cancel = self.job_cancel.clone();
+                let flag = self.export_cancel.clone();
                 std::thread::spawn(move || {
-                    let result = export::export(&p, &source, &settings, &path, &cancel, |value| {
-                        post(move |_, ui| ui.set_progress(value))
+                    let started = std::time::Instant::now();
+                    let result = export::export(&p, &source, &settings, &path, &flag, |value| {
+                        let detail = time_left(value, started.elapsed());
+                        post(move |_, ui| {
+                            ui.set_export_progress(value);
+                            ui.set_export_detail(detail);
+                        })
                     });
-                    post(move |app, ui| {
-                        ui.set_busy(false);
-                        match result {
-                            Ok(()) => {
-                                app.last_export = Some(path.clone());
-                                ui.set_status(format!("Exported {}", path.display()));
-                            }
-                            Err(e) => ui.set_status(format!("{e:#}")),
-                        }
-                    });
+                    finish(result);
                 });
             }
+            "cancel-export" => self.export_cancel.store(true, Ordering::Relaxed),
             "cancel" => {
                 self.job_cancel.store(true, Ordering::Relaxed);
                 ui.set_status("Cancelling…".into());
@@ -1177,4 +1198,21 @@ fn unused_path(path: PathBuf) -> PathBuf {
         .map(|n| path.with_file_name(format!("{stem} {n}.{extension}")))
         .find(|p| !p.exists())
         .unwrap()
+}
+
+/// "62% · 40s left": how far an export has got, and a straight-line guess
+/// at the rest from how long the part done so far took. The guess waits for
+/// the first few percent, which carry the encoder's start-up.
+fn time_left(progress: f32, elapsed: Duration) -> String {
+    let percent = (progress * 100.).floor() as u32;
+    if progress < 0.03 {
+        return format!("{percent}%");
+    }
+    let left = (elapsed.as_secs_f32() * (1. - progress) / progress).ceil() as u64;
+    let left = if left >= 60 {
+        format!("{}m {}s", left / 60, left % 60)
+    } else {
+        format!("{left}s")
+    };
+    format!("{percent}% · {left} left")
 }

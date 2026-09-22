@@ -135,6 +135,10 @@ struct Properties {
     countdown: i32,
     counting: i32,
     stopping: bool,
+    export_state: String,
+    export_name: String,
+    export_detail: String,
+    export_progress: f32,
 }
 
 impl Default for Properties {
@@ -222,6 +226,10 @@ impl Default for Properties {
             countdown: 3,
             counting: 0,
             stopping: false,
+            export_state: String::new(),
+            export_name: String::new(),
+            export_detail: String::new(),
+            export_progress: 0.,
         }
     }
 }
@@ -1213,6 +1221,60 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.stopping != value {
             props.stopping = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The titlebar's export pill: `"exporting"`, `"done"`, `"failed"`,
+    /// or empty while there is none.
+    pub fn get_export_state(&self) -> String {
+        self.0.props.borrow().export_state.clone()
+    }
+
+    pub fn set_export_state(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.export_state != value {
+            props.export_state = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The file the pill is about, by name.
+    pub fn get_export_name(&self) -> String {
+        self.0.props.borrow().export_name.clone()
+    }
+
+    pub fn set_export_name(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.export_name != value {
+            props.export_name = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The pill's second line: time left while exporting, the reason after
+    /// a failure.
+    pub fn get_export_detail(&self) -> String {
+        self.0.props.borrow().export_detail.clone()
+    }
+
+    pub fn set_export_detail(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.export_detail != value {
+            props.export_detail = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// How far the running export has got, 0 to 1.
+    pub fn get_export_progress(&self) -> f32 {
+        self.0.props.borrow().export_progress
+    }
+
+    pub fn set_export_progress(&self, value: f32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.export_progress != value {
+            props.export_progress = value;
             self.window().invalidate();
         }
     }

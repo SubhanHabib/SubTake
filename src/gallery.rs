@@ -14,7 +14,9 @@
 //! ⌘⇧E swaps the editor for the empty state ("Nothing open yet") and back;
 //! the titlebar's Presets button, or ⌘⇧P, opens the Presets dialog.
 //! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either; `=export`,
-//! `=export-gif` or `=export-frame` opens the Export panel; `=card-<panel>`
+//! `=export-gif` or `=export-frame` opens the Export panel, whose button runs
+//! a fake eight-second export in the titlebar pill; `=export-progress`,
+//! `=export-done` or `=export-failed` holds the pill in one state; `=card-<panel>`
 //! opens that recorder card; `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
 use crate::{
@@ -89,6 +91,23 @@ pub fn run() -> Result<()> {
     match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
         Ok("empty") => editor.set_has_video(false),
         Ok("presets") => editor.set_dialog("presets".into()),
+        // The titlebar pill: `export-progress` (held at 62%), `export-done`
+        // or `export-failed`.
+        Ok("export-progress") => {
+            editor.set_export_name("gallery.mp4".into());
+            editor.set_export_progress(0.62);
+            editor.set_export_detail("62% · 40s left".into());
+            editor.set_export_state("exporting".into());
+        }
+        Ok("export-done") => {
+            editor.set_export_name("gallery.mp4".into());
+            editor.set_export_state("done".into());
+        }
+        Ok("export-failed") => {
+            editor.set_export_name("gallery.mp4".into());
+            editor.set_export_detail("Not enough disk space: 2.1 GB needed, 0.4 GB free".into());
+            editor.set_export_state("failed".into());
+        }
         // The Export panel: `export`, or `export-gif` / `export-frame` for
         // the other two formats.
         Ok(screen) if screen.starts_with("export") => {
@@ -396,15 +415,19 @@ impl Gallery {
                 self.editor.set_timeline_offset(0.);
             }
             "export" => {
-                // A fake progress run so the export affordances can be seen.
+                // A fake eight-second run so the pill can be watched from
+                // start to finish; Cancel stops it.
                 let editor = self.editor.clone();
-                editor.set_busy(true);
-                editor.set_status("Exporting…".into());
+                editor.set_export_name("gallery.mp4".into());
+                editor.set_export_progress(0.);
+                editor.set_export_detail("0%".into());
+                editor.set_export_state("exporting".into());
                 let started = std::time::Instant::now();
                 Timer::single_shot(Duration::from_millis(16), move || {
                     tick_export(editor, started)
                 });
             }
+            "cancel-export" => self.editor.set_export_state(String::new()),
             "sources" => {
                 // A fake refresh, long enough to see the Refreshing state.
                 self.options.set_sources_loading(true);
@@ -607,16 +630,19 @@ impl Appearance for RecordingOptions {
 }
 
 fn tick_export(editor: EditorWindow, started: std::time::Instant) {
-    let progress = (started.elapsed().as_secs_f32() / 4.).min(1.);
-    editor.set_progress(progress);
+    if editor.get_export_state() != "exporting" {
+        return;
+    }
+    let progress = (started.elapsed().as_secs_f32() / 8.).min(1.);
+    editor.set_export_progress(progress);
+    let left = (8. - started.elapsed().as_secs_f32()).max(0.).ceil();
+    editor.set_export_detail(format!("{:.0}% · {left:.0}s left", progress * 100.));
     if progress < 1. {
         Timer::single_shot(Duration::from_millis(33), move || {
             tick_export(editor, started)
         });
     } else {
-        editor.set_busy(false);
-        editor.set_progress(0.);
-        editor.set_status("Exported gallery.mp4".into());
+        editor.set_export_state("done".into());
     }
 }
 

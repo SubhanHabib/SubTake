@@ -378,6 +378,22 @@ impl Theme {
 
     /// The destination row's right inset, round its Change… button.
     pub const EXPORT_DESTINATION_INSET: f32 = 14.0;
+    /// The titlebar's export pill: its width, its insets (tight on the right
+    /// round the pill's round buttons), and the gap between its parts.
+    pub const EXPORT_PILL_WIDTH: f32 = 480.0;
+    pub const EXPORT_PILL_INSET_LEFT: f32 = 16.0;
+    pub const EXPORT_PILL_INSET_RIGHT: f32 = 6.0;
+    pub const EXPORT_PILL_GAP: f32 = 10.0;
+    /// The name and the time left, on one baseline.
+    pub const EXPORT_TITLE_GAP: f32 = 8.0;
+    pub const EXPORT_SPINNER_SIZE: f32 = 20.0;
+    pub const EXPORT_CHECK_SIZE: f32 = 18.0;
+    pub const EXPORT_DOT_SIZE: f32 = 8.0;
+    /// The progress track under the name: thinner than the console's bar,
+    /// because it shares its pill with a line of text.
+    pub const EXPORT_TRACK_HEIGHT: f32 = 3.0;
+    pub const EXPORT_TRACK_RADIUS: f32 = 2.0;
+    pub const EXPORT_TRACK_GAP: f32 = 5.0;
 
     // ---- on-screen countdown -----------------------------------------------
 

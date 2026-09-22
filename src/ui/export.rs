@@ -5,6 +5,7 @@
 //! panel looks each one up by key and draws it where the handoff puts it.
 
 use super::*;
+use subtake_ui::icon_sized;
 
 impl RootView {
     /// The panel's heading, rows and hero button, for the inspector shell
@@ -183,5 +184,159 @@ impl RootView {
                 .on_click(self.command("export")),
         );
         (heading, content, footer)
+    }
+}
+
+/// How long a finished export's pill stays up before it goes by itself.
+const DONE_SECONDS: u64 = 8;
+
+impl RootView {
+    /// The titlebar pill a running, finished or failed export shows, so the
+    /// panel can close and editing carry on while the file is written.
+    pub(super) fn export_pill(
+        &mut self,
+        e: &EditorWindow,
+        cx: &mut Context<Self>,
+    ) -> Option<Stateful<Div>> {
+        let theme = self.theme;
+        let state = e.get_export_state();
+        // A finished export leaves by itself unless the pointer has been
+        // over it: once looked at, it waits to be dismissed.
+        if state != "done" {
+            self.export_dismiss = None;
+        } else if self.export_dismiss.is_none() {
+            let timer = crate::ui_runtime::Timer::default();
+            let editor = e.clone();
+            timer.start(
+                crate::ui_runtime::TimerMode::SingleShot,
+                std::time::Duration::from_secs(DONE_SECONDS),
+                move || editor.set_export_state(String::new()),
+            );
+            self.export_dismiss = Some(timer);
+        }
+        let name = e.get_export_name();
+        let dismiss = {
+            let editor = e.clone();
+            icon_button("export-dismiss", "X-regular", "Dismiss", theme)
+                .ghost()
+                .small()
+                .on_click(move |_, _, _| editor.set_export_state(String::new()))
+        };
+        let caption = |text: String| {
+            div()
+                .text_size(px(Theme::FONT_SECONDARY))
+                .font_weight(FontWeight::MEDIUM)
+                .whitespace_nowrap()
+                .text_ellipsis()
+                .child(text)
+        };
+        let pill = row()
+            .id("export-pill")
+            .w(px(Theme::EXPORT_PILL_WIDTH))
+            .min_w_0()
+            .flex_shrink_1()
+            .h(px(Theme::CONTROL_HEIGHT_LARGE))
+            .gap(px(Theme::EXPORT_PILL_GAP))
+            .pl(px(Theme::EXPORT_PILL_INSET_LEFT))
+            .pr(px(Theme::EXPORT_PILL_INSET_RIGHT))
+            .rounded_full()
+            .bg(theme.sunk)
+            .text_color(theme.text);
+        let pill = match state.as_str() {
+            "exporting" => pill
+                .child(super::recorder::spinner(Theme::EXPORT_SPINNER_SIZE, theme))
+                .child(
+                    column()
+                        .flex_1()
+                        .min_w_0()
+                        .gap(px(Theme::EXPORT_TRACK_GAP))
+                        .child(
+                            row()
+                                .items_baseline()
+                                .line_height(relative(Theme::MESSAGE_LEADING))
+                                .gap(px(Theme::EXPORT_TITLE_GAP))
+                                .child(caption(format!("Exporting {name}")).min_w_0())
+                                .child(
+                                    mono(e.get_export_detail())
+                                        .flex_none()
+                                        .text_size(px(Theme::FONT_SMALL))
+                                        .text_color(theme.muted),
+                                ),
+                        )
+                        .child(
+                            div()
+                                .h(px(Theme::EXPORT_TRACK_HEIGHT))
+                                .rounded(px(Theme::EXPORT_TRACK_RADIUS))
+                                .overflow_hidden()
+                                .bg(theme.sunk2)
+                                .child(
+                                    div()
+                                        .h_full()
+                                        .w(relative(e.get_export_progress().clamp(0., 1.)))
+                                        .rounded(px(Theme::EXPORT_TRACK_RADIUS))
+                                        .bg(theme.accent),
+                                ),
+                        ),
+                )
+                .child(
+                    button("export-cancel", "Cancel", theme)
+                        .raised()
+                        .small()
+                        .on_click(self.command("cancel-export")),
+                ),
+            "done" => pill
+                .on_hover(cx.listener(|s, hovered: &bool, _, _| {
+                    if *hovered && let Some(timer) = &s.export_dismiss {
+                        timer.stop();
+                    }
+                }))
+                .child(icon_sized(
+                    "Check-regular",
+                    Theme::EXPORT_CHECK_SIZE,
+                    theme.accent,
+                ))
+                .child(caption(format!("Exported {name}")).flex_1().min_w_0())
+                .child(
+                    button("export-reveal", "Reveal in Finder", theme)
+                        .raised()
+                        .small()
+                        .on_click(self.command("reveal-export")),
+                )
+                .child(dismiss),
+            "failed" => pill
+                .shadow(vec![hairline(theme.danger, 1.)])
+                .child(
+                    div()
+                        .flex_none()
+                        .size(px(Theme::EXPORT_DOT_SIZE))
+                        .rounded_full()
+                        .bg(theme.danger),
+                )
+                .child(
+                    column()
+                        .flex_1()
+                        .min_w_0()
+                        .gap_0()
+                        .line_height(relative(Theme::MESSAGE_LEADING))
+                        .child(caption("Export failed".into()).text_color(theme.danger))
+                        .child(
+                            div()
+                                .text_size(px(Theme::FONT_SMALL))
+                                .text_color(theme.muted)
+                                .whitespace_nowrap()
+                                .text_ellipsis()
+                                .child(e.get_export_detail()),
+                        ),
+                )
+                .child(
+                    button("export-retry", "Try again", theme)
+                        .raised()
+                        .small()
+                        .on_click(self.command("export")),
+                )
+                .child(dismiss),
+            _ => return None,
+        };
+        Some(pill)
     }
 }

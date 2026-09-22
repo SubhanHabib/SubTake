@@ -438,7 +438,7 @@ impl RootView {
     /// button, because once capture has ended there is nothing to cancel.
     fn working_controls(&self, bar: Div, state: &RecordingLauncher) -> Div {
         let theme = self.theme;
-        let bar = bar.child(round_plate(theme).child(spinner(theme)));
+        let bar = bar.child(round_plate(theme).child(spinner(Theme::SPINNER_SIZE, theme)));
         if state.get_stopping() {
             return bar
                 .child(
@@ -552,14 +552,15 @@ fn message(title: impl Into<SharedString>, detail: impl Into<SharedString>, them
 }
 
 /// A `sunk2` ring with an accent arc turning round it once a second.
-fn spinner(theme: Theme) -> Div {
+pub(super) fn spinner(size: f32, theme: Theme) -> Div {
     div()
         .relative()
-        .size(px(Theme::SPINNER_SIZE))
+        .flex_none()
+        .size(px(size))
         .rounded_full()
         .shadow(vec![hairline(theme.sunk2, Theme::SPINNER_WIDTH)])
         .child(
-            icon_sized("SpinnerArc", Theme::SPINNER_SIZE, theme.accent)
+            icon_sized("SpinnerArc", size, theme.accent)
                 .absolute()
                 .inset_0()
                 .with_animation(

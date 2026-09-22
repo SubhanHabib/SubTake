@@ -99,6 +99,9 @@ pub struct App {
     started: Option<(Arc<AtomicU64>, f64)>,
     audio_cancel: Arc<AtomicBool>,
     job_cancel: Arc<AtomicBool>,
+    /// The running export's own stop, apart from `job_cancel`, because an
+    /// export no longer holds the editor and can run beside another job.
+    export_cancel: Arc<AtomicBool>,
     sources: Vec<Value>,
     devices: Value,
     launcher: Option<RecordingLauncher>,
@@ -162,6 +165,7 @@ impl App {
             started: None,
             audio_cancel: Arc::new(AtomicBool::new(false)),
             job_cancel: Arc::new(AtomicBool::new(false)),
+            export_cancel: Arc::new(AtomicBool::new(false)),
             sources: vec![],
             devices: Value::Null,
             launcher: None,

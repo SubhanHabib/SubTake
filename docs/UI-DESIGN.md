@@ -139,8 +139,29 @@ inspector always shows a panel), and the Hardware encoding, Save subtitle
 files and Loop GIF switches, kept under the destination for the formats they
 change.
 
+Progress is not in the panel. A running export is a 44 pill in the titlebar —
+a spinner, "Exporting name.mp4", the percent and time left in Geist Mono, a 3
+accent track and Cancel — so the panel can close and editing goes on while the
+file is written. When it finishes the pill says "Exported name.mp4" with Reveal
+in Finder and a dismiss, and goes by itself after 8 seconds unless the pointer
+has been over it. A failure outlines the pill in `danger`, says "Export failed"
+with the reason under it, and waits with Try again and dismiss. Cancelling just
+removes the pill.
+
+Not drawn by the design: where the pill sits (it takes the document pill's
+place while it shows, centred between the traffic lights and the buttons), and
+the failure's headline, which is always "Export failed" because the reason
+comes from the encoder as one line and is shown under it rather than split.
+Not wired: queueing a second export — Export waits while one runs.
+
+The console's status line no longer speaks for export. Not drawn by the
+design: that line itself, kept for transcription and the other background
+jobs until toasts are drawn.
+
 `SUBTAKE_GALLERY_SCREEN=export` (or `export-gif`, `export-frame`) opens the
-gallery on the panel.
+gallery on the panel, where Export runs a fake eight-second export;
+`export-progress`, `export-done` and `export-failed` hold the pill in one
+state.
 
 ## The recorder
 

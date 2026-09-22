@@ -222,6 +222,9 @@ pub struct RootView {
     /// When the microphone meter last clipped, so its top bars can hold red
     /// for a second after the peak has passed.
     mic_clipped: Option<Instant>,
+    /// A finished export's auto-dismiss, held from when its pill first
+    /// shows until it goes; stopped, not dropped, once hovered.
+    export_dismiss: Option<crate::ui_runtime::Timer>,
     theme: Theme,
 }
 
@@ -258,6 +261,7 @@ impl RootView {
             preview_known_zoom: 1.,
             presets: None,
             mic_clipped: None,
+            export_dismiss: None,
             theme,
         }
     }
