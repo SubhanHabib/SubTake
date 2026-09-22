@@ -250,7 +250,7 @@ impl App {
         //
         // TODO(redesign): the "Stage" handoff draws three of these — Frame,
         // Recent and Wallpapers; its fourth, Presets, is a dialog now — and
-        // round 2 draws Export and Selection. The rest are marked below;
+        // round 2 draws Export, Selection and Cursor. The rest are marked below;
         // they are carried into the new design by the
         // generic field renderer rather than left on the old one, so they
         // are correct but undesigned: their grouping, their density and
@@ -261,7 +261,7 @@ impl App {
         ui.set_panel_index(
             [
                 "Frame",       // drawn
-                "Cursor",      // not drawn
+                "Cursor",      // drawn
                 "Webcam",      // not drawn
                 "Captions",    // not drawn
                 "Selection",   // drawn

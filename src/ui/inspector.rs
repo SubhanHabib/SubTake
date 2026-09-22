@@ -177,6 +177,9 @@ impl RootView {
             s.theme = theme;
             s.set_caption(caption.0.to_owned(), caption.1.to_owned());
             s.set_unit(unit.0, unit.1.to_owned());
+            // Cached across renders, so a row disabled last frame is live
+            // again unless its caller says otherwise this one.
+            s.enabled = true;
         });
         control
     }
@@ -633,7 +636,7 @@ impl RootView {
                     )),
                 );
         }
-        if matches!(name.as_str(), "Cursor" | "Preferences") {
+        if name == "Preferences" {
             // A preset is a choice you make once and live with, so it states
             // what it does rather than making the name carry it alone.
             let mut presets = tile_grid(2);
@@ -776,7 +779,7 @@ impl RootView {
                         )),
                 );
         }
-        if !matches!(name.as_str(), "Export" | "Selection") {
+        if !matches!(name.as_str(), "Export" | "Selection" | "Cursor") {
             for field in e.get_fields().iter() {
                 content = content.child(self.field(e, field, window, cx));
             }
@@ -821,6 +824,7 @@ impl RootView {
                 )
             }
             "Selection" => (heading, content) = self.selection_panel(e, window, cx),
+            "Cursor" => (heading, content) = self.cursor_panel(e, window, cx),
             "Export" => {
                 let (h, c, f) = self.export_panel(e, cx);
                 heading = h;

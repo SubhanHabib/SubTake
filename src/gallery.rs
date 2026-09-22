@@ -18,7 +18,8 @@
 //! a fake eight-second export in the titlebar pill; `=export-progress`,
 //! `=export-done` or `=export-failed` holds the pill in one state;
 //! `=selection` opens Selection on a zoom region, `=selection-empty` with
-//! nothing selected (clicking any region opens it too); `=card-<panel>`
+//! nothing selected (clicking any region opens it too); `=cursor` and
+//! `=cursor-hidden` open Cursor with the cursor shown and hidden; `=card-<panel>`
 //! opens that recorder card; `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
 use crate::{
@@ -107,6 +108,12 @@ pub fn run() -> Result<()> {
             g.before_selection = Some("Frame".into());
         }
         Ok("selection-empty") => editor.set_panel("Selection".into()),
+        // The Cursor panel, and with the cursor hidden.
+        Ok("cursor") => editor.set_panel("Cursor".into()),
+        Ok("cursor-hidden") => {
+            gallery.borrow_mut().set_value("showCursor", "false");
+            editor.set_panel("Cursor".into());
+        }
         // The titlebar pill: `export-progress` (held at 62%), `export-done`
         // or `export-failed`.
         Ok("export-progress") => {

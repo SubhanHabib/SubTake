@@ -23,6 +23,7 @@ use subtake_ui::{
     tile_grid, title, toggle, tool_button, tooltip,
 };
 
+mod cursor;
 mod editor;
 mod empty;
 mod export;

@@ -194,6 +194,26 @@ choose between.
 `SUBTAKE_GALLERY_SCREEN=selection` opens the gallery on a zoom region's
 panel, `selection-empty` on the empty state; clicking any region opens it.
 
+## Cursor
+
+A 19 "Cursor" title and a close control, then Show cursor, the STYLE tiles,
+Size, CLICK EFFECT as one segmented control, and MOVEMENT — Smooth movement
+and Smoothness. With Show cursor off every row under it dims to 0.4 and takes
+no clicks; Smoothness dims the same way while Smooth movement is off. Smooth
+movement is not a setting of its own: off sets the smoothing to 0, on puts
+the default 0.67 back, and Smoothness is that same number.
+
+Not drawn by the design: the style picker, whose five tiles are the
+renderer's styles (the handoff's Arrow / Hand / Dot are not), where closing
+lands (Scene), and a More section with the rest of the cursor settings —
+sway, motion blur, the click effect's size, opacity, length and colour,
+bounce, looping and the camera's motion blur. The motion presets moved out:
+the Presets dialog owns them. Palette churn: Click effect is None / Ripple /
+Spotlight / Echo, because the renderer has no Pulse. Not wired: Tab still
+reaches the dimmed rows.
+
+`SUBTAKE_GALLERY_SCREEN=cursor` (or `cursor-hidden`) opens the gallery on it.
+
 ## The recorder
 
 A compact rounded floating bar with a source control, audio and webcam options,

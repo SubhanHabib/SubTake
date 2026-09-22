@@ -497,6 +497,40 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
                 "circle",
             ),
         ],
+        // The keys `App::raw_fields("Cursor")` hands over.
+        "Cursor" => vec![
+            toggle("showCursor", "Rendered cursor", true),
+            dropdown(
+                "cursorStyle",
+                "Style",
+                &[
+                    ("tahoe", "macOS Tahoe"),
+                    ("macos", "macOS"),
+                    ("windows11", "Windows 11"),
+                    ("dot", "Dot"),
+                    ("figma", "Figma"),
+                ],
+                "tahoe",
+            ),
+            slider("cursorSize", "Size", "3", 0.5, 8.),
+            dropdown(
+                "cursorClickEffect",
+                "Click effect",
+                &[
+                    ("none", "None"),
+                    ("ripple", "Ripple"),
+                    ("spotlight", "Spotlight"),
+                    ("echo", "Echo"),
+                ],
+                "ripple",
+            ),
+            slider("cursorSmoothing", "Smooth movement", "0.67", 0., 2.),
+            slider("cursorSway", "Sway", "0.4", 0., 2.),
+            slider("cursorMotionBlur", "Motion blur", "0.6", 0., 2.),
+            slider("cursorClickBounce", "Click bounce", "2", 0., 4.),
+            toggle("loopCursor", "Loop cursor", false),
+            slider("zoomMotionBlur", "Camera motion blur", "0.35", 0., 2.),
+        ],
         "Wallpapers" => vec![
             section("Background"),
             slider("backgroundBlur", "Blur", "12", 0., 80.),

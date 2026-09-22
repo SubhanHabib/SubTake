@@ -28,6 +28,8 @@ pub struct Slider {
     /// Words for a stepped slider: the value is an index into them, it
     /// lands on whole steps, and the row shows the word, not the number.
     pub steps: Vec<SharedString>,
+    /// Off, the row dims to the disabled opacity and takes no input.
+    pub enabled: bool,
     bounds: Rc<Cell<Bounds<Pixels>>>,
     dragging: bool,
     change: Box<dyn Fn(f32, bool, &mut Window, &mut App)>,
@@ -71,6 +73,7 @@ impl Slider {
             scale: 1.0,
             unit: SharedString::default(),
             steps: Vec::new(),
+            enabled: true,
             bounds: Rc::new(Cell::new(Bounds::default())),
             dragging: false,
             change: Box::new(change),
@@ -124,10 +127,10 @@ impl Render for Slider {
             format!("{}{}", shown.round() as i64, self.unit)
         };
 
+        let enabled = self.enabled;
         div()
             .id("scrub")
             .relative()
-            .tab_index(0)
             .group("scrub")
             .h(px(Theme::CONTROL_HEIGHT_LARGE))
             .w_full()
@@ -136,11 +139,18 @@ impl Render for Slider {
             // is its own hit target across its whole width, so the track is
             // the only thing that can say it is live.
             .bg(theme.sunk)
-            .hover(|s| s.bg(theme.sunk2))
             .overflow_hidden()
-            .cursor(CursorStyle::ResizeLeftRight)
-            .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
+            .when(enabled, |el| {
+                el.tab_index(0)
+                    .hover(|s| s.bg(theme.sunk2))
+                    .cursor(CursorStyle::ResizeLeftRight)
+                    .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
+            })
+            .when(!enabled, |el| el.opacity(Theme::DISABLED_OPACITY))
             .on_key_down(cx.listener(|s, e: &KeyDownEvent, w, cx| {
+                if !s.enabled {
+                    return;
+                }
                 let step = if !s.steps.is_empty() {
                     1.
                 } else {
@@ -185,7 +195,7 @@ impl Render for Slider {
                             el.bg(theme.accent_soft)
                         } else {
                             el.bg(theme.slider_fill())
-                                .group_hover("scrub", |s| s.bg(theme.press))
+                                .when(enabled, |el| el.group_hover("scrub", |s| s.bg(theme.press)))
                         }
                     }),
             )
@@ -247,6 +257,9 @@ impl Render for Slider {
             .on_mouse_down(
                 MouseButton::Left,
                 cx.listener(|s, e: &MouseDownEvent, w, cx| {
+                    if !s.enabled {
+                        return;
+                    }
                     s.dragging = true;
                     s.set(e.position.x, false, w, cx);
                     cx.stop_propagation();
