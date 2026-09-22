@@ -8,7 +8,9 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
     ui.set_document_title("Gallery · Onboarding walkthrough".into());
     ui.set_has_project(true);
     ui.set_has_video(true);
-    ui.set_edit_visible(true);
+    // Nothing on the picture is selected, so it carries no selection box;
+    // one with no bounds drew as a stray square at the picture's corner.
+    ui.set_edit_visible(false);
     ui.set_dirty(true);
     ui.set_can_undo(true);
     ui.set_can_redo(false);
