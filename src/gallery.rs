@@ -19,7 +19,8 @@
 //! `=export-done` or `=export-failed` holds the pill in one state;
 //! `=selection` opens Selection on a zoom region, `=selection-empty` with
 //! nothing selected (clicking any region opens it too); `=cursor` and
-//! `=cursor-hidden` open Cursor with the cursor shown and hidden; `=card-<panel>`
+//! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
+//! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
 //! opens that recorder card; `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
 use crate::{
@@ -110,6 +111,12 @@ pub fn run() -> Result<()> {
         Ok("selection-empty") => editor.set_panel("Selection".into()),
         // The Cursor panel, and with the cursor hidden.
         Ok("cursor") => editor.set_panel("Cursor".into()),
+        // The Camera panel, and with the overlay off.
+        Ok("camera") => editor.set_panel("Webcam".into()),
+        Ok("camera-off") => {
+            gallery.borrow_mut().set_value("webcam.enabled", "false");
+            editor.set_panel("Webcam".into());
+        }
         Ok("cursor-hidden") => {
             gallery.borrow_mut().set_value("showCursor", "false");
             editor.set_panel("Cursor".into());

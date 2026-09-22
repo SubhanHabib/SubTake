@@ -250,7 +250,7 @@ impl App {
         //
         // TODO(redesign): the "Stage" handoff draws three of these — Frame,
         // Recent and Wallpapers; its fourth, Presets, is a dialog now — and
-        // round 2 draws Export, Selection and Cursor. The rest are marked below;
+        // round 2 draws Export, Selection, Cursor and Camera (Webcam). The rest are marked below;
         // they are carried into the new design by the
         // generic field renderer rather than left on the old one, so they
         // are correct but undesigned: their grouping, their density and
@@ -262,7 +262,7 @@ impl App {
             [
                 "Frame",       // drawn
                 "Cursor",      // drawn
-                "Webcam",      // not drawn
+                "Webcam",      // drawn, as Camera
                 "Captions",    // not drawn
                 "Selection",   // drawn
                 "Recording",   // not drawn

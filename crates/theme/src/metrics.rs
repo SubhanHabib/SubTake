@@ -411,6 +411,19 @@ impl Theme {
     pub const SELECTION_EMPTY_ICON: f32 = 22.0;
     pub const SELECTION_EMPTY_TEXT_WIDTH: f32 = 210.0;
 
+    // ---- camera panel ------------------------------------------------------
+
+    /// A position tile: 60 tall at radius 20, 8 apart, two across.
+    pub const CAMERA_TILE_HEIGHT: f32 = 60.0;
+    pub const CAMERA_TILE_RADIUS: f32 = 20.0;
+    pub const CAMERA_TILE_GAP: f32 = 8.0;
+    /// The dot in a tile's corner, 9 in from both edges.
+    pub const CAMERA_DOT_SIZE: f32 = 16.0;
+    pub const CAMERA_DOT_INSET: f32 = 9.0;
+    /// The Custom tile's glyph and the gap to its word.
+    pub const CAMERA_CUSTOM_ICON: f32 = 15.0;
+    pub const CAMERA_CUSTOM_GAP: f32 = 8.0;
+
     // ---- on-screen countdown -----------------------------------------------
 
     /// The numeral centred on the display the capture will record.

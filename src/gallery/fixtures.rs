@@ -413,9 +413,12 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
         kind: 2,
         ..Default::default()
     };
+    // An action row shows its value, which the app sets to the button's
+    // words.
     let action = |key: &str, label: &str| Field {
         key: key.into(),
         label: label.into(),
+        value: label.into(),
         kind: 3,
         ..Default::default()
     };
@@ -530,6 +533,21 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
             slider("cursorClickBounce", "Click bounce", "2", 0., 4.),
             toggle("loopCursor", "Loop cursor", false),
             slider("zoomMotionBlur", "Camera motion blur", "0.35", 0., 2.),
+        ],
+        // The keys `App::raw_fields("Webcam")` hands over.
+        "Webcam" => vec![
+            action("choose-webcam", "Choose video…"),
+            toggle("webcam.enabled", "Show webcam", true),
+            toggle("webcam.mirror", "Mirror", false),
+            slider("webcam.width", "Width", "24", 5., 100.),
+            slider("webcam.height", "Height", "24", 5., 100.),
+            slider("webcam.positionX", "Horizontal position", "1", 0., 1.),
+            slider("webcam.positionY", "Vertical position", "1", 0., 1.),
+            text("webcam.positionPreset", "", "bottom-right"),
+            toggle("webcam.reactToZoom", "React to zoom", true),
+            slider("webcam.shadow", "Shadow", "0.3", 0., 1.),
+            slider("webcam.roundness", "Roundness", "100", 0., 100.),
+            slider("webcam.margin", "Margin", "24", 0., 150.),
         ],
         "Wallpapers" => vec![
             section("Background"),

@@ -779,7 +779,7 @@ impl RootView {
                         )),
                 );
         }
-        if !matches!(name.as_str(), "Export" | "Selection" | "Cursor") {
+        if !matches!(name.as_str(), "Export" | "Selection" | "Cursor" | "Webcam") {
             for field in e.get_fields().iter() {
                 content = content.child(self.field(e, field, window, cx));
             }
@@ -825,6 +825,7 @@ impl RootView {
             }
             "Selection" => (heading, content) = self.selection_panel(e, window, cx),
             "Cursor" => (heading, content) = self.cursor_panel(e, window, cx),
+            "Webcam" => (heading, content) = self.camera_panel(e, window, cx),
             "Export" => {
                 let (h, c, f) = self.export_panel(e, cx);
                 heading = h;

@@ -214,6 +214,29 @@ reaches the dimmed rows.
 
 `SUBTAKE_GALLERY_SCREEN=cursor` (or `cursor-hidden`) opens the gallery on it.
 
+## Camera
+
+The webcam overlay, called the camera in the interface. A 19 "Camera" title
+and a close control; POSITION as four 60 `sunk` tiles two across — bottom
+right, bottom left and top right, each with a 16 dot in its corner (`accent`
+when chosen), then Custom — the chosen one ringed by a 1.5 accent edge; SHAPE
+as Circle / Rounded / Square; Width; and Mirror. Custom starts where the
+overlay already is, so choosing it moves nothing. The shapes are the
+overlay's roundness at 100, 25 and 0.
+
+Not drawn by the design: the footage row and Show webcam, which come first
+and dim the rest while the overlay is off; the other six position presets a
+project can hold (they still place it, and no tile is ringed); where closing
+lands (Scene); and a More section with height, the custom position, margin,
+shadow, reacting to zoom, the crop and the time offset. Palette churn: Width
+reads as a percentage of the frame's shorter side, which is what the model
+stores, not in points; and a pressed tile darkens rather than scaling to
+0.98, since gpui has no element transform. Not wired: dragging the overlay
+on the stage for Custom (the position rows under More set it), and the
+helper line about the camera being its own track — it is not a track yet.
+
+`SUBTAKE_GALLERY_SCREEN=camera` (or `camera-off`) opens the gallery on it.
+
 ## The recorder
 
 A compact rounded floating bar with a source control, audio and webcam options,
