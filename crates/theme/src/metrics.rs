@@ -54,14 +54,27 @@ impl Theme {
     // A glyph tracks the control it sits in rather than choosing for itself,
     // so the four sizes pair with the four control heights below.
 
-    /// In a 34px control: a caret, a resize grip, a menu item's tick.
+    /// A caret or a disclosure arrow — the smallest glyph the set uses. It
+    /// is not sized by its control: a caret is a hint about the control
+    /// rather than the control's own mark, so it stays small inside a 40px
+    /// trigger where a 16px glyph would read as a second icon.
+    pub const ICON_SIZE_CARET: f32 = 12.0;
+    /// In a 34px control: a resize grip, a menu item's tick, a checkbox.
     pub const ICON_SIZE_SMALL: f32 = 14.0;
     /// In a 40px control — the default a glyph takes.
     pub const ICON_SIZE: f32 = 16.0;
-    /// In a 44px control: the tool pod, a primary button, the titlebar.
+    /// In a 44px control: a primary button, the titlebar.
     pub const ICON_SIZE_MEDIUM: f32 = 17.0;
-    /// In a 52–60px control: the transport, Record, the brand mark.
+    /// In a 44–52px control: the tool pod, where a glyph is the whole
+    /// control and carries no caption to share the space with.
+    pub const ICON_SIZE_POD: f32 = 18.0;
+    /// In a 52–60px control: Record, a hero button, the brand mark.
     pub const ICON_SIZE_LARGE: f32 = 19.0;
+    /// The transport's play and pause. The one glyph drawn at fill weight,
+    /// and the one drawn larger than its control's own step: it is the only
+    /// mark on a 56px plate, so it is sized to the plate rather than to the
+    /// ladder.
+    pub const ICON_SIZE_TRANSPORT: f32 = 21.0;
 
     // ---- radius ----------------------------------------------------------
     //
@@ -138,12 +151,19 @@ impl Theme {
     pub const CONTROL_PADDING_LARGE: f32 = 18.0;
     pub const CONTROL_PADDING_PRIMARY: f32 = 22.0;
     pub const CONTROL_PADDING_HERO: f32 = 26.0;
-    pub const INPUT_PADDING: f32 = Self::CONTROL_PADDING;
+    /// A text field's own sides. A hair under the button padding: a field
+    /// is read along its whole width, so its text starts closer to the edge
+    /// than a centred caption does.
+    pub const INPUT_PADDING: f32 = 15.0;
     /// Between a glyph and the label beside it: on a button, in a row, in a
     /// pod. Three values because the gap has to grow with the control.
     pub const ICON_GAP_POD: f32 = 8.0;
     pub const ICON_GAP: f32 = 9.0;
     pub const ICON_GAP_ROW: f32 = 10.0;
+    /// Record's dot to its caption. One step wider than any other button,
+    /// because the dot is a state indicator rather than an icon and has to
+    /// read as separate from the word beside it.
+    pub const ICON_GAP_RECORD: f32 = 11.0;
 
     // ---- edges -----------------------------------------------------------
     //
@@ -228,7 +248,11 @@ impl Theme {
     /// Small marks: the unsaved dot, a progress rule, a colour sample and a
     /// picker thumbnail. Named here so no view invents its own.
     pub const DOT_SIZE: f32 = 7.0;
-    pub const PROGRESS_HEIGHT: f32 = 4.0;
+    /// A progress rule: a `sunk` track under an `accent` fill, with its
+    /// percentage set beside the bar rather than inside it — the bar is too
+    /// thin to hold text and a number on top of a moving fill is unreadable.
+    pub const PROGRESS_HEIGHT: f32 = 6.0;
+    pub const PROGRESS_RADIUS: f32 = Self::PROGRESS_HEIGHT / 2.0;
     pub const SWATCH_SIZE: f32 = 26.0;
     pub const TILE_WIDTH: f32 = 68.0;
     pub const TILE_HEIGHT: f32 = 48.0;

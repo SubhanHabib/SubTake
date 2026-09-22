@@ -58,7 +58,9 @@ impl ButtonVariant {
 }
 
 /// The glyph size for a control of this height — the pairing the icon scale
-/// is built around. Anything taller than a hero button is transport-sized.
+/// is built around. Anything taller than a hero button is Record-sized; the
+/// transport asks for its own size, because it is the one control whose glyph
+/// is the whole control.
 fn glyph_for(height: f32) -> f32 {
     if height <= Theme::CONTROL_HEIGHT_SMALL {
         Theme::ICON_SIZE_SMALL
@@ -253,7 +255,10 @@ impl RenderOnce for Button {
         let theme = self.theme;
         let tip = self.label.clone();
         let height = self.height.unwrap_or_else(|| self.variant.height());
-        let glyph_size = self.glyph_size.unwrap_or_else(|| glyph_for(height));
+        let glyph_size = self.glyph_size.unwrap_or_else(|| match self.variant {
+            ButtonVariant::Transport => Theme::ICON_SIZE_TRANSPORT,
+            _ => glyph_for(height),
+        });
 
         // A control is either FILLED — a solid plate with its glyph inverted
         // on top — or a wash. Only three things fill: the primary action,
@@ -311,7 +316,11 @@ impl RenderOnce for Button {
                     el.justify_center()
                 }
             })
-            .gap(px(Theme::ICON_GAP))
+            .gap(px(if self.variant == ButtonVariant::Record {
+                Theme::ICON_GAP_RECORD
+            } else {
+                Theme::ICON_GAP
+            }))
             .h(px(height))
             .rounded_full()
             .bg(background)
@@ -361,6 +370,12 @@ impl RenderOnce for Button {
             match self.variant {
                 ButtonVariant::Transport => {}
                 ButtonVariant::Record => shadows.push(glow(theme.rec.opacity(0.32), 26., 10.)),
+                // A hero button glows one step wider than a primary one. It
+                // is the same accent saying the same thing, on a screen with
+                // nothing else on it to say it against.
+                _ if height >= Theme::CONTROL_HEIGHT_HERO => {
+                    shadows.push(glow(theme.accent_soft, 28., 12.))
+                }
                 _ => shadows.push(glow(theme.accent_soft, 20., 8.)),
             }
         }

@@ -143,9 +143,13 @@ impl Render for Dropdown {
                             .on_hover(motion::hover_listener(trigger_key))
                     })
                     .child(div().flex_1().min_w_0().text_ellipsis().child(label))
+                    // A caret at the caret size, not at the control's. It
+                    // says "this opens"; it is not the trigger's own icon,
+                    // and at 14 it read as a second glyph competing with the
+                    // label.
                     .child(icon_sized(
                         "CaretDown-regular",
-                        Theme::ICON_SIZE_SMALL,
+                        Theme::ICON_SIZE_CARET,
                         theme.muted,
                     ))
                     .on_click(cx.listener(|this, _, w, cx| {

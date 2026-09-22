@@ -57,17 +57,23 @@ pub fn composer_footer(theme: Theme) -> Div {
         .text_color(theme.muted)
 }
 
-/// A determinate progress rule: a wash track with a filled bar over it.
+/// A determinate progress rule: a `sunk` track under an `accent` fill.
+///
+/// Accent, not `text`. Progress is one of the four things the accent marks —
+/// it is the primary action, still running — and a near-black bar on a light
+/// track read as a rule rather than as something moving.
 pub fn progress_bar(fraction: f32, theme: Theme) -> Div {
     div()
+        .flex_none()
         .h(px(Theme::PROGRESS_HEIGHT))
-        .rounded_full()
+        .rounded(px(Theme::PROGRESS_RADIUS))
         .overflow_hidden()
-        .bg(theme.sunk2)
+        .bg(theme.sunk)
         .child(
             div()
                 .h_full()
                 .w(relative(fraction.clamp(0., 1.)))
-                .bg(theme.text),
+                .rounded(px(Theme::PROGRESS_RADIUS))
+                .bg(theme.accent),
         )
 }

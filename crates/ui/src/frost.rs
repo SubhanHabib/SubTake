@@ -19,14 +19,23 @@ use gpui::{
 
 use subtake_theme::Theme;
 
-/// Shared backdrop-blur sigma for floating menus, popovers and palettes.
-/// Keep these on the same surface as Cmd+K and the composer.
-///
-/// 34 is the redesign's figure for anything that floats and holds text — the
-/// same blur the inspector and the console carry, so a menu opening over a
-/// panel does not read as a different material from it. The handoff pairs it
-/// with `saturate(1.5)`, which gpui at the pinned revision has no filter for.
+// The blur ladder. A float's blur is chosen by what it is, not by how big it
+// is: the further a surface floats from the window, the more of the desktop it
+// takes out behind itself. The handoff pairs each figure with a `saturate()`,
+// which gpui at the pinned revision has no filter for, so only the blur is
+// carried.
+
+/// The tool pod — the shallowest float, and the only one that holds nothing
+/// but icons.
+pub const POD_BLUR: f32 = 28.0;
+/// The console and the inspector, and every menu and popover that opens over
+/// them. Shared so a menu opening over a panel does not read as a different
+/// material from it.
 pub const MENU_BLUR: f32 = 34.0;
+pub const PANEL_BLUR: f32 = MENU_BLUR;
+/// The recorder bar and a modal dialog: the two surfaces that float over
+/// something other than this window's own content.
+pub const BAR_BLUR: f32 = 38.0;
 
 /// Frost `child` (a popover card): backdrop-blurred on glass, pass-through on
 /// opaque platforms. `corner_radius` must match the card's rounding.

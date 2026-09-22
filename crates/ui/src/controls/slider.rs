@@ -164,7 +164,7 @@ impl Render for Slider {
                     .flex()
                     .items_center()
                     .gap(px(Theme::GAP))
-                    .px(px(Theme::CONTROL_PADDING))
+                    .px(px(Theme::CONTROL_PADDING_LARGE))
                     .when(!self.glyph.is_empty(), |el| {
                         el.child(icon(&self.glyph, theme.text))
                     })
