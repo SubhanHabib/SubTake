@@ -4,7 +4,9 @@ use gpui::{prelude::*, *};
 use std::{cell::Cell, rc::Rc};
 use subtake_theme::Theme;
 
-use crate::{frost, icon_sized, measure, menu_in, menu_list, menu_row, menu_surface, motion};
+use crate::{
+    fade_edges, frost, icon_sized, measure, menu_in, menu_list, menu_row, menu_surface, motion,
+};
 
 /// A retained dropdown: keyboard navigation, selected state, and a native GPUI popover.
 pub struct Dropdown {
@@ -59,7 +61,7 @@ impl Dropdown {
 }
 
 impl Render for Dropdown {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // A dropdown carries no caller-supplied id, and every one of them
         // names its trigger "trigger"; the entity id is the thing that is
         // actually unique per instance, so the tween keys hang off that.
@@ -158,49 +160,76 @@ impl Render for Dropdown {
             );
 
         if open {
+            // The menu is `anchored`, not absolutely placed. An absolute menu
+            // is positioned against its trigger and then clipped by whatever
+            // window it happens to be in — which is fine in the editor and
+            // wrong in the recorder's options window, a window sized to its
+            // sheet with no room below the control. There the menu ran past
+            // the frame and the window cut it into a square-cornered box
+            // through the middle of a row. `anchored` flips it above the
+            // trigger when below will not fit and snaps it inside the frame
+            // when neither side will, and the height is capped by the window
+            // rather than by the constant alone, so a menu can always be
+            // drawn whole.
+            let viewport = window.viewport_size();
+            let trigger = self.bounds.get();
+            let width = trigger.size.width.max(px(Theme::MENU_MIN_WIDTH));
+            let max_height = Theme::MENU_MAX_HEIGHT
+                .min(f32::from(viewport.height) - Theme::GAP * 2.0 - Theme::CONTROL_HEIGHT)
+                .max(Theme::CONTROL_HEIGHT);
             root = root.child(
-                deferred(frost::frosted(
-                    Theme::RADIUS_MENU,
-                    frost::MENU_BLUR,
-                    menu_in(
-                        "dropdown-menu",
-                        Theme::CONTROL_HEIGHT + Theme::GAP_SMALL,
-                        menu_surface(theme)
-                            .id("choices")
-                            .absolute()
-                            .left_0()
-                            // The menu tracks its trigger rather than sizing
-                            // itself to its longest row: a source list holds
-                            // whole window titles, and a menu that grows to
-                            // fit one runs off the edge of the window.
-                            .w_full()
-                            .min_w(px(Theme::MENU_MIN_WIDTH))
-                            .on_mouse_down_out(cx.listener(
-                                |this, event: &MouseDownEvent, _, cx| {
-                                    if !this.bounds.get().contains(&event.position) {
-                                        this.open = false;
-                                        cx.notify();
-                                    }
-                                },
-                            ))
-                            .child(
-                                menu_list("dropdown-choices", Theme::MENU_MAX_HEIGHT).children(
-                                    self.items.iter().enumerate().map(|(i, label)| {
-                                        menu_row(
-                                            ("choice", i),
-                                            label.clone(),
-                                            i == self.selected,
-                                            i == self.highlighted,
-                                            theme,
-                                            cx.listener(move |this, _, w, cx| {
-                                                this.choose(i, w, cx)
-                                            }),
-                                        )
-                                    }),
-                                ),
+                deferred(
+                    anchored()
+                        // Anchored in window coordinates off the trigger's own
+                        // measured bounds. An `anchored` element lays out
+                        // absolutely at its container's origin, so without this
+                        // the menu would open on top of the control it belongs
+                        // to instead of under it.
+                        .position(trigger.bottom_left() + point(px(0.), px(Theme::GAP_SMALL)))
+                        .snap_to_window_with_margin(px(Theme::GAP))
+                        .child(frost::frosted(
+                            Theme::RADIUS_MENU,
+                            frost::MENU_BLUR,
+                            menu_in(
+                                "dropdown-menu",
+                                0.0,
+                                menu_surface(theme)
+                                    .id("choices")
+                                    // The menu tracks its trigger rather than
+                                    // sizing itself to its longest row: a
+                                    // source list holds whole window titles,
+                                    // and a menu that grows to fit one runs
+                                    // off the edge of the window.
+                                    .w(width)
+                                    .on_mouse_down_out(cx.listener(
+                                        |this, event: &MouseDownEvent, _, cx| {
+                                            if !this.bounds.get().contains(&event.position) {
+                                                this.open = false;
+                                                cx.notify();
+                                            }
+                                        },
+                                    ))
+                                    .child(fade_edges(
+                                        menu_list("dropdown-choices", max_height)
+                                            .py(px(crate::FADE_BAND))
+                                            .children(self.items.iter().enumerate().map(
+                                                |(i, label)| {
+                                                    menu_row(
+                                                        ("choice", i),
+                                                        label.clone(),
+                                                        i == self.selected,
+                                                        i == self.highlighted,
+                                                        theme,
+                                                        cx.listener(move |this, _, w, cx| {
+                                                            this.choose(i, w, cx)
+                                                        }),
+                                                    )
+                                                },
+                                            )),
+                                    )),
                             ),
-                    ),
-                ))
+                        )),
+                )
                 .with_priority(20),
             );
         }

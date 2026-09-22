@@ -11,9 +11,15 @@ pub fn menu_surface(theme: Theme) -> Div {
     // No `shadow_lg` of its own: `shadow` replaces the whole stack rather
     // than adding to it, so the preset was quietly dropping the hairline and
     // the designed float shadow that `panel_variant` had just set.
+    //
+    // `occlude` is what makes it a menu rather than a picture of one: without
+    // it the surface only paints over what is behind, so a wheel scrolled on
+    // an open menu scrolled the panel underneath and a click on a gap between
+    // rows reached whatever it was covering.
     panel_variant(theme, Surface::Popup)
         .p(px(Theme::GAP_SMALL))
         .gap(px(Theme::GAP_SMALL))
+        .occlude()
 }
 
 /// The scrolling column of rows inside a menu surface. Rows sit closer than
