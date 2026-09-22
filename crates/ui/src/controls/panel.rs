@@ -116,9 +116,15 @@ pub fn pod(theme: Theme) -> Div {
         .occlude()
 }
 
-/// A hairline rule.
+/// A hairline rule, one row of a stack.
+///
+/// It takes no part in the distribution of its parent's spare height: a
+/// `flex_1` here reads as "grow" on a column's main axis, which turns the
+/// hairline into a filled block and starves whatever scrolls above it. A rule
+/// that has to run out along a row — `section_label`'s — asks for the growth
+/// itself.
 pub fn divider(theme: Theme) -> Div {
-    div().h(px(Theme::BORDER_WIDTH)).flex_1().bg(theme.line)
+    div().h(px(Theme::BORDER_WIDTH)).flex_none().bg(theme.line)
 }
 
 /// A small muted section caption ("Frame", "Padding", "Animation").
@@ -148,5 +154,7 @@ pub fn panel_header(theme: Theme, title: impl Into<SharedString>) -> Div {
 /// same caps label a panel heading uses — the redesign draws "FRAME",
 /// "BACKGROUND" and "MOTION" in one style, not two.
 pub fn section_label(text: impl Into<SharedString>, theme: Theme) -> Div {
-    row().child(caps_label(text, theme)).child(divider(theme))
+    row()
+        .child(caps_label(text, theme))
+        .child(divider(theme).flex_1())
 }

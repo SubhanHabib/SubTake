@@ -200,7 +200,11 @@ impl IntoElement for Layered {
 
 /// The ramp depth used by [`fade_edges`], and the padding a scroll region
 /// should carry so the ramp lands on empty space when nothing is clipped.
-pub const FADE_BAND: f32 = 16.0;
+///
+/// The figure itself is a theme metric: a box that reserves height for a
+/// scroller has to add the band to its own budget, and that arithmetic
+/// happens in `metrics.rs` where the rest of it lives.
+pub const FADE_BAND: f32 = Theme::FADE_BAND;
 
 /// Fade `child` out across [`FADE_BAND`] at its top and bottom edges.
 ///

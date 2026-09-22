@@ -316,10 +316,18 @@ impl Theme {
     /// not a row's worth of height.
     pub const RULER_HEIGHT: f32 = 16.0;
 
+    /// The depth of the ramp a scroll region fades its clipped edge across,
+    /// and the padding that region carries inside itself so the ramp lands on
+    /// empty space while nothing is actually clipped. Any box that budgets
+    /// height for a scroller has to budget this with it, or the region starts
+    /// one band short and fades its own last row for good.
+    pub const FADE_BAND: f32 = 16.0;
+
     /// The console's height: its own padding, the transport row, and the lane
-    /// stack the handoff draws — a ruler, the source lane and five lanes. A
-    /// project with more lanes than that scrolls inside the console rather
-    /// than growing it into the stage.
+    /// stack the handoff draws — a ruler, the source lane and five lanes,
+    /// plus the fade band the lane scroller rests on. A project with more
+    /// lanes than that scrolls inside the console rather than growing it into
+    /// the stage.
     pub const CONSOLE_HEIGHT: f32 = Self::PANEL_PADDING * 2.0
         + Self::TRANSPORT_SIZE
         + Self::GAP_BLOCK
@@ -327,7 +335,8 @@ impl Theme {
         + Self::LANE_GAP
         + Self::LANE_SOURCE_HEIGHT
         + Self::LANE_GAP
-        + 5.0 * Self::LANE_PITCH;
+        + 5.0 * Self::LANE_PITCH
+        + Self::FADE_BAND;
 }
 
 // ---------------------------------------------------------------------------

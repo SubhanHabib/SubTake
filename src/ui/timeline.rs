@@ -2,6 +2,20 @@
 
 use super::*;
 
+/// One name in the lane gutter, on the lane's own grid: the lane's height,
+/// the label centred in it, and the gap that follows every lane below it.
+fn lane_label(text: impl Into<SharedString>, height: f32, theme: Theme) -> Div {
+    div()
+        .h(px(height))
+        .mb(px(Theme::LANE_GAP))
+        .flex()
+        .items_center()
+        .flex_shrink_0()
+        .text_size(px(Theme::FONT_SECONDARY))
+        .text_color(theme.muted)
+        .child(text.into())
+}
+
 impl RootView {
     pub(super) fn seek_at(&self, x: Pixels) {
         if let Surface::Editor(e) = &self.surface {
@@ -521,27 +535,20 @@ impl RootView {
                             .w(px(Theme::LANE_GUTTER))
                             .flex_shrink_0()
                             .gap_0()
-                            // The gutter's first entry has to clear the ruler
-                            // and then name the source lane, so it is the
-                            // ruler plus that lane plus the gap the column
-                            // below it uses.
-                            .child(
-                                div()
-                                    .h(px(Theme::RULER_HEIGHT
-                                        + Theme::LANE_SOURCE_HEIGHT
-                                        + Theme::LANE_GAP))
-                                    .pt(px(Theme::RULER_HEIGHT + Theme::LANE_GAP))
-                                    .text_size(px(Theme::FONT_SECONDARY))
-                                    .text_color(theme.muted)
-                                    .child("Source"),
-                            )
-                            .children(labels.into_iter().map(|label| {
-                                div()
-                                    .h(px(Theme::LANE_PITCH))
-                                    .text_size(px(Theme::FONT_SECONDARY))
-                                    .text_color(theme.muted)
-                                    .child(label)
-                            })),
+                            // The gutter runs on the track column's own grid,
+                            // row for row: a spacer the height of the ruler
+                            // and the gap under it, then one box per lane at
+                            // that lane's height with the same gap below. A
+                            // label is centred on its lane rather than set at
+                            // its top, so the name and the blocks it names
+                            // read as one line.
+                            .child(div().h(px(Theme::RULER_HEIGHT + Theme::LANE_GAP)))
+                            .child(lane_label("Source", Theme::LANE_SOURCE_HEIGHT, theme))
+                            .children(
+                                labels
+                                    .into_iter()
+                                    .map(|label| lane_label(label, Theme::LANE_HEIGHT, theme)),
+                            ),
                     )
                     .child(timeline),
             ))
