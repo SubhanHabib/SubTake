@@ -309,8 +309,12 @@ impl RootView {
                     ),
             );
         }
+        // The viewport's height is what the picture is sized to, so the
+        // column holding it has to take the stage's height rather than its
+        // content's: sized by its content, it measured the picture, which
+        // was sized by it, and the two shrank to nothing.
         stage_reserve(
-            div().flex().flex_col().child(
+            div().flex().flex_col().flex_1().min_h_0().child(
                 div()
                     .id("preview-viewport")
                     .relative()
