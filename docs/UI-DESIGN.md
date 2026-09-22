@@ -50,6 +50,12 @@ has no call site for yet — a field, a stepper, a checkbox, a key cap, a toast,
 dialog, a list row and three menu pieces. They are built to the cards' numbers
 and parked rather than left unbuilt.
 
+`SUBTAKE_GALLERY_SCREEN=tour` plays the whole flow on its own in about a minute
+and then quits: the recorder cards, the count, recording, pausing and stopping,
+then the editor's panels, a selected region, Presets, an export run, and the
+inspector folding and sliding at a narrow width. It is there so the flow can be
+filmed or watched without anyone clicking.
+
 ## The editor
 
 Nothing is docked. That is the change the redesign is named for, and every
