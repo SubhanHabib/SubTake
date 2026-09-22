@@ -323,15 +323,16 @@ impl Theme {
     /// one band short and fades its own last row for good.
     pub const FADE_BAND: f32 = 16.0;
 
-    /// The console's height: its own padding, the transport row, and the lane
-    /// stack the handoff draws — a ruler, the source lane and five lanes,
-    /// plus the fade band the lane scroller rests on. A project with more
-    /// lanes than that scrolls inside the console rather than growing it into
-    /// the stage.
-    pub const CONSOLE_HEIGHT: f32 = Self::PANEL_PADDING * 2.0
-        + Self::TRANSPORT_SIZE
-        + Self::GAP_BLOCK
-        + Self::RULER_HEIGHT
+    /// The lane region's height: the stack the handoff draws — a ruler, the
+    /// source lane and five lanes — plus the fade band the scroller rests on.
+    /// A project with more lanes than that scrolls inside the region rather
+    /// than growing the console into the stage.
+    ///
+    /// The figure is the region's, not the console's. The console is that
+    /// region plus its own padding, its transport row, and whatever else it
+    /// is carrying at the time — so a line it only sometimes shows adds to
+    /// its height instead of being taken out of the lanes.
+    pub const LANE_STACK_HEIGHT: f32 = Self::RULER_HEIGHT
         + Self::LANE_GAP
         + Self::LANE_SOURCE_HEIGHT
         + Self::LANE_GAP

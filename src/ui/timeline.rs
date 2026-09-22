@@ -516,7 +516,6 @@ impl RootView {
         }
         let console = panel(theme)
             .id("timeline")
-            .h(px(Theme::CONSOLE_HEIGHT))
             .mx(px(Theme::INSET))
             .mb(px(Theme::INSET))
             .flex_shrink_0()
@@ -526,8 +525,8 @@ impl RootView {
                     .id("track-scroll")
                     .gap(px(Theme::LANE_GUTTER_GAP))
                     .items_start()
-                    .flex_1()
-                    .min_h_0()
+                    .h(px(Theme::LANE_STACK_HEIGHT))
+                    .flex_none()
                     .overflow_y_scroll()
                     .pb(px(FADE_BAND))
                     .child(
