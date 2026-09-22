@@ -4,7 +4,7 @@ use gpui::{prelude::*, *};
 use std::{cell::Cell, rc::Rc};
 use subtake_theme::Theme;
 
-use crate::{focus_ring, icon, measure, motion};
+use crate::{focus_ring, icon, layered, measure, motion};
 
 /// A filled slider that *is* the row: glyph and label on the left, the level
 /// painted as a flat fill from the left end of the 44px plate, and the value
@@ -132,7 +132,7 @@ impl Render for Slider {
         // A slider has no caller-supplied id, so its hover hangs off the
         // entity, as a dropdown's does.
         let hover_key = format!("slider-{:?}-hover", cx.entity_id());
-        div()
+        let scrub = div()
             .id("scrub")
             .relative()
             .h(px(Theme::CONTROL_HEIGHT_LARGE))
@@ -298,6 +298,9 @@ impl Render for Slider {
                         s.set(e.position.x, true, w, cx);
                     }
                 }),
-            )
+            );
+        // A layer of its own for the focus ring, which falls outside the
+        // track and inside a frosted float would draw under the panel's fill.
+        layered(scrub)
     }
 }

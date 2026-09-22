@@ -13,7 +13,7 @@ use gpui::{prelude::*, *};
 use std::rc::Rc;
 use subtake_theme::Theme;
 
-use crate::{focus_ring, hairline, motion, perf};
+use crate::{focus_ring, hairline, layered, motion, perf, pill_edge};
 
 pub fn segmented_control(
     id: &str,
@@ -52,16 +52,14 @@ pub fn segmented_control(
                 .size_full()
                 .rounded_full()
                 .bg(theme.seg_active)
-                .shadow(vec![
-                    BoxShadow {
-                        color: hsla(0.65, 0.33, 0.12, 0.12),
-                        offset: point(px(0.), px(1.)),
-                        blur_radius: px(3.),
-                        spread_radius: px(0.),
-                        inset: false,
-                    },
-                    hairline(theme.line, Theme::HAIRLINE_WIDTH),
-                ]),
+                .shadow(vec![BoxShadow {
+                    color: hsla(0.65, 0.33, 0.12, 0.12),
+                    offset: point(px(0.), px(1.)),
+                    blur_radius: px(3.),
+                    spread_radius: px(0.),
+                    inset: false,
+                }])
+                .child(pill_edge(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)])),
         );
     div()
         .flex()
@@ -77,7 +75,7 @@ pub fn segmented_control(
                 .flex()
                 .flex_1()
                 .min_w_0()
-                .child(pill)
+                .child(layered(pill))
                 .children(
                     options
                         .iter()
@@ -134,7 +132,12 @@ pub fn segmented_control(
                                         })
                                         .child(div().text_ellipsis().child(label)),
                                 )
-                        }),
+                        })
+                        // Each segment on a layer over the pill and the
+                        // track: its focus ring is a shadow, and inside a
+                        // frosted float a shadow at the track's draw order
+                        // goes under the track's fill.
+                        .map(layered),
                 ),
         )
 }

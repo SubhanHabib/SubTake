@@ -3,7 +3,7 @@
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
-use crate::{field_row, focus_ring, motion, perf};
+use crate::{field_row, focus_ring, layered, motion, perf};
 
 /// The bare switch, with no label and no plate of its own.
 ///
@@ -43,39 +43,43 @@ pub fn switch(
         .rounded_full()
         .bg(motion::blend(t.sunk2, t.switch_on, on))
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
-        .child(
+        // The hover wash and the thumb on it are on a layer over the track,
+        // or the thumb's drop shadow goes under the track's fill inside a
+        // frosted float — at one draw order gpui draws every shadow before
+        // every fill.
+        .child(layered(
             div()
                 .absolute()
                 .inset_0()
                 .rounded_full()
-                .bg(motion::hover_blend(&hover_key, wash.opacity(0.), wash)),
-        )
-        .child(
-            div()
-                .absolute()
-                .top(px(Theme::TOGGLE_INSET))
-                .left(px(motion::lerp(
-                    Theme::TOGGLE_INSET,
-                    Theme::TOGGLE_INSET + Theme::TOGGLE_TRAVEL,
-                    on,
-                )))
-                .size(px(Theme::TOGGLE_THUMB))
-                .rounded_full()
-                // White in both states and both appearances: on and off are
-                // the track's tone and the thumb's side, never the thumb's
-                // colour. An `ink` track with an `on_ink` thumb read as off
-                // in dark, where it was a black dot on white. On the light
-                // off track that is white on a near-white `sunk2`, so the
-                // thumb's own drop shadow is what separates it.
-                .bg(t.thumb())
-                .shadow(vec![BoxShadow {
-                    color: hsla(0., 0., 0., 0.3),
-                    offset: point(px(0.), px(1.)),
-                    blur_radius: px(3.),
-                    spread_radius: px(0.),
-                    inset: false,
-                }]),
-        );
+                .bg(motion::hover_blend(&hover_key, wash.opacity(0.), wash))
+                .child(
+                    div()
+                        .absolute()
+                        .top(px(Theme::TOGGLE_INSET))
+                        .left(px(motion::lerp(
+                            Theme::TOGGLE_INSET,
+                            Theme::TOGGLE_INSET + Theme::TOGGLE_TRAVEL,
+                            on,
+                        )))
+                        .size(px(Theme::TOGGLE_THUMB))
+                        .rounded_full()
+                        // White in both states and both appearances: on and off are
+                        // the track's tone and the thumb's side, never the thumb's
+                        // colour. An `ink` track with an `on_ink` thumb read as off
+                        // in dark, where it was a black dot on white. On the light
+                        // off track that is white on a near-white `sunk2`, so the
+                        // thumb's own drop shadow is what separates it.
+                        .bg(t.thumb())
+                        .shadow(vec![BoxShadow {
+                            color: hsla(0., 0., 0., 0.3),
+                            offset: point(px(0.), px(1.)),
+                            blur_radius: px(3.),
+                            spread_radius: px(0.),
+                            inset: false,
+                        }]),
+                ),
+        ));
     if enabled {
         switch = switch
             .tab_index(0)
@@ -88,7 +92,9 @@ pub fn switch(
                 change(!checked, w, cx)
             });
     }
-    switch
+    // A layer of its own for the focus ring, which falls outside the track
+    // onto the plate the switch sits on and would otherwise draw under it.
+    layered(switch)
 }
 
 /// The switch on its own plate with its label — the shape a setting takes when
