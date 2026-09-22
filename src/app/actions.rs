@@ -822,12 +822,14 @@ impl App {
                 let cancel = self.job_cancel.clone();
                 std::thread::spawn(move || {
                     for remaining in (1..=countdown).rev() {
-                        post(move |_, ui| {
+                        post(move |app, ui| {
+                            app.counting = remaining;
                             ui.set_status(format!("Recording starts in {remaining}…"))
                         });
                         for _ in 0..20 {
                             if cancel.load(Ordering::Relaxed) {
-                                post(|_, ui| {
+                                post(|app, ui| {
+                                    app.counting = 0;
                                     ui.set_busy(false);
                                     ui.set_status("Recording cancelled".into());
                                 });
@@ -836,6 +838,10 @@ impl App {
                             std::thread::sleep(Duration::from_millis(50));
                         }
                     }
+                    post(|app, ui| {
+                        app.counting = 0;
+                        ui.set_status("Starting capture…".into());
+                    });
                     let result = Recording::start(&source, path, mic, system, camera, &cancel);
                     post(move |app, ui| {
                         ui.set_busy(false);
@@ -911,12 +917,18 @@ impl App {
             "stop-recording" => {
                 if let Some(recording) = self.recording.take() {
                     self.recording_watch.stop();
+                    // The clock stops where capture did: the bar goes on
+                    // showing how much was captured while it is written out.
+                    self.pause_started
+                        .get_or_insert_with(std::time::Instant::now);
+                    self.stopping = true;
                     ui.set_recording(false);
                     ui.set_busy(true);
                     ui.set_status("Finalizing recording…".into());
                     std::thread::spawn(move || {
                         let result = recording.stop();
                         post(move |app, ui| {
+                            app.stopping = false;
                             ui.set_busy(false);
                             match result {
                                 Ok(path) => {
@@ -928,6 +940,19 @@ impl App {
                             }
                         });
                     });
+                }
+            }
+            "discard-recording" => {
+                if let Some(recording) = self.recording.take() {
+                    self.recording_watch.stop();
+                    self.capture_started = None;
+                    self.pause_started = None;
+                    ui.set_recording(false);
+                    ui.set_recording_paused(false);
+                    // Killing the helpers waits on them, so it leaves the UI
+                    // thread; the bar is back to its controls meanwhile.
+                    std::thread::spawn(move || recording.discard());
+                    ui.set_status("Recording discarded".into());
                 }
             }
             "auto-zoom" => {

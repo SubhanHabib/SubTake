@@ -106,6 +106,10 @@ pub struct App {
     tray: Option<AppTray>,
     editor_shown: bool,
     capture_started: Option<std::time::Instant>,
+    /// Seconds left on the countdown before a capture, 0 when none runs.
+    counting: u32,
+    /// Capture has ended and the recording is being written out.
+    stopping: bool,
     pause_started: Option<std::time::Instant>,
     paused_total: Duration,
     recording_watch: Timer,
@@ -155,6 +159,8 @@ impl App {
             tray: None,
             editor_shown: false,
             capture_started: None,
+            counting: 0,
+            stopping: false,
             pause_started: None,
             paused_total: Duration::ZERO,
             recording_watch: Timer::default(),

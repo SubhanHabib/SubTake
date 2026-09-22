@@ -114,6 +114,8 @@ impl App {
             ui.get_busy() && (ui.get_sources_loading() || self.capture_started.is_none()),
         );
         launcher.set_countdown(self.preferences.countdown_seconds as i32);
+        launcher.set_counting(self.counting as i32);
+        launcher.set_stopping(self.stopping);
         launcher.set_directory(
             self.recording_directory()
                 .map(|p| p.display().to_string())

@@ -14,7 +14,8 @@
 //! ⌘⇧E swaps the editor for the empty state ("Nothing open yet") and back;
 //! the titlebar's Presets button, or ⌘⇧P, opens the Presets dialog.
 //! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either; `=card-<panel>`
-//! opens that recorder card.
+//! opens that recorder card; `=rec-counting`, `=rec-recording`, `=rec-paused` or
+//! `=rec-stopping` shows the bar mid-capture.
 use crate::{
     CaptureSource, EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions, Region,
     Wallpaper,
@@ -95,6 +96,32 @@ pub fn run() -> Result<()> {
                 g.launcher.set_panel(panel.clone().into());
                 g.options.set_panel(panel.into());
                 g.position_options();
+            });
+        }
+        // The bar mid-capture: `rec-counting`, `rec-recording`, `rec-paused`
+        // or `rec-stopping`.
+        Ok(screen) if screen.starts_with("rec-") => {
+            let state = screen.trim_start_matches("rec-").to_owned();
+            let g = gallery.clone();
+            Timer::single_shot(Duration::from_millis(400), move || {
+                let g = g.borrow();
+                show_recorder(&g.launcher, &g.options);
+                let l = &g.launcher;
+                match state.as_str() {
+                    "counting" => {
+                        l.set_busy(true);
+                        l.set_counting(3);
+                    }
+                    "stopping" => {
+                        l.set_busy(true);
+                        l.set_stopping(true);
+                        l.set_elapsed("00:42".into());
+                    }
+                    _ => {
+                        start_capture(l, &g.playback, 42);
+                        l.set_paused(state == "paused");
+                    }
+                }
             });
         }
         _ => {}
@@ -281,23 +308,58 @@ impl Gallery {
                 self.editor.set_motion_choice(key["motion-".len()..].into())
             }
             "record" | "start-recording" => {
-                self.launcher.set_recording(true);
-                self.launcher.set_paused(false);
-                self.launcher.set_status("Recording".into());
-                let launcher = self.launcher.clone();
-                let started = std::time::Instant::now();
-                self.playback
-                    .start(TimerMode::Repeated, Duration::from_millis(250), move || {
-                        let s = started.elapsed().as_secs();
-                        launcher.set_elapsed(format!("{:02}:{:02}", s / 60, s % 60));
-                    });
+                // The count first, the way the app runs it, then capture.
+                self.options.set_panel("".into());
+                self.launcher.set_panel("".into());
+                let _ = self.options.hide();
+                let count = self.launcher.get_countdown();
+                if count > 0 {
+                    self.launcher.set_busy(true);
+                    self.launcher.set_counting(count);
+                    let me = self.me.clone();
+                    self.playback
+                        .start(TimerMode::Repeated, Duration::from_secs(1), move || {
+                            if let Some(g) = me.upgrade() {
+                                let g = g.borrow();
+                                let left = g.launcher.get_counting() - 1;
+                                g.launcher.set_counting(left.max(0));
+                                if left <= 0 {
+                                    g.launcher.set_busy(false);
+                                    start_capture(&g.launcher, &g.playback, 0);
+                                }
+                            }
+                        });
+                } else {
+                    start_capture(&self.launcher, &self.playback, 0);
+                }
             }
-            "stop" | "stop-recording" | "finish" => {
+            "cancel" => {
+                self.playback.stop();
+                self.launcher.set_counting(0);
+                self.launcher.set_busy(false);
+            }
+            "discard-recording" => {
                 self.playback.stop();
                 self.launcher.set_recording(false);
                 self.launcher.set_paused(false);
                 self.launcher.set_elapsed("".into());
-                self.launcher.set_status("Saved to Movies/SubTake".into());
+            }
+            "stop" | "stop-recording" | "finish" => {
+                // A writing-out pause long enough to see, then the editor.
+                self.playback.stop();
+                self.launcher.set_recording(false);
+                self.launcher.set_paused(false);
+                self.launcher.set_busy(true);
+                self.launcher.set_stopping(true);
+                let me = self.me.clone();
+                Timer::single_shot(Duration::from_millis(2400), move || {
+                    if let Some(g) = me.upgrade() {
+                        let g = g.borrow();
+                        g.launcher.set_stopping(false);
+                        g.launcher.set_busy(false);
+                        g.launcher.set_elapsed("".into());
+                    }
+                });
             }
             "pause-recording" | "resume-recording" => {
                 let paused = !self.launcher.get_paused();
@@ -558,6 +620,24 @@ fn time_label(time: f32) -> String {
         (DURATION as u32) / 60,
         (DURATION as u32) % 60
     )
+}
+
+/// Capture running in the gallery: the bar's clock ticks from `from`
+/// seconds so a screenshot shows a plausible recording.
+fn start_capture(launcher: &RecordingLauncher, clock: &Timer, from: u64) {
+    launcher.set_recording(true);
+    launcher.set_paused(false);
+    launcher.set_status("Recording".into());
+    launcher.set_elapsed(format!("{:02}:{:02}", from / 60, from % 60));
+    let launcher = launcher.clone();
+    let started = std::time::Instant::now();
+    clock.start(TimerMode::Repeated, Duration::from_millis(250), move || {
+        if launcher.get_paused() {
+            return;
+        }
+        let s = from + started.elapsed().as_secs();
+        launcher.set_elapsed(format!("{:02}:{:02}", s / 60, s % 60));
+    });
 }
 
 fn show_recorder(launcher: &RecordingLauncher, options: &RecordingOptions) {

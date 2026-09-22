@@ -146,6 +146,12 @@ impl Recording {
         bail!("Recorder did not acknowledge pause/resume")
     }
 
+    /// Throw the capture away: dropping the recording kills its helpers and
+    /// deletes its working folder, so nothing reaches the recordings folder.
+    pub fn discard(self) {
+        drop(self);
+    }
+
     pub fn stop(mut self) -> Result<PathBuf> {
         match self.finish_recording() {
             Ok(path) => Ok(path),

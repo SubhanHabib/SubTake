@@ -125,8 +125,27 @@ goes under that element's fill.
 
 A compact rounded floating bar with a source control, audio and webcam options,
 a countdown, a red Record control, More and Hide. Option panels expand above it.
-The same overlay shows the countdown, the elapsed time in Geist Mono,
-pause/resume and stop.
+
+The bar keeps its size and shape in every state; only its controls change.
+
+- **Counting down** — the count in a 60 round plate, "Recording starts in 3…"
+  over the source and whether the mic is on, and Cancel (`esc`).
+- **Recording** — the grip, a red pill with a pulsing white dot and the elapsed
+  time in Geist Mono, Pause and Stop, then whether the mic and camera are in
+  the capture (the glyph says it, not a colour) and a red X that discards it.
+- **Paused** — the pill turns `sunk` with a dimmed dot and PAUSED; Pause
+  becomes a red Resume. Nothing else moves.
+- **Stopping** — a spinner, "Finishing your recording" over how much was
+  captured, and a plate (not a button) saying it opens in the editor.
+
+Not drawn by the design: the other waits — finding displays, starting
+capture, holding or resuming it — take the Stopping layout with the status
+line, and Cancel when there is something to cancel. Palette churn: PAUSED is
+not tracked out, because gpui sets no letter spacing.
+
+`SUBTAKE_GALLERY_SCREEN=rec-counting` (or `rec-recording`, `rec-paused`,
+`rec-stopping`) opens the gallery with the bar in that state; Record in the
+gallery runs the whole sequence.
 
 The recorder's windows are borderless, and macOS gives a borderless window no
 corner mask, so the editor's window material would fill the frame square behind

@@ -133,6 +133,8 @@ struct Properties {
     elapsed: String,
     directory: String,
     countdown: i32,
+    counting: i32,
+    stopping: bool,
 }
 
 impl Default for Properties {
@@ -218,6 +220,8 @@ impl Default for Properties {
             elapsed: "00:00".into(),
             directory: String::new(),
             countdown: 3,
+            counting: 0,
+            stopping: false,
         }
     }
 }
@@ -1183,6 +1187,32 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.countdown != value {
             props.countdown = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The seconds left on a countdown that is running, or 0 when none is.
+    pub fn get_counting(&self) -> i32 {
+        self.0.props.borrow().counting
+    }
+
+    pub fn set_counting(&self, value: i32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.counting != value {
+            props.counting = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// Capture has ended and the recording is being written out.
+    pub fn get_stopping(&self) -> bool {
+        self.0.props.borrow().stopping
+    }
+
+    pub fn set_stopping(&self, value: bool) {
+        let mut props = self.0.props.borrow_mut();
+        if props.stopping != value {
+            props.stopping = value;
             self.window().invalidate();
         }
     }

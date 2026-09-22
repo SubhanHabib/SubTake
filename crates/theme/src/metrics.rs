@@ -351,6 +351,29 @@ impl Theme {
     pub const RECENT_CARD_PADDING: f32 = 10.0;
     pub const RECENT_THUMB_HEIGHT: f32 = 96.0;
 
+    // ---- recorder states --------------------------------------------------
+
+    /// The countdown's figure in the bar's round plate.
+    pub const FONT_COUNT: f32 = 24.0;
+    /// The elapsed clock in the recording pill.
+    pub const FONT_CLOCK: f32 = 17.0;
+    /// A text block's inset beside the round plate, past the bar's gap.
+    pub const RECORDER_TEXT_INSET: f32 = 6.0;
+    /// A bar message's two lines, set close so they read as one caption.
+    pub const MESSAGE_LEADING: f32 = 1.25;
+    /// The recording pill's and Resume's side padding.
+    pub const RECORDER_PILL_PADDING: f32 = 22.0;
+    /// Cancel's and "Opens in the editor"'s side padding.
+    pub const RECORDER_PLATE_PADDING: f32 = 24.0;
+    /// The paused dot, dimmed to say the capture is held, not gone.
+    pub const PAUSED_DOT_OPACITY: f32 = 0.45;
+    /// The spinner a writing-out recording shows: its size and ring width.
+    pub const SPINNER_SIZE: f32 = 22.0;
+    pub const SPINNER_WIDTH: f32 = 2.5;
+    /// How far the stopping line's text block reaches, so the bar does not
+    /// shrink round a short caption.
+    pub const STOPPING_TEXT_WIDTH: f32 = 190.0;
+
     // ---- recorder option cards ---------------------------------------------
 
     /// Each bar control's card, a window of its own floating over the bar.

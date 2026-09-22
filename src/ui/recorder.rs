@@ -1,6 +1,7 @@
 //! The recorder bar. Its option cards are `options.rs`.
 
 use super::*;
+use subtake_ui::icon_sized;
 
 thread_local! {
     /// The anchor last handed to the options window, so the bar only moves
@@ -27,8 +28,13 @@ impl RootView {
             .min_w_0()
             .overflow_hidden()
             .p(px(Theme::RECORDER_PADDING))
-            .gap(px(Theme::GAP))
-            .child(
+            .gap(px(Theme::GAP));
+        // The grip is drawn on the idle and capturing bars only: while the
+        // count runs or the file is written the bar is a message, and a
+        // message is not something to pick up and move.
+        let counting = !state.get_recording() && state.get_busy();
+        if !counting {
+            bar = bar.child(
                 div()
                     .id("launcher-drag")
                     .flex()
@@ -41,6 +47,7 @@ impl RootView {
                     .child(icon("DotsSixVertical-regular", theme.muted))
                     .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
             );
+        }
         if !state.get_recording() && !state.get_busy() {
             // Where each control that opens a card sits, so its card can
             // float over it rather than over the middle of the bar. The
@@ -150,36 +157,15 @@ impl RootView {
                         }
                     }),
             );
+        } else if state.get_recording() {
+            bar = self.capture_controls(bar, state);
+        } else if state.get_counting() > 0 {
+            bar = self.counting_controls(bar, state);
         } else {
-            // While recording, the word and the clock are two children, not
-            // one formatted string: the clock is Geist Mono so its digits do
-            // not shove the word beside them every time the seconds tick.
-            bar = bar.child(if state.get_recording() {
-                row()
-                    .flex_1()
-                    .gap(px(Theme::ICON_GAP))
-                    .child(if state.get_paused() { "PAUSED" } else { "REC" })
-                    .child(mono(state.get_elapsed()))
-            } else {
-                row().flex_1().child(state.get_status())
-            });
-            if state.get_recording() {
-                bar = bar
-                    .child(self.action(
-                        "pause",
-                        if state.get_paused() {
-                            "Resume"
-                        } else {
-                            "Pause"
-                        },
-                        "pause-recording",
-                        !state.get_busy(),
-                    ))
-                    .child(self.action("stop", "Stop", "stop-recording", !state.get_busy()));
-            }
-            if state.get_cancellable() {
-                bar = bar.child(self.action("cancel", "Cancel", "cancel", true));
-            }
+            bar = self.working_controls(bar, state);
+        }
+        if state.get_recording() || state.get_busy() {
+            return bar.into_any_element();
         }
         // The bar's last control. The handoff draws a 44 close button and
         // nothing else after Record.
@@ -197,10 +183,321 @@ impl RootView {
         bar.into_any_element()
     }
 
+    /// Recording and paused. The Record button's place becomes the clock —
+    /// red while capture runs, `sunk` while it is held — and the controls
+    /// after it keep one position across both, so Stop never moves under
+    /// the pointer. Only Pause trades places with Resume.
+    fn capture_controls(&self, bar: Div, state: &RecordingLauncher) -> Div {
+        let theme = self.theme;
+        let paused = state.get_paused();
+        let enabled = !state.get_busy();
+        let dot = div().flex_none().size(px(Theme::RECORD_DOT)).rounded_full();
+        let dot = if paused {
+            dot.bg(theme.rec)
+                .opacity(Theme::PAUSED_DOT_OPACITY)
+                .into_any_element()
+        } else {
+            dot.bg(white())
+                .with_animation(
+                    "rec-pulse",
+                    Animation::new(std::time::Duration::from_secs(1))
+                        .repeat()
+                        .with_easing(ease_in_out),
+                    |dot, t| dot.opacity(1. - 0.65 * (1. - (2. * t - 1.).abs())),
+                )
+                .into_any_element()
+        };
+        let mut clock = row()
+            .flex_none()
+            .gap(px(Theme::ICON_GAP_RECORD))
+            .h(px(Theme::RECORD_HEIGHT))
+            .px(px(Theme::RECORDER_PILL_PADDING))
+            .rounded_full()
+            .whitespace_nowrap()
+            .child(dot)
+            .child(
+                mono(state.get_elapsed())
+                    .text_size(px(Theme::FONT_CLOCK))
+                    .font_weight(FontWeight::MEDIUM),
+            );
+        clock = if paused {
+            // Palette churn: the handoff tracks PAUSED out by .09em; gpui
+            // sets no letter spacing, so it is the caps alone.
+            clock.bg(theme.sunk).text_color(theme.text).child(
+                div()
+                    .text_size(px(Theme::FONT_SMALL))
+                    .text_color(theme.muted)
+                    .child("PAUSED"),
+            )
+        } else {
+            clock.bg(theme.rec).text_color(white())
+        };
+        let pause = if paused {
+            // Resume takes Pause's place in `rec`: the one way back into
+            // the capture, in the capture's own colour.
+            row()
+                .id("pause")
+                .flex_none()
+                .gap(px(Theme::ICON_GAP_ROW))
+                .h(px(Theme::RECORD_HEIGHT))
+                .px(px(Theme::RECORDER_PILL_PADDING))
+                .rounded_full()
+                .bg(theme.rec)
+                .text_color(white())
+                .font_weight(FontWeight::MEDIUM)
+                .whitespace_nowrap()
+                .when(enabled, |s| s.cursor_pointer())
+                .when(!enabled, |s| s.opacity(Theme::DISABLED_OPACITY))
+                .child(icon_sized("Play-fill", Theme::ICON_SIZE_POD, white()))
+                .child("Resume")
+                .on_click(self.command("pause-recording"))
+                .into_any_element()
+        } else {
+            self.bar_round("pause", "Pause-fill", "Pause", theme.text, true, enabled)
+                .on_click(self.command("pause-recording"))
+                .into_any_element()
+        };
+        // Whether the microphone and the camera are in this capture is fixed
+        // when it starts, so these say it rather than change it: on or off
+        // is the glyph, never the colour.
+        let mic = state.get_microphone() || state.get_system_audio();
+        let camera = state.get_camera();
+        bar.child(clock)
+            .child(pause)
+            .child(
+                self.bar_round("stop", "Stop-fill", "Stop", theme.text, true, enabled)
+                    .on_click(self.command("stop-recording")),
+            )
+            .child(div().flex_1())
+            .child(self.bar_round(
+                "capture-mic",
+                if mic {
+                    "Microphone-regular"
+                } else {
+                    "MicrophoneSlash-regular"
+                },
+                if mic {
+                    "Audio is recording"
+                } else {
+                    "No audio"
+                },
+                theme.muted,
+                false,
+                true,
+            ))
+            .child(self.bar_round(
+                "capture-camera",
+                if camera {
+                    "VideoCamera-regular"
+                } else {
+                    "VideoCameraSlash-regular"
+                },
+                if camera {
+                    "Camera is recording"
+                } else {
+                    "No camera"
+                },
+                theme.muted,
+                false,
+                true,
+            ))
+            .child(
+                self.bar_round(
+                    "discard",
+                    "X-regular",
+                    "Discard recording",
+                    theme.danger,
+                    false,
+                    enabled,
+                )
+                .on_click(self.command("discard-recording")),
+            )
+    }
+
+    /// The count before capture. The bar becomes the count, so the control
+    /// that was just pressed is the thing that answers.
+    fn counting_controls(&self, bar: Div, state: &RecordingLauncher) -> Div {
+        let theme = self.theme;
+        let count = state.get_counting();
+        let source = state
+            .get_source_names()
+            .row_data(state.get_source_index().max(0) as usize)
+            .map(|name| name.split(" · ").next().unwrap_or_default().to_owned())
+            .unwrap_or_default();
+        let mic = if state.get_microphone() {
+            "mic on"
+        } else {
+            "mic off"
+        };
+        bar.child(
+            round_plate(theme).child(
+                mono(count.to_string())
+                    .text_size(px(Theme::FONT_COUNT))
+                    .font_weight(FontWeight::MEDIUM),
+            ),
+        )
+        .child(message(
+            format!("Recording starts in {count}…"),
+            format!("{source} · {mic}"),
+            theme,
+        ))
+        .child(
+            // Cancel names its key, in the mono face a shortcut is set in.
+            row()
+                .id("cancel")
+                .flex_none()
+                .gap(px(Theme::ICON_GAP_ROW))
+                .h(px(Theme::RECORD_HEIGHT))
+                .px(px(Theme::RECORDER_PLATE_PADDING))
+                .rounded_full()
+                .bg(theme.sunk)
+                .hover(move |s| s.bg(theme.sunk2))
+                .cursor_pointer()
+                .whitespace_nowrap()
+                .child("Cancel")
+                .child(
+                    mono("esc")
+                        .text_size(px(Theme::FONT_SMALL))
+                        .text_color(theme.muted),
+                )
+                .on_click(self.command("cancel")),
+        )
+    }
+
+    /// Writing the recording out, and — not drawn by the design — any other
+    /// wait the bar has to sit through: finding displays, starting capture,
+    /// holding or resuming it. Stopping ends on a plate rather than a
+    /// button, because once capture has ended there is nothing to cancel.
+    fn working_controls(&self, bar: Div, state: &RecordingLauncher) -> Div {
+        let theme = self.theme;
+        let bar = bar.child(round_plate(theme).child(spinner(theme)));
+        if state.get_stopping() {
+            return bar
+                .child(
+                    message(
+                        "Finishing your recording",
+                        format!("{} captured · writing to disk", state.get_elapsed()),
+                        theme,
+                    )
+                    .min_w(px(Theme::STOPPING_TEXT_WIDTH)),
+                )
+                .child(
+                    row()
+                        .flex_none()
+                        .h(px(Theme::RECORD_HEIGHT))
+                        .px(px(Theme::RECORDER_PLATE_PADDING))
+                        .rounded_full()
+                        .bg(theme.sunk)
+                        .text_color(theme.muted)
+                        .whitespace_nowrap()
+                        .child("Opens in the editor"),
+                );
+        }
+        let bar = bar.child(message(state.get_status(), SharedString::default(), theme));
+        if state.get_cancellable() {
+            bar.child(
+                button("cancel", "Cancel", theme)
+                    .bar()
+                    .on_click(self.command("cancel")),
+            )
+        } else {
+            bar
+        }
+    }
+
+    /// A 60 round control on the bar. `plate` is the `sunk` fill Pause and
+    /// Stop stand on; without it the control is bare glass until hovered.
+    fn bar_round(
+        &self,
+        id: &'static str,
+        glyph: &'static str,
+        label: &'static str,
+        color: Hsla,
+        plate: bool,
+        enabled: bool,
+    ) -> Stateful<Div> {
+        let theme = self.theme;
+        div()
+            .id(id)
+            .flex()
+            .flex_none()
+            .items_center()
+            .justify_center()
+            .size(px(Theme::RECORD_HEIGHT))
+            .rounded_full()
+            .when(plate, |s| s.bg(theme.sunk))
+            .when(enabled, |s| {
+                s.hover(move |s| s.bg(if plate { theme.sunk2 } else { theme.hover }))
+                    .cursor_pointer()
+            })
+            .when(!enabled, |s| s.opacity(Theme::DISABLED_OPACITY))
+            .tooltip(move |_, cx| tooltip(label, theme, cx))
+            .child(icon_sized(glyph, Theme::ICON_SIZE_LARGE, color))
+    }
+
     /// A bar control that opens its panel, or closes it if it is the open one.
     fn toggle_panel(state: &RecordingLauncher, id: &str) {
         let value = if state.get_panel() == id { "" } else { id };
         state.set_panel(value.into());
         state.defer_panel(value.into());
     }
+}
+
+/// The bar's 60 round `sunk` plate: it holds the count, or the spinner.
+fn round_plate(theme: Theme) -> Div {
+    div()
+        .flex()
+        .flex_none()
+        .items_center()
+        .justify_center()
+        .size(px(Theme::RECORD_HEIGHT))
+        .rounded_full()
+        .bg(theme.sunk)
+}
+
+/// What the bar is doing, in a line and a muted line under it.
+fn message(title: impl Into<SharedString>, detail: impl Into<SharedString>, theme: Theme) -> Div {
+    let detail = detail.into();
+    column()
+        .flex_1()
+        .min_w_0()
+        .justify_center()
+        .h(px(Theme::RECORD_HEIGHT))
+        .px(px(Theme::RECORDER_TEXT_INSET))
+        .line_height(relative(Theme::MESSAGE_LEADING))
+        .whitespace_nowrap()
+        .child(
+            div()
+                .font_weight(FontWeight::MEDIUM)
+                .text_ellipsis()
+                .child(title.into()),
+        )
+        .when(!detail.is_empty(), |s| {
+            s.child(
+                div()
+                    .text_size(px(Theme::FONT_SMALL))
+                    .text_color(theme.muted)
+                    .text_ellipsis()
+                    .child(detail),
+            )
+        })
+}
+
+/// A `sunk2` ring with an accent arc turning round it once a second.
+fn spinner(theme: Theme) -> Div {
+    div()
+        .relative()
+        .size(px(Theme::SPINNER_SIZE))
+        .rounded_full()
+        .shadow(vec![hairline(theme.sunk2, Theme::SPINNER_WIDTH)])
+        .child(
+            icon_sized("SpinnerArc", Theme::SPINNER_SIZE, theme.accent)
+                .absolute()
+                .inset_0()
+                .with_animation(
+                    "stop-spin",
+                    Animation::new(std::time::Duration::from_secs(1)).repeat(),
+                    |svg, t| svg.with_transformation(Transformation::rotate(percentage(t))),
+                ),
+        )
 }
