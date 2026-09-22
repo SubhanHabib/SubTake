@@ -116,6 +116,7 @@ impl RootView {
         // from a file. The handoff shows only the built-ins, but a saved
         // preset is one the user made on purpose, so it is listed here
         // rather than stranded in the inspector panel this dialog replaced.
+        // Each sits on a plate, as the tiles above do.
         let mut saved = column().gap(px(Theme::GAP_SMALL));
         for (index, name) in e.get_saved_presets().iter().enumerate() {
             saved = saved.child(
@@ -126,7 +127,6 @@ impl RootView {
                             name,
                             theme,
                         )
-                        .ghost()
                         .stretch()
                         .enabled(enabled)
                         .on_click(self.command(&format!("apply-preset-{index}"))),
@@ -146,7 +146,6 @@ impl RootView {
         saved = saved.child(
             button("presets-load", "Load preset file…", theme)
                 .glyph("FolderOpen-regular")
-                .ghost()
                 .stretch()
                 .enabled(enabled)
                 .on_click(self.command("load-preset")),
