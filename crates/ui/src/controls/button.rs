@@ -283,6 +283,12 @@ impl RenderOnce for Button {
         let (fill_rest, fill_hover) = match self.variant {
             ButtonVariant::Transport => (theme.ink, theme.ink),
             ButtonVariant::Record => (theme.rec, theme.rec),
+            // Palette churn: `--danger` at 10% resting, which is a fill the
+            // handoff's "no fill until hover" line would forbid. That line is
+            // written under menu items, about a destructive *row* in a list
+            // of rows; this is a standalone button, where a bare red caption
+            // on glass reads as text rather than as the thing that deletes.
+            // Kept, and noted here so it is a decision rather than a drift.
             ButtonVariant::Danger => (theme.danger.opacity(0.10), theme.danger.opacity(0.22)),
             ButtonVariant::Ghost => (theme.hover.opacity(0.0), theme.hover),
             ButtonVariant::Raised => (theme.raise, theme.raise_hover()),
@@ -396,11 +402,27 @@ impl RenderOnce for Button {
             }
         }
         if !shadows.is_empty() {
-            el = el.shadow(shadows);
+            el = el.shadow(shadows.clone());
+        }
+        // A raised control lifts under the pointer: the same hairline plus a
+        // `0 2 6`. gpui's `.shadow` replaces the whole stack rather than
+        // appending to it, so the hovered state restates what the resting one
+        // already carries.
+        if self.variant == ButtonVariant::Raised && self.enabled {
+            let mut lifted = shadows;
+            lifted.push(theme.lift_shadow());
+            el = el.hover(move |s| s.shadow(lifted.clone()));
         }
 
-        // Record wears its state: a white dot that becomes the pulse while
-        // capture is running, ahead of whatever the caption says.
+        // Record wears its state: a white dot ahead of whatever the caption
+        // says.
+        //
+        // The card also gives a recording state — the dot pulsing on a 1s
+        // cycle and the caption swapping to the elapsed time in mono. Neither
+        // is reachable here: the recorder bar swaps its whole contents when
+        // capture starts, so this button is never on screen while recording,
+        // and the elapsed clock is rendered by the bar itself. Building the
+        // pulse would be building something nothing can show.
         if self.variant == ButtonVariant::Record {
             el = el.child(
                 div()

@@ -163,6 +163,23 @@ impl Theme {
             .collect()
     }
 
+    /// The single `0 2 6` a raised control gains under the pointer — the
+    /// near layer of `panel_shadow` and nothing else, so a button lifting on
+    /// hover reads as the same material as a panel that is already lifted.
+    pub fn lift_shadow(&self) -> gpui::BoxShadow {
+        let (tint, alpha) = match self.appearance {
+            Appearance::Light => (gpui::hsla(0.65, 0.33, 0.12, 1.), 0.08),
+            Appearance::Dark => (gpui::hsla(0., 0., 0., 1.), 0.3),
+        };
+        gpui::BoxShadow {
+            color: tint.opacity(alpha),
+            offset: gpui::point(gpui::px(0.), gpui::px(2.)),
+            blur_radius: gpui::px(6.),
+            spread_radius: gpui::px(0.),
+            inset: false,
+        }
+    }
+
     /// A raised control, hovered: its own tone one step up the fill scale.
     /// The redesign spells this `white .16`, which is the dark value — the
     /// factor below reproduces it exactly and does the right thing on light,

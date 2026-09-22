@@ -73,10 +73,23 @@ impl Slider {
         }
     }
 
+    /// The number the row shows is the number the row commits. A drag lands
+    /// on a pixel, which is an arbitrary fraction of the range: committing
+    /// that raw float wrote `1.7592592592593` into the project for a row
+    /// reading `1.76`, and every place that shows the stored string rather
+    /// than this slider's own rendering — a text field, a saved preset, the
+    /// project file — carried the tail. The step is the one the display
+    /// implies: two decimals when the number is shown as it is, and one part
+    /// in `scale` when it is rescaled to whole units.
+    fn quantise(&self, value: f32) -> f32 {
+        let step = if self.scale == 1.0 { 100.0 } else { self.scale };
+        (value * step).round() / step
+    }
+
     fn set(&mut self, x: Pixels, commit: bool, window: &mut Window, cx: &mut Context<Self>) {
         let b = self.bounds.get();
         let f = (f32::from(x - b.left()) / f32::from(b.size.width).max(1.)).clamp(0., 1.);
-        self.value = self.minimum + f * (self.maximum - self.minimum);
+        self.value = self.quantise(self.minimum + f * (self.maximum - self.minimum));
         (self.change)(self.value, commit, window, cx);
         cx.notify();
     }
@@ -105,10 +118,15 @@ impl Render for Slider {
             .id("scrub")
             .relative()
             .tab_index(0)
+            .group("scrub")
             .h(px(Theme::CONTROL_HEIGHT_LARGE))
             .w_full()
             .rounded_full()
+            // Track `sunk`, one step up to `sunk2` under the pointer. The row
+            // is its own hit target across its whole width, so the track is
+            // the only thing that can say it is live.
             .bg(theme.sunk)
+            .hover(|s| s.bg(theme.sunk2))
             .overflow_hidden()
             .cursor(CursorStyle::ResizeLeftRight)
             .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
@@ -126,7 +144,7 @@ impl Render for Slider {
                     "end" => s.maximum,
                     _ => return,
                 };
-                s.value = value.clamp(s.minimum, s.maximum);
+                s.value = s.quantise(value.clamp(s.minimum, s.maximum));
                 (s.change)(s.value, true, w, cx);
                 cx.stop_propagation();
                 cx.notify();
@@ -143,9 +161,26 @@ impl Render for Slider {
                     ))
                     .w(relative(fraction))
                     .rounded_full()
-                    .bg(theme.slider_fill()),
+                    // Three fills, one per state, as the Slider row card
+                    // gives them: `sunk2` at rest, `press` under the pointer,
+                    // `accent_soft` while the user is actually dragging it —
+                    // the level is the primary action for as long as a hand
+                    // is on it, and nothing else in the row may say so.
+                    .map(|el| {
+                        if self.dragging {
+                            el.bg(theme.accent_soft)
+                        } else {
+                            el.bg(theme.slider_fill())
+                                .group_hover("scrub", |s| s.bg(theme.press))
+                        }
+                    }),
             )
             // Hairline at the fill edge so the exact level stays readable.
+            //
+            // Not drawn by the design: the card gives the fill and nothing
+            // marking where it ends. `sunk2` over `sunk` is a two-percent
+            // step in lightness, and at a low level the fill was invisible —
+            // the row read as an empty plate. Kept deliberately.
             .child(
                 div()
                     .absolute()
