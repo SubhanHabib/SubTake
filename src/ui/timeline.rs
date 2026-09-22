@@ -509,8 +509,14 @@ fn lane_header(
             .justify_center()
             .rounded_full()
             .bg(subtake_ui::motion::hover_blend(&hover_key, rest, hovered))
+            // The hairline is an edge over the plate: the headers are frosted,
+            // and at one draw order a shadow on the header went under its own
+            // `sunk` fill.
             .when(!off, |el| {
-                el.shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)])
+                el.child(subtake_ui::pill_edge(vec![hairline(
+                    theme.line,
+                    Theme::HAIRLINE_WIDTH,
+                )]))
             }),
         theme,
         Some(theme.press),
@@ -988,7 +994,12 @@ impl RootView {
             .h(px(Theme::RULER_HEIGHT))
             .rounded_full()
             .bg(theme.sunk)
-            .shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)]);
+            // An edge over the band, not its own shadow, which inside the
+            // frosted console went under the band's fill.
+            .child(subtake_ui::pill_edge(vec![hairline(
+                theme.line,
+                Theme::HAIRLINE_WIDTH,
+            )]));
         if track_width > 0. {
             let first = (offset / minor).ceil() as i64;
             let last = ((offset + visible) / minor).floor() as i64;
