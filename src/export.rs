@@ -41,6 +41,40 @@ impl Default for ExportSettings {
     }
 }
 
+/// Roughly how big an export of `seconds` will be, for the Export panel's
+/// "≈" line. A guess from the encoder's settings, not a measurement: the
+/// bits a frame costs depend on what is in it, and screen recordings are
+/// mostly still.
+pub fn estimate_bytes(settings: &ExportSettings, seconds: f64) -> u64 {
+    let pixels = settings.width as f64 * settings.height as f64;
+    let frames = settings.fps as f64 * seconds.max(0.);
+    let bits = if settings.gif {
+        pixels * frames * 1.0
+    } else if settings.hardware && cfg!(target_os = "macos") {
+        seconds.max(0.)
+            * match settings.quality.as_str() {
+                "low" => 4e6,
+                "medium" => 10e6,
+                _ => 24e6,
+            }
+    } else {
+        pixels
+            * frames
+            * match settings.quality.as_str() {
+                "low" => 0.02,
+                "medium" => 0.04,
+                "lossless" => 0.5,
+                _ => 0.08,
+            }
+    };
+    (bits / 8.) as u64
+}
+
+/// Roughly how big one PNG still at these settings will be.
+pub fn estimate_frame_bytes(settings: &ExportSettings) -> u64 {
+    (settings.width as f64 * settings.height as f64 * 0.8) as u64
+}
+
 impl ExportSettings {
     pub fn from_project(project: &Project) -> Self {
         let gif = project.text("exportFormat", "mp4") == "gif";

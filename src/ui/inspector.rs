@@ -779,8 +779,11 @@ impl RootView {
                         )),
                 );
         }
-        for field in e.get_fields().iter() {
-            content = content.child(self.field(e, field, window, cx));
+        let export = name == "Export";
+        if !export {
+            for field in e.get_fields().iter() {
+                content = content.child(self.field(e, field, window, cx));
+            }
         }
         // Only these panels pin an action strip under the scroll region. An
         // always-present empty column still cost the panel's gap plus its
@@ -830,15 +833,10 @@ impl RootView {
                 ))
             }
             "Export" => {
-                footer = footer.child(
-                    self.action(
-                        "export-video",
-                        "Export video",
-                        "export",
-                        e.get_has_video() && !e.get_busy(),
-                    )
-                    .primary(),
-                )
+                let (h, c, f) = self.export_panel(e, cx);
+                heading = h;
+                content = c;
+                footer = f;
             }
             "Captions" => {
                 footer = footer.child(

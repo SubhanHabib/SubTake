@@ -13,7 +13,8 @@
 //!
 //! ⌘⇧E swaps the editor for the empty state ("Nothing open yet") and back;
 //! the titlebar's Presets button, or ⌘⇧P, opens the Presets dialog.
-//! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either; `=card-<panel>`
+//! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either; `=export`,
+//! `=export-gif` or `=export-frame` opens the Export panel; `=card-<panel>`
 //! opens that recorder card; `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
 use crate::{
@@ -88,6 +89,15 @@ pub fn run() -> Result<()> {
     match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
         Ok("empty") => editor.set_has_video(false),
         Ok("presets") => editor.set_dialog("presets".into()),
+        // The Export panel: `export`, or `export-gif` / `export-frame` for
+        // the other two formats.
+        Ok(screen) if screen.starts_with("export") => {
+            let mut g = gallery.borrow_mut();
+            if let Some(format) = screen.strip_prefix("export-") {
+                g.set_value("export.format", format);
+            }
+            editor.set_panel("Export".into());
+        }
         // A recorder card open over the bar: `card-sources`, `card-audio`,
         // `card-camera`, `card-countdown` or `card-more`.
         Ok(screen) if screen.starts_with("card-") => {

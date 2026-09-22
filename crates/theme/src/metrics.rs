@@ -374,6 +374,11 @@ impl Theme {
     /// shrink round a short caption.
     pub const STOPPING_TEXT_WIDTH: f32 = 190.0;
 
+    // ---- export -------------------------------------------------------------
+
+    /// The destination row's right inset, round its Change… button.
+    pub const EXPORT_DESTINATION_INSET: f32 = 14.0;
+
     // ---- on-screen countdown -----------------------------------------------
 
     /// The numeral centred on the display the capture will record.

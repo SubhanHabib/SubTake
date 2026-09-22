@@ -676,20 +676,63 @@ impl App {
                     })?;
                 }
             }
+            "export-destination" => {
+                let settings = ExportSettings::for_media(
+                    self.project()?,
+                    self.info.as_ref().context("Open a video first")?,
+                );
+                let current = self.export_destination(&settings);
+                let mut dialog = rfd::FileDialog::new().set_file_name(
+                    current
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .as_ref(),
+                );
+                if let Some(dir) = current.parent() {
+                    dialog = dialog.set_directory(dir);
+                }
+                if let Some(path) = dialog.save_file() {
+                    self.export_path = Some(path);
+                    self.refresh(ui);
+                }
+            }
             "export" => {
                 let p = self.project()?.clone();
-                let source = self.source.clone().unwrap();
-                let settings = ExportSettings::for_media(&p, self.info.as_ref().unwrap());
-                let Some(path) = rfd::FileDialog::new()
-                    .set_file_name(if settings.gif {
-                        "SubTake.gif"
-                    } else {
-                        "SubTake.mp4"
-                    })
-                    .save_file()
-                else {
+                let source = self.source.clone().context("Open a video first")?;
+                let info = self.info.clone().context("Open a video first")?;
+                let settings = ExportSettings::for_media(&p, &info);
+                let mut path = self.export_destination(&settings);
+                // The Movies default is a suggestion, not a choice: never
+                // write over an earlier export the user did not name.
+                if self.export_path.is_none() {
+                    path = unused_path(path);
+                }
+                if let Some(dir) = path.parent() {
+                    std::fs::create_dir_all(dir)?;
+                }
+                if self.export_frame {
+                    let time = self.source_time;
+                    ui.set_status("Exporting frame…".into());
+                    std::thread::spawn(move || {
+                        let result = (|| -> Result<()> {
+                            let pixels = Scene::new(source, info, settings.width, settings.height)?
+                                .render(&p, time)?;
+                            image::RgbaImage::from_raw(settings.width, settings.height, pixels)
+                                .context("Rendered frame has the wrong size")?
+                                .save(&path)?;
+                            Ok(())
+                        })();
+                        post(move |app, ui| match result {
+                            Ok(()) => {
+                                app.last_export = Some(path.clone());
+                                ui.set_status(format!("Exported {}", path.display()));
+                            }
+                            Err(e) => ui.set_status(format!("{e:#}")),
+                        });
+                    });
                     return Ok(());
-                };
+                }
                 self.stop(ui);
                 ui.set_busy(true);
                 ui.set_progress(0.);
@@ -1113,4 +1156,25 @@ impl App {
         self.refresh(ui);
         Ok(())
     }
+}
+
+/// `path`, or the first of "name 2", "name 3"… beside it that is free.
+fn unused_path(path: PathBuf) -> PathBuf {
+    if !path.exists() {
+        return path;
+    }
+    let stem = path
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    let extension = path
+        .extension()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    (2..)
+        .map(|n| path.with_file_name(format!("{stem} {n}.{extension}")))
+        .find(|p| !p.exists())
+        .unwrap()
 }

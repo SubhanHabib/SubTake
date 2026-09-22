@@ -503,6 +503,82 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
             text("background.color", "Solid colour", "#1F3B73"),
             action("choose-background", "Choose image…"),
         ],
+        // The keys `App::export_fields` hands over, with fixture values.
+        "Export" => {
+            let format = v("export.format", "video");
+            let (w, h, fps) = (
+                match v("export.resolution", "1080").as_str() {
+                    "720" => 1280.,
+                    "source" => 2880.,
+                    _ => 1920.,
+                },
+                match v("export.resolution", "1080").as_str() {
+                    "720" => 720.,
+                    "source" => 1800.,
+                    _ => 1080.,
+                },
+                v("export.fps", "60").parse::<f64>().unwrap_or(60.),
+            );
+            let bpp = match v("export.quality", "high").as_str() {
+                "low" => 0.02,
+                "medium" => 0.04,
+                _ => 0.08,
+            };
+            let bytes = match format.as_str() {
+                "frame" => w * h * 0.8,
+                "gif" => w * h * fps * DURATION as f64 / 8.,
+                _ => w * h * fps * DURATION as f64 * bpp / 8.,
+            };
+            let extension = match format.as_str() {
+                "frame" => "png",
+                "gif" => "gif",
+                _ => "mp4",
+            };
+            let plain = |key: &str, kind: i32, value: String| Field {
+                key: key.into(),
+                value: value.into(),
+                kind,
+                ..Default::default()
+            };
+            vec![
+                plain("export.format", 0, format),
+                dropdown(
+                    "export.resolution",
+                    "",
+                    &[("720", "720p"), ("1080", "1080p"), ("source", "Source")],
+                    "1080",
+                ),
+                dropdown(
+                    "export.fps",
+                    "",
+                    &[("24", "24 fps"), ("30", "30 fps"), ("60", "60 fps")],
+                    "60",
+                ),
+                dropdown(
+                    "export.quality",
+                    "",
+                    &[("low", "Low"), ("medium", "Medium"), ("high", "High")],
+                    "high",
+                ),
+                plain(
+                    "export.destination",
+                    3,
+                    format!("~/Movies/gallery.{extension}"),
+                ),
+                plain(
+                    "export.estimate",
+                    3,
+                    if bytes >= 1e9 {
+                        format!("≈ {:.1} GB", bytes / 1e9)
+                    } else {
+                        format!("≈ {:.0} MB", bytes / 1e6)
+                    },
+                ),
+                toggle("export.hardware", "", false),
+                toggle("export.loop", "", true),
+                toggle("nativeCaptionSidecars", "", false),
+            ]
+        }
         "Selection" => {
             let selected = fixture.regions.iter().find(|r| r.selected);
             match selected {

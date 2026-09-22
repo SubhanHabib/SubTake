@@ -122,6 +122,11 @@ pub struct App {
     /// count is over whatever app is in front, so the bar has no focus.
     escape_hotkey: Option<global_hotkey::hotkey::HotKey>,
     last_export: Option<PathBuf>,
+    /// The Export panel's Frame format: a still of the current frame. Not
+    /// stored in the project — a still is a one-off, not a setting.
+    export_frame: bool,
+    /// The file Change… picked; `None` writes to the Movies folder.
+    export_path: Option<PathBuf>,
 }
 
 impl App {
@@ -175,6 +180,8 @@ impl App {
             hotkey_ids: vec![],
             escape_hotkey: None,
             last_export: None,
+            export_frame: false,
+            export_path: None,
         }
     }
 

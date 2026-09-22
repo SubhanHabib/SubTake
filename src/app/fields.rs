@@ -764,58 +764,134 @@ impl App {
                     );
                 }
             }
-            "Export" => {
-                add(
-                    "export-preset-720",
-                    "Output size presets",
-                    3,
-                    0.,
-                    0.,
-                    json!("720p"),
-                );
-                add("export-preset-1080", "", 3, 0., 0., json!("1080p"));
-                add("export-preset-source", "", 3, 0., 0., json!("Source size"));
-                add(
-                    "nativeCaptionSidecars",
-                    "Save SRT and VTT subtitles",
-                    2,
-                    0.,
-                    0.,
-                    json!(false),
-                );
-                add("export.width", "Width (pixels)", 0, 0., 0., json!(1920));
-                add("export.height", "Height (pixels)", 0, 0., 0., json!(1080));
-                add("export.fps", "Frames per second", 0, 0., 0., json!(30));
-                add(
-                    "export.quality",
-                    "Quality (low, medium, high)",
-                    0,
-                    0.,
-                    0.,
-                    json!("high"),
-                );
-                add("export.gif", "Export GIF", 2, 0., 0., json!(false));
-                add("export.loop", "Loop GIF", 2, 0., 0., json!(true));
-                add(
-                    "export.hardware",
-                    "Hardware H.264 encoding",
-                    2,
-                    0.,
-                    0.,
-                    json!(false),
-                );
-                add(
-                    "reveal-export",
-                    "Last exported file",
-                    3,
-                    0.,
-                    0.,
-                    json!("Reveal in Finder"),
-                );
-            }
             _ => (),
         }
+        if panel == "Export" {
+            fields.extend(self.export_fields(&settings));
+        }
         fields
+    }
+
+    /// The Export panel's rows. The panel is drawn to the handoff rather
+    /// than stacked from these, so each key is one thing it looks up.
+    fn export_fields(&self, settings: &ExportSettings) -> Vec<Field> {
+        let choice = |key: &str, options: &[(&str, &str)], value: String| {
+            let mut options: Vec<(String, String)> = options
+                .iter()
+                .map(|(v, l)| (v.to_string(), l.to_string()))
+                .collect();
+            if !options.iter().any(|(v, _)| *v == value) {
+                options.push((value.clone(), value.clone()));
+            }
+            Field {
+                key: key.into(),
+                choice: options.iter().position(|(v, _)| *v == value).unwrap_or(0) as i32,
+                choices: ModelRc::new(VecModel::from(
+                    options
+                        .iter()
+                        .map(|(_, l)| SharedString::from(l.as_str()))
+                        .collect::<Vec<_>>(),
+                )),
+                values: ModelRc::new(VecModel::from(
+                    options
+                        .iter()
+                        .map(|(v, _)| SharedString::from(v.as_str()))
+                        .collect::<Vec<_>>(),
+                )),
+                value: value.into(),
+                kind: 4,
+                ..Default::default()
+            }
+        };
+        let plain = |key: &str, kind: i32, value: String| Field {
+            key: key.into(),
+            value: value.into(),
+            kind,
+            ..Default::default()
+        };
+        let source_height = self.info.as_ref().map_or(0, |i| i.height);
+        let resolution = match settings.height {
+            720 => "720".to_owned(),
+            1080 => "1080".to_owned(),
+            h if h == source_height => "source".to_owned(),
+            h => format!("{}×{h}", settings.width),
+        };
+        let format = if self.export_frame {
+            "frame"
+        } else if settings.gif {
+            "gif"
+        } else {
+            "video"
+        };
+        let seconds = self.info.as_ref().map_or(0., |i| i.duration);
+        let bytes = if self.export_frame {
+            export::estimate_frame_bytes(settings)
+        } else {
+            export::estimate_bytes(settings, seconds)
+        };
+        vec![
+            plain("export.format", 0, format.into()),
+            choice(
+                "export.resolution",
+                &[("720", "720p"), ("1080", "1080p"), ("source", "Source")],
+                resolution,
+            ),
+            choice(
+                "export.fps",
+                &[("24", "24 fps"), ("30", "30 fps"), ("60", "60 fps")],
+                settings.fps.to_string(),
+            ),
+            choice(
+                "export.quality",
+                &[("low", "Low"), ("medium", "Medium"), ("high", "High")],
+                settings.quality.clone(),
+            ),
+            plain(
+                "export.destination",
+                3,
+                display_path(&self.export_destination(settings)),
+            ),
+            plain("export.estimate", 3, format!("≈ {}", file_size(bytes))),
+            plain("export.hardware", 2, settings.hardware.to_string()),
+            plain("export.loop", 2, settings.gif_loop.to_string()),
+            plain(
+                "nativeCaptionSidecars",
+                2,
+                self.history
+                    .as_ref()
+                    .is_some_and(|h| h.project.flag("nativeCaptionSidecars", false))
+                    .to_string(),
+            ),
+        ]
+    }
+
+    /// Where Export writes: the file the user chose with Change…, or the
+    /// Movies folder under the recording's own name, with the extension the
+    /// format takes.
+    pub(super) fn export_destination(&self, settings: &ExportSettings) -> PathBuf {
+        let extension = if self.export_frame {
+            "png"
+        } else if settings.gif {
+            "gif"
+        } else {
+            "mp4"
+        };
+        if let Some(path) = &self.export_path {
+            return path.with_extension(extension);
+        }
+        let stem = self
+            .history
+            .as_ref()
+            .and_then(|h| {
+                Path::new(&h.project.video_path)
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned())
+            })
+            .unwrap_or_else(|| "SubTake".into());
+        directories::UserDirs::new()
+            .and_then(|d| d.video_dir().map(Path::to_path_buf))
+            .unwrap_or_else(std::env::temp_dir)
+            .join(format!("{stem}.{extension}"))
     }
 
     pub(super) fn field(&mut self, ui: &EditorWindow, key: &str, value: &str) -> Result<()> {
@@ -944,6 +1020,16 @@ impl App {
         } else {
             serde_json::from_str::<Value>(value).unwrap_or(json!(value))
         };
+        if key == "export.format" {
+            self.export_frame = value == "frame";
+            if value == "frame" {
+                self.refresh(ui);
+                return Ok(());
+            }
+        }
+        if key == "export.resolution" {
+            return self.action(ui, &format!("export-preset-{value}"));
+        }
         if key.starts_with("export.") {
             let mut settings = ExportSettings::for_media(
                 self.project()?,
@@ -954,6 +1040,7 @@ impl App {
                 "export.height" => settings.height = value.parse()?,
                 "export.fps" => settings.fps = value.parse()?,
                 "export.gif" => settings.gif = value == "true",
+                "export.format" => settings.gif = value == "gif",
                 "export.loop" => settings.gif_loop = value == "true",
                 "export.hardware" => settings.hardware = value == "true",
                 "export.quality" => settings.quality = value.into(),
@@ -1029,4 +1116,24 @@ pub(super) fn normalize_crop(crop: &mut Value) {
     let width = n(crop, "width", 1.).clamp(0.01, 1. - x);
     let height = n(crop, "height", 1.).clamp(0.01, 1. - y);
     *crop = json!({"x":x,"y":y,"width":width,"height":height});
+}
+
+/// A path as the Export panel shows it: the home folder as `~`.
+pub(super) fn display_path(path: &Path) -> String {
+    directories::BaseDirs::new()
+        .and_then(|d| path.strip_prefix(d.home_dir()).ok().map(Path::to_path_buf))
+        .map(|rest| format!("~/{}", rest.display()))
+        .unwrap_or_else(|| path.display().to_string())
+}
+
+/// A byte count in the one unit that keeps it short.
+pub(super) fn file_size(bytes: u64) -> String {
+    let b = bytes as f64;
+    if b >= 1e9 {
+        format!("{:.1} GB", b / 1e9)
+    } else if b >= 1e6 {
+        format!("{:.0} MB", b / 1e6)
+    } else {
+        format!("{:.0} KB", (b / 1e3).max(1.))
+    }
 }

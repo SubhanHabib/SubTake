@@ -121,6 +121,27 @@ primitive shares one draw order, and at one order gpui draws all shadows
 before all fills, so an inset ring or a glow set on the element it belongs to
 goes under that element's fill.
 
+## Export
+
+Export is an inspector panel, not a dialog, so the picture stays in view while
+it is set up: a 19 "Export" title and a close control, Video / GIF / Frame,
+then OUTPUT (Resolution and Frame rate selects with the value in Geist Mono,
+and a Quality slider that reads Low / Medium / High), DESTINATION (the file in
+Geist Mono and a raised Change…), the estimated size, and a 52 hero button
+named for the format.
+
+The file goes to the Movies folder under the recording's own name — never over
+an earlier export there — until Change… picks another. Frame writes a PNG of
+the frame under the playhead. The size is a guess from the encoder's settings.
+
+Not drawn by the design: where closing lands (back to Scene, since the
+inspector always shows a panel), and the Hardware encoding, Save subtitle
+files and Loop GIF switches, kept under the destination for the formats they
+change.
+
+`SUBTAKE_GALLERY_SCREEN=export` (or `export-gif`, `export-frame`) opens the
+gallery on the panel.
+
 ## The recorder
 
 A compact rounded floating bar with a source control, audio and webcam options,

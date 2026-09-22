@@ -25,6 +25,9 @@ pub struct Slider {
     /// a percentage) and `unit` is the suffix.
     pub scale: f32,
     pub unit: SharedString,
+    /// Words for a stepped slider: the value is an index into them, it
+    /// lands on whole steps, and the row shows the word, not the number.
+    pub steps: Vec<SharedString>,
     bounds: Rc<Cell<Bounds<Pixels>>>,
     dragging: bool,
     change: Box<dyn Fn(f32, bool, &mut Window, &mut App)>,
@@ -67,6 +70,7 @@ impl Slider {
             label: SharedString::default(),
             scale: 1.0,
             unit: SharedString::default(),
+            steps: Vec::new(),
             bounds: Rc::new(Cell::new(Bounds::default())),
             dragging: false,
             change: Box::new(change),
@@ -82,6 +86,9 @@ impl Slider {
     /// implies: two decimals when the number is shown as it is, and one part
     /// in `scale` when it is rescaled to whole units.
     fn quantise(&self, value: f32) -> f32 {
+        if !self.steps.is_empty() {
+            return value.round();
+        }
         let step = if self.scale == 1.0 { 100.0 } else { self.scale };
         (value * step).round() / step
     }
@@ -101,7 +108,10 @@ impl Render for Slider {
         let fraction =
             ((self.value - self.minimum) / (self.maximum - self.minimum).max(0.001)).clamp(0., 1.);
         let shown = self.value * self.scale;
-        let display = if self.scale == 1.0 {
+        let display = if !self.steps.is_empty() {
+            let index = (self.value.round().max(0.) as usize).min(self.steps.len() - 1);
+            self.steps[index].to_string()
+        } else if self.scale == 1.0 {
             let rounded = (shown * 100.0).round() / 100.0;
             if rounded.fract() == 0.0 {
                 format!("{}{}", rounded as i64, self.unit)
@@ -131,12 +141,16 @@ impl Render for Slider {
             .cursor(CursorStyle::ResizeLeftRight)
             .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
             .on_key_down(cx.listener(|s, e: &KeyDownEvent, w, cx| {
-                let step = (s.maximum - s.minimum)
-                    / if e.keystroke.modifiers.shift {
-                        10.
-                    } else {
-                        100.
-                    };
+                let step = if !s.steps.is_empty() {
+                    1.
+                } else {
+                    (s.maximum - s.minimum)
+                        / if e.keystroke.modifiers.shift {
+                            10.
+                        } else {
+                            100.
+                        }
+                };
                 let value = match e.keystroke.key.as_str() {
                     "left" | "down" => s.value - step,
                     "right" | "up" => s.value + step,

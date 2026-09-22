@@ -19,6 +19,10 @@ pub struct Dropdown {
     /// A dropdown with one takes the select-row shape: the 44 plate a
     /// `toggle` sits on, so the two stack as one list of settings.
     pub glyph: Option<SharedString>,
+    /// The setting's name, set inside the plate with the value after it in
+    /// Geist Mono `muted` — the Export panel's selects. Also the select-row
+    /// shape.
+    pub caption: Option<SharedString>,
     open: bool,
     highlighted: usize,
     bounds: Rc<Cell<Bounds<Pixels>>>,
@@ -48,6 +52,7 @@ impl Dropdown {
             enabled: true,
             theme,
             glyph: None,
+            caption: None,
             open: false,
             highlighted: selected,
             bounds: Rc::new(Cell::new(Bounds::default())),
@@ -74,7 +79,7 @@ impl Render for Dropdown {
         let trigger_key = format!("{menu_key}-trigger");
         let theme = self.theme;
         let open = self.open;
-        let row = self.glyph.is_some();
+        let row = self.glyph.is_some() || self.caption.is_some();
         let label = self
             .items
             .get(self.selected)
@@ -165,7 +170,18 @@ impl Render for Dropdown {
                             .as_ref()
                             .map(|g| icon_sized(g, Theme::ICON_SIZE_MEDIUM, theme.text)),
                     )
-                    .child(div().flex_1().min_w_0().text_ellipsis().child(label))
+                    .map(|el| match &self.caption {
+                        Some(caption) => el
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .text_ellipsis()
+                                    .child(caption.clone()),
+                            )
+                            .child(crate::mono(label).flex_none().text_color(theme.muted)),
+                        None => el.child(div().flex_1().min_w_0().text_ellipsis().child(label)),
+                    })
                     // A caret at the caret size, not at the control's. It
                     // says "this opens"; it is not the trigger's own icon,
                     // and at 14 it read as a second glyph competing with the
