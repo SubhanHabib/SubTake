@@ -90,16 +90,16 @@ pub fn suggest(points: &[Value], duration: f64, reserved: &[(f64, f64)]) -> Vec<
         .collect::<Vec<_>>();
     let mut clusters: Vec<(f64, f64, f64, f64, f64)> = vec![];
     for (time, x, y, strength) in clicks {
-        if let Some(last) = clusters.last_mut() {
-            if time - last.1 <= 2500. {
-                last.1 = last.1.max(time);
-                if strength > last.4 {
-                    last.2 = x;
-                    last.3 = y;
-                    last.4 = strength;
-                }
-                continue;
+        if let Some(last) = clusters.last_mut()
+            && time - last.1 <= 2500.
+        {
+            last.1 = last.1.max(time);
+            if strength > last.4 {
+                last.2 = x;
+                last.3 = y;
+                last.4 = strength;
             }
+            continue;
         }
         clusters.push((time, time, x, y, strength));
     }

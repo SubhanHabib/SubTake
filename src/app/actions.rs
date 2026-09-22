@@ -39,9 +39,10 @@ impl App {
             let retained = subtake_native::presets::remove(path)?;
             self.presets = subtake_native::presets::list();
             self.refresh(ui);
-            ui.set_status(
-                format!("Preset removed. Recoverable copy: {}", retained.display()).into(),
-            );
+            ui.set_status(format!(
+                "Preset removed. Recoverable copy: {}",
+                retained.display()
+            ));
             return Ok(());
         }
         match action {
@@ -280,7 +281,7 @@ impl App {
                                     "Whisper Small is ready. Transcription runs locally.".into(),
                                 );
                             }
-                            Err(e) => ui.set_status(format!("{e:#}").into()),
+                            Err(e) => ui.set_status(format!("{e:#}")),
                         }
                     });
                 });
@@ -333,10 +334,9 @@ impl App {
                     }
                     Ok(())
                 })?;
-                ui.set_status(
-                    format!("Imported {family}; use this family in text annotations or captions.")
-                        .into(),
-                );
+                ui.set_status(format!(
+                    "Imported {family}; use this family in text annotations or captions."
+                ));
             }
             "show" => self.show_launcher(ui)?,
             "show-editor" => self.show_editor(ui)?,
@@ -370,7 +370,7 @@ impl App {
                         if let Some(ui) = weak.upgrade() {
                             ui.set_status(match result {
                                 Ok(()) => "Agent video workspace opened".into(),
-                                Err(error) => format!("Agent workspace: {error}").into(),
+                                Err(error) => format!("Agent workspace: {error}"),
                             });
                         }
                     });
@@ -415,8 +415,8 @@ impl App {
                 }
             }
             "open" => {
-                if self.can_replace(ui) {
-                    if let Some(path) = rfd::FileDialog::new()
+                if self.can_replace(ui)
+                    && let Some(path) = rfd::FileDialog::new()
                         .add_filter(
                             "Videos and projects",
                             &[
@@ -431,9 +431,8 @@ impl App {
                             ],
                         )
                         .pick_file()
-                    {
-                        self.load(ui, path)?;
-                    }
+                {
+                    self.load(ui, path)?;
                 }
             }
             "save" => self.save(ui, false)?,
@@ -570,7 +569,7 @@ impl App {
                     let start=n(&clip,"startMs",0.);let speed=n(&clip,"speed",1.);let source_end=start+(n(&clip,"endMs",0.)-start)*speed;let id=clip["id"].as_str().unwrap();
                     p.change_region("clipRegions",id,json!({"endMs":start+(time-start)/speed}))?;
                     let mut right=clip.clone();right["id"]=Value::Null;right["startMs"]=json!(time);right["endMs"]=json!(time+(source_end-time)/speed);let new_id=p.add("clipRegions",right)?;
-                    if let Some(map)=p.editor.get_mut("sourceAudioTrackSettingsByClip").and_then(Value::as_object_mut){if let Some(settings)=map.get(id).cloned(){map.insert(new_id,settings);}}
+                    if let Some(map)=p.editor.get_mut("sourceAudioTrackSettingsByClip").and_then(Value::as_object_mut)&& let Some(settings)=map.get(id).cloned(){map.insert(new_id,settings);}
                     Ok(())
                 })?;
             }
@@ -622,7 +621,7 @@ impl App {
                                     && !cancel.load(Ordering::Relaxed)
                                 {
                                     s.stop(ui);
-                                    ui.set_status(format!("Audio: {e:#}").into())
+                                    ui.set_status(format!("Audio: {e:#}"))
                                 }
                             })
                         }
@@ -706,9 +705,9 @@ impl App {
                         match result {
                             Ok(()) => {
                                 s.last_export = Some(path.clone());
-                                ui.set_status(format!("Exported {}", path.display()).into());
+                                ui.set_status(format!("Exported {}", path.display()));
                             }
-                            Err(e) => ui.set_status(format!("{e:#}").into()),
+                            Err(e) => ui.set_status(format!("{e:#}")),
                         }
                     });
                 });
@@ -740,7 +739,7 @@ impl App {
                             ui.set_microphone_names(names("microphones"));
                             s.devices = devices;
                         }
-                        Err(e) => ui.set_status(format!("Devices: {e:#}").into()),
+                        Err(e) => ui.set_status(format!("Devices: {e:#}")),
                     });
                 });
             }
@@ -824,7 +823,7 @@ impl App {
                 std::thread::spawn(move || {
                     for remaining in (1..=countdown).rev() {
                         post(move |_, ui| {
-                            ui.set_status(format!("Recording starts in {remaining}…").into())
+                            ui.set_status(format!("Recording starts in {remaining}…"))
                         });
                         for _ in 0..20 {
                             if cancel.load(Ordering::Relaxed) {
@@ -857,16 +856,14 @@ impl App {
                                                     std::thread::spawn(move || {
                                                         if let Err(e) = recording.stop() {
                                                             post(move |_, ui| {
-                                                                ui.set_status(
-                                                                    format!("{e:#}").into(),
-                                                                )
+                                                                ui.set_status(format!("{e:#}"))
                                                             });
                                                         }
                                                     });
                                                 }
                                                 s.recording_watch.stop();
                                                 ui.set_recording(false);
-                                                ui.set_status(error.into());
+                                                ui.set_status(error);
                                             }
                                         })
                                     },
@@ -875,7 +872,7 @@ impl App {
                                     "Recording · use Stop recording to open the editor".into(),
                                 );
                             }
-                            Err(e) => ui.set_status(format!("{e:#}").into()),
+                            Err(e) => ui.set_status(format!("{e:#}")),
                         }
                     });
                 });
@@ -904,7 +901,7 @@ impl App {
                                     }
                                     .into(),
                                 ),
-                                Err(e) => ui.set_status(format!("{e:#}").into()),
+                                Err(e) => ui.set_status(format!("{e:#}")),
                             }
                         });
                     });
@@ -926,7 +923,7 @@ impl App {
                                     let r = s.load(ui, path);
                                     report(ui, r);
                                 }
-                                Err(e) => ui.set_status(format!("{e:#}").into()),
+                                Err(e) => ui.set_status(format!("{e:#}")),
                             }
                         });
                     });
@@ -1007,7 +1004,7 @@ impl App {
                         &cancel,
                         |message| {
                             let message = message.to_owned();
-                            post(move |_, ui| ui.set_status(message.into()));
+                            post(move |_, ui| ui.set_status(message));
                         },
                     );
                     post(move |s, ui| {
@@ -1024,7 +1021,7 @@ impl App {
                                 "Document changed during transcription; captions were not applied."
                                     .into(),
                             ),
-                            Err(e) => ui.set_status(format!("{e:#}").into()),
+                            Err(e) => ui.set_status(format!("{e:#}")),
                         }
                     });
                 });

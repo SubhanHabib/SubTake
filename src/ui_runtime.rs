@@ -61,7 +61,7 @@ impl Image {
     pub fn from_rgba8(buffer: SharedPixelBuffer<Rgba8Pixel>) -> Self {
         let mut bytes = buffer.bytes;
         // GPUI's RenderImage stores BGRA, while the shared compositor emits RGBA.
-        for pixel in bytes.chunks_exact_mut(4) {
+        for pixel in bytes.as_chunks_mut::<4>().0 {
             pixel.swap(0, 2);
         }
         let image = image::RgbaImage::from_raw(buffer.width, buffer.height, bytes)
@@ -116,7 +116,7 @@ pub struct Weak<T> {
     thread: std::thread::ThreadId,
     marker: PhantomData<fn() -> T>,
 }
-thread_local! {static WEAK_DATA:RefCell<BTreeMap<u64,std::rc::Weak<UiData>>>=RefCell::new(BTreeMap::new());}
+thread_local! {static WEAK_DATA:RefCell<BTreeMap<u64,std::rc::Weak<UiData>>>=const { RefCell::new(BTreeMap::new()) };}
 impl<T> Clone for Weak<T> {
     fn clone(&self) -> Self {
         Self {
@@ -182,7 +182,7 @@ struct Scheduled {
     callback: TimerCallback,
 }
 thread_local! {
-    static TIMERS:RefCell<BTreeMap<u64,Scheduled>>=RefCell::new(BTreeMap::new());
+    static TIMERS:RefCell<BTreeMap<u64,Scheduled>>=const { RefCell::new(BTreeMap::new()) };
     static NEXT_ID:Cell<u64>=const{Cell::new(1)};
     static SURFACES:RefCell<Vec<Surface>>=const{RefCell::new(Vec::new())};
     static QUIT:Cell<bool>=const{Cell::new(false)};
@@ -283,10 +283,10 @@ fn drain_commands() {
             }
             Some(callback)
         });
-        if let Some(callback) = callback {
-            if let Ok(mut f) = callback.try_borrow_mut() {
-                f();
-            }
+        if let Some(callback) = callback
+            && let Ok(mut f) = callback.try_borrow_mut()
+        {
+            f();
         }
     }
 }
@@ -582,10 +582,10 @@ fn sync_windows(cx: &mut gpui::App) -> Result<()> {
             };
             let rt = runtime.clone();
             let handle = cx.open_window(options, move |window, cx| {
-                if let Ok(handle) = HasWindowHandle::window_handle(window) {
-                    if let RawWindowHandle::AppKit(handle) = handle.as_raw() {
-                        rt.0.native.set(handle.ns_view.as_ptr());
-                    }
+                if let Ok(handle) = HasWindowHandle::window_handle(window)
+                    && let RawWindowHandle::AppKit(handle) = handle.as_raw()
+                {
+                    rt.0.native.set(handle.ns_view.as_ptr());
                 }
                 rt.0.scale.set(window.scale_factor());
                 let closed = rt.clone();
@@ -606,11 +606,9 @@ fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 cx.new(|cx| RootView::new(surface.clone(), window, cx))
             })?;
             runtime.0.handle.set(Some(handle));
-            if is_editor {
-                if let Some(view) = runtime.native_view() {
-                    unsafe {
-                        crate::platform::ui_window_install_magnify(view, native_magnify)?;
-                    }
+            if is_editor && let Some(view) = runtime.native_view() {
+                unsafe {
+                    crate::platform::ui_window_install_magnify(view, native_magnify)?;
                 }
             }
             if !is_editor {
@@ -642,26 +640,26 @@ fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 });
             }
         }
-        if let Some(handle) = runtime.0.handle.get() {
-            if runtime.0.dirty.replace(false) || runtime.0.resize.get() {
-                handle.update(cx, |_, window, _| {
-                    window.set_window_title(&title);
-                    let resizing = runtime.0.resize.replace(false);
-                    if resizing {
-                        let s = runtime.0.size.get();
-                        window.resize(size(px(s.width), px(s.height)));
-                    }
-                    if !resizing {
-                        let dimensions = window.viewport_size();
-                        runtime.0.size.set(LogicalSize::new(
-                            dimensions.width.into(),
-                            dimensions.height.into(),
-                        ));
-                    }
-                    runtime.0.scale.set(window.scale_factor());
-                    window.refresh();
-                })?;
-            }
+        if let Some(handle) = runtime.0.handle.get()
+            && (runtime.0.dirty.replace(false) || runtime.0.resize.get())
+        {
+            handle.update(cx, |_, window, _| {
+                window.set_window_title(&title);
+                let resizing = runtime.0.resize.replace(false);
+                if resizing {
+                    let s = runtime.0.size.get();
+                    window.resize(size(px(s.width), px(s.height)));
+                }
+                if !resizing {
+                    let dimensions = window.viewport_size();
+                    runtime.0.size.set(LogicalSize::new(
+                        dimensions.width.into(),
+                        dimensions.height.into(),
+                    ));
+                }
+                runtime.0.scale.set(window.scale_factor());
+                window.refresh();
+            })?;
         }
     }
     Ok(())

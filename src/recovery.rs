@@ -70,10 +70,10 @@ impl Store {
                         }
                         Operation::Clear(origin) => {
                             remove(path)?;
-                            if let Some(origin) = origin {
-                                if is_snapshot(&origin) {
-                                    remove(&origin)?;
-                                }
+                            if let Some(origin) = origin
+                                && is_snapshot(&origin)
+                            {
+                                remove(&origin)?;
                             }
                             Ok(())
                         }

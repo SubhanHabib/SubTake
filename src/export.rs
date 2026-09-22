@@ -312,7 +312,7 @@ pub fn export(
         "Invalid output dimensions"
     );
     ensure!(
-        settings.width % 2 == 0 && settings.height % 2 == 0,
+        settings.width.is_multiple_of(2) && settings.height.is_multiple_of(2),
         "MP4 dimensions must be even"
     );
     ensure!(

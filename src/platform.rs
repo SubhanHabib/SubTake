@@ -148,10 +148,10 @@ impl Recording {
                     !cancel.load(std::sync::atomic::Ordering::Relaxed),
                     "Recording cancelled"
                 );
-                if let Ok(line) = events.recv_timeout(Duration::from_millis(50)) {
-                    if line.contains("Recording started") {
-                        break;
-                    }
+                if let Ok(line) = events.recv_timeout(Duration::from_millis(50))
+                    && line.contains("Recording started")
+                {
+                    break;
                 }
                 if process.child.try_wait()?.is_some() {
                     bail!("Recording failed: {}", process.errors.lock().unwrap())
@@ -200,17 +200,17 @@ impl Recording {
         };
         let deadline = std::time::Instant::now() + Duration::from_secs(5);
         while std::time::Instant::now() < deadline {
-            if let Ok(line) = self.events.recv_timeout(Duration::from_millis(50)) {
-                if line.contains(marker) {
-                    self.paused = !self.paused;
-                    if let Some(c) = &mut self.companion {
-                        c.command(if self.paused { "pause" } else { "resume" })?;
-                    }
-                    if let Some(t) = &mut self.telemetry {
-                        t.command(if self.paused { "pause" } else { "resume" })?;
-                    }
-                    return Ok(());
+            if let Ok(line) = self.events.recv_timeout(Duration::from_millis(50))
+                && line.contains(marker)
+            {
+                self.paused = !self.paused;
+                if let Some(c) = &mut self.companion {
+                    c.command(if self.paused { "pause" } else { "resume" })?;
                 }
+                if let Some(t) = &mut self.telemetry {
+                    t.command(if self.paused { "pause" } else { "resume" })?;
+                }
+                return Ok(());
             }
         }
         bail!("Recorder did not acknowledge pause/resume")
@@ -230,16 +230,16 @@ impl Recording {
     fn finish_recording(&mut self) -> Result<PathBuf> {
         let mut issues = vec![];
         let mut companion_ok = true;
-        if let Some(t) = &mut self.telemetry {
-            if let Err(e) = t.command("stop") {
-                issues.push(format!("Cursor telemetry: {e}"));
-            }
+        if let Some(t) = &mut self.telemetry
+            && let Err(e) = t.command("stop")
+        {
+            issues.push(format!("Cursor telemetry: {e}"));
         }
-        if let Some(c) = &mut self.companion {
-            if let Err(e) = c.command("stop") {
-                companion_ok = false;
-                issues.push(format!("Camera/microphone: {e}"));
-            }
+        if let Some(c) = &mut self.companion
+            && let Err(e) = c.command("stop")
+        {
+            companion_ok = false;
+            issues.push(format!("Camera/microphone: {e}"));
         }
         // Always ask the screen recorder to finalize, even if another helper failed.
         let stop_result = self.send("stop");
@@ -247,11 +247,11 @@ impl Recording {
         let finish_result = self.process.finish(Duration::from_secs(30));
         stop_result?;
         finish_result?;
-        if let Some(c) = &mut self.companion {
-            if let Err(e) = c.process.finish(Duration::from_secs(30)) {
-                companion_ok = false;
-                issues.push(format!("Camera/microphone: {e}"));
-            }
+        if let Some(c) = &mut self.companion
+            && let Err(e) = c.process.finish(Duration::from_secs(30))
+        {
+            companion_ok = false;
+            issues.push(format!("Camera/microphone: {e}"));
         }
         let captured = self.work.as_ref().unwrap().path().join("recording.mp4");
         crate::media::probe(&captured)?;
@@ -303,13 +303,13 @@ impl Recording {
         Ok(self.output.clone())
     }
     pub fn error(&mut self) -> Option<String> {
-        if let Some(c) = &mut self.companion {
-            if c.process.child.try_wait().ok().flatten().is_some() {
-                return Some(format!(
-                    "Camera/microphone recording ended: {}",
-                    c.process.errors.lock().unwrap()
-                ));
-            }
+        if let Some(c) = &mut self.companion
+            && c.process.child.try_wait().ok().flatten().is_some()
+        {
+            return Some(format!(
+                "Camera/microphone recording ended: {}",
+                c.process.errors.lock().unwrap()
+            ));
         }
         self.process.child.try_wait().ok().flatten().map(|s| {
             format!(
@@ -464,10 +464,10 @@ impl Companion {
                 !cancel.load(std::sync::atomic::Ordering::Relaxed),
                 "Recording cancelled"
             );
-            if let Ok(line) = self.events.recv_timeout(Duration::from_millis(20)) {
-                if line == marker {
-                    return Ok(());
-                }
+            if let Ok(line) = self.events.recv_timeout(Duration::from_millis(20))
+                && line == marker
+            {
+                return Ok(());
             }
             ensure!(
                 self.process.child.try_wait()?.is_none(),

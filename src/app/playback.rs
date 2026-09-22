@@ -101,7 +101,7 @@ impl Preview {
                         }
                         Err(e) => {
                             s.stop(ui);
-                            ui.set_status(format!("Preview: {e:#}").into());
+                            ui.set_status(format!("Preview: {e:#}"));
                         }
                     }
                 });
@@ -184,16 +184,13 @@ impl App {
             );
         }
         let t = self.source_time;
-        ui.set_time_label(
-            format!(
-                "{:02}:{:06.3} / {:02}:{:06.3}",
-                (t / 60.) as u64,
-                t % 60.,
-                (ui.get_duration() / 60.) as u64,
-                ui.get_duration() % 60.
-            )
-            .into(),
-        );
+        ui.set_time_label(format!(
+            "{:02}:{:06.3} / {:02}:{:06.3}",
+            (t / 60.) as u64,
+            t % 60.,
+            (ui.get_duration() / 60.) as u64,
+            ui.get_duration() % 60.
+        ));
     }
 
     pub(super) fn refresh(&self, ui: &EditorWindow) {

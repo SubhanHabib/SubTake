@@ -9,10 +9,11 @@ use super::*;
 pub(super) fn position_launcher_when_ready(attempt: u8) {
     Timer::single_shot(Duration::from_millis(20), move || {
         with_app(|s, _| {
-            if let Some(launcher) = &s.launcher {
-                if platform::position_launcher(launcher.window()).is_err() && attempt < 9 {
-                    position_launcher_when_ready(attempt + 1);
-                }
+            if let Some(launcher) = &s.launcher
+                && platform::position_launcher(launcher.window()).is_err()
+                && attempt < 9
+            {
+                position_launcher_when_ready(attempt + 1);
             }
         });
     });
@@ -41,10 +42,11 @@ impl App {
         }
         match key {
             "source" => {
-                if let Ok(index) = value.parse::<i32>() {
-                    if index >= 0 && (index as usize) < self.sources.len() {
-                        ui.set_source_index(index);
-                    }
+                if let Ok(index) = value.parse::<i32>()
+                    && index >= 0
+                    && (index as usize) < self.sources.len()
+                {
+                    ui.set_source_index(index);
                 }
             }
             "camera" => ui.set_capture_camera(value == "true"),
@@ -83,8 +85,7 @@ impl App {
         options.set_directory(
             self.recording_directory()
                 .map(|p| p.display().to_string())
-                .unwrap_or_default()
-                .into(),
+                .unwrap_or_default(),
         );
     }
 
@@ -113,8 +114,7 @@ impl App {
         launcher.set_directory(
             self.recording_directory()
                 .map(|p| p.display().to_string())
-                .unwrap_or_default()
-                .into(),
+                .unwrap_or_default(),
         );
         launcher.set_status(ui.get_status());
         let seconds = self
@@ -127,7 +127,7 @@ impl App {
                     .as_secs()
             })
             .unwrap_or(0);
-        launcher.set_elapsed(format!("{:02}:{:02}", seconds / 60, seconds % 60).into());
+        launcher.set_elapsed(format!("{:02}:{:02}", seconds / 60, seconds % 60));
         // The native glass belongs only to the fixed bar. The option menu owns a separate window.
         platform::update_recorder_glass(launcher.window(), launcher.get_bar_width(), 0., 0., false);
         self.sync_launcher_options(ui);
@@ -308,8 +308,8 @@ impl App {
                 ),
             }
         };
-        ui.set_recording_hint(message.clone().into());
-        ui.set_status(message.into());
+        ui.set_recording_hint(message.clone());
+        ui.set_status(message);
     }
 
     pub(super) fn register_hotkeys(&mut self) -> Result<()> {

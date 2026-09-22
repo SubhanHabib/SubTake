@@ -48,15 +48,15 @@ pub fn parse_silences(log: &str) -> Vec<Silence> {
         };
         if let Some(a) = value(&["silence_start:", "lavfi.silence_start="]) {
             pending = Some((a * 1000.).round().max(0.));
-        } else if let Some(b) = value(&["silence_end:", "lavfi.silence_end="]) {
-            if let Some(a) = pending.take() {
-                let b = (b * 1000.).round();
-                if b > a {
-                    intervals.push(Silence {
-                        start_ms: a,
-                        end_ms: b,
-                    });
-                }
+        } else if let Some(b) = value(&["silence_end:", "lavfi.silence_end="])
+            && let Some(a) = pending.take()
+        {
+            let b = (b * 1000.).round();
+            if b > a {
+                intervals.push(Silence {
+                    start_ms: a,
+                    end_ms: b,
+                });
             }
         }
     }
@@ -107,10 +107,10 @@ pub fn text_from_words(words: &[Value]) -> String {
     result.trim().into()
 }
 fn piece(mut words: Vec<Value>) -> Value {
-    if let Some(w) = words.first_mut() {
-        if w["leadingSpace"] == true {
-            w.as_object_mut().unwrap().remove("leadingSpace");
-        }
+    if let Some(w) = words.first_mut()
+        && w["leadingSpace"] == true
+    {
+        w.as_object_mut().unwrap().remove("leadingSpace");
     }
     json!({"id":"","startMs":start(&words[0]),"endMs":end(words.last().unwrap()),"text":text_from_words(&words),"words":words})
 }
@@ -135,26 +135,25 @@ fn pad(cues: &mut [Value]) {
 fn merge_short(cues: Vec<Value>) -> Vec<Value> {
     let mut merged: Vec<Value> = vec![];
     for next in cues {
-        if let Some(group) = merged.last_mut() {
-            if end(group) - start(group) < 800.
-                && end(&next) - start(&next) < 800.
-                && start(&next) - end(group) <= 400.
-                && end(&next) - start(group) <= 2500.
-                && utf16_len(text(group)) + utf16_len(text(&next)) + 1 <= 80
-            {
-                let (mut left, mut right) = (words(group), words(&next));
-                let mut joined = if !left.is_empty() && !right.is_empty() {
-                    right[0]["leadingSpace"] = json!(true);
-                    left.extend(right);
-                    piece(left)
-                } else {
-                    json!({"id":"","text":format!("{} {}",text(group),text(&next)).trim()})
-                };
-                joined["startMs"] = json!(start(group));
-                joined["endMs"] = json!(end(&next));
-                *group = joined;
-                continue;
-            }
+        if let Some(group) = merged.last_mut()
+            && end(group) - start(group) < 800.
+            && end(&next) - start(&next) < 800.
+            && start(&next) - end(group) <= 400.
+            && end(&next) - start(group) <= 2500.
+            && utf16_len(text(group)) + utf16_len(text(&next)) < 80
+        {
+            let (mut left, mut right) = (words(group), words(&next));
+            let mut joined = if !left.is_empty() && !right.is_empty() {
+                right[0]["leadingSpace"] = json!(true);
+                left.extend(right);
+                piece(left)
+            } else {
+                json!({"id":"","text":format!("{} {}",text(group),text(&next)).trim()})
+            };
+            joined["startMs"] = json!(start(group));
+            joined["endMs"] = json!(end(&next));
+            *group = joined;
+            continue;
         }
         merged.push(next);
     }

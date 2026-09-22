@@ -6,7 +6,7 @@ use super::*;
 pub fn run(path: Option<PathBuf>) -> Result<()> {
     let ui = EditorWindow::new()?;
     ui.set_mac_titlebar(cfg!(target_os = "macos"));
-    ui.on_translate(|text, locale| subtake_native::localization::translate(&text, &locale).into());
+    ui.on_translate(|text, locale| subtake_native::localization::translate(&text, &locale));
     let state = Rc::new(RefCell::new(App::new()));
     STATE.with(|s| *s.borrow_mut() = Some((state.clone(), ui.as_weak())));
     let wallpaper_paths = state.borrow().wallpapers.clone();
@@ -47,8 +47,8 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                 tiles
                     .into_iter()
                     .map(|(index, title, w, h, pixels)| Wallpaper {
-                        key: format!("wallpaper-{index}").into(),
-                        title: title.into(),
+                        key: format!("wallpaper-{index}"),
+                        title,
                         source: ui_runtime::Image::from_rgba8(ui_runtime::SharedPixelBuffer::<
                             ui_runtime::Rgba8Pixel,
                         >::clone_from_slice(
@@ -60,7 +60,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         });
     });
     if let Err(e) = state.borrow_mut().register_hotkeys() {
-        ui.set_status(format!("Global shortcuts: {e}").into());
+        ui.set_status(format!("Global shortcuts: {e}"));
     }
     global_hotkey::GlobalHotKeyEvent::set_event_handler(Some(
         |event: global_hotkey::GlobalHotKeyEvent| {
@@ -238,51 +238,51 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             if ui.get_panel() == "Crop" {
                 return;
             }
-            if let Some((kind, id)) = s.selected.clone() {
-                if kind == "zoomRegions" {
-                    let result = (|| -> Result<()> {
-                        let p = s.project()?;
-                        let info = s.info.as_ref().context("Open a video first")?;
-                        let width = 960.;
-                        let height = (width / aspect_ratio(p, info)).round().clamp(100., 1920.);
-                        let frame = subtake_native::geometry::frame(
-                            p,
-                            width,
-                            height,
-                            info.width as f64,
-                            info.height as f64,
-                        );
-                        let mut sidecar = s.source.as_ref().unwrap().as_os_str().to_os_string();
-                        sidecar.push(".cursor.json");
-                        let telemetry: Value = std::fs::read(PathBuf::from(sidecar))
-                            .ok()
-                            .and_then(|b| serde_json::from_slice(&b).ok())
-                            .unwrap_or(Value::Null);
-                        let samples = telemetry
-                            .as_array()
-                            .or_else(|| telemetry["samples"].as_array())
-                            .map(Vec::as_slice)
-                            .unwrap_or(&[]);
-                        let camera = subtake_native::motion::CameraTrack::default().at(
-                            p,
-                            samples,
-                            s.source_time * 1000.,
-                            width,
-                            height,
-                            &frame,
-                        );
-                        let cx = (((x as f64 * width - camera.x) / camera.scale - frame.x)
-                            / frame.width)
-                            .clamp(0., 1.);
-                        let cy = (((y as f64 * height - camera.y) / camera.scale - frame.y)
-                            / frame.height)
-                            .clamp(0., 1.);
-                        s.edit(ui, |p| {
-                            p.change_region(&kind, &id, json!({"focus":{"cx":cx,"cy":cy}}))
-                        })
-                    })();
-                    report(ui, result);
-                }
+            if let Some((kind, id)) = s.selected.clone()
+                && kind == "zoomRegions"
+            {
+                let result = (|| -> Result<()> {
+                    let p = s.project()?;
+                    let info = s.info.as_ref().context("Open a video first")?;
+                    let width = 960.;
+                    let height = (width / aspect_ratio(p, info)).round().clamp(100., 1920.);
+                    let frame = subtake_native::geometry::frame(
+                        p,
+                        width,
+                        height,
+                        info.width as f64,
+                        info.height as f64,
+                    );
+                    let mut sidecar = s.source.as_ref().unwrap().as_os_str().to_os_string();
+                    sidecar.push(".cursor.json");
+                    let telemetry: Value = std::fs::read(PathBuf::from(sidecar))
+                        .ok()
+                        .and_then(|b| serde_json::from_slice(&b).ok())
+                        .unwrap_or(Value::Null);
+                    let samples = telemetry
+                        .as_array()
+                        .or_else(|| telemetry["samples"].as_array())
+                        .map(Vec::as_slice)
+                        .unwrap_or(&[]);
+                    let camera = subtake_native::motion::CameraTrack::default().at(
+                        p,
+                        samples,
+                        s.source_time * 1000.,
+                        width,
+                        height,
+                        &frame,
+                    );
+                    let cx = (((x as f64 * width - camera.x) / camera.scale - frame.x)
+                        / frame.width)
+                        .clamp(0., 1.);
+                    let cy = (((y as f64 * height - camera.y) / camera.scale - frame.y)
+                        / frame.height)
+                        .clamp(0., 1.);
+                    s.edit(ui, |p| {
+                        p.change_region(&kind, &id, json!({"focus":{"cx":cx,"cy":cy}}))
+                    })
+                })();
+                report(ui, result);
             }
         })
     });
@@ -594,7 +594,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             s.field(ui, "cropRegion.width", "0.8")?;
                             s.field(ui, "cropRegion.height", "0.8")?;
                         } else {
-                            ui.set_panel(panel.into());
+                            ui.set_panel(panel);
                             s.refresh(ui);
                             s.epoch += 1;
                             s.request();
@@ -647,11 +647,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             );
                             std::process::exit(1);
                         }
-                        if panel == "Wallpapers" {
-                            if ui.get_wallpapers().row_count() == 0 {
-                                eprintln!("UI_SMOKE_FAILED: wallpaper thumbnails were not loaded");
-                                std::process::exit(1);
-                            }
+                        if panel == "Wallpapers" && ui.get_wallpapers().row_count() == 0 {
+                            eprintln!("UI_SMOKE_FAILED: wallpaper thumbnails were not loaded");
+                            std::process::exit(1);
                         }
                         s.discard_recovery();
                         s.recovery.flush();
@@ -714,20 +712,19 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     preview_size_timer.start(TimerMode::Repeated, Duration::from_millis(150), move || {
         STATE.with(|slot| {
             let context = slot.borrow().clone();
-            if let Some((state, weak)) = context {
-                if let Some(ui) = weak.upgrade() {
-                    when_idle(&state, |s| {
-                        let size = (
-                            (ui.get_preview_pixel_width() * ui.window().scale_factor()).ceil()
-                                as u32,
-                            (ui.get_preview_aspect() * 10000.) as u32,
-                        );
-                        if size != last_preview_size {
-                            last_preview_size = size;
-                            s.request();
-                        }
-                    });
-                }
+            if let Some((state, weak)) = context
+                && let Some(ui) = weak.upgrade()
+            {
+                when_idle(&state, |s| {
+                    let size = (
+                        (ui.get_preview_pixel_width() * ui.window().scale_factor()).ceil() as u32,
+                        (ui.get_preview_aspect() * 10000.) as u32,
+                    );
+                    if size != last_preview_size {
+                        last_preview_size = size;
+                        s.request();
+                    }
+                });
             }
         });
     });

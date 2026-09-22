@@ -517,116 +517,113 @@ impl Scene {
             .editor
             .get("webcam")
             .filter(|v| v["enabled"].as_bool() == Some(true))
+            && let Some(path) = webcam["sourcePath"].as_str()
         {
-            if let Some(path) = webcam["sourcePath"].as_str() {
-                let path = crate::project::local_path(path);
-                let path = if path.is_absolute() {
-                    path
-                } else {
-                    self.base.join(path)
-                };
-                if self
-                    .webcam
-                    .as_ref()
-                    .is_none_or(|(p, _, _, _, _)| *p != path)
-                {
-                    let info = crate::media::probe(&path)?;
-                    let height = (640. * info.height as f64 / info.width as f64)
-                        .round()
-                        .max(2.) as u32;
-                    self.webcam = Some((
-                        path.clone(),
-                        Decoder::new(path, 640, height).with_rate(info.fps),
-                        640,
-                        height,
-                        info.duration,
-                    ));
-                }
-                let time = (source_time - n(webcam, "timeOffsetMs", 0.) / 1000.).max(0.);
-                let (_, decoder, iw, ih, duration) = self.webcam.as_mut().unwrap();
-                let i = image(
-                    decoder.frame(time.min((*duration - 1. / 60.).max(0.)))?,
-                    *iw,
-                    *ih,
-                )?;
-                let reactive = if webcam["reactToZoom"].as_bool().unwrap_or(true) {
-                    1. / cam.scale as f32
-                } else {
-                    1.
-                };
-                let ww = (n(webcam, "width", n(webcam, "size", 40.)) as f32 / 100.
-                    * w.min(h)
-                    * reactive)
-                    .max(56. * unit);
-                let wh =
-                    (n(webcam, "height", 40.) as f32 / 100. * w.min(h) * reactive).max(56. * unit);
-                let margin = n(webcam, "margin", 24.) as f32 * unit;
-                let preset = webcam["positionPreset"]
-                    .as_str()
-                    .or(webcam["corner"].as_str())
-                    .unwrap_or("custom");
-                let (px, py) = match preset {
-                    "top-left" => (0., 0.),
-                    "top-center" => (0.5, 0.),
-                    "top-right" => (1., 0.),
-                    "center-left" => (0., 0.5),
-                    "center" => (0.5, 0.5),
-                    "center-right" => (1., 0.5),
-                    "bottom-left" => (0., 1.),
-                    "bottom-center" => (0.5, 1.),
-                    "bottom-right" => (1., 1.),
-                    _ => (
-                        n(webcam, "positionX", 1.) as f32,
-                        n(webcam, "positionY", 1.) as f32,
-                    ),
-                };
-                let x = margin + (w - ww - 2. * margin).max(0.) * px;
-                let y = margin + (h - wh - 2. * margin).max(0.) * py;
-                let rect = Rect::from_xywh(x, y, ww, wh);
-                let rad = (n(webcam, "roundness", 100.).clamp(0., 100.) as f32 / 100.).sqrt()
-                    * ww.min(wh)
-                    * 0.5;
-                let mut shadow = paint(Color::from_argb(
-                    (n(webcam, "shadow", 0.3).clamp(0., 1.) * 200.) as u8,
-                    0,
-                    0,
-                    0,
+            let path = crate::project::local_path(path);
+            let path = if path.is_absolute() {
+                path
+            } else {
+                self.base.join(path)
+            };
+            if self
+                .webcam
+                .as_ref()
+                .is_none_or(|(p, _, _, _, _)| *p != path)
+            {
+                let info = crate::media::probe(&path)?;
+                let height = (640. * info.height as f64 / info.width as f64)
+                    .round()
+                    .max(2.) as u32;
+                self.webcam = Some((
+                    path.clone(),
+                    Decoder::new(path, 640, height).with_rate(info.fps),
+                    640,
+                    height,
+                    info.duration,
                 ));
-                shadow.set_image_filter(sk::image_filters::blur(
-                    (12. * unit, 12. * unit),
-                    None,
-                    None,
-                    None,
-                ));
-                canvas.draw_rrect(
-                    RRect::new_rect_xy(rect.with_offset((0., 8. * unit)), rad, rad),
-                    &shadow,
-                );
-                let crop = &webcam["cropRegion"];
-                let cx = n(crop, "x", 0.).clamp(0., 0.99) as f32 * i.width() as f32;
-                let cy = n(crop, "y", 0.).clamp(0., 0.99) as f32 * i.height() as f32;
-                let cw = (n(crop, "width", 1.).clamp(0.01, 1.) as f32 * i.width() as f32)
-                    .min(i.width() as f32 - cx);
-                let ch = (n(crop, "height", 1.).clamp(0.01, 1.) as f32 * i.height() as f32)
-                    .min(i.height() as f32 - cy);
-                let scale = (ww / cw).max(wh / ch);
-                let sw = ww / scale;
-                let sh = wh / scale;
-                let src = Rect::from_xywh(cx + (cw - sw) / 2., cy + (ch - sh) / 2., sw, sh);
-                canvas.save();
-                canvas.clip_rrect(RRect::new_rect_xy(rect, rad, rad), None, true);
-                if webcam["mirror"].as_bool().unwrap_or(true) {
-                    canvas.translate((rect.center_x() * 2., 0.));
-                    canvas.scale((-1., 1.));
-                }
-                canvas.draw_image_rect(
-                    &i,
-                    Some((&src, sk::canvas::SrcRectConstraint::Strict)),
-                    rect,
-                    &Paint::default(),
-                );
-                canvas.restore();
             }
+            let time = (source_time - n(webcam, "timeOffsetMs", 0.) / 1000.).max(0.);
+            let (_, decoder, iw, ih, duration) = self.webcam.as_mut().unwrap();
+            let i = image(
+                decoder.frame(time.min((*duration - 1. / 60.).max(0.)))?,
+                *iw,
+                *ih,
+            )?;
+            let reactive = if webcam["reactToZoom"].as_bool().unwrap_or(true) {
+                1. / cam.scale as f32
+            } else {
+                1.
+            };
+            let ww =
+                (n(webcam, "width", n(webcam, "size", 40.)) as f32 / 100. * w.min(h) * reactive)
+                    .max(56. * unit);
+            let wh = (n(webcam, "height", 40.) as f32 / 100. * w.min(h) * reactive).max(56. * unit);
+            let margin = n(webcam, "margin", 24.) as f32 * unit;
+            let preset = webcam["positionPreset"]
+                .as_str()
+                .or(webcam["corner"].as_str())
+                .unwrap_or("custom");
+            let (px, py) = match preset {
+                "top-left" => (0., 0.),
+                "top-center" => (0.5, 0.),
+                "top-right" => (1., 0.),
+                "center-left" => (0., 0.5),
+                "center" => (0.5, 0.5),
+                "center-right" => (1., 0.5),
+                "bottom-left" => (0., 1.),
+                "bottom-center" => (0.5, 1.),
+                "bottom-right" => (1., 1.),
+                _ => (
+                    n(webcam, "positionX", 1.) as f32,
+                    n(webcam, "positionY", 1.) as f32,
+                ),
+            };
+            let x = margin + (w - ww - 2. * margin).max(0.) * px;
+            let y = margin + (h - wh - 2. * margin).max(0.) * py;
+            let rect = Rect::from_xywh(x, y, ww, wh);
+            let rad = (n(webcam, "roundness", 100.).clamp(0., 100.) as f32 / 100.).sqrt()
+                * ww.min(wh)
+                * 0.5;
+            let mut shadow = paint(Color::from_argb(
+                (n(webcam, "shadow", 0.3).clamp(0., 1.) * 200.) as u8,
+                0,
+                0,
+                0,
+            ));
+            shadow.set_image_filter(sk::image_filters::blur(
+                (12. * unit, 12. * unit),
+                None,
+                None,
+                None,
+            ));
+            canvas.draw_rrect(
+                RRect::new_rect_xy(rect.with_offset((0., 8. * unit)), rad, rad),
+                &shadow,
+            );
+            let crop = &webcam["cropRegion"];
+            let cx = n(crop, "x", 0.).clamp(0., 0.99) as f32 * i.width() as f32;
+            let cy = n(crop, "y", 0.).clamp(0., 0.99) as f32 * i.height() as f32;
+            let cw = (n(crop, "width", 1.).clamp(0.01, 1.) as f32 * i.width() as f32)
+                .min(i.width() as f32 - cx);
+            let ch = (n(crop, "height", 1.).clamp(0.01, 1.) as f32 * i.height() as f32)
+                .min(i.height() as f32 - cy);
+            let scale = (ww / cw).max(wh / ch);
+            let sw = ww / scale;
+            let sh = wh / scale;
+            let src = Rect::from_xywh(cx + (cw - sw) / 2., cy + (ch - sh) / 2., sw, sh);
+            canvas.save();
+            canvas.clip_rrect(RRect::new_rect_xy(rect, rad, rad), None, true);
+            if webcam["mirror"].as_bool().unwrap_or(true) {
+                canvas.translate((rect.center_x() * 2., 0.));
+                canvas.scale((-1., 1.));
+            }
+            canvas.draw_image_rect(
+                &i,
+                Some((&src, sk::canvas::SrcRectConstraint::Strict)),
+                rect,
+                &Paint::default(),
+            );
+            canvas.restore();
         }
         let mut annotations: Vec<_> = p
             .regions("annotationRegions")

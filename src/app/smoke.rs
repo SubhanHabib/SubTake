@@ -155,7 +155,6 @@ pub(super) fn launcher_smoke_step(step: u8) {
                                     });
                                     launcher_smoke_step(10);
                                 });
-                                return;
                             }
                         });
                         launcher_smoke_step(10);

@@ -100,7 +100,7 @@ pub fn run() -> Result<()> {
             g.apply_appearance();
         }
         if key == "prefs.language" {
-            g.editor.set_language(value.into());
+            g.editor.set_language(value);
         }
         g.push_fields();
     });
@@ -130,7 +130,7 @@ pub fn run() -> Result<()> {
             let hit = r.kind == kind && r.id == id;
             r.selected = if additive { r.selected ^ hit } else { hit };
         }
-        g.editor.set_selected_id(id.into());
+        g.editor.set_selected_id(id);
         g.push_timeline();
     });
     let g = gallery.clone();
@@ -215,7 +215,7 @@ impl Gallery {
                 self.playback
                     .start(TimerMode::Repeated, Duration::from_millis(250), move || {
                         let s = started.elapsed().as_secs();
-                        launcher.set_elapsed(format!("{:02}:{:02}", s / 60, s % 60).into());
+                        launcher.set_elapsed(format!("{:02}:{:02}", s / 60, s % 60));
                     });
             }
             "stop" | "stop-recording" | "finish" => {
@@ -266,7 +266,7 @@ impl Gallery {
             ),
             other => {
                 self.editor
-                    .set_status(format!("Gallery: “{other}” has no effect here").into());
+                    .set_status(format!("Gallery: “{other}” has no effect here"));
             }
         }
     }
@@ -311,7 +311,7 @@ impl Gallery {
             }
             _ => self
                 .launcher
-                .set_status(format!("Gallery: option {key} = {value}").into()),
+                .set_status(format!("Gallery: option {key} = {value}")),
         }
     }
 
@@ -378,7 +378,7 @@ impl Gallery {
 
     fn push_time(&self) {
         self.editor.set_playhead(self.playhead);
-        self.editor.set_time_label(time_label(self.playhead).into());
+        self.editor.set_time_label(time_label(self.playhead));
     }
 
     fn push_timeline(&self) {

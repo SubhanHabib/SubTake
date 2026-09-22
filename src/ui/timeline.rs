@@ -233,14 +233,14 @@ impl RootView {
                 mode,
                 ..
             }) = &self.gesture
+                && dragged.id == region.id
+                && dragged.kind == region.kind
             {
-                if dragged.id == region.id && dragged.kind == region.kind {
-                    if *mode != 1 {
-                        start += delta;
-                    }
-                    if *mode != 2 {
-                        end += delta;
-                    }
+                if *mode != 1 {
+                    start += delta;
+                }
+                if *mode != 2 {
+                    end += delta;
                 }
             }
             let tint = region.tint.to_gpui();

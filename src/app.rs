@@ -25,16 +25,16 @@ use ui_runtime::{ModelRc, SharedString, Timer, TimerMode, VecModel};
 thread_local! {static STATE:RefCell<Option<(Rc<RefCell<App>>,ui_runtime::Weak<EditorWindow>)>>=const{RefCell::new(None)};}
 fn with_app(f: impl FnOnce(&mut App, &EditorWindow)) {
     STATE.with(|slot| {
-        if let Some((state, weak)) = slot.borrow().as_ref() {
-            if let Some(ui) = weak.upgrade() {
-                let mut app = state.borrow_mut();
-                let began = std::time::Instant::now();
-                f(&mut app, &ui);
-                subtake_ui::perf::log_took("with_app callback", began, 1.0);
-                let began = std::time::Instant::now();
-                app.sync_launcher(&ui);
-                subtake_ui::perf::log_took("with_app sync_launcher", began, 1.0);
-            }
+        if let Some((state, weak)) = slot.borrow().as_ref()
+            && let Some(ui) = weak.upgrade()
+        {
+            let mut app = state.borrow_mut();
+            let began = std::time::Instant::now();
+            f(&mut app, &ui);
+            subtake_ui::perf::log_took("with_app callback", began, 1.0);
+            let began = std::time::Instant::now();
+            app.sync_launcher(&ui);
+            subtake_ui::perf::log_took("with_app sync_launcher", began, 1.0);
         }
     });
 }
@@ -51,7 +51,7 @@ fn post(f: impl FnOnce(&mut App, &EditorWindow) + Send + 'static) {
 }
 fn report(ui: &EditorWindow, result: Result<()>) {
     if let Err(error) = result {
-        ui.set_status(format!("{error:#}").into());
+        ui.set_status(format!("{error:#}"));
     }
 }
 
@@ -126,7 +126,7 @@ impl App {
             clipboard: vec![],
             extra_selection: vec![],
             recovery: subtake_native::recovery::Store::new(|message| {
-                post(move |_, ui| ui.set_status(message.into()))
+                post(move |_, ui| ui.set_status(message))
             }),
             recovery_timer: Timer::default(),
             recovery_origin: None,
@@ -163,10 +163,10 @@ impl App {
 
     pub(super) fn selected_keys(&self) -> Vec<(String, String)> {
         let mut keys = self.extra_selection.clone();
-        if let Some(key) = &self.selected {
-            if !keys.contains(key) {
-                keys.push(key.clone());
-            }
+        if let Some(key) = &self.selected
+            && !keys.contains(key)
+        {
+            keys.push(key.clone());
         }
         keys.retain(|(kind, id)| {
             self.history

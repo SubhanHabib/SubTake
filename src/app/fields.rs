@@ -26,8 +26,7 @@ impl App {
                     field.value = padding
                         .as_f64()
                         .unwrap_or_else(|| n(&padding, side, 20.))
-                        .to_string()
-                        .into();
+                        .to_string();
                 }
             }
             if linked {
@@ -41,7 +40,7 @@ impl App {
                 key: "padding.linked".into(),
                 label: "Link all sides".into(),
                 kind: 2,
-                value: linked.to_string().into(),
+                value: linked.to_string(),
                 ..Default::default()
             });
         }
@@ -89,8 +88,7 @@ impl App {
                 value: value
                     .as_str()
                     .map(str::to_owned)
-                    .unwrap_or_else(|| value.to_string())
-                    .into(),
+                    .unwrap_or_else(|| value.to_string()),
                 kind: 0,
                 minimum: 0.,
                 maximum: 0.,
@@ -99,7 +97,7 @@ impl App {
             .chain(subtake_native::shortcuts::ACTIONS.into_iter().map(
                 |(action, label, default)| {
                     Field {
-                        key: format!("shortcut.{action}").into(),
+                        key: format!("shortcut.{action}"),
                         label: label.into(),
                         value: self
                             .preferences
@@ -123,14 +121,13 @@ impl App {
                 .iter()
                 .enumerate()
                 .map(|(i, path)| Field {
-                    key: format!("wallpaper-{i}").into(),
+                    key: format!("wallpaper-{i}"),
                     label: "Built-in wallpaper".into(),
                     value: path
                         .file_stem()
                         .unwrap_or_default()
                         .to_string_lossy()
-                        .to_string()
-                        .into(),
+                        .to_string(),
                     kind: 3,
                     minimum: 0.,
                     maximum: 0.,
@@ -148,8 +145,7 @@ impl App {
                         .library_directory
                         .as_ref()
                         .map(|p| p.display().to_string())
-                        .unwrap_or_else(|| "Choose folder…".into())
-                        .into(),
+                        .unwrap_or_else(|| "Choose folder…".into()),
                     kind: 3,
                     minimum: 0.,
                     maximum: 0.,
@@ -180,7 +176,7 @@ impl App {
                     .iter()
                     .enumerate()
                     .map(|(i, path)| Field {
-                        key: format!("recovery-{i}").into(),
+                        key: format!("recovery-{i}"),
                         label: "Unsaved project recovery".into(),
                         value: Project::load(path)
                             .ok()
@@ -193,8 +189,7 @@ impl App {
                                         .to_string_lossy()
                                 )
                             })
-                            .unwrap_or_else(|| "Recovery file".into())
-                            .into(),
+                            .unwrap_or_else(|| "Recovery file".into()),
                         kind: 3,
                         minimum: 0.,
                         maximum: 0.,
@@ -202,19 +197,13 @@ impl App {
                     })
                     .chain(self.library.iter().enumerate().map(|(i, path)| {
                         Field {
-                            key: format!("library-open-{i}").into(),
-                            label: path
-                                .parent()
-                                .unwrap_or(Path::new(""))
-                                .display()
-                                .to_string()
-                                .into(),
+                            key: format!("library-open-{i}"),
+                            label: path.parent().unwrap_or(Path::new("")).display().to_string(),
                             value: path
                                 .file_name()
                                 .unwrap_or_default()
                                 .to_string_lossy()
-                                .to_string()
-                                .into(),
+                                .to_string(),
                             kind: 3,
                             minimum: 0.,
                             maximum: 0.,
@@ -264,7 +253,7 @@ impl App {
             fields.push(Field {
                 key: key.into(),
                 label: label.into(),
-                value: value.into(),
+                value,
                 kind,
                 minimum: min,
                 maximum: max,

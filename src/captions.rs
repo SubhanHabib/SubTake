@@ -34,10 +34,10 @@ fn covered(cues: &[Value], time: f64) -> bool {
             return false;
         }
         let mut end = n(c, "endMs", 0.);
-        if let Some(next) = sorted.get(i + 1) {
-            if n(next, "startMs", 0.) - end < 500. {
-                end = end.max(n(next, "startMs", 0.));
-            }
+        if let Some(next) = sorted.get(i + 1)
+            && n(next, "startMs", 0.) - end < 500.
+        {
+            end = end.max(n(next, "startMs", 0.));
         }
         if time <= end {
             return true;

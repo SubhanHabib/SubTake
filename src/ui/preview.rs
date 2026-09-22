@@ -363,16 +363,13 @@ impl RootView {
                             cx.stop_propagation();
                             return;
                         }
-                        if let Surface::Editor(e) = &s.surface {
-                            if e.get_preview_zoom() > 1. {
-                                s.preview_pan.x += delta.x;
-                                s.preview_pan.y += delta.y;
-                                let image = s.preview_bounds.get().size;
-                                s.clamp_preview_pan(
-                                    f32::from(image.width),
-                                    f32::from(image.height),
-                                );
-                            }
+                        if let Surface::Editor(e) = &s.surface
+                            && e.get_preview_zoom() > 1.
+                        {
+                            s.preview_pan.x += delta.x;
+                            s.preview_pan.y += delta.y;
+                            let image = s.preview_bounds.get().size;
+                            s.clamp_preview_pan(f32::from(image.width), f32::from(image.height));
                         }
                         cx.stop_propagation();
                         cx.notify();

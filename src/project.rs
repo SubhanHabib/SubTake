@@ -326,20 +326,20 @@ impl History {
 
 pub fn parse_color(s: &str) -> [u8; 4] {
     let s = s.trim().trim_start_matches('#');
-    if s.len() == 6 {
-        if let Ok(n) = u32::from_str_radix(s, 16) {
-            return [(n >> 16) as u8, (n >> 8) as u8, n as u8, 255];
-        }
+    if s.len() == 6
+        && let Ok(n) = u32::from_str_radix(s, 16)
+    {
+        return [(n >> 16) as u8, (n >> 8) as u8, n as u8, 255];
     }
-    if s.len() == 3 {
-        if let Ok(n) = u16::from_str_radix(s, 16) {
-            return [
-                ((n >> 8) & 15) as u8 * 17,
-                ((n >> 4) & 15) as u8 * 17,
-                (n & 15) as u8 * 17,
-                255,
-            ];
-        }
+    if s.len() == 3
+        && let Ok(n) = u16::from_str_radix(s, 16)
+    {
+        return [
+            ((n >> 8) & 15) as u8 * 17,
+            ((n >> 4) & 15) as u8 * 17,
+            (n & 15) as u8 * 17,
+            255,
+        ];
     }
     if s == "transparent" {
         return [0, 0, 0, 0];
@@ -380,12 +380,11 @@ pub fn parse_srt(text: &str) -> Result<Vec<Value>> {
 }
 
 pub fn local_path(value: &str) -> PathBuf {
-    if value.starts_with("file:") {
-        if let Ok(url) = url::Url::parse(value) {
-            if let Ok(path) = url.to_file_path() {
-                return path;
-            }
-        }
+    if value.starts_with("file:")
+        && let Ok(url) = url::Url::parse(value)
+        && let Ok(path) = url.to_file_path()
+    {
+        return path;
     }
     PathBuf::from(value)
 }

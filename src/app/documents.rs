@@ -151,12 +151,11 @@ impl App {
                                                 );
                                             }
                                         }
-                                        if let Some(wave) = wave {
-                                            if let Ok(image) =
+                                        if let Some(wave) = wave
+                                            && let Ok(image) =
                                                 ui_runtime::Image::load_from_path(&wave)
-                                            {
-                                                ui.set_waveform(image);
-                                            }
+                                        {
+                                            ui.set_waveform(image);
                                         }
                                     }
                                     Err(e) => eprintln!("Timeline artwork: {e:#}"),
@@ -189,12 +188,12 @@ impl App {
                         }
                         s.refresh(ui);
                         s.request();
-                        ui.set_status(zoom_warning.unwrap_or_else(|| "Ready".into()).into());
+                        ui.set_status(zoom_warning.unwrap_or_else(|| "Ready".into()));
                         if let Err(error) = s.show_editor(ui) {
-                            ui.set_status(format!("Open editor: {error:#}").into());
+                            ui.set_status(format!("Open editor: {error:#}"));
                         }
                     }
-                    Err(e) => ui.set_status(format!("Open failed: {e:#}").into()),
+                    Err(e) => ui.set_status(format!("Open failed: {e:#}")),
                 }
             });
         });

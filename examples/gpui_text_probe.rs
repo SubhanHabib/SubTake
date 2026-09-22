@@ -66,46 +66,37 @@ fn main() {
                 #[cfg(target_os = "macos")]
                 {
                     use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-                    if let Ok(handle) = window.window_handle() {
-                        if let RawWindowHandle::AppKit(handle) = handle.as_raw() {
-                            // Borrowed only on GPUI's main thread. Pass the numeric
-                            // WindowServer ID, never an NSView pointer, to the worker.
-                            let number: isize = unsafe {
-                                let view =
-                                    handle.ns_view.as_ptr().cast::<objc2::runtime::AnyObject>();
-                                let native: *mut objc2::runtime::AnyObject =
-                                    objc2::msg_send![view, window];
-                                objc2::msg_send![native, windowNumber]
-                            };
-                            eprintln!("GPUI_TEXT_PROBE window={number}");
-                            if let Some(path) = std::env::var_os("GPUI_TEXT_PROBE_SNAPSHOT") {
-                                std::thread::spawn(move || {
-                                    std::thread::sleep(std::time::Duration::from_secs(2));
-                                    let result =
-                                        std::process::Command::new("/usr/sbin/screencapture")
-                                            .args([
-                                                "-x",
-                                                "-o",
-                                                "-t",
-                                                "png",
-                                                "-l",
-                                                &number.to_string(),
-                                            ])
-                                            .arg(&path)
-                                            .output();
-                                    match result {
-                                        Ok(output) => eprintln!(
-                                            "GPUI_TEXT_PROBE capture={} path={} stderr={}",
-                                            output.status,
-                                            std::path::Path::new(&path).display(),
-                                            String::from_utf8_lossy(&output.stderr)
-                                        ),
-                                        Err(error) => {
-                                            eprintln!("GPUI_TEXT_PROBE capture failed: {error}")
-                                        }
+                    if let Ok(handle) = window.window_handle()
+                        && let RawWindowHandle::AppKit(handle) = handle.as_raw()
+                    {
+                        // Borrowed only on GPUI's main thread. Pass the numeric
+                        // WindowServer ID, never an NSView pointer, to the worker.
+                        let number: isize = unsafe {
+                            let view = handle.ns_view.as_ptr().cast::<objc2::runtime::AnyObject>();
+                            let native: *mut objc2::runtime::AnyObject =
+                                objc2::msg_send![view, window];
+                            objc2::msg_send![native, windowNumber]
+                        };
+                        eprintln!("GPUI_TEXT_PROBE window={number}");
+                        if let Some(path) = std::env::var_os("GPUI_TEXT_PROBE_SNAPSHOT") {
+                            std::thread::spawn(move || {
+                                std::thread::sleep(std::time::Duration::from_secs(2));
+                                let result = std::process::Command::new("/usr/sbin/screencapture")
+                                    .args(["-x", "-o", "-t", "png", "-l", &number.to_string()])
+                                    .arg(&path)
+                                    .output();
+                                match result {
+                                    Ok(output) => eprintln!(
+                                        "GPUI_TEXT_PROBE capture={} path={} stderr={}",
+                                        output.status,
+                                        std::path::Path::new(&path).display(),
+                                        String::from_utf8_lossy(&output.stderr)
+                                    ),
+                                    Err(error) => {
+                                        eprintln!("GPUI_TEXT_PROBE capture failed: {error}")
                                     }
-                                });
-                            }
+                                }
+                            });
                         }
                     }
                 }

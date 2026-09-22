@@ -260,10 +260,10 @@ impl Decoder {
     }
     pub fn frame(&mut self, time: f64) -> Result<Vec<u8>> {
         let index = (time.max(0.) * self.rate + 1e-6).floor() as u64;
-        if self.last_index == Some(index) {
-            if let Some(frame) = &self.last {
-                return Ok(frame.clone());
-            }
+        if self.last_index == Some(index)
+            && let Some(frame) = &self.last
+        {
+            return Ok(frame.clone());
         }
         #[cfg(feature = "native-ffmpeg")]
         {
@@ -281,7 +281,7 @@ impl Decoder {
                 .frame(index as f64 / self.rate)?;
             self.last_index = Some(index);
             self.last = Some(bytes.clone());
-            return Ok(bytes);
+            Ok(bytes)
         }
         #[cfg(not(feature = "native-ffmpeg"))]
         {
