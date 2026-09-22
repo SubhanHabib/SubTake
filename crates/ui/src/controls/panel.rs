@@ -3,7 +3,7 @@
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
-use crate::{frost, hairline, row};
+use crate::{edge, frost, hairline, row};
 
 /// Surface planes.
 ///
@@ -75,21 +75,26 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     // changing width would move everything inside it. A card is nested inside
     // something that already has an edge, so it gets none of its own.
     //
+    // The hairline is an `edge` child rather than one of the panel's own
+    // shadows. A float is frosted, so the panel's fill and anything it sets
+    // with `.shadow()` share one draw order, and at one order every shadow is
+    // drawn before every fill: set on the panel, the hairline went under the
+    // panel's own `glass` or `card` and all but vanished.
+    //
     // An Overlay gets the hairline and nothing else. It is the one surface
     // that IS its window — the recorder's borderless windows are sized to the
     // plate and the plate is `size_full()` — so a drop shadow has nowhere to
     // fall: it is clipped to the window frame and paints as a grey rectangle
     // in the plate's corners. Its shadow has to come from the window server
     // or not at all.
-    let mut shadows = Vec::new();
     if variant != Surface::Card {
-        shadows.push(hairline(theme.line, Theme::HAIRLINE_WIDTH));
+        el = el.child(edge(
+            radius,
+            vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)],
+        ));
         if variant != Surface::Overlay {
-            shadows.extend(theme.panel_shadow());
+            el = el.shadow(theme.panel_shadow());
         }
-    }
-    if !shadows.is_empty() {
-        el = el.shadow(shadows);
     }
     el
 }

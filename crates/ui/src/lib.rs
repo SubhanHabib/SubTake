@@ -26,7 +26,8 @@ pub mod unused;
 pub use controls::*;
 pub use fonts::{families_available, register as register_fonts};
 pub use frost::{
-    BAR_BLUR, FADE_BAND, MENU_BLUR, PANEL_BLUR, POD_BLUR, fade_edges, frosted, layered,
+    BAR_BLUR, FADE_BAND, MENU_BLUR, PANEL_BLUR, POD_BLUR, edge, fade_edges, frosted, layered,
+    pill_edge,
 };
 pub use icon::{icon, icon_sized};
 pub use layout::{column, measure, row};

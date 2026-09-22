@@ -13,8 +13,9 @@
 //! is structural: blur first, then shadow, tint, border, rows, text.
 
 use gpui::{
-    AnyElement, App, Bounds, Corners, EdgeFade, Element, GlobalElementId, Hsla, InspectorElementId,
-    IntoElement, LayoutId, Pixels, ScrollHandle, Window, fill, point, px, size,
+    AnyElement, App, Bounds, BoxShadow, Corners, Div, EdgeFade, Element, GlobalElementId, Hsla,
+    InspectorElementId, IntoElement, LayoutId, Pixels, ScrollHandle, Styled, Window, div, fill,
+    point, px, size,
 };
 
 use subtake_theme::Theme;
@@ -192,6 +193,28 @@ impl IntoElement for Layered {
     fn into_element(self) -> Self::Element {
         self
     }
+}
+
+/// An inset edge — a hairline, a selection ring — drawn over its owner's
+/// fill rather than on it. Add it as a child of the element it outlines:
+/// it covers that element exactly, at `radius`, and takes no part in layout.
+///
+/// Inside a frosted card the owner's fill and its own inset shadow share one
+/// draw order, and at one order gpui draws every shadow before every fill, so
+/// an edge set with `.shadow()` on the element it belongs to goes under that
+/// element's `.bg()` and only a trace of it shows through a translucent one.
+/// On a layer of its own the edge always lands on top.
+pub fn edge(radius: f32, shadows: Vec<BoxShadow>) -> Layered {
+    edge_on(div().rounded(px(radius)), shadows)
+}
+
+/// [`edge`] for a pill or a circle: an owner drawn `rounded_full`.
+pub fn pill_edge(shadows: Vec<BoxShadow>) -> Layered {
+    edge_on(div().rounded_full(), shadows)
+}
+
+fn edge_on(shape: Div, shadows: Vec<BoxShadow>) -> Layered {
+    layered(shape.absolute().inset_0().shadow(shadows))
 }
 
 // ---------------------------------------------------------------------------
