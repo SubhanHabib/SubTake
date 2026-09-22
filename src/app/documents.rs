@@ -12,6 +12,45 @@ impl App {
         Ok(())
     }
 
+    /// The empty state's Recent cards: the three newest library entries.
+    ///
+    /// Not drawn by the design: the handoff's cards carry a thumbnail and a
+    /// running time, and the library holds neither without opening each
+    /// file, so a card says what kind of file it is and how old it is, and
+    /// the card draws its own placeholder for the picture.
+    pub(super) fn recents(&self) -> Vec<Recent> {
+        self.library
+            .iter()
+            .take(3)
+            .enumerate()
+            .map(|(index, path)| {
+                let kind = match path.extension().and_then(|e| e.to_str()) {
+                    Some("recordly" | "openscreen") => "Project",
+                    _ => "Video",
+                };
+                let age = path
+                    .metadata()
+                    .and_then(|m| m.modified())
+                    .ok()
+                    .map(relative_age);
+                Recent {
+                    key: format!("library-open-{index}"),
+                    title: path
+                        .file_stem()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into(),
+                    meta: [Some(kind.to_owned()), age]
+                        .into_iter()
+                        .flatten()
+                        .collect::<Vec<_>>()
+                        .join(" · "),
+                    ..Default::default()
+                }
+            })
+            .collect()
+    }
+
     pub(super) fn schedule_recovery(&self) {
         self.recovery_timer
             .start(TimerMode::SingleShot, Duration::from_secs(2), || {
@@ -253,4 +292,20 @@ impl App {
 pub(super) fn id_to_null(mut value: Value) -> Value {
     value["id"] = Value::Null;
     value
+}
+
+/// How long ago a file was touched, in the words a person would use.
+fn relative_age(modified: std::time::SystemTime) -> String {
+    let days = modified
+        .elapsed()
+        .map(|d| d.as_secs() / 86_400)
+        .unwrap_or(0);
+    match days {
+        0 => "today".into(),
+        1 => "yesterday".into(),
+        2..=6 => format!("{days} days ago"),
+        7..=13 => "last week".into(),
+        14..=59 => format!("{} weeks ago", days / 7),
+        _ => format!("{} months ago", days / 30),
+    }
 }

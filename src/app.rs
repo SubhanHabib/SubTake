@@ -1,4 +1,6 @@
-use crate::{AppTray, EditorWindow, Field, RecordingLauncher, RecordingOptions, Region, Wallpaper};
+use crate::{
+    AppTray, EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions, Region, Wallpaper,
+};
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
 use std::{

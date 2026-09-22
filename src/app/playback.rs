@@ -248,9 +248,9 @@ impl App {
         );
         // The inspector's panels, in the order the rail lists them.
         //
-        // TODO(redesign): the "Stage" handoff draws four of these — Frame,
-        // Presets, Recent and Wallpapers — and says nothing about the other
-        // ten, marked below. They are carried into the new design by the
+        // TODO(redesign): the "Stage" handoff draws three of these — Frame,
+        // Recent and Wallpapers; its fourth, Presets, is a dialog now — and
+        // says nothing about the other ten, marked below. They are carried into the new design by the
         // generic field renderer rather than left on the old one, so they
         // are correct but undesigned: their grouping, their density and
         // which of them the rail should still offer are open questions for
@@ -271,7 +271,6 @@ impl App {
                 "Recent",      // drawn
                 "Wallpapers",  // drawn
                 "Crop",        // not drawn
-                "Presets",     // drawn
                 "Shortcuts",   // not drawn
             ]
             .iter()
@@ -382,7 +381,16 @@ impl App {
                     .into(),
             );
         }
+        ui.set_saved_presets(ModelRc::new(VecModel::from(
+            self.presets
+                .iter()
+                .map(|p| {
+                    SharedString::from(p.file_stem().unwrap_or_default().to_string_lossy().as_ref())
+                })
+                .collect::<Vec<_>>(),
+        )));
         if self.history.is_none() {
+            ui.set_recents(ModelRc::new(VecModel::from(self.recents())));
             ui.set_dirty(false);
             ui.set_document_title("Untitled".into());
             ui.set_duration(0.);

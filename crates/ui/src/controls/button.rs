@@ -183,6 +183,12 @@ impl Button {
         self
     }
 
+    /// The 48 step a dialog's footer buttons take.
+    pub fn dialog(mut self) -> Self {
+        self.height = Some(Theme::CONTROL_HEIGHT_DIALOG);
+        self
+    }
+
     pub fn small(mut self) -> Self {
         self.height = Some(Theme::CONTROL_HEIGHT_SMALL);
         self

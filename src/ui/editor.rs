@@ -32,91 +32,105 @@ impl RootView {
         if e.get_mac_titlebar() {
             header = header.pl(px(Theme::TITLEBAR_TRAFFIC_LIGHTS));
         }
-        header = header.child(div().flex_1()).child(
-            button(
-                "record",
-                self.translate(e, if e.get_recording() { "Stop" } else { "Record" }),
-                theme,
-            )
-            .glyph(if e.get_recording() {
-                "Stop-fill"
-            } else {
-                "Record-regular"
-            })
-            .enabled(!e.get_busy())
-            .on_click(self.command(if e.get_recording() {
-                "stop-recording"
-            } else {
-                "record"
-            })),
-        );
-        if e.get_recording() {
-            header = header.child(
+        // With nothing open the titlebar is empty, as the handoff draws it:
+        // Record and Open are the empty state's own two buttons, and there is
+        // no document to name, preset or export.
+        if e.get_has_video() || e.get_recording() {
+            header = header.child(div().flex_1()).child(
                 button(
-                    "pause-recording",
-                    if e.get_recording_paused() {
-                        "Resume"
-                    } else {
-                        "Pause"
-                    },
+                    "record",
+                    self.translate(e, if e.get_recording() { "Stop" } else { "Record" }),
                     theme,
                 )
-                .glyph("Pause-regular")
-                .on_click(self.command("pause-recording")),
+                .glyph(if e.get_recording() {
+                    "Stop-fill"
+                } else {
+                    "Record-regular"
+                })
+                .enabled(!e.get_busy())
+                .on_click(self.command(if e.get_recording() {
+                    "stop-recording"
+                } else {
+                    "record"
+                })),
             );
+            if e.get_recording() {
+                header = header.child(
+                    button(
+                        "pause-recording",
+                        if e.get_recording_paused() {
+                            "Resume"
+                        } else {
+                            "Pause"
+                        },
+                        theme,
+                    )
+                    .glyph("Pause-regular")
+                    .on_click(self.command("pause-recording")),
+                );
+            }
+            header = header
+                .child(
+                    button("presets", "Presets", theme)
+                        .glyph("Stack-regular")
+                        .icon_only()
+                        .selected(e.get_dialog() == "presets")
+                        .enabled(!e.get_busy())
+                        .on_click({
+                            let e = e.clone();
+                            move |_, _, _| {
+                                let open = e.get_dialog() == "presets";
+                                e.set_dialog(if open { "" } else { "presets" }.into());
+                            }
+                        }),
+                )
+                .child(
+                    self.panel_button(e, "Export", "Export")
+                        .glyph("Export-regular")
+                        .primary()
+                        .enabled(e.get_has_video() && !e.get_busy()),
+                )
+                // The document pill, centred on the window rather than on the gap
+                // between the two clusters: a `flex_1` between them centres it in
+                // whatever they leave, which moves every time a button appears.
+                // gpui at the pinned revision has no transform, so it is a
+                // full-width absolute strip with the pill centred inside it.
+                //
+                // The strip itself takes no pointer events — only the pill has a
+                // listener — so the buttons underneath it stay clickable.
+                .child(
+                    div()
+                        .absolute()
+                        .left_0()
+                        .right_0()
+                        .flex()
+                        .justify_center()
+                        .child(
+                            row()
+                                .id("title-drag")
+                                .max_w(relative(0.4))
+                                .h(px(Theme::TITLE_PILL_HEIGHT))
+                                .px(px(Theme::CONTROL_PADDING_SMALL))
+                                .gap(px(Theme::GAP_SMALL))
+                                .rounded_full()
+                                .bg(theme.sunk)
+                                // The handoff's dot is decoration. This one says
+                                // the document has unsaved work, which is the
+                                // only thing the titlebar has left to say it
+                                // with, so it appears rather than always burning.
+                                .when(e.get_dirty(), |el| el.child(status_dot(theme)))
+                                .child(
+                                    div()
+                                        .min_w_0()
+                                        .text_ellipsis()
+                                        .font_weight(FontWeight::MEDIUM)
+                                        .text_color(theme.text)
+                                        .child(e.get_document_title()),
+                                )
+                                .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
+                        ),
+                );
         }
-        header = header
-            .child(
-                self.panel_button(e, "Presets", "Presets")
-                    .glyph("Stack-regular")
-                    .icon_only(),
-            )
-            .child(
-                self.panel_button(e, "Export", "Export")
-                    .glyph("Export-regular")
-                    .primary()
-                    .enabled(e.get_has_video() && !e.get_busy()),
-            )
-            // The document pill, centred on the window rather than on the gap
-            // between the two clusters: a `flex_1` between them centres it in
-            // whatever they leave, which moves every time a button appears.
-            // gpui at the pinned revision has no transform, so it is a
-            // full-width absolute strip with the pill centred inside it.
-            //
-            // The strip itself takes no pointer events — only the pill has a
-            // listener — so the buttons underneath it stay clickable.
-            .child(
-                div()
-                    .absolute()
-                    .left_0()
-                    .right_0()
-                    .flex()
-                    .justify_center()
-                    .child(
-                        row()
-                            .id("title-drag")
-                            .max_w(relative(0.4))
-                            .h(px(Theme::TITLE_PILL_HEIGHT))
-                            .px(px(Theme::CONTROL_PADDING_SMALL))
-                            .gap(px(Theme::GAP_SMALL))
-                            .rounded_full()
-                            .bg(theme.sunk)
-                            // The handoff's dot is decoration. This one says
-                            // the document has unsaved work, which is the
-                            // only thing the titlebar has left to say it
-                            // with, so it appears rather than always burning.
-                            .when(e.get_dirty(), |el| el.child(status_dot(theme)))
-                            .child(
-                                div()
-                                    .min_w_0()
-                                    .text_ellipsis()
-                                    .font_weight(FontWeight::MEDIUM)
-                                    .text_color(theme.text)
-                                    .child(e.get_document_title()),
-                            )
-                            .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
-                    ),
-            );
         // The tool pod. The handoff docks nothing: the rail is a 60-wide
         // float 24 from the window's left edge, vertically centred, and the
         // picture runs under it. It was a full-height column in the content
@@ -173,7 +187,11 @@ impl RootView {
             ));
         let preview = self.preview(e, window, cx);
         let aspect_pod = self.aspect_pod(e, cx);
-        let inspector = self.inspector(e, window, cx);
+        // The empty state has no tools to pod and no scene to inspect. The
+        // inspector still opens over it for the panels that stand on their
+        // own — Settings from the menu, Projects when a recovery is waiting.
+        let inspector =
+            (e.get_has_video() || e.get_panel() != "Frame").then(|| self.inspector(e, window, cx));
         let mut root = div()
             .flex()
             .flex_col()
@@ -191,8 +209,8 @@ impl RootView {
                     .min_h_0()
                     .child(preview)
                     .children(aspect_pod)
-                    .child(rail)
-                    .child(inspector),
+                    .children(e.get_has_video().then_some(rail))
+                    .children(inspector),
             );
         let status = self.status_strip(e);
         if e.get_has_video() {
@@ -205,7 +223,9 @@ impl RootView {
                     .child(status),
             );
         }
-        root.child(self.menu_overlay(window, cx)).into_any_element()
+        root.children(self.presets_dialog(e, cx))
+            .child(self.menu_overlay(window, cx))
+            .into_any_element()
     }
 
     /// The export and transcription line. `None` when there is nothing to

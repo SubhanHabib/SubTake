@@ -58,12 +58,21 @@ pub fn empty_state(
         .flex_1()
         .items_center()
         .justify_center()
-        .gap(px(Theme::GAP_LARGE))
+        .gap(px(Theme::EMPTY_GAP))
+        .px(px(Theme::EMPTY_PADDING_X))
+        .pb(px(Theme::EMPTY_PADDING_BOTTOM))
         // Space Grotesk at 40, the one place the redesign is loud. It was
         // Geist SemiBold: the face was bundled and registered and nothing had
         // ever asked for it.
         .child(crate::title(headline, Theme::FONT_DISPLAY))
-        .child(div().text_color(theme.muted).child(detail.into()))
+        .child(
+            div()
+                .max_w(px(Theme::EMPTY_TEXT_WIDTH))
+                .text_center()
+                .text_size(px(Theme::FONT_ACTION))
+                .text_color(theme.muted)
+                .child(detail.into()),
+        )
 }
 
 // ---------------------------------------------------------------------------

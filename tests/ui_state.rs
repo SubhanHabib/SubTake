@@ -136,7 +136,6 @@ fn panel_changes_update_selection_before_callbacks_and_do_not_emit_actions() {
         "Recent",
         "Wallpapers",
         "Crop",
-        "Presets",
         "Shortcuts",
     ];
     for (index, panel) in panels.into_iter().enumerate() {

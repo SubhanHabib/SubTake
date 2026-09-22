@@ -5,7 +5,7 @@ use super::*;
 
 impl App {
     pub(super) fn fields(&self, panel: &str) -> Vec<Field> {
-        let mut raw = self.raw_fields(if panel == "Presets" || panel == "Wallpapers" {
+        let mut raw = self.raw_fields(if panel == "Wallpapers" {
             "Frame"
         } else {
             panel

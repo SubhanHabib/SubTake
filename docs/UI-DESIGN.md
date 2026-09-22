@@ -84,6 +84,43 @@ thing that is progressing. It is carried because export and transcription still
 need somewhere to speak, and it lives inside the console, only while it has
 something to report.
 
+## The empty state
+
+With nothing open the titlebar is empty and there are no floats: no tool pod,
+no aspect pod, no inspector. The stage holds one centred column, 26 apart —
+"Nothing open yet" in Space Grotesk 40, a muted line, New recording (accent,
+hero glow) and Open video (`sunk`) at 52, then a RECENT label and up to three
+cards sharing a 760 row. A card is `glass` at radius 22 with a 96-tall
+thumbnail at radius 14, a title and a Geist Mono 11 meta line.
+
+In the app the cards are the three newest library entries. The library holds
+no thumbnail or running time without opening each file, so a real card says
+what kind of file it is and how old it is, and draws a film glyph on `sunk`
+where the picture would be. The inspector still opens over the empty state for
+the panels that stand on their own — Settings (⌘, or the app menu, since there
+is no rail to reach the gear on) and Projects when a recovery is waiting — and
+carries a close control there.
+
+## Presets
+
+A centred 470 dialog on `card`, frosted at 38, opened by the titlebar's
+Presets button: the title and a close control, the line saying what a preset
+does and does not touch, three Appearance rows (a 74×50 preview of the look,
+its name, its values in Geist Mono) and two Motion tiles. Picking a row or a
+tile only moves the selection; Apply runs the `look-*` and `motion-*`
+commands, so browsing never edits the project. The footer is Save current and
+Apply at 48.
+
+Not drawn by the design: a Saved section under Motion listing presets saved
+to disk, each with a delete control, and Load preset file…. It replaces the
+inspector panel Presets used to be.
+
+The dialog's content is on a `layered` layer over its card, and each
+selection ring on a layer over its row. Inside a frosted surface every
+primitive shares one draw order, and at one order gpui draws all shadows
+before all fills, so an inset ring or a glow set on the element it belongs to
+goes under that element's fill.
+
 ## The recorder
 
 A compact rounded floating bar with a source control, audio and webcam options,

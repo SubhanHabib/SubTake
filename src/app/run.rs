@@ -638,7 +638,6 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             "Recent",
                             "Wallpapers",
                             "Crop",
-                            "Presets",
                             "Shortcuts",
                         ]
                         .iter()
@@ -688,6 +687,10 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             })
         });
     }
+    // The empty state lists the newest projects, so the library is read
+    // before the first frame rather than on first opening Recent.
+    let result = state.borrow_mut().reload_library();
+    report(&ui, result);
     if path.is_none() && !state.borrow().recoveries.is_empty() {
         ui.set_panel("Recent".into());
         ui.set_status("Unsaved project recovery is available in Recent.".into());

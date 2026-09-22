@@ -320,6 +320,36 @@ impl Theme {
     pub const SWATCH_SIZE: f32 = 26.0;
     pub const TILE_WIDTH: f32 = 68.0;
     pub const TILE_HEIGHT: f32 = 48.0;
+
+    // ---- dialogs ----------------------------------------------------------
+
+    /// A centred dialog — the Presets panel is the one the handoff draws.
+    pub const DIALOG_WIDTH: f32 = 470.0;
+    pub const DIALOG_PADDING: f32 = 22.0;
+    /// A dialog's footer buttons: a step between Primary and Hero, because
+    /// they end the dialog rather than act inside it.
+    pub const CONTROL_HEIGHT_DIALOG: f32 = 48.0;
+    /// A preset row's preview: the preset's background with its frame drawn
+    /// inside at `PRESET_PREVIEW_SCALE` of its real padding and radius.
+    pub const PRESET_PREVIEW_WIDTH: f32 = 74.0;
+    pub const PRESET_PREVIEW_HEIGHT: f32 = 50.0;
+    pub const PRESET_PREVIEW_SCALE: f32 = 0.35;
+
+    // ---- empty state ------------------------------------------------------
+
+    /// The empty state's column rhythm — looser than any panel's, because
+    /// there is nothing else on the screen to hold it together.
+    pub const EMPTY_GAP: f32 = 26.0;
+    /// The empty state's side and bottom margins, so the column centres on
+    /// the stage a little above the window's middle.
+    pub const EMPTY_PADDING_X: f32 = 60.0;
+    pub const EMPTY_PADDING_BOTTOM: f32 = 40.0;
+    /// How wide the muted line may run before it wraps.
+    pub const EMPTY_TEXT_WIDTH: f32 = 420.0;
+    /// The Recent row: three cards sharing this width equally.
+    pub const RECENT_WIDTH: f32 = 760.0;
+    pub const RECENT_CARD_PADDING: f32 = 10.0;
+    pub const RECENT_THUMB_HEIGHT: f32 = 96.0;
     /// The strip of tick labels above the lanes. It holds one line of
     /// `FONT_SMALL` and nothing else, so it is that line plus its leading and
     /// not a row's worth of height.

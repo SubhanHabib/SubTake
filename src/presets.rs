@@ -153,11 +153,22 @@ pub fn list() -> Vec<PathBuf> {
     entries
 }
 
+/// A motion preset's zoom-in and zoom-out durations, in milliseconds — the
+/// two figures the Presets dialog shows for it.
+pub fn motion_durations(smooth: bool) -> (f64, f64) {
+    if smooth {
+        (1522.575, 1015.05)
+    } else {
+        (200., 200.)
+    }
+}
+
 pub fn motion(project: &mut Project, smooth: bool) {
+    let (zoom_in, zoom_out) = motion_durations(smooth);
     for (key, value) in [
         ("zoomSmoothness", 0.5),
-        ("zoomInDurationMs", if smooth { 1522.575 } else { 200. }),
-        ("zoomOutDurationMs", if smooth { 1015.05 } else { 200. }),
+        ("zoomInDurationMs", zoom_in),
+        ("zoomOutDurationMs", zoom_out),
         ("cursorSize", 2.5),
         ("cursorSmoothing", 0.67),
         ("cursorSpringMassMultiplier", 1.29),
@@ -194,7 +205,7 @@ pub fn motion_choice(project: &Project) -> &'static str {
 }
 
 pub fn appearance_choice(project: &Project) -> &'static str {
-    for name in ["studio", "minimal", "bold"] {
+    for Look { name, .. } in LOOKS {
         let mut reference = Project::new(Path::new("preset-preview.mp4"));
         reference.editor.clear();
         appearance(&mut reference, name).expect("built-in appearance");
@@ -209,12 +220,55 @@ pub fn appearance_choice(project: &Project) -> &'static str {
     ""
 }
 
+/// A built-in appearance: what it writes, and so what the Presets dialog
+/// previews and prints for it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Look {
+    pub name: &'static str,
+    pub title: &'static str,
+    pub wallpaper: &'static str,
+    pub padding: u32,
+    pub radius: u32,
+    pub shadow: f64,
+}
+
+pub const LOOKS: [Look; 3] = [
+    Look {
+        name: "studio",
+        title: "Studio",
+        wallpaper: "#171c35",
+        padding: 24,
+        radius: 16,
+        shadow: 0.35,
+    },
+    Look {
+        name: "minimal",
+        title: "Minimal",
+        wallpaper: "#ededed",
+        padding: 12,
+        radius: 6,
+        shadow: 0.1,
+    },
+    Look {
+        name: "bold",
+        title: "Bold",
+        wallpaper: "#54324a",
+        padding: 40,
+        radius: 28,
+        shadow: 0.5,
+    },
+];
+
 pub fn appearance(project: &mut Project, name: &str) -> Result<()> {
-    let (wallpaper, padding, radius, shadow) = match name {
-        "studio" => ("#171c35", 24, 16, 0.35),
-        "minimal" => ("#ededed", 12, 6, 0.1),
-        "bold" => ("#54324a", 40, 28, 0.5),
-        _ => anyhow::bail!("Unknown appearance preset"),
+    let Some(&Look {
+        wallpaper,
+        padding,
+        radius,
+        shadow,
+        ..
+    }) = LOOKS.iter().find(|look| look.name == name)
+    else {
+        anyhow::bail!("Unknown appearance preset")
     };
     for (key, value) in [
         ("wallpaper", json!(wallpaper)),

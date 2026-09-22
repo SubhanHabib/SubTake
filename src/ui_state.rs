@@ -27,6 +27,18 @@ pub struct Field {
     pub choice: i32,
 }
 
+/// A project or recording the empty state offers to reopen.
+#[derive(Clone, Default, Debug, PartialEq)]
+pub struct Recent {
+    /// The action that opens it.
+    pub key: String,
+    pub title: String,
+    /// One mono line under the title: its kind and when it last changed.
+    pub meta: String,
+    /// A still from it, when one is to hand. Empty draws a placeholder.
+    pub thumbnail: Image,
+}
+
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Wallpaper {
     pub key: String,
@@ -54,6 +66,9 @@ struct Properties {
     mac_titlebar: bool,
     edit_visible: bool,
     wallpapers: ModelRc<Wallpaper>,
+    recents: ModelRc<Recent>,
+    saved_presets: ModelRc<String>,
+    dialog: String,
     aspect_index: i32,
     background_value: String,
     recording_hint: String,
@@ -126,6 +141,9 @@ impl Default for Properties {
             mac_titlebar: false,
             edit_visible: false,
             wallpapers: ModelRc::default(),
+            recents: ModelRc::default(),
+            saved_presets: ModelRc::default(),
+            dialog: String::new(),
             aspect_index: 0,
             background_value: String::new(),
             recording_hint: "Choose a display or window, then start recording.".into(),
@@ -471,6 +489,45 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.wallpapers != value {
             props.wallpapers = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The centred dialog over the editor: `"presets"`, or empty for none.
+    pub fn get_dialog(&self) -> String {
+        self.0.props.borrow().dialog.clone()
+    }
+
+    pub fn set_dialog(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.dialog != value {
+            props.dialog = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_recents(&self) -> ModelRc<Recent> {
+        self.0.props.borrow().recents.clone()
+    }
+
+    pub fn set_recents(&self, value: ModelRc<Recent>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.recents != value {
+            props.recents = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The names of the presets saved to disk, in the order the
+    /// `apply-preset-{index}` actions address them.
+    pub fn get_saved_presets(&self) -> ModelRc<String> {
+        self.0.props.borrow().saved_presets.clone()
+    }
+
+    pub fn set_saved_presets(&self, value: ModelRc<String>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.saved_presets != value {
+            props.saved_presets = value;
             self.window().invalidate();
         }
     }
@@ -939,7 +996,7 @@ impl UiHandle {
                 "Recent" => 9,
                 "Wallpapers" => 10,
                 "Crop" => 11,
-                "Presets" => 12,
+                "Shortcuts" => 12,
                 _ => 13,
             };
             props.panel = value;

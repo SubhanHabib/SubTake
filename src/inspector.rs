@@ -17,8 +17,6 @@ pub fn present(mut fields: Vec<Field>, panel: &str, language: &str) -> Vec<Field
                 )
                 && !f.key.starts_with("cropRegion.")
         });
-    } else if panel == "Presets" {
-        fields.retain(|f| is_preset(&f.key));
     } else if panel == "Wallpapers" {
         fields.retain(|f| f.key == "backgroundBlur");
     }
@@ -286,7 +284,6 @@ fn group<'a>(panel: &str, key: &str) -> (i32, &'a str) {
                 (1, "Recording")
             }
         }
-        "Presets" => (0, "Appearance presets"),
         "Audio" => (0, "Source audio"),
         _ => (0, ""),
     }

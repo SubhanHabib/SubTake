@@ -1,7 +1,7 @@
 //! Native editor and recorder surfaces, one `RootView` per window kind.
 //! Business commands stay behind the `ui_state` callbacks; this module and
 //! its children only present state and forward intent.
-use crate::ui_state::{EditorWindow, Field, RecordingLauncher, RecordingOptions, Region};
+use crate::ui_state::{EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions, Region};
 use base64::Engine;
 use gpui::{prelude::*, *};
 use std::{
@@ -18,12 +18,14 @@ use subtake_ui::{
     empty_state, fade_edges, frosted, group_card, hairline, icon, icon_button, measure, media_tile,
     menu_in, menu_list, menu_row, menu_surface, mono, mono_small, panel, panel_variant, pod,
     progress_bar, row, section_label, segmented_control, setting_card, status_dot, swatch, switch,
-    tile_grid, toggle, tool_button, tooltip,
+    tile_grid, title, toggle, tool_button, tooltip,
 };
 
 mod editor;
+mod empty;
 mod inspector;
 mod menus;
+mod presets;
 mod preview;
 mod recorder;
 mod timeline;
@@ -207,6 +209,8 @@ pub struct RootView {
     preview_pan: Point<Pixels>,
     preview_context: Option<PreviewContext>,
     preview_known_zoom: f32,
+    /// The Presets dialog's unapplied selection; `None` while it is closed.
+    presets: Option<presets::PresetsDraft>,
     theme: Theme,
 }
 
@@ -241,6 +245,7 @@ impl RootView {
             preview_pan: point(px(0.), px(0.)),
             preview_context: None,
             preview_known_zoom: 1.,
+            presets: None,
             theme,
         }
     }
@@ -399,6 +404,9 @@ impl Render for RootView {
                 if event.keystroke.key == "escape" {
                     s.gesture = None;
                     s.menu = None;
+                    if let Surface::Editor(e) = &s.surface {
+                        e.set_dialog(String::new());
+                    }
                     cx.notify();
                 }
                 if let Surface::Editor(e) = &s.surface {

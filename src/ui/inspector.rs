@@ -455,10 +455,7 @@ impl RootView {
         // sub-panel keeps its way back, now as a caret rather than a button
         // whose caption was a single guillemet character.
         let mut heading = row().h(px(Theme::CONTROL_HEIGHT)).flex_none();
-        if matches!(
-            name.as_str(),
-            "Crop" | "Wallpapers" | "Presets" | "Shortcuts"
-        ) {
+        if matches!(name.as_str(), "Crop" | "Wallpapers" | "Shortcuts") {
             let editor = e.clone();
             let back = if name == "Shortcuts" {
                 "Preferences"
@@ -477,6 +474,19 @@ impl RootView {
         heading = heading
             .child(caps_label(title.to_owned(), theme))
             .child(div().flex_1());
+        // Not drawn by the design: the inspector over the empty state. With
+        // no rail to pick another panel from, it needs its own way out.
+        if !e.get_has_video() {
+            let editor = e.clone();
+            heading = heading.child(
+                icon_button("inspector-close", "X-regular", "Close", theme)
+                    .ghost()
+                    .on_click(move |_, _, _| {
+                        editor.set_panel("Frame".into());
+                        editor.defer_panel("Frame".into());
+                    }),
+            );
+        }
         let mut content = column().gap(px(Theme::GAP));
         if name == "Frame" || name == "Wallpapers" {
             // Scene / Background is one segmented control, not two buttons.
@@ -626,23 +636,7 @@ impl RootView {
                     )),
                 );
         }
-        if name == "Presets" {
-            let mut looks = row();
-            for (label, value) in [
-                ("Studio", "studio"),
-                ("Minimal", "minimal"),
-                ("Bold", "bold"),
-            ] {
-                looks = looks.child(
-                    self.action(value, label, &format!("look-{value}"), e.get_has_video())
-                        .selected(e.get_look_choice() == value),
-                );
-            }
-            content = content
-                .child(caps_label("Choose a look", theme))
-                .child(looks);
-        }
-        if matches!(name.as_str(), "Cursor" | "Preferences" | "Presets") {
+        if matches!(name.as_str(), "Cursor" | "Preferences") {
             // A preset is a choice you make once and live with, so it states
             // what it does rather than making the name carry it alone.
             let mut presets = tile_grid(2);

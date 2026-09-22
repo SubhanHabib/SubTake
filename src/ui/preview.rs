@@ -203,37 +203,7 @@ impl RootView {
         let theme = self.theme;
         self.sync_preview_context(e);
         if !e.get_has_video() {
-            return stage_reserve(
-                empty_state(
-                    theme,
-                    "No Video Loaded",
-                    "Open a video or start a recording",
-                )
-                .child(
-                    row()
-                        .gap(px(Theme::GAP))
-                        .child(
-                            self.action("open-video", "Open video", "open", !e.get_busy())
-                                .raised()
-                                .hero(),
-                        )
-                        // The hero size exists for exactly this: the one action an
-                        // otherwise empty screen is asking for. It had been built
-                        // and never used, so the emptiest screen in the app wore
-                        // the same 44px button as a dialog's footer.
-                        .child(
-                            self.action(
-                                "new-recording",
-                                "New recording",
-                                "record",
-                                !e.get_busy() && !e.get_recording(),
-                            )
-                            .primary()
-                            .hero(),
-                        ),
-                ),
-            )
-            .into_any_element();
+            return self.empty_stage(e);
         }
         let viewport = self.preview_viewport.get();
         let available_w = if viewport.size.width > px(0.) {
