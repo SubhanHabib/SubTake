@@ -152,6 +152,23 @@ impl Theme {
             .collect()
     }
 
+    /// The picture's shadow on the stage: one soft layer, short enough to
+    /// fade out inside the stage's margin rather than being cut off at the
+    /// timeline's edge the way a panel's deep shadow would be.
+    pub fn picture_shadow(&self) -> Vec<gpui::BoxShadow> {
+        let (tint, alpha) = match self.appearance {
+            Appearance::Light => (gpui::hsla(0.65, 0.33, 0.12, 1.), 0.18),
+            Appearance::Dark => (gpui::hsla(0., 0., 0., 1.), 0.45),
+        };
+        vec![gpui::BoxShadow {
+            color: tint.opacity(alpha),
+            offset: gpui::point(gpui::px(0.), gpui::px(6.)),
+            blur_radius: gpui::px(18.),
+            spread_radius: gpui::px(0.),
+            inset: false,
+        }]
+    }
+
     /// The single `0 2 6` a raised control gains under the pointer — the
     /// near layer of `panel_shadow` and nothing else, so a button lifting on
     /// hover reads as the same material as a panel that is already lifted.

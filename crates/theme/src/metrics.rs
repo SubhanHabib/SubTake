@@ -173,6 +173,12 @@ impl Theme {
     /// A float hanging from the top of the stage sits a step tighter than one
     /// at its side: the titlebar above it is already air.
     pub const INSET_TOP: f32 = 20.0;
+    /// The air above and below the picture on the stage, so it never runs
+    /// into the titlebar or the timeline.
+    pub const STAGE_PICTURE_MARGIN: f32 = 20.0;
+    /// The picture's corners: a little curved, well under a panel's, so it
+    /// still reads as the video rather than as another card.
+    pub const STAGE_PICTURE_RADIUS: f32 = 10.0;
 
     /// Side padding by control height. A labelled control is a pill, so its
     /// padding is what gives it its width.

@@ -207,13 +207,13 @@ impl RootView {
         }
         let viewport = self.preview_viewport.get();
         let available_w = if viewport.size.width > px(0.) {
-            f32::from(viewport.size.width) - 16.
+            f32::from(viewport.size.width)
         } else {
             (f32::from(window.viewport_size().width) - STAGE_RESERVE_LEFT - STAGE_RESERVE_RIGHT)
                 .max(100.)
         };
         let available_h = if viewport.size.height > px(0.) {
-            f32::from(viewport.size.height) - 16.
+            f32::from(viewport.size.height) - Theme::STAGE_PICTURE_MARGIN * 2.
         } else {
             (f32::from(window.viewport_size().height) - 492.).max(80.)
         };
@@ -230,11 +230,17 @@ impl RootView {
             .flex_shrink_0()
             .w(px(width))
             .h(px(height))
-            .rounded_xl()
+            .rounded(px(Theme::STAGE_PICTURE_RADIUS))
+            .shadow(theme.picture_shadow())
             .overflow_hidden()
             .child(measure(self.preview_bounds.clone()));
         if let Some(image) = e.get_preview().0 {
-            picture = picture.child(img(image).size_full().object_fit(ObjectFit::Contain));
+            picture = picture.child(
+                img(image)
+                    .size_full()
+                    .rounded(px(Theme::STAGE_PICTURE_RADIUS))
+                    .object_fit(ObjectFit::Contain),
+            );
         }
         picture = picture.on_mouse_down(
             MouseButton::Left,
