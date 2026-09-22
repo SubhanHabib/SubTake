@@ -864,7 +864,7 @@ impl RootView {
         // the band and pushing the first row down.
         let mut el = content_panel(theme)
             .py_0()
-            .w_full()
+            .size_full()
             .min_h_0()
             .child(heading.pt(px(Theme::GAP_LARGE)))
             .child(fade_edges(
@@ -888,9 +888,14 @@ impl RootView {
         // builder the caller is still adding children to.
         //
         // It floats over the stage rather than occupying a column of it: 24
-        // from the window's right edge, 20 down, and no taller than the stage
-        // it sits on. The picture runs underneath, and the stage reserves the
+        // from the window's right edge, 20 down, and as tall as the stage it
+        // sits on. The picture runs underneath, and the stage reserves the
         // width back so the two never overlap.
+        //
+        // The card takes that full height itself — `frosted` hands its child
+        // the layout it was given, so a card that only asked for its content
+        // would leave the float's spare height empty and scroll rows away
+        // that had room to be drawn.
         div()
             .absolute()
             .right(px(Theme::INSET))
