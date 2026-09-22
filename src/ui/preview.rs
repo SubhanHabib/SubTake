@@ -35,14 +35,29 @@ pub(super) fn macos_cursor_image() -> Arc<gpui::Image> {
 /// pod changed shape every time the ratio changed.
 const ASPECT_TRIGGER_WIDTH: f32 = 108.0;
 
-fn stage_reserve(el: impl IntoElement) -> Div {
+/// The stage's right reserve: the inspector's, or only its toggle's while it
+/// is folded away.
+pub(super) fn stage_reserve_right(window: &Window) -> f32 {
+    if inspector_collapsed(window) {
+        STAGE_RESERVE_RIGHT_COLLAPSED
+    } else {
+        STAGE_RESERVE_RIGHT
+    }
+}
+
+/// Whether the window is too narrow to keep the inspector beside the stage.
+pub(super) fn inspector_collapsed(window: &Window) -> bool {
+    window.viewport_size().width < px(INSPECTOR_COLLAPSE_WIDTH)
+}
+
+fn stage_reserve(el: impl IntoElement, right: f32) -> Div {
     div()
         .flex()
         .flex_1()
         .min_w_0()
         .h_full()
         .pl(px(STAGE_RESERVE_LEFT))
-        .pr(px(STAGE_RESERVE_RIGHT))
+        .pr(px(right))
         .child(
             div()
                 .flex()
@@ -209,8 +224,10 @@ impl RootView {
         let available_w = if viewport.size.width > px(0.) {
             f32::from(viewport.size.width)
         } else {
-            (f32::from(window.viewport_size().width) - STAGE_RESERVE_LEFT - STAGE_RESERVE_RIGHT)
-                .max(100.)
+            (f32::from(window.viewport_size().width)
+                - STAGE_RESERVE_LEFT
+                - stage_reserve_right(window))
+            .max(100.)
         };
         let available_h = if viewport.size.height > px(0.) {
             f32::from(viewport.size.height) - Theme::STAGE_PICTURE_MARGIN * 2.
@@ -364,6 +381,7 @@ impl RootView {
                             .child(picture),
                     ),
             ),
+            stage_reserve_right(window),
         )
         .into_any_element()
     }

@@ -22,7 +22,9 @@
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
 //! opens that recorder card; `=panel-<name>` opens any other panel by its
-//! model name (`=panel-Preferences`); `=rec-counting`, `=rec-recording`, `=rec-paused` or
+//! model name (`=panel-Preferences`); `=inspector-open` slides the folded
+//! inspector in, with `SUBTAKE_GALLERY_WIDTH=1100` (any width under 1280)
+//! folding it; `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen).
 use crate::{
     CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
@@ -99,6 +101,7 @@ pub fn run() -> Result<()> {
     match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
         Ok("empty") => editor.set_has_video(false),
         Ok("presets") => editor.set_dialog("presets".into()),
+        Ok("inspector-open") => editor.set_inspector_open(true),
         // The Selection panel over a zoom region, or with nothing selected.
         Ok("selection") => {
             let mut g = gallery.borrow_mut();
@@ -326,9 +329,14 @@ pub fn run() -> Result<()> {
         .on_close_requested(|| ui_runtime::CloseRequestResponse::HideWindow);
 
     // -- Show ---------------------------------------------------------------
+    // Under 1280 the inspector folds away to its toggle.
+    let width = std::env::var("SUBTAKE_GALLERY_WIDTH")
+        .ok()
+        .and_then(|w| w.parse::<f32>().ok())
+        .unwrap_or(1360.);
     editor
         .window()
-        .set_size(ui_runtime::LogicalSize::new(1360., 880.));
+        .set_size(ui_runtime::LogicalSize::new(width, 880.));
     editor.show()?;
     show_recorder(&launcher, &options);
 

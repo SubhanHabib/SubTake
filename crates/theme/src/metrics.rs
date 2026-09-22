@@ -576,3 +576,13 @@ pub const PANEL_WIDTH: f32 = 340.0;
 /// right edge.
 pub const STAGE_RESERVE_LEFT: f32 = Theme::INSET * 2.0 + Theme::POD_WIDTH;
 pub const STAGE_RESERVE_RIGHT: f32 = Theme::INSET * 2.0 + PANEL_WIDTH;
+
+/// Below this window width the side reserve squeezes the picture, so the
+/// inspector folds away to a round toggle and slides in over the stage when
+/// opened — the first of the handoff's two responsive options.
+pub const INSPECTOR_COLLAPSE_WIDTH: f32 = 1280.0;
+/// What the stage keeps clear on the right while the inspector is folded:
+/// the 44 toggle and its inset either side.
+pub const STAGE_RESERVE_RIGHT_COLLAPSED: f32 = Theme::INSET * 2.0 + Theme::CONTROL_HEIGHT_LARGE;
+/// How long the folded inspector takes to slide in or out.
+pub const INSPECTOR_SLIDE_MS: u64 = 240;

@@ -13,7 +13,10 @@ use std::{
     sync::{Arc, OnceLock},
     time::Instant,
 };
-use subtake_theme::{FONT_SANS, PANEL_WIDTH, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, Theme};
+use subtake_theme::{
+    FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_WIDTH, STAGE_RESERVE_LEFT,
+    STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
+};
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
     caps_label, choice_tile, column, composer_footer, content_panel, context_chip, divider,
@@ -232,6 +235,10 @@ pub struct RootView {
     /// Each inspector panel's scroll position, so its edges fade by how much
     /// of it is scrolled out of sight.
     inspector_scroll: HashMap<String, ScrollHandle>,
+    /// The folded inspector's slide: where it is heading (in or out), where
+    /// it set off from (0 out, 1 in) and when. `None` until first drawn, so
+    /// a window that opens narrow starts folded rather than sliding shut.
+    inspector_slide: Option<(bool, f32, Instant)>,
     theme: Theme,
 }
 
@@ -271,6 +278,7 @@ impl RootView {
             mic_clipped: None,
             export_dismiss: None,
             inspector_scroll: HashMap::new(),
+            inspector_slide: None,
             theme,
         }
     }

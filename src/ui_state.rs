@@ -81,6 +81,7 @@ struct Properties {
     recents: ModelRc<Recent>,
     saved_presets: ModelRc<String>,
     dialog: String,
+    inspector_open: bool,
     aspect_index: i32,
     background_value: String,
     recording_hint: String,
@@ -166,6 +167,7 @@ impl Default for Properties {
             recents: ModelRc::default(),
             saved_presets: ModelRc::default(),
             dialog: String::new(),
+            inspector_open: false,
             aspect_index: 0,
             background_value: String::new(),
             recording_hint: "Choose a display or window, then start recording.".into(),
@@ -536,6 +538,20 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.dialog != value {
             props.dialog = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// Whether the folded inspector is slid in. Only read while the window
+    /// is too narrow to keep the inspector beside the stage.
+    pub fn get_inspector_open(&self) -> bool {
+        self.0.props.borrow().inspector_open
+    }
+
+    pub fn set_inspector_open(&self, value: bool) {
+        let mut props = self.0.props.borrow_mut();
+        if props.inspector_open != value {
+            props.inspector_open = value;
             self.window().invalidate();
         }
     }

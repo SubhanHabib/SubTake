@@ -74,6 +74,17 @@ slightly left of the window's true centre. That is the handoff's own answer to
 its own open question — the alternative was a larger frame with its right edge
 covered.
 
+Under 1280 wide that reserve squeezes the picture, so the inspector folds away
+to a 44 round toggle at its top-right corner and the stage takes the width
+back — the first of the handoff's two responsive options, which it leaves to
+be decided. The toggle, or any tool on the pod, slides the inspector in over
+the stage in 240 ms; its close, or the tool already showing, slides it back
+out and leaves the panel as it was. Not drawn by the design: the toggle's
+icon, which is SlidersHorizontal, and the slide, which the handoff names but
+does not time. Scene and Background take a close while folded, since there
+closing has somewhere to go. `SUBTAKE_GALLERY_WIDTH=1100` shows the folded
+editor in the gallery, and `=inspector-open` the inspector slid in.
+
 Below the stage the console, inset 24 on all three of its edges. Its first row
 is the transport: SkipBack, Play on `ink`, SkipForward, the timecode in Geist
 Mono, then Suggest zooms / Split / Add as raised buttons, then snap, fit and

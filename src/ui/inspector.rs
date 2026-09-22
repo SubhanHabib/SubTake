@@ -1,6 +1,6 @@
 //! The inspector panel: every field kind and the panels built from them.
 
-use super::preview::macos_cursor_image;
+use super::preview::{inspector_collapsed, macos_cursor_image};
 use super::*;
 
 /// The glyph a numeric field wears in its scrub plate. Keyed on the field so
@@ -148,6 +148,10 @@ impl RootView {
             self.theme,
             move |_, _, _| {
                 if is_panel {
+                    // While the inspector is folded, a tool slides it in and
+                    // the tool already showing slides it back out.
+                    let open = !(e.get_panel() == target && e.get_inspector_open());
+                    e.set_inspector_open(open);
                     e.set_panel(target.clone());
                     e.defer_panel(target.clone());
                 } else {
@@ -553,19 +557,28 @@ impl RootView {
             );
         }
         heading = heading.child(title(shown.to_owned(), Theme::FONT_HEADING).flex_1());
-        // Not wired: the handoff's close on Scene. The inspector always
-        // shows a panel and Scene is where closing lands, so with a video
-        // open Scene and Background have no close. Over the empty state,
-        // with no rail to pick another panel from, every panel keeps one.
+        // Folded, every panel's close slides the inspector back out and
+        // leaves the panel as it was, for the toggle to bring back.
+        //
+        // Not wired: the handoff's close on Scene while the inspector sits
+        // beside the stage. It always shows a panel there and Scene is where
+        // closing lands, so with a video open Scene and Background have no
+        // close. Over the empty state, with no rail to pick another panel
+        // from, every panel keeps one.
+        let collapsed = inspector_collapsed(window);
         let root = matches!(name.as_str(), "Frame" | "Wallpapers");
-        if !root || !e.get_has_video() {
+        if collapsed || !root || !e.get_has_video() {
             let editor = e.clone();
             heading = heading.child(
                 icon_button("inspector-close", "X-regular", "Close", theme)
                     .small()
                     .on_click(move |_, _, _| {
-                        editor.set_panel("Frame".into());
-                        editor.defer_panel("Frame".into());
+                        if collapsed {
+                            editor.set_inspector_open(false);
+                        } else {
+                            editor.set_panel("Frame".into());
+                            editor.defer_panel("Frame".into());
+                        }
                     }),
             );
         }
@@ -993,19 +1006,75 @@ impl RootView {
         // the layout it was given, so a card that only asked for its content
         // would leave the float's spare height empty and scroll rows away
         // that had room to be drawn.
-        div()
+        let float = |right: f32| {
+            div()
+                .absolute()
+                .right(px(right))
+                .top(px(Theme::INSET_TOP))
+                .bottom(px(Theme::INSET))
+                .w(px(PANEL_WIDTH))
+                .flex()
+                .occlude()
+                .child(frosted(
+                    UiSurface::Content.radius(),
+                    UiSurface::Content.blur(),
+                    el,
+                ))
+        };
+        if !collapsed {
+            self.inspector_slide = None;
+            e.set_inspector_open(false);
+            return float(Theme::INSET).into_any_element();
+        }
+        // Folded: a 44 round toggle where the float's corner would be, and
+        // the float sliding in over the stage from past the window's edge.
+        // The toggle sits under it, so an open inspector covers it.
+        let shown = self.inspector_slide(e.get_inspector_open(), window);
+        let editor = e.clone();
+        let toggle = div()
             .absolute()
             .right(px(Theme::INSET))
             .top(px(Theme::INSET_TOP))
-            .bottom(px(Theme::INSET))
-            .w(px(PANEL_WIDTH))
-            .flex()
-            .occlude()
-            .child(frosted(
-                UiSurface::Content.radius(),
-                UiSurface::Content.blur(),
-                el,
-            ))
+            .child(
+                button("inspector-toggle", "Show inspector", theme)
+                    .glyph("SlidersHorizontal-regular")
+                    .icon_only()
+                    .on_click(move |_, _, _| editor.set_inspector_open(true)),
+            );
+        let away = (PANEL_WIDTH + Theme::INSET * 2.) * (1. - shown);
+        div()
+            .absolute()
+            .inset_0()
+            .child(toggle)
+            .when(shown > 0., |el| el.child(float(Theme::INSET - away)))
             .into_any_element()
+    }
+
+    /// How far the folded inspector is slid in, 0 to 1, easing toward
+    /// `open` over [`INSPECTOR_SLIDE_MS`] and asking for frames until it
+    /// arrives.
+    fn inspector_slide(&mut self, open: bool, window: &mut Window) -> f32 {
+        let now = Instant::now();
+        let duration = std::time::Duration::from_millis(INSPECTOR_SLIDE_MS);
+        let at = |(target, origin, started): (bool, f32, Instant)| {
+            let raw = now.saturating_duration_since(started).as_secs_f32() / duration.as_secs_f32();
+            let to = if target { 1. } else { 0. };
+            if raw >= 1. {
+                to
+            } else {
+                subtake_ui::motion::lerp(origin, to, subtake_ui::motion::EASE_OUT.eval(raw))
+            }
+        };
+        let slide = match self.inspector_slide {
+            Some(slide) if slide.0 == open => slide,
+            Some(slide) if !subtake_ui::motion::reduced_motion() => (open, at(slide), now),
+            _ => (open, if open { 1. } else { 0. }, now),
+        };
+        self.inspector_slide = Some(slide);
+        let value = at(slide);
+        if value != if open { 1. } else { 0. } {
+            window.request_animation_frame();
+        }
+        value
     }
 }
