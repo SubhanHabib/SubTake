@@ -14,8 +14,8 @@ use std::{
     time::Instant,
 };
 use subtake_theme::{
-    FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_WIDTH, STAGE_RESERVE_LEFT,
-    STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
+    FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_WIDTH, PILL_MORPH_MS,
+    STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
@@ -239,6 +239,12 @@ pub struct RootView {
     /// it set off from (0 out, 1 in) and when. `None` until first drawn, so
     /// a window that opens narrow starts folded rather than sliding shut.
     inspector_slide: Option<(bool, f32, Instant)>,
+    /// The document pill's turn into the export pill, as `inspector_slide`.
+    pill_morph: Option<(bool, f32, Instant)>,
+    /// The document pill's own size, for the export pill to grow out of.
+    title_pill: Rc<Cell<Bounds<Pixels>>>,
+    /// The titlebar's buttons, which the export pill narrows to clear.
+    titlebar_cluster: Rc<Cell<Bounds<Pixels>>>,
     theme: Theme,
 }
 
@@ -279,6 +285,9 @@ impl RootView {
             export_dismiss: None,
             inspector_scroll: HashMap::new(),
             inspector_slide: None,
+            pill_morph: None,
+            title_pill: Rc::new(Cell::new(Bounds::default())),
+            titlebar_cluster: Rc::new(Cell::new(Bounds::default())),
             theme,
         }
     }
@@ -339,6 +348,40 @@ impl RootView {
         .enabled(enabled)
         .on_click(move |_, _, _| s.action(&command))
     }
+}
+
+/// Progress, 0 to 1, of a two-way transition easing toward `on` over `ms`,
+/// asking for frames until it arrives. `slot` holds where it is heading,
+/// where it set off from and when; it starts `None`, so a first draw lands
+/// in place rather than playing in.
+pub(super) fn slide_toward(
+    slot: &mut Option<(bool, f32, Instant)>,
+    on: bool,
+    ms: u64,
+    window: &mut Window,
+) -> f32 {
+    let now = Instant::now();
+    let duration = std::time::Duration::from_millis(ms);
+    let at = |(target, origin, started): (bool, f32, Instant)| {
+        let raw = now.saturating_duration_since(started).as_secs_f32() / duration.as_secs_f32();
+        let to = if target { 1. } else { 0. };
+        if raw >= 1. {
+            to
+        } else {
+            subtake_ui::motion::lerp(origin, to, subtake_ui::motion::EASE_OUT.eval(raw))
+        }
+    };
+    let slide = match *slot {
+        Some(slide) if slide.0 == on => slide,
+        Some(slide) if !subtake_ui::motion::reduced_motion() => (on, at(slide), now),
+        _ => (on, if on { 1. } else { 0. }, now),
+    };
+    *slot = Some(slide);
+    let value = at(slide);
+    if value != if on { 1. } else { 0. } {
+        window.request_animation_frame();
+    }
+    value
 }
 
 impl Render for RootView {

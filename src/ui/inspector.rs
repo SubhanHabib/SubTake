@@ -1029,7 +1029,12 @@ impl RootView {
         // Folded: a 44 round toggle where the float's corner would be, and
         // the float sliding in over the stage from past the window's edge.
         // The toggle sits under it, so an open inspector covers it.
-        let shown = self.inspector_slide(e.get_inspector_open(), window);
+        let shown = slide_toward(
+            &mut self.inspector_slide,
+            e.get_inspector_open(),
+            INSPECTOR_SLIDE_MS,
+            window,
+        );
         let editor = e.clone();
         let toggle = div()
             .absolute()
@@ -1048,33 +1053,5 @@ impl RootView {
             .child(toggle)
             .when(shown > 0., |el| el.child(float(Theme::INSET - away)))
             .into_any_element()
-    }
-
-    /// How far the folded inspector is slid in, 0 to 1, easing toward
-    /// `open` over [`INSPECTOR_SLIDE_MS`] and asking for frames until it
-    /// arrives.
-    fn inspector_slide(&mut self, open: bool, window: &mut Window) -> f32 {
-        let now = Instant::now();
-        let duration = std::time::Duration::from_millis(INSPECTOR_SLIDE_MS);
-        let at = |(target, origin, started): (bool, f32, Instant)| {
-            let raw = now.saturating_duration_since(started).as_secs_f32() / duration.as_secs_f32();
-            let to = if target { 1. } else { 0. };
-            if raw >= 1. {
-                to
-            } else {
-                subtake_ui::motion::lerp(origin, to, subtake_ui::motion::EASE_OUT.eval(raw))
-            }
-        };
-        let slide = match self.inspector_slide {
-            Some(slide) if slide.0 == open => slide,
-            Some(slide) if !subtake_ui::motion::reduced_motion() => (open, at(slide), now),
-            _ => (open, if open { 1. } else { 0. }, now),
-        };
-        self.inspector_slide = Some(slide);
-        let value = at(slide);
-        if value != if open { 1. } else { 0. } {
-            window.request_animation_frame();
-        }
-        value
     }
 }

@@ -38,16 +38,15 @@ impl RootView {
         if e.get_has_video() || e.get_recording() {
             // Not drawn by the design: where the export pill sits. The
             // handoff draws it filling a titlebar of its own, so it stands in
-            // for the document pill while it shows, centred in the space the
-            // buttons leave — in the flow rather than on the window's centre,
-            // so a narrow window squeezes it instead of running it under them.
+            // for the document pill while it shows, centred on the window as
+            // the document is and narrowed where the buttons would meet it.
             let export = self.export_pill(e, cx);
-            let showing_export = export.is_some();
             header = header.child(div().flex_1());
-            if let Some(pill) = export {
-                header = header.child(pill).child(div().flex_1());
-            }
-            header = header.child(
+            let mut cluster = row()
+                .relative()
+                .gap(px(Theme::GAP))
+                .child(measure(self.titlebar_cluster.clone()));
+            cluster = cluster.child(
                 button(
                     "record",
                     self.translate(e, if e.get_recording() { "Stop" } else { "Record" }),
@@ -66,7 +65,7 @@ impl RootView {
                 })),
             );
             if e.get_recording() {
-                header = header.child(
+                cluster = cluster.child(
                     button(
                         "pause-recording",
                         if e.get_recording_paused() {
@@ -80,7 +79,7 @@ impl RootView {
                     .on_click(self.command("pause-recording")),
                 );
             }
-            header = header
+            cluster = cluster
                 .child(
                     button("presets", "Presets", theme)
                         .glyph("Stack-regular")
@@ -116,40 +115,98 @@ impl RootView {
             //
             // The strip itself takes no pointer events — only the pill has a
             // listener — so the buttons underneath it stay clickable.
-            header = header.when(!showing_export, |header| {
-                header.child(
+            header = header.child(cluster);
+            // The document pill, centred on the window rather than on the gap
+            // between the two clusters: a `flex_1` between them centres it in
+            // whatever they leave, which moves every time a button appears.
+            // gpui at the pinned revision has no transform, so it is a
+            // full-width absolute strip with the pill centred inside it.
+            //
+            // The strip itself takes no pointer events — only the pill has a
+            // listener — so the buttons underneath it stay clickable.
+            let title_pill = row()
+                .id("title-drag")
+                .relative()
+                .max_w(relative(0.4))
+                .h(px(Theme::TITLE_PILL_HEIGHT))
+                .px(px(Theme::CONTROL_PADDING_SMALL))
+                .gap(px(Theme::GAP_SMALL))
+                .rounded_full()
+                .bg(theme.sunk)
+                // The handoff's dot is decoration. This one says
+                // the document has unsaved work, which is the
+                // only thing the titlebar has left to say it
+                // with, so it appears rather than always burning.
+                .when(e.get_dirty(), |el| el.child(status_dot(theme)))
+                .child(
                     div()
-                        .absolute()
-                        .left_0()
-                        .right_0()
-                        .flex()
-                        .justify_center()
-                        .child(
-                            row()
-                                .id("title-drag")
-                                .max_w(relative(0.4))
-                                .h(px(Theme::TITLE_PILL_HEIGHT))
-                                .px(px(Theme::CONTROL_PADDING_SMALL))
-                                .gap(px(Theme::GAP_SMALL))
-                                .rounded_full()
-                                .bg(theme.sunk)
-                                // The handoff's dot is decoration. This one says
-                                // the document has unsaved work, which is the
-                                // only thing the titlebar has left to say it
-                                // with, so it appears rather than always burning.
-                                .when(e.get_dirty(), |el| el.child(status_dot(theme)))
-                                .child(
-                                    div()
-                                        .min_w_0()
-                                        .text_ellipsis()
-                                        .font_weight(FontWeight::MEDIUM)
-                                        .text_color(theme.text)
-                                        .child(e.get_document_title()),
-                                )
-                                .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
-                        ),
+                        .min_w_0()
+                        .text_ellipsis()
+                        .font_weight(FontWeight::MEDIUM)
+                        .text_color(theme.text)
+                        .child(e.get_document_title()),
                 )
-            });
+                .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move())
+                .child(measure(self.title_pill.clone()));
+            // While an export runs or has just ended its pill takes the
+            // document pill's place, the one growing into the other: the
+            // width and height ease between the two and the old contents fade
+            // out before the new fade in.
+            let shown = slide_toward(
+                &mut self.pill_morph,
+                export.is_some(),
+                PILL_MORPH_MS,
+                window,
+            );
+            let centre = f32::from(window.viewport_size().width) / 2.;
+            let cluster = f32::from(self.titlebar_cluster.get().left());
+            let room = (cluster - centre - Theme::GAP) * 2.;
+            let export_width = if cluster > centre {
+                Theme::EXPORT_PILL_WIDTH.min(room)
+            } else {
+                Theme::EXPORT_PILL_WIDTH
+            };
+            let piece = match export {
+                Some(pill) if shown >= 1. => pill.w(px(export_width)).into_any_element(),
+                None if shown <= 0. => title_pill.into_any_element(),
+                export => {
+                    let title_width = f32::from(self.title_pill.get().size.width);
+                    let (content, fade) = match export {
+                        Some(pill) => {
+                            (pill.w(px(export_width)).into_any_element(), shown * 2. - 1.)
+                        }
+                        None => (title_pill.into_any_element(), 1. - shown * 2.),
+                    };
+                    div()
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .w(px(subtake_ui::motion::lerp(
+                            title_width,
+                            export_width,
+                            shown,
+                        )))
+                        .h(px(subtake_ui::motion::lerp(
+                            Theme::TITLE_PILL_HEIGHT,
+                            Theme::CONTROL_HEIGHT_LARGE,
+                            shown,
+                        )))
+                        .rounded_full()
+                        .bg(theme.sunk)
+                        .overflow_hidden()
+                        .child(div().flex_none().opacity(fade.clamp(0., 1.)).child(content))
+                        .into_any_element()
+                }
+            };
+            header = header.child(
+                div()
+                    .absolute()
+                    .left_0()
+                    .right_0()
+                    .flex()
+                    .justify_center()
+                    .child(piece),
+            );
         }
         // The tool pod. The handoff docks nothing: the rail is a 60-wide
         // float 24 from the window's left edge, vertically centred, and the

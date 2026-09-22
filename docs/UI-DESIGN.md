@@ -168,7 +168,8 @@ with the reason under it, and waits with Try again and dismiss. Cancelling just
 removes the pill.
 
 Not drawn by the design: where the pill sits (it takes the document pill's
-place while it shows, centred between the traffic lights and the buttons), and
+place while it shows, centred on the window as the document is, growing out
+of it over 240 ms and narrowing where it would meet the buttons), and
 the failure's headline, which is always "Export failed" because the reason
 comes from the encoder as one line and is shown under it rather than split.
 Not wired: queueing a second export — Export waits while one runs.
