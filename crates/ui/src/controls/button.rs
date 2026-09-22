@@ -260,15 +260,26 @@ impl RenderOnce for Button {
             _ => glyph_for(height),
         });
 
-        // A control is either FILLED — a solid plate with its glyph inverted
-        // on top — or a wash. Only three things fill: the primary action,
-        // Record, and whatever is switched on. The accent marks exactly four
-        // things in this interface, and "the button you are looking at" is
-        // not one of them, so everything else washes.
+        // Selection is not a fill swap. The handoff is explicit twice over —
+        // "selected is `inset 0 0 0 1.5px --accent` over `--sunk` or
+        // `--card`, never a fill swap", and again under button states, "not
+        // a button state". A selected control keeps the plate it already had
+        // and gains an accent edge, so a row of choices reads as one row of
+        // choices with one of them marked, instead of one blue button beside
+        // some grey ones.
+        //
+        // The one exception is the icon button's "active tool" state, which
+        // the Icon card does give as `fill --accent · text --on-accent`.
+        // That is the accent doing one of its four jobs: the tool pod, the
+        // snap toggle. A glyph has no room for an edge to read against, and
+        // an active tool is a mode the whole app is in rather than one item
+        // picked from a list.
+        let tool_active = self.selected && self.icon_only;
         let filled = matches!(
             self.variant,
             ButtonVariant::Primary | ButtonVariant::Record | ButtonVariant::Transport
-        ) || self.selected;
+        ) || tool_active;
+        let marked = self.selected && !self.icon_only;
         let (fill_rest, fill_hover) = match self.variant {
             ButtonVariant::Transport => (theme.ink, theme.ink),
             ButtonVariant::Record => (theme.rec, theme.rec),
@@ -332,7 +343,7 @@ impl RenderOnce for Button {
             }))
             // 500 on a filled control and on Record, 400 elsewhere: weight is
             // the quiet half of what marks the primary action.
-            .font_weight(if filled {
+            .font_weight(if filled || marked {
                 FontWeight::MEDIUM
             } else {
                 FontWeight::NORMAL
@@ -362,6 +373,11 @@ impl RenderOnce for Button {
         let mut shadows = Vec::new();
         if self.variant == ButtonVariant::Raised {
             shadows.push(hairline(theme.raise_line, Theme::BORDER_WIDTH));
+        }
+        // The mark a selected control carries: an inset edge, so gaining or
+        // losing it cannot change what the control measures.
+        if marked {
+            shadows.push(hairline(theme.accent, Theme::SELECTED_WIDTH));
         }
         // Only the accent and Record glow. The transport is filled too, but
         // it is `ink` — a glow would make the quietest control in the player
