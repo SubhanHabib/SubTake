@@ -6,7 +6,7 @@
 
 use super::*;
 use crate::presets::{LOOKS, Look, motion_durations};
-use subtake_ui::layered;
+use subtake_ui::{edge, layered};
 
 /// What the dialog has selected but not yet applied.
 #[derive(Clone)]
@@ -181,10 +181,6 @@ impl RootView {
                 ),
         );
 
-        // The content sits on a layer over the card. Inside a frosted card
-        // everything shares one draw order, and at one order gpui draws every
-        // shadow before every fill — so Apply's glow and the selection rings
-        // went under the card's own `card` fill and all but vanished.
         let card = panel_variant(theme, UiSurface::Content)
             .id("presets-dialog")
             .relative()
@@ -197,7 +193,7 @@ impl RootView {
                 let editor = e.clone();
                 move |_, _, _| editor.set_dialog(String::new())
             })
-            .child(layered(card));
+            .child(card);
 
         // The scrim takes the pointer from everything under the dialog; it
         // draws nothing, because the handoff sets the dialog straight over
@@ -251,7 +247,9 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         .rounded(px(Theme::RADIUS_LANE))
         .bg(background)
         .p(px(look.padding as f32 * scale))
-        .child(frame);
+        // The frame's shadow is the look's shadow, so it has to show: on a
+        // layer over the preview, or it draws under the preview's own fill.
+        .child(layered(frame));
     let values = format!(
         "{} · pad {} · r {} · shadow {:.0}%",
         look.wallpaper,
@@ -358,17 +356,10 @@ fn motion_tile(
     tile
 }
 
-/// The 1.5 accent inset a selected row or tile carries, on a layer of its
-/// own over the fill: set on the row itself, it would draw under the row's
-/// own `sunk` for the reason the dialog's content is layered.
+/// The 1.5 accent inset a selected row or tile carries, as an `edge` over
+/// the fill: set on the row itself, it would draw under the row's own `sunk`.
 fn selection_ring(radius: f32, theme: Theme) -> impl IntoElement {
-    layered(
-        div()
-            .absolute()
-            .inset_0()
-            .rounded(px(radius))
-            .shadow(vec![hairline(theme.accent, Theme::SELECTED_WIDTH)]),
-    )
+    edge(radius, vec![hairline(theme.accent, Theme::SELECTED_WIDTH)])
 }
 
 fn parse_hex(value: &str) -> Hsla {

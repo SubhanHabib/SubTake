@@ -327,11 +327,12 @@ Not drawn by the design: a Saved section under Motion listing presets saved
 to disk, each with a delete control, and Load preset file…. It replaces the
 inspector panel Presets used to be.
 
-The dialog's content is on a `layered` layer over its card, and each
-selection ring on a layer over its row. Inside a frosted surface every
-primitive shares one draw order, and at one order gpui draws all shadows
-before all fills, so an inset ring or a glow set on the element it belongs to
-goes under that element's fill.
+Each selection ring is a `frost::edge` over its row or tile and the preview
+frame is `layered` over the preview, so a look's shadow shows. Inside a
+frosted surface every primitive shares one draw order, and at one order gpui
+draws all shadows before all fills, so an inset ring or a glow set on the
+element it belongs to goes under that element's fill (see Frosted glass in
+UI-COMPONENTS.md).
 
 ## Export
 
