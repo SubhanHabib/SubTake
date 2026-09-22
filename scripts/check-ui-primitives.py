@@ -43,7 +43,7 @@ def violations(path, text):
 def check(root):
     errors = []
     required = ["crates/theme/src/lib.rs", "crates/ui/src/lib.rs",
-                "src/ui_state.rs", "src/ui_runtime.rs", "src/gpui_views.rs"]
+                "src/ui_state.rs", "src/ui_runtime.rs", "src/ui.rs"]
     for name in required:
         if not (root / name).is_file():
             errors.append(f"{name}: required GPUI boundary source missing")
@@ -70,12 +70,12 @@ def check(root):
         path = root / name
         if path.exists() and re.search(r"(?i)\b(?:i[-_]slint[-_]core|slint(?:[-_]build)?)\b", path.read_text()):
             errors.append(f"{name}: retired Slint dependency/build reference")
-    views = root / "src/gpui_views.rs"
+    views = root / "src/ui.rs"
     if views.exists():
         text = views.read_text()
         for dependency in ("subtake_ui", "subtake_theme"):
             if not re.search(r"\b" + dependency + r"\b", text):
-                errors.append(f"src/gpui_views.rs: must consume {dependency}")
+                errors.append(f"src/ui.rs: must consume {dependency}")
     return files, errors
 
 

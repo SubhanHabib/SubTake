@@ -1,0 +1,875 @@
+//! The inspector panel: every field kind and the panels built from them.
+
+use super::preview::macos_cursor_image;
+use super::*;
+
+/// The glyph a numeric field wears in its scrub plate. Keyed on the field so
+/// the inspector reads as a set of labelled dials rather than a list of rows.
+/// How a slider's number should read. The model carries the raw value, so the
+/// unit is presentation: a 0-1 factor reads as a percentage, a multiplier as
+/// a cross, a length in points. Returned as (scale, suffix); anything not
+/// listed keeps the bare number it has today.
+pub(super) fn field_unit(key: &str) -> (f32, &'static str) {
+    match key.rsplit('.').next().unwrap_or(key) {
+        "borderRadius" | "backgroundBlur" | "margin" => (1.0, " px"),
+        "cursorSize" | "cursorSmoothing" | "cursorSway" | "cursorMotionBlur"
+        | "cursorClickBounce" | "depth" | "speed" | "volume" => (1.0, "\u{00d7}"),
+        // Roundness is already carried as 0-100, so it takes the suffix
+        // without the rescale the other factors need.
+        "roundness" => (1.0, "%"),
+        "zoomSmoothness" | "shadowIntensity" | "shadow" | "cx" | "cy" => (100.0, "%"),
+        _ => (1.0, ""),
+    }
+}
+
+impl RootView {
+    /// A rail entry: round icon over its caption, accented while active.
+    pub(super) fn rail_panel_button(
+        &self,
+        editor: &EditorWindow,
+        label: &str,
+        name: &str,
+        glyph: &str,
+    ) -> AnyElement {
+        let e = editor.clone();
+        let target = name.to_owned();
+        // "Help" opens a command rather than a panel.
+        let is_panel = !target.contains('-');
+        let active = is_panel && editor.get_panel() == target;
+        let surface = self.surface.clone();
+        let caption = editor.invoke_translate(label.into(), editor.get_language());
+        let caption = if caption.is_empty() {
+            label.to_owned()
+        } else {
+            caption
+        };
+        rail_button(
+            SharedString::from(format!("rail-{target}")),
+            glyph,
+            caption,
+            active,
+            self.theme,
+            move |_, _, _| {
+                if is_panel {
+                    e.set_panel(target.clone());
+                    e.defer_panel(target.clone());
+                } else {
+                    surface.action(&target);
+                }
+            },
+        )
+        .into_any_element()
+    }
+
+    pub(super) fn panel_button(&self, editor: &EditorWindow, label: &str, name: &str) -> Button {
+        let e = editor.clone();
+        let name = name.to_owned();
+        button(
+            SharedString::from(format!("panel-{name}-{label}")),
+            self.translate(editor, label),
+            self.theme,
+        )
+        .selected(editor.get_panel() == name)
+        .on_click(move |_, _, _| {
+            e.set_panel(name.clone());
+            e.defer_panel(name.clone());
+        })
+    }
+
+    pub(super) fn input(
+        &mut self,
+        id: &str,
+        value: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        accept: impl Fn(String, &mut Window, &mut App) + 'static,
+    ) -> Entity<TextInput> {
+        let theme = self.theme;
+        let accept = Rc::new(accept);
+        let initial = accept.clone();
+        let input = self
+            .inputs
+            .entry(id.to_owned())
+            .or_insert_with(|| {
+                cx.new(|cx| {
+                    TextInput::new(cx, value.to_owned(), theme, move |v, w, cx| {
+                        initial(v, w, cx)
+                    })
+                })
+            })
+            .clone();
+        input.update(cx, |s, _| {
+            s.set_handler(move |v, w, cx| accept(v, w, cx));
+            s.theme = theme;
+            s.sync(value, window);
+        });
+        input
+    }
+
+    pub(super) fn dropdown(
+        &mut self,
+        id: &str,
+        items: Vec<String>,
+        selected: i32,
+        enabled: bool,
+        cx: &mut Context<Self>,
+        change: impl Fn(usize, &mut Window, &mut App) + 'static,
+    ) -> Entity<Dropdown> {
+        let theme = self.theme;
+        let change = Rc::new(change);
+        let initial = change.clone();
+        let control = self
+            .dropdowns
+            .entry(id.to_owned())
+            .or_insert_with(|| {
+                cx.new(|cx| {
+                    Dropdown::new(
+                        cx,
+                        items.clone(),
+                        selected.max(0) as usize,
+                        theme,
+                        move |v, w, cx| initial(v, w, cx),
+                    )
+                })
+            })
+            .clone();
+        control.update(cx, |s, _| {
+            s.set_handler(move |v, w, cx| change(v, w, cx));
+            s.items = items;
+            s.selected = selected.max(0) as usize;
+            s.enabled = enabled;
+            s.theme = theme;
+        });
+        control
+    }
+
+    pub(super) fn slider(
+        &mut self,
+        id: &str,
+        minimum: f32,
+        maximum: f32,
+        value: f32,
+        caption: (&str, &str),
+        unit: (f32, &str),
+        cx: &mut Context<Self>,
+        change: impl Fn(f32, bool, &mut Window, &mut App) + 'static,
+    ) -> Entity<Slider> {
+        let theme = self.theme;
+        let change = Rc::new(change);
+        let initial = change.clone();
+        let control = self
+            .sliders
+            .entry(id.to_owned())
+            .or_insert_with(|| {
+                cx.new(|_| {
+                    Slider::new(minimum, maximum, value, theme, move |v, commit, w, cx| {
+                        initial(v, commit, w, cx)
+                    })
+                })
+            })
+            .clone();
+        control.update(cx, |s, _| {
+            s.set_handler(move |v, commit, w, cx| change(v, commit, w, cx));
+            s.minimum = minimum;
+            s.maximum = maximum;
+            s.sync(value);
+            s.theme = theme;
+            s.set_caption(caption.0.to_owned(), caption.1.to_owned());
+            s.set_unit(unit.0, unit.1.to_owned());
+        });
+        control
+    }
+
+    pub(super) fn field(
+        &mut self,
+        e: &EditorWindow,
+        field: Field,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let t = self.theme;
+        let key = field.key.clone();
+        let id = format!("{}:{}", e.get_panel(), key);
+        let label = e.invoke_translate(field.label.clone(), e.get_language());
+        let label = if label.is_empty() {
+            field.label.clone()
+        } else {
+            label
+        };
+        let mut body = column().gap(px(Theme::GAP_SMALL));
+        if key == "cursorStyle" {
+            // Five even tiles, four across: the reference's pickers are grids,
+            // and a wrap puts a ragged last row under an even first one.
+            let mut choices = tile_grid(4);
+            for (value, label, asset) in [
+                (
+                    "tahoe",
+                    "Tahoe",
+                    "legacy-electron/src/assets/cursors/tahoe/pointer-1__14-6.svg",
+                ),
+                (
+                    "macos",
+                    "macOS",
+                    "legacy-electron/src/assets/cursors/macos/pointer-1__34-24.svg",
+                ),
+                (
+                    "windows11",
+                    "Windows",
+                    "legacy-electron/src/assets/cursors/windows11/arrow__31-22.svg",
+                ),
+                ("dot", "Dot", "assets/icons/Record-fill.svg"),
+                (
+                    "figma",
+                    "Minimal",
+                    "legacy-electron/src/assets/cursors/custom/minimal-cursor.svg",
+                ),
+            ] {
+                let editor = e.clone();
+                let cursor = if value == "macos" {
+                    img(macos_cursor_image())
+                        .size(px(28.))
+                        .object_fit(ObjectFit::Contain)
+                        .into_any_element()
+                } else {
+                    svg()
+                        .path(asset)
+                        .size(px(28.))
+                        .text_color(t.text)
+                        .into_any_element()
+                };
+                choices = choices.child(
+                    choice_tile(value, field.value == value, true, t)
+                        .items_center()
+                        .justify_center()
+                        .h(px(Theme::TILE_HEIGHT + Theme::GAP_LARGE))
+                        .child(cursor)
+                        .tooltip(move |_, cx| tooltip(label, t, cx))
+                        .on_click(move |_, _, _| {
+                            editor.defer_field("cursorStyle".into(), value.into())
+                        }),
+                );
+            }
+            body = body.child(caps_label(label, t)).child(choices);
+            if field.choice >= 5 {
+                body = body.child(format!("Current: {}", field.value));
+            }
+            return body.into_any_element();
+        }
+        if key == "webcam.positionPreset" {
+            // Nine cells, three across — the grid IS the picture of where the
+            // webcam lands, which is why the marker stays a dot rather than an
+            // arrow glyph the icon set does not carry.
+            let mut choices = tile_grid(3);
+            for (i, value) in [
+                "top-left",
+                "top-center",
+                "top-right",
+                "center-left",
+                "center",
+                "center-right",
+                "bottom-left",
+                "bottom-center",
+                "bottom-right",
+            ]
+            .iter()
+            .enumerate()
+            {
+                let editor = e.clone();
+                let value = *value;
+                choices = choices.child(
+                    choice_tile(value, field.value == value, true, t)
+                        .h(px(Theme::CONTROL_HEIGHT))
+                        .items_center()
+                        .justify_center()
+                        .child(
+                            div()
+                                .flex()
+                                .w_full()
+                                .h_full()
+                                .map(|el| match i % 3 {
+                                    0 => el.justify_start(),
+                                    1 => el.justify_center(),
+                                    _ => el.justify_end(),
+                                })
+                                .map(|el| match i / 3 {
+                                    0 => el.items_start(),
+                                    1 => el.items_center(),
+                                    _ => el.items_end(),
+                                })
+                                .child(
+                                    div()
+                                        .size(px(Theme::DOT_SIZE + 2.0))
+                                        .rounded(px(Theme::RADIUS_SMALL / 2.0))
+                                        .bg(if field.value == value {
+                                            t.accent
+                                        } else {
+                                            t.muted
+                                        }),
+                                ),
+                        )
+                        .tooltip(move |_, cx| tooltip(format!("Webcam position {value}"), t, cx))
+                        .on_click(move |_, _, _| {
+                            editor.defer_field("webcam.positionPreset".into(), value.into())
+                        }),
+                );
+            }
+            let editor = e.clone();
+            return body
+                .child(caps_label(label, t))
+                .child(choices)
+                .child(
+                    button("custom-position", "Custom position", t)
+                        .selected(field.value == "custom")
+                        .on_click(move |_, _, _| {
+                            editor.defer_field("webcam.positionPreset".into(), "custom".into())
+                        }),
+                )
+                .into_any_element();
+        }
+        match field.kind {
+            5 => {
+                // A small muted caption with a rule running out to the edge.
+                return section_label(label, t)
+                    .mt(px(Theme::GAP_SMALL))
+                    .into_any_element();
+            }
+            3 => {
+                // An inspector action is a row in a stacked picker, not a
+                // toolbar control, so it carries the recessed field plate.
+                return self
+                    .action(SharedString::from(id), field.value, &key, true)
+                    .into_any_element();
+            }
+            2 => {
+                let e = e.clone();
+                return toggle(
+                    SharedString::from(id),
+                    label,
+                    field.value == "true",
+                    true,
+                    t,
+                    move |v, _, _| e.defer_field(key.clone(), v.to_string()),
+                )
+                .into_any_element();
+            }
+            4 => {
+                // The model remains authoritative, including custom cursor/position choices.
+                let e = e.clone();
+                let values: Vec<_> = field.values.iter().collect();
+                let control = self.dropdown(
+                    &id,
+                    field.choices.iter().collect(),
+                    field.choice,
+                    true,
+                    cx,
+                    move |i, _, _| {
+                        if let Some(v) = values.get(i) {
+                            e.defer_field(key.clone(), v.clone());
+                        }
+                    },
+                );
+                // One row, not two: a label stacked over its control reads
+                // as a heading plus a thing, when it is one setting.
+                body = body.child(
+                    row()
+                        .h(px(Theme::CONTROL_HEIGHT))
+                        .child(
+                            div()
+                                .flex_none()
+                                .max_w(px(PANEL_WIDTH / 3.0))
+                                .text_ellipsis()
+                                .text_color(t.text)
+                                .child(label),
+                        )
+                        .child(div().flex_1().min_w_0().child(control)),
+                );
+            }
+            1 => {
+                let e1 = e.clone();
+                let k1 = key.clone();
+                let min = field.minimum;
+                let max = field.maximum;
+                let _ = (&e1, &k1);
+                let e2 = e.clone();
+                // One control, not three: the plate carries the caption, the
+                // level and the value together (the product's "unified
+                // control geometry"). No glyph -- a stack of these is a list
+                // of settings, and a pictogram on every row reads as
+                // decoration rather than as information.
+                let scrub = self.slider(
+                    &id,
+                    min,
+                    max,
+                    field.value.parse().unwrap_or(min),
+                    (&label, ""),
+                    field_unit(&key),
+                    cx,
+                    move |v, commit, _, _| {
+                        if commit {
+                            e2.defer_field(key.clone(), v.to_string());
+                        }
+                    },
+                );
+                body = body.child(scrub);
+            }
+            _ => {
+                let e = e.clone();
+                let input = self.input(&id, &field.value, window, cx, move |v, _, _| {
+                    e.defer_field(key.clone(), v)
+                });
+                body = body.child(
+                    row()
+                        .h(px(Theme::CONTROL_HEIGHT))
+                        .child(
+                            div()
+                                .flex_none()
+                                .max_w(px(PANEL_WIDTH / 3.0))
+                                .text_ellipsis()
+                                .text_color(t.text)
+                                .child(label),
+                        )
+                        .child(div().flex_1().min_w_0().child(input)),
+                );
+            }
+        }
+        body.into_any_element()
+    }
+
+    pub(super) fn inspector(
+        &mut self,
+        e: &EditorWindow,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let t = self.theme;
+        let name = e.get_panel();
+        let title = match name.as_str() {
+            "Frame" => "Scene",
+            "Preferences" => "Settings",
+            "Recent" => "Projects",
+            "Wallpapers" => "Background",
+            _ => &name,
+        };
+        // The panel names itself the way the reference does: small caps
+        // rather than a heading that competes with the controls under it. A
+        // sub-panel keeps its way back, now as a caret rather than a button
+        // whose caption was a single guillemet character.
+        let mut heading = row().h(px(Theme::CONTROL_HEIGHT)).flex_none();
+        if matches!(
+            name.as_str(),
+            "Crop" | "Wallpapers" | "Presets" | "Shortcuts"
+        ) {
+            let editor = e.clone();
+            let back = if name == "Shortcuts" {
+                "Preferences"
+            } else {
+                "Frame"
+            };
+            heading = heading.child(
+                icon_button("inspector-back", "CaretLeft-regular", "Back", t)
+                    .ghost()
+                    .on_click(move |_, _, _| {
+                        editor.set_panel(back.into());
+                        editor.defer_panel(back.into());
+                    }),
+            );
+        }
+        heading = heading
+            .child(caps_label(title.to_owned(), t))
+            .child(div().flex_1());
+        let mut content = column().gap(px(Theme::GAP));
+        if name == "Frame" || name == "Wallpapers" {
+            // Scene / Background is one segmented control, not two buttons.
+            let editor = e.clone();
+            let surface = self.surface.clone();
+            content = content.child(segmented_control(
+                "scene-background",
+                &["Scene", "Background"],
+                if name == "Wallpapers" { 1 } else { 0 },
+                t,
+                move |index, _, _| {
+                    if index == 0 {
+                        editor.set_panel("Frame".into());
+                        editor.defer_panel("Frame".into());
+                    } else {
+                        surface.action("wallpapers");
+                    }
+                },
+            ));
+        }
+        if name == "Recent" {
+            content = content
+                .child(
+                    self.action(
+                        "storyboard",
+                        "Create video · spike",
+                        "storyboard-spike",
+                        true,
+                    )
+                    .primary(),
+                )
+                .child(self.action("import", "Import video or project", "open", true));
+        }
+        if name == "Selection" && e.get_selected_id().is_empty() {
+            content = content.child("Select a clip or effect in the timeline to edit it.");
+        }
+        if name == "Wallpapers" {
+            let mut wallpapers = row().flex_wrap();
+            for tile in e.get_wallpapers().iter() {
+                let editor = e.clone();
+                let key = tile.key.clone();
+                let mut item =
+                    media_tile(SharedString::from(format!("wallpaper-{key}")), tile.title);
+                if let Some(image) = tile.source.0 {
+                    item = item.child(
+                        img(image)
+                            .w_full()
+                            .h(px(Theme::TILE_HEIGHT))
+                            .object_fit(ObjectFit::Cover),
+                    );
+                }
+                wallpapers = wallpapers
+                    .child(item.on_click(move |_, _, _| editor.defer_action(key.clone())));
+            }
+            content = content
+                .child(caps_label("Choose a background", t))
+                .child(wallpapers)
+                .child(self.action(
+                    "upload-background",
+                    "Upload image or video",
+                    "choose-background",
+                    true,
+                ));
+            let mut swatches = row();
+            for value in [
+                "#17171c", "#22364a", "#253c32", "#54324a", "#784832", "#ededed",
+            ] {
+                let editor = e.clone();
+                swatches = swatches.child(
+                    swatch(
+                        value,
+                        rgb(u32::from_str_radix(&value[1..], 16).unwrap()).into(),
+                        e.get_background_value() == value,
+                        t,
+                    )
+                    .on_click(move |_, _, _| editor.defer_field("wallpaper".into(), value.into())),
+                );
+            }
+            let editor = e.clone();
+            let input = self.input(
+                "wallpaper-color",
+                &e.get_background_value(),
+                window,
+                cx,
+                move |v, _, _| editor.defer_field("wallpaper".into(), v),
+            );
+            content = content.child(
+                group_card(t, "Background color or gradient")
+                    .child(swatches)
+                    .child(input),
+            );
+        }
+        if name == "Preferences" {
+            // Appearance is one choice of three, so it is one segmented
+            // control rather than three buttons that happen to sit together.
+            let editor = e.clone();
+            let appearances = ["light", "dark", "system"];
+            let chosen = appearances
+                .iter()
+                .position(|v| *v == e.get_appearance())
+                .unwrap_or(2);
+            let e1 = e.clone();
+            let e2 = e.clone();
+            content = content
+                .child(caps_label("Appearance", t))
+                .child(segmented_control(
+                    "appearance",
+                    &["Light", "Dark", "System"],
+                    chosen,
+                    t,
+                    move |index, _, _| {
+                        editor.defer_field("prefs.appearance".into(), appearances[index].to_owned())
+                    },
+                ))
+                .child(caps_label("Zooms", t))
+                // A setting and the sentence that explains it are one thing,
+                // so they share one plate. Loose muted lines under a control
+                // read as unattached commentary.
+                .child(
+                    setting_card(
+                        t,
+                        "Automatic recording zooms",
+                        "Suggest zooms when a new recording opens.",
+                    )
+                    .child(switch(
+                        "auto-zooms",
+                        e.get_auto_apply_zooms(),
+                        true,
+                        t,
+                        move |v, _, _| {
+                            e1.defer_field("prefs.auto_apply_zooms".into(), v.to_string())
+                        },
+                    )),
+                )
+                .child(
+                    setting_card(
+                        t,
+                        "Connect zooms",
+                        "Join nearby zooms into a continuous camera move.",
+                    )
+                    .child(switch(
+                        "connect-zooms",
+                        e.get_connect_zooms(),
+                        e.get_has_video(),
+                        t,
+                        move |v, _, _| e2.defer_field("connectZooms".into(), v.to_string()),
+                    )),
+                );
+        }
+        if name == "Presets" {
+            let mut looks = row();
+            for (label, value) in [
+                ("Studio", "studio"),
+                ("Minimal", "minimal"),
+                ("Bold", "bold"),
+            ] {
+                looks = looks.child(
+                    self.action(value, label, &format!("look-{value}"), e.get_has_video())
+                        .selected(e.get_look_choice() == value),
+                );
+            }
+            content = content.child(caps_label("Choose a look", t)).child(looks);
+        }
+        if matches!(name.as_str(), "Cursor" | "Preferences" | "Presets") {
+            // A preset is a choice you make once and live with, so it states
+            // what it does rather than making the name carry it alone.
+            let mut presets = tile_grid(2);
+            for (value, title, glyph, detail) in [
+                (
+                    "focused",
+                    "Focused",
+                    "Cursor-regular",
+                    "Snappier motion for demos, walkthroughs and everyday recordings.",
+                ),
+                (
+                    "smooth",
+                    "Smooth",
+                    "FilmStrip-regular",
+                    "Gentler motion for presentations, keynote-style videos and polished reveals.",
+                ),
+            ] {
+                let surface = self.surface.clone();
+                let command = format!("motion-{value}");
+                presets = presets.child(
+                    choice_tile(value, e.get_motion_choice() == value, e.get_has_video(), t)
+                        .child(
+                            div()
+                                .flex()
+                                .items_center()
+                                .justify_center()
+                                .flex_none()
+                                .size(px(Theme::CONTROL_HEIGHT))
+                                .rounded(px(Theme::RADIUS_SMALL))
+                                .bg(t.surface)
+                                .child(icon(glyph, t.text)),
+                        )
+                        .child(
+                            div()
+                                .font_weight(FontWeight::MEDIUM)
+                                .text_color(t.text)
+                                .child(title),
+                        )
+                        .child(
+                            div()
+                                .text_size(px(Theme::FONT_SMALL))
+                                .text_color(t.muted)
+                                .child(detail),
+                        )
+                        .on_click(move |_, _, _| surface.action(&command)),
+                );
+            }
+            content = content
+                .child(caps_label("Motion presets", t))
+                .child(presets);
+            if !e.get_has_video() {
+                content = content.child(
+                    div()
+                        .text_color(t.muted)
+                        .child("Open a project to adjust its motion."),
+                );
+            }
+        }
+        if name == "Recording" {
+            let editor = e.clone();
+            let source = self.dropdown(
+                "editor-source",
+                e.get_source_names().iter().collect(),
+                e.get_source_index(),
+                !e.get_busy(),
+                cx,
+                move |i, _, _| editor.set_source_index(i as i32),
+            );
+            let editor = e.clone();
+            let camera = self.dropdown(
+                "editor-camera",
+                e.get_camera_names().iter().collect(),
+                e.get_camera_index(),
+                e.get_capture_camera(),
+                cx,
+                move |i, _, _| editor.set_camera_index(i as i32),
+            );
+            let editor = e.clone();
+            let microphone = self.dropdown(
+                "editor-microphone",
+                e.get_microphone_names().iter().collect(),
+                e.get_microphone_index(),
+                e.get_capture_mic(),
+                cx,
+                move |i, _, _| editor.set_microphone_index(i as i32),
+            );
+            let e1 = e.clone();
+            let e2 = e.clone();
+            let e3 = e.clone();
+            content = content
+                .child(caps_label("Capture source", t))
+                .child(source)
+                .child(self.action(
+                    "sources",
+                    if e.get_sources_loading() {
+                        "Finding sources…"
+                    } else {
+                        "Refresh displays and windows"
+                    },
+                    "sources",
+                    !e.get_busy(),
+                ))
+                // Eight controls in one flat stack gave no clue which
+                // dropdown belonged to which switch. They are groups now.
+                .child(
+                    group_card(t, "Camera")
+                        .child(toggle(
+                            "capture-camera",
+                            "Record camera",
+                            e.get_capture_camera(),
+                            true,
+                            t,
+                            move |v, _, _| e1.set_capture_camera(v),
+                        ))
+                        .child(camera),
+                )
+                .child(
+                    group_card(t, "Audio")
+                        .child(toggle(
+                            "capture-mic",
+                            "Microphone",
+                            e.get_capture_mic(),
+                            true,
+                            t,
+                            move |v, _, _| e2.set_capture_mic(v),
+                        ))
+                        .child(microphone)
+                        .child(toggle(
+                            "capture-system",
+                            "System audio",
+                            e.get_capture_system(),
+                            true,
+                            t,
+                            move |v, _, _| e3.set_capture_system(v),
+                        )),
+                );
+        }
+        for field in e.get_fields().iter() {
+            content = content.child(self.field(e, field, window, cx));
+        }
+        // Only these panels pin an action strip under the scroll region. An
+        // always-present empty column still cost the panel's gap plus its
+        // bottom padding, which is what left the dead band under the last row.
+        let has_footer = matches!(
+            name.as_str(),
+            "Preferences" | "Recording" | "Selection" | "Export" | "Captions"
+        );
+        let mut footer = column();
+        match name.as_str() {
+            "Preferences" => {
+                footer =
+                    footer.child(self.panel_button(e, "Customize keyboard shortcuts…", "Shortcuts"))
+            }
+            "Recording" => {
+                footer = footer.child(e.get_recording_hint()).child(
+                    self.action(
+                        "start-recording",
+                        if e.get_recording() {
+                            "Stop recording"
+                        } else {
+                            "Start recording"
+                        },
+                        if e.get_recording() {
+                            "stop-recording"
+                        } else {
+                            "start-recording"
+                        },
+                        !e.get_busy()
+                            && (e.get_recording() || e.get_source_names().row_count() > 0),
+                    )
+                    .primary(),
+                )
+            }
+            "Selection" => {
+                footer = footer.child(self.action(
+                    "delete-region",
+                    "Delete selected region",
+                    "delete",
+                    !e.get_selected_id().is_empty(),
+                ))
+            }
+            "Export" => {
+                footer = footer.child(
+                    self.action(
+                        "export-video",
+                        "Export video",
+                        "export",
+                        e.get_has_video() && !e.get_busy(),
+                    )
+                    .primary(),
+                )
+            }
+            "Captions" => {
+                footer = footer.child(
+                    row()
+                        .child(self.action("import-srt", "Import SRT", "import-captions", true))
+                        .child(
+                            self.action("transcribe", "Transcribe", "transcribe", true)
+                                .primary(),
+                        ),
+                )
+            }
+            _ => {}
+        }
+        // The scroll region runs to the panel's inner top and bottom edges so
+        // the fade ramp sits exactly on the clip line; the panel's vertical
+        // padding moves onto the heading and footer instead of stacking with
+        // the band and pushing the first row down.
+        let mut el = panel(t)
+            .py_0()
+            .w(px(PANEL_WIDTH))
+            .h_full()
+            .flex_shrink_0()
+            .child(heading.pt(px(Theme::GAP_LARGE)))
+            .child(fade_edges(
+                div()
+                    .id(SharedString::from(format!("inspector-{name}")))
+                    .flex_1()
+                    .min_h_0()
+                    .overflow_y_scroll()
+                    // A band's worth of padding: at rest the ramp lands here,
+                    // so a panel that fits is never dimmed, and one that
+                    // overflows dissolves instead of slicing a row in half.
+                    .py(px(FADE_BAND))
+                    .child(content),
+            ));
+        if has_footer {
+            el = el.child(footer.pb(px(Theme::GAP_LARGE)));
+        }
+        el.into_any_element()
+    }
+}

@@ -1,7 +1,7 @@
 //! GPUI application runtime. Keeps the media controller independent of render borrows.
 //! Commands and timers execute on the main thread; workers only enqueue completions.
 use crate::{
-    gpui_views::{RootView, Surface},
+    ui::{RootView, Surface},
     ui_state::UiData,
 };
 use anyhow::{Context, Result};
@@ -788,7 +788,7 @@ fn install_menus(cx: &mut gpui::App) {
             });
             if let Some(ui) = editor {
                 // `@Panel` opens an inspector; everything else is an action.
-                // The palette in `gpui_views` strips the prefix the same way.
+                // The palette in `ui::menus` strips the prefix the same way.
                 if let Some(panel) = command.strip_prefix('@') {
                     ui.set_panel(panel.into());
                     ui.invoke_panel_change(panel.into());
@@ -798,12 +798,12 @@ fn install_menus(cx: &mut gpui::App) {
             }
         });
     });
-    // Both menu bars are built from `gpui_views::menu_commands`, so the
+    // Both menu bars are built from `ui::menu_commands`, so the
     // palette and the OS menu can no longer drift apart. Groups in that table
     // become the separators here.
     let menu = |name: &'static str| gpui::Menu {
         name: name.into(),
-        items: crate::gpui_views::menu_commands(name)
+        items: crate::ui::menu_commands(name)
             .iter()
             .enumerate()
             .flat_map(|(group, commands)| {

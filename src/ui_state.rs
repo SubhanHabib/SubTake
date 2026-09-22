@@ -1082,7 +1082,7 @@ macro_rules! surface {
                     callbacks: RefCell::new(Callbacks::default()),
                     window,
                 })));
-                ui_runtime::register(crate::gpui_views::Surface::$variant(value.clone()));
+                ui_runtime::register(crate::ui::Surface::$variant(value.clone()));
                 Ok(value)
             }
             pub fn as_weak(&self) -> ui_runtime::Weak<Self> {

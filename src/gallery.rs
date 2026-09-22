@@ -784,7 +784,7 @@ fn fixture_regions() -> Vec<Region> {
     ]
 }
 
-/// Field kinds as `gpui_views` renders them: 0 text/number, 1 slider,
+/// Field kinds as `ui::inspector` renders them: 0 text/number, 1 slider,
 /// 2 toggle, 3 action row, 4 dropdown, 5 section label.
 fn fixture_fields(g: &Gallery, panel: &str) -> Vec<Field> {
     let v = |key: &str, default: &str| g.value(key, default).to_owned();
