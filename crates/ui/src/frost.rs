@@ -21,7 +21,12 @@ use subtake_theme::Theme;
 
 /// Shared backdrop-blur sigma for floating menus, popovers and palettes.
 /// Keep these on the same surface as Cmd+K and the composer.
-pub const MENU_BLUR: f32 = 0.0;
+///
+/// 34 is the redesign's figure for anything that floats and holds text — the
+/// same blur the inspector and the console carry, so a menu opening over a
+/// panel does not read as a different material from it. The handoff pairs it
+/// with `saturate(1.5)`, which gpui at the pinned revision has no filter for.
+pub const MENU_BLUR: f32 = 34.0;
 
 /// Frost `child` (a popover card): backdrop-blurred on glass, pass-through on
 /// opaque platforms. `corner_radius` must match the card's rounding.
