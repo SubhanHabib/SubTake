@@ -174,6 +174,44 @@ pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOpt
         set_index(1, 0, 0);
         set_flag(true, true, false);
     }
+    // The Source card's pictures and the camera card's picture: stand-ins
+    // for the stills the platform layer does not take yet.
+    options.set_capture_sources(ModelRc::new(VecModel::from(
+        source_names()
+            .into_iter()
+            .zip([
+                ([0xe8, 0xa0, 0x5c], [0x3a, 0x47, 0x63]),
+                ([0x2c, 0x5e, 0x3f], [0xa8, 0xc8, 0xd8]),
+                ([0x6a, 0x4f, 0xc8], [0xe0, 0x9a, 0xc8]),
+                ([0x10, 0x14, 0x24], [0x3a, 0x4a, 0x6a]),
+                ([0x8a, 0xa0, 0x4a], [0xe0, 0xd0, 0x8a]),
+            ])
+            .map(|(full, (a, b))| {
+                let (name, detail) = match full.split_once(" · ") {
+                    Some((name, detail)) => (name.to_owned(), detail.replace('×', " × ")),
+                    None => (full.clone(), String::new()),
+                };
+                CaptureSource {
+                    kind: if detail.is_empty() {
+                        "window"
+                    } else {
+                        "display"
+                    }
+                    .into(),
+                    name,
+                    detail,
+                    thumbnail: gradient(240, 132, a, b, Style::Preview),
+                }
+            })
+            .collect::<Vec<_>>(),
+    )));
+    options.set_camera_preview(gradient(
+        640,
+        264,
+        [0xd8, 0x8a, 0x5a],
+        [0x2a, 0x2f, 0x4a],
+        Style::Preview,
+    ));
     for w in [launcher as &dyn Recorder, options] {
         w.seed();
     }
@@ -213,11 +251,11 @@ impl Recorder for RecordingOptions {
 
 pub(super) fn source_names() -> Vec<String> {
     [
-        "Built-in Retina Display",
-        "Studio Display",
-        "Safari — SubTake docs",
-        "Xcode",
-        "Figma",
+        "Built-in Display · 3456×2234",
+        "Studio Display · 5120×2880",
+        "Safari — Release notes",
+        "Terminal",
+        "Figma — SubTake redesign",
     ]
     .into_iter()
     .map(String::from)

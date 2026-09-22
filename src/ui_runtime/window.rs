@@ -78,7 +78,11 @@ impl Window {
                 WindowKind::Launcher => {
                     LogicalSize::new(724., subtake_theme::Theme::RECORDER_HEIGHT)
                 }
-                WindowKind::Options => LogicalSize::new(430., 264.),
+                // Only the width is fixed: the card measures itself and
+                // resizes the window to its own height (`options_fit`).
+                WindowKind::Options => {
+                    LogicalSize::new(subtake_theme::Theme::RECORDER_CARD_WIDTH, 264.)
+                }
             }),
             resize: Cell::new(false),
             scale: Cell::new(1.),
@@ -371,13 +375,17 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                         &runtime,
                         runtime.0.kind == WindowKind::Launcher,
                     );
-                    // Both recorder plates are drawn at the overlay radius
-                    // and fill their windows, so the material takes the
-                    // window's shape at that radius and the two are one
-                    // surface.
+                    // Both recorder plates fill their windows, so the
+                    // material takes the window's shape at the plate's
+                    // radius and the two are one surface: the bar's, or the
+                    // card's.
                     crate::platform::update_recorder_glass(
                         &runtime,
-                        subtake_theme::Theme::RADIUS_BAR,
+                        if runtime.0.kind == WindowKind::Launcher {
+                            subtake_theme::Theme::RADIUS_BAR
+                        } else {
+                            subtake_theme::Theme::RADIUS_PANEL
+                        },
                     );
                     if runtime.0.kind == WindowKind::Launcher {
                         let _ = crate::platform::position_launcher(&runtime);

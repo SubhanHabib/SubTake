@@ -124,6 +124,11 @@ static NSWindow *subtake_follow_options = nil;
 static id subtake_follow_observer = nil;
 static id subtake_options_resize_observer = nil;
 
+// Where on the bar the open card belongs: the centre of the control that
+// opened it, in points from the bar's left edge. Negative centres the card
+// on the bar.
+static CGFloat subtake_options_anchor = -1;
+
 static NSPoint subtake_options_origin(NSWindow *options, NSWindow *launcher) {
     NSRect bar = launcher.frame, menu = options.frame;
     NSRect screen = (launcher.screen ?: NSScreen.mainScreen).visibleFrame;
@@ -131,6 +136,12 @@ static NSPoint subtake_options_origin(NSWindow *options, NSWindow *launcher) {
     if (y + menu.size.height > NSMaxY(screen)) y = NSMinY(bar) - menu.size.height - 14;
     y = MAX(NSMinY(screen), MIN(y, NSMaxY(screen) - menu.size.height));
     CGFloat x = NSMidX(bar) - menu.size.width / 2;
+    if (subtake_options_anchor >= 0) {
+        // Over its control, but never past either end of the bar: a card
+        // hanging off the bar's end reads as belonging to something else.
+        x = NSMinX(bar) + subtake_options_anchor - menu.size.width / 2;
+        x = MAX(NSMinX(bar), MIN(x, NSMaxX(bar) - menu.size.width));
+    }
     x = MAX(NSMinX(screen), MIN(x, NSMaxX(screen) - menu.size.width));
     return NSMakePoint(x, y);
 }
@@ -141,6 +152,13 @@ static void subtake_place_options_above_launcher(NSWindow *options, NSWindow *la
     NSPoint origin = subtake_options_origin(options, launcher);
     if (fabs(menu.origin.x - origin.x) > 0.5 || fabs(menu.origin.y - origin.y) > 0.5) {
         [options setFrameOrigin:origin];
+    }
+}
+
+void subtake_set_launcher_options_anchor(double anchor) {
+    subtake_options_anchor = anchor;
+    if (subtake_follow_options && subtake_follow_options.parentWindow == subtake_follow_launcher) {
+        subtake_place_options_above_launcher(subtake_follow_options, subtake_follow_launcher);
     }
 }
 

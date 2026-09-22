@@ -242,18 +242,13 @@ fn changing_options_panel_preserves_device_selection_and_recomputes_dimensions()
     ui.set_camera_index(1);
     ui.set_countdown(5);
     ui.on_option(|key, _| panic!("Panel change committed an option: {key}"));
-    for (panel, width, height) in [
-        ("sources", 430., 264.),
-        ("audio", 420., 264.),
-        ("camera", 420., 276.),
-        ("countdown", 400., 264.),
-        ("more", 520., 284.),
-        ("sources", 430., 264.),
-    ] {
+    for panel in ["sources", "audio", "camera", "countdown", "more", "sources"] {
         ui.set_panel(panel.into());
+        // The card measures its own height; a panel change alone keeps the
+        // window a card wide and leaves its height to that measurement.
         assert_eq!(
             (ui.get_options_width(), ui.get_options_height()),
-            (width, height)
+            (subtake_theme::Theme::RECORDER_CARD_WIDTH, 264.)
         );
         assert_eq!(
             (

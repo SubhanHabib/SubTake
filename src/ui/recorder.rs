@@ -1,6 +1,12 @@
-//! The recorder bar and its detached options card.
+//! The recorder bar. Its option cards are `options.rs`.
 
 use super::*;
+
+thread_local! {
+    /// The anchor last handed to the options window, so the bar only moves
+    /// the card when its control has actually moved.
+    static OPTIONS_ANCHOR: Cell<f32> = const { Cell::new(-1.) };
+}
 
 impl RootView {
     pub(super) fn launcher(&self, state: &RecordingLauncher) -> AnyElement {
@@ -36,6 +42,24 @@ impl RootView {
                     .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
             );
         if !state.get_recording() && !state.get_busy() {
+            // Where each control that opens a card sits, so its card can
+            // float over it rather than over the middle of the bar. The
+            // children are the handle, then these five in this order.
+            let panel = state.get_panel();
+            bar = bar.on_children_prepainted(move |bounds, _, _| {
+                let slot = ["sources", "audio", "camera", "countdown", "more"]
+                    .iter()
+                    .position(|id| *id == panel);
+                let anchor = slot
+                    .and_then(|i| bounds.get(i + 1))
+                    .map(|b| f32::from(b.center().x))
+                    .unwrap_or(-1.);
+                if OPTIONS_ANCHOR.replace(anchor) != anchor {
+                    crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
+                        crate::platform::set_launcher_options_anchor(anchor)
+                    });
+                }
+            });
             // The source pill. The platform layer composes a display's name
             // as "<name> · <width>×<height>"; the handoff sets the name and
             // the resolution on two lines, so the pill splits it back apart.
@@ -178,196 +202,5 @@ impl RootView {
         let value = if state.get_panel() == id { "" } else { id };
         state.set_panel(value.into());
         state.defer_panel(value.into());
-    }
-
-    pub(super) fn options(
-        &mut self,
-        state: &RecordingOptions,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let theme = self.theme;
-        let name = state.get_panel();
-        let title = match name.as_str() {
-            "sources" => "Screens and windows",
-            "audio" => "Microphone & system audio",
-            "camera" => "Webcam",
-            "countdown" => "Countdown delay",
-            _ => "More",
-        };
-        let options = state.clone();
-        // TODO(redesign): the "Stage" handoff draws the recorder bar and
-        // stops there — this sheet, and every panel in the match below, has
-        // no counterpart in it. Deferred deliberately: the sheet keeps its
-        // current 40px control geometry until the designer draws it, so the
-        // one surface that is still on the old shapes is the one nobody has
-        // redrawn rather than one that was missed. It is on the new tokens,
-        // so it does not look foreign beside the rest — only denser.
-        //
-        // Composer structure: a context chip naming the surface, the controls
-        // beneath it, and a quiet footer row. The close control is an icon at
-        // the shared geometry rather than a button whose caption was the
-        // literal character "×".
-        let mut body = panel_variant(theme, UiSurface::Overlay)
-            .size_full()
-            .p(px(Theme::GAP_LARGE))
-            .gap(px(Theme::GAP))
-            .child(
-                row()
-                    .child(context_chip(theme, &["Recorder", title]).flex_1().min_w_0())
-                    .child(
-                        icon_button("close", "X-regular", "Close", theme)
-                            .ghost()
-                            .on_click(move |_, _, _| options.defer_panel("".into())),
-                    ),
-            );
-        match name.as_str() {
-            "sources" => {
-                let options = state.clone();
-                let sources = self.dropdown(
-                    "sources",
-                    state.get_source_names().iter().collect(),
-                    state.get_source_index(),
-                    !state.get_busy(),
-                    cx,
-                    move |i, _, _| options.defer_option("source".into(), i.to_string()),
-                );
-                body = body
-                    .child(section_label("Capture source", theme))
-                    .child(sources)
-                    .child(self.action(
-                        "refresh",
-                        "Refresh displays and windows",
-                        "sources",
-                        !state.get_busy(),
-                    ))
-                    .child(div().flex_1())
-                    .child(
-                        composer_footer(theme)
-                            .child("Choose a display or a visible window to record."),
-                    );
-            }
-            "audio" => {
-                let options = state.clone();
-                let microphone = self.dropdown(
-                    "microphone",
-                    state.get_microphone_names().iter().collect(),
-                    state.get_microphone_index(),
-                    !state.get_busy() && state.get_microphone(),
-                    cx,
-                    move |i, _, _| options.defer_option("microphone-device".into(), i.to_string()),
-                );
-                let s1 = state.clone();
-                let s2 = state.clone();
-                body = body
-                    .child(toggle(
-                        "mic-toggle",
-                        "Microphone",
-                        state.get_microphone(),
-                        !state.get_busy(),
-                        theme,
-                        move |v, _, _| s1.defer_option("microphone".into(), v.to_string()),
-                    ))
-                    .child(microphone)
-                    .child(toggle(
-                        "system-toggle",
-                        "System audio",
-                        state.get_system_audio(),
-                        !state.get_busy(),
-                        theme,
-                        move |v, _, _| s2.defer_option("system-audio".into(), v.to_string()),
-                    ));
-            }
-            "camera" => {
-                let options = state.clone();
-                let camera = self.dropdown(
-                    "camera",
-                    state.get_camera_names().iter().collect(),
-                    state.get_camera_index(),
-                    !state.get_busy() && state.get_camera(),
-                    cx,
-                    move |i, _, _| options.defer_option("camera-device".into(), i.to_string()),
-                );
-                let options = state.clone();
-                body = body
-                    .child(toggle(
-                        "camera-toggle",
-                        "Webcam overlay",
-                        state.get_camera(),
-                        !state.get_busy(),
-                        theme,
-                        move |v, _, _| options.defer_option("camera".into(), v.to_string()),
-                    ))
-                    .child(camera)
-                    .child(
-                        div()
-                            .text_color(theme.muted)
-                            .child("Your camera is recorded separately and added to the project."),
-                    );
-            }
-            "countdown" => {
-                let mut choices = row().flex_wrap();
-                for (label, value) in [
-                    ("No delay", 0),
-                    ("3 seconds", 3),
-                    ("5 seconds", 5),
-                    ("10 seconds", 10),
-                ] {
-                    let options = state.clone();
-                    choices = choices.child(
-                        button(label, label, theme)
-                            .selected(state.get_countdown() == value)
-                            .on_click(move |_, _, _| {
-                                options.defer_option("countdown".into(), value.to_string())
-                            }),
-                    );
-                }
-                body = body
-                    .child("Give yourself a moment before recording starts.")
-                    .child(choices);
-            }
-            _ => {
-                body = body
-                    .child(self.action(
-                        "storyboard",
-                        "Create video · spike",
-                        "storyboard-spike",
-                        true,
-                    ))
-                    .child(
-                        row()
-                            .child(self.action("open", "Open video or project", "open", true))
-                            .child(self.action("projects", "Projects", "projects", true))
-                            .child(self.action(
-                                "editor",
-                                "Back to editor",
-                                "show-editor",
-                                state.get_has_project(),
-                            )),
-                    )
-                    .child(div().flex_1())
-                    // The path and the control that changes it are one
-                    // setting; they were a muted line and a row a gap apart,
-                    // with the value drifting away from its own label.
-                    .child(
-                        group_card(theme, "Recordings path").child(
-                            row()
-                                .child(
-                                    div()
-                                        .flex_1()
-                                        .min_w_0()
-                                        .text_ellipsis()
-                                        .child(state.get_directory()),
-                                )
-                                .child(self.action(
-                                    "folder",
-                                    "Choose folder…",
-                                    "recording-folder",
-                                    true,
-                                )),
-                        ),
-                    );
-            }
-        }
-        body.into_any_element()
     }
 }

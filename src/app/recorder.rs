@@ -71,6 +71,9 @@ impl App {
         options.set_panel(launcher.get_panel());
         options.set_appearance(self.preferences.appearance.as_str().into());
         options.set_source_names(ui.get_source_names());
+        options.set_capture_sources(ui.get_capture_sources());
+        options.set_sources_loading(ui.get_sources_loading());
+        options.set_status(ui.get_status());
         options.set_source_index(ui.get_source_index());
         options.set_camera_names(ui.get_camera_names());
         options.set_camera_index(ui.get_camera_index());
@@ -292,6 +295,9 @@ impl App {
                             })
                             .collect::<Vec<_>>(),
                     )));
+                    ui.set_capture_sources(ModelRc::new(VecModel::from(
+                        sources.iter().map(capture_source).collect::<Vec<_>>(),
+                    )));
                     ui.set_source_index(index as i32);
                     self.sources = sources;
                     if self.sources.is_empty() {
@@ -335,5 +341,24 @@ impl App {
         }
         self.hotkeys = Some(manager);
         Ok(())
+    }
+}
+
+/// What the Source card draws for one platform source. The platform names a
+/// display "<name> · <width>×<height>"; the card sets the resolution on its
+/// own line, so it is split back out here.
+fn capture_source(source: &Value) -> CaptureSource {
+    let full = source["name"].as_str().unwrap_or("Source");
+    let (name, detail) = match full.split_once(" · ") {
+        Some((name, detail)) => (name, detail.replace('×', " × ")),
+        None => (full, String::new()),
+    };
+    CaptureSource {
+        kind: source["kind"].as_str().unwrap_or("window").into(),
+        name: name.into(),
+        detail,
+        // Not wired: the platform layer takes no stills of its sources yet,
+        // so every source draws its placeholder.
+        thumbnail: Default::default(),
     }
 }

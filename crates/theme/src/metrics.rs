@@ -350,6 +350,40 @@ impl Theme {
     pub const RECENT_WIDTH: f32 = 760.0;
     pub const RECENT_CARD_PADDING: f32 = 10.0;
     pub const RECENT_THUMB_HEIGHT: f32 = 96.0;
+
+    // ---- recorder option cards ---------------------------------------------
+
+    /// Each bar control's card, a window of its own floating over the bar.
+    pub const RECORDER_CARD_WIDTH: f32 = 320.0;
+    /// How far above the bar a card floats.
+    pub const RECORDER_CARD_OFFSET: f32 = 14.0;
+    /// The rows of a short list — windows, countdown choices, More's items
+    /// — sit this close, so the list reads as one object.
+    pub const LIST_GAP: f32 = 2.0;
+    /// A helper line's leading, relative to its size.
+    pub const HELPER_LEADING: f32 = 1.5;
+    /// A display tile: its picture, then its name and resolution under it.
+    pub const SOURCE_THUMB_HEIGHT: f32 = 66.0;
+    pub const SOURCE_TILE_GAP: f32 = 6.0;
+    /// A window row's picture.
+    pub const WINDOW_THUMB_WIDTH: f32 = 30.0;
+    pub const WINDOW_THUMB_HEIGHT: f32 = 20.0;
+    pub const WINDOW_THUMB_RADIUS: f32 = 5.0;
+    /// The microphone meter: twelve bars of a fixed silhouette, lit from the
+    /// left as the level rises.
+    pub const METER_HEIGHT: f32 = 26.0;
+    pub const METER_BAR_WIDTH: f32 = 3.0;
+    pub const METER_BAR_RADIUS: f32 = 2.0;
+    pub const METER_GAP: f32 = 3.0;
+    pub const METER_BARS: [f32; 12] = [8., 14., 20., 11., 17., 7., 13., 9., 16., 6., 12., 8.];
+    /// The quietest level the meter lights a bar for, in dBFS.
+    pub const METER_FLOOR_DB: f32 = -60.0;
+    /// At or above this the top two bars turn `rec`, and hold for a second.
+    pub const METER_CLIP_DB: f32 = -1.0;
+    /// The camera card's live picture and the shape swatch set in it.
+    pub const CAMERA_PREVIEW_HEIGHT: f32 = 132.0;
+    pub const CAMERA_SWATCH: f32 = 44.0;
+
     /// The strip of tick labels above the lanes. It holds one line of
     /// `FONT_SMALL` and nothing else, so it is that line plus its leading and
     /// not a row's worth of height.

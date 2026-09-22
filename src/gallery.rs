@@ -13,8 +13,12 @@
 //!
 //! ⌘⇧E swaps the editor for the empty state ("Nothing open yet") and back;
 //! the titlebar's Presets button, or ⌘⇧P, opens the Presets dialog.
-//! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either.
-use crate::{EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions, Region, Wallpaper};
+//! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either; `=card-<panel>`
+//! opens that recorder card.
+use crate::{
+    CaptureSource, EditorWindow, Field, Recent, RecordingLauncher, RecordingOptions, Region,
+    Wallpaper,
+};
 use anyhow::Result;
 use std::{
     cell::RefCell,
@@ -80,8 +84,22 @@ pub fn run() -> Result<()> {
     match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
         Ok("empty") => editor.set_has_video(false),
         Ok("presets") => editor.set_dialog("presets".into()),
+        // A recorder card open over the bar: `card-sources`, `card-audio`,
+        // `card-camera`, `card-countdown` or `card-more`.
+        Ok(screen) if screen.starts_with("card-") => {
+            let panel = screen.trim_start_matches("card-").to_owned();
+            let g = gallery.clone();
+            Timer::single_shot(Duration::from_millis(400), move || {
+                let g = g.borrow();
+                show_recorder(&g.launcher, &g.options);
+                g.launcher.set_panel(panel.clone().into());
+                g.options.set_panel(panel.into());
+                g.position_options();
+            });
+        }
         _ => {}
     }
+    tick_meter(options.clone(), 0);
     {
         let g = gallery.borrow();
         g.apply_appearance();
@@ -312,6 +330,14 @@ impl Gallery {
                     tick_export(editor, started)
                 });
             }
+            "sources" => {
+                // A fake refresh, long enough to see the Refreshing state.
+                self.options.set_sources_loading(true);
+                let options = self.options.clone();
+                Timer::single_shot(Duration::from_millis(1600), move || {
+                    options.set_sources_loading(false)
+                });
+            }
             "toggle-camera" => self.option("camera", &(!self.launcher.get_camera()).to_string()),
             "toggle-microphone" => {
                 self.option("microphone", &(!self.launcher.get_microphone()).to_string())
@@ -341,7 +367,7 @@ impl Gallery {
                 self.launcher.set_microphone(on);
                 self.options.set_microphone(on);
             }
-            "system_audio" | "system" => {
+            "system_audio" | "system" | "system-audio" => {
                 self.launcher.set_system_audio(on);
                 self.options.set_system_audio(on);
             }
@@ -349,11 +375,11 @@ impl Gallery {
                 self.launcher.set_source_index(index);
                 self.options.set_source_index(index);
             }
-            "camera_index" => {
+            "camera_index" | "camera-device" => {
                 self.launcher.set_camera_index(index);
                 self.options.set_camera_index(index);
             }
-            "microphone_index" => {
+            "microphone_index" | "microphone-device" => {
                 self.launcher.set_microphone_index(index);
                 self.options.set_microphone_index(index);
             }
@@ -495,6 +521,23 @@ fn tick_export(editor: EditorWindow, started: std::time::Instant) {
         editor.set_progress(0.);
         editor.set_status("Exported gallery.mp4".into());
     }
+}
+
+/// A fake microphone for the Audio card's meter: a level wandering around
+/// −18 dB, with an occasional peak hard enough to clip.
+fn tick_meter(options: RecordingOptions, step: u32) {
+    if options.get_panel() == "audio" {
+        let wobble = ((step as f32 * 0.9).sin() + (step as f32 * 0.37).sin()) * 5.;
+        let level = if step % 70 == 69 { 0. } else { -18. + wobble };
+        options.set_mic_level(if options.get_microphone() {
+            level
+        } else {
+            f32::NEG_INFINITY
+        });
+    }
+    Timer::single_shot(Duration::from_millis(90), move || {
+        tick_meter(options, step + 1)
+    });
 }
 
 fn follow_playhead(editor: &EditorWindow, time: f32) {

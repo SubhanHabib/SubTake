@@ -15,31 +15,32 @@ pub fn status_dot(theme: Theme) -> Div {
         .bg(theme.accent)
 }
 
-/// The quiet context strip that sits above a composer or palette input and
-/// names what the surface is acting on. Several short labels in one plate,
-/// separated by spacing rather than punctuation.
+/// The quiet context strip that sits above a composer, a palette or a card
+/// and names what the surface is acting on: a trail of short labels, the
+/// last — where you are — in `text` and the rest muted, with a half-strength
+/// "/" between them so "Recorder More" does not read as one phrase.
 pub fn context_chip(theme: Theme, parts: &[&str]) -> Div {
+    let last = parts.len().saturating_sub(1);
     div()
         .flex()
+        .flex_none()
         .items_center()
-        .gap(px(Theme::GAP_SMALL))
+        .gap(px(Theme::GAP))
         .h(px(Theme::CHIP_HEIGHT))
         .px(px(Theme::GAP_LARGE))
         .rounded_full()
         .bg(theme.sunk)
         .text_size(px(Theme::FONT_SMALL))
         .text_color(theme.muted)
-        // A separator between the parts, or "Recorder More" reads as one
-        // phrase rather than as a trail.
+        .whitespace_nowrap()
         .children(parts.iter().enumerate().flat_map(|(i, part)| {
-            let lead = (i > 0).then(|| {
-                div()
-                    .flex_none()
-                    .text_color(theme.muted.opacity(0.6))
-                    .child("/")
-            });
-            lead.into_iter()
-                .chain([div().text_ellipsis().min_w_0().child(part.to_string())])
+            let lead = (i > 0).then(|| div().flex_none().opacity(0.5).child("/"));
+            let part = div().min_w_0().text_ellipsis().child(part.to_string());
+            lead.into_iter().chain([if i == last {
+                part.text_color(theme.text)
+            } else {
+                part
+            }])
         }))
 }
 

@@ -183,6 +183,13 @@ impl Button {
         self
     }
 
+    /// The 40 step: the height a Raised or Ghost control already takes, for
+    /// a variant that would otherwise sit at 44.
+    pub fn standard(mut self) -> Self {
+        self.height = Some(Theme::CONTROL_HEIGHT);
+        self
+    }
+
     /// The 48 step a dialog's footer buttons take.
     pub fn dialog(mut self) -> Self {
         self.height = Some(Theme::CONTROL_HEIGHT_DIALOG);

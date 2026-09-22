@@ -136,6 +136,37 @@ handoff's `glass` tint over it, so glass and tint are one surface. The window
 server's shadow is off: it rings a transparent window with a dark rim, which on
 a plate that fills its window reads as an outline.
 
+### Option cards
+
+Each bar control opens a 320 card 14 above the bar, centred over the control
+that opened it and kept inside the bar and the screen: a `Recorder / name`
+chip and a close control, then the card's rows, then a muted helper line.
+
+- **Capture source** — Displays as two picture tiles (the chosen one ringed in
+  accent inside and out), Windows as 34 rows with a 30×20 picture, and Refresh.
+- **Audio** — the microphone select, Record microphone, a 12-bar level meter
+  with its peak in dB (the top two bars turn red for a second on a clip), and
+  Record system audio.
+- **Camera** — Webcam overlay, the camera select, and a 132 preview with the
+  overlay's shape in its corner.
+- **Countdown delay** — four 44 rows; the chosen one is sunk, ringed, checked.
+- **More** — Open, Projects, Back to editor, then the recordings folder.
+
+The card measures its own height and the window follows, so a card never
+clips and never leaves empty glass. Its window glass is masked at
+`RADIUS_PANEL`.
+
+Not drawn by the design: the "Create video · spike" row in More, the empty
+Sources state, the camera card with no camera, and the Refreshing… pill.
+Not wired yet: source pictures, the microphone level and the camera preview —
+outside the gallery they show a glyph, "— dB" and the camera glyph.
+
+Palette churn: the Preview chip on the camera picture keeps its tint but not
+the handoff's 18 backdrop blur.
+
+`SUBTAKE_GALLERY_SCREEN=card-sources` (or `card-audio`, `card-camera`,
+`card-countdown`, `card-more`) opens the gallery with that card up.
+
 ## Gestures
 
 Pinch over the timeline zooms between 1x and 100x, anchoring the time under the

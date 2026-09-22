@@ -15,6 +15,10 @@ pub struct Dropdown {
     pub selected: usize,
     pub enabled: bool,
     pub theme: Theme,
+    /// A leading glyph naming what is being chosen — a microphone, a camera.
+    /// A dropdown with one takes the select-row shape: the 44 plate a
+    /// `toggle` sits on, so the two stack as one list of settings.
+    pub glyph: Option<SharedString>,
     open: bool,
     highlighted: usize,
     bounds: Rc<Cell<Bounds<Pixels>>>,
@@ -43,6 +47,7 @@ impl Dropdown {
             selected,
             enabled: true,
             theme,
+            glyph: None,
             open: false,
             highlighted: selected,
             bounds: Rc::new(Cell::new(Bounds::default())),
@@ -69,6 +74,7 @@ impl Render for Dropdown {
         let trigger_key = format!("{menu_key}-trigger");
         let theme = self.theme;
         let open = self.open;
+        let row = self.glyph.is_some();
         let label = self
             .items
             .get(self.selected)
@@ -120,9 +126,17 @@ impl Render for Dropdown {
                     .flex()
                     .items_center()
                     .justify_between()
-                    .gap(px(Theme::GAP))
-                    .h(px(Theme::CONTROL_HEIGHT))
-                    .px(px(Theme::CONTROL_PADDING))
+                    .gap(px(if row { Theme::ICON_GAP_ROW } else { Theme::GAP }))
+                    .h(px(if row {
+                        Theme::CONTROL_HEIGHT_LARGE
+                    } else {
+                        Theme::CONTROL_HEIGHT
+                    }))
+                    .px(px(if row {
+                        Theme::CONTROL_PADDING_LARGE
+                    } else {
+                        Theme::CONTROL_PADDING
+                    }))
                     .rounded_full()
                     .bg(motion::hover_blend(
                         &trigger_key,
@@ -130,7 +144,11 @@ impl Render for Dropdown {
                         theme.hover,
                     ))
                     .text_size(px(Theme::FONT_CONTROL))
-                    .font_weight(FontWeight::MEDIUM)
+                    .font_weight(if row {
+                        FontWeight::NORMAL
+                    } else {
+                        FontWeight::MEDIUM
+                    })
                     .text_color(theme.text)
                     .opacity(if self.enabled {
                         1.
@@ -142,6 +160,11 @@ impl Render for Dropdown {
                             .active(|s| s.opacity(Theme::PRESSED_OPACITY))
                             .on_hover(motion::hover_listener(trigger_key))
                     })
+                    .children(
+                        self.glyph
+                            .as_ref()
+                            .map(|g| icon_sized(g, Theme::ICON_SIZE_MEDIUM, theme.text)),
+                    )
                     .child(div().flex_1().min_w_0().text_ellipsis().child(label))
                     // A caret at the caret size, not at the control's. It
                     // says "this opens"; it is not the trigger's own icon,

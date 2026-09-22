@@ -39,6 +39,18 @@ pub struct Recent {
     pub thumbnail: Image,
 }
 
+/// A display or window the recorder can capture, as its Source card draws it.
+#[derive(Clone, Default, Debug, PartialEq)]
+pub struct CaptureSource {
+    /// `"display"` or `"window"`: the card lists them in two groups.
+    pub kind: String,
+    pub name: String,
+    /// A display's resolution; empty for a window.
+    pub detail: String,
+    /// A still of it, when one is to hand. Empty draws a placeholder.
+    pub thumbnail: Image,
+}
+
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Wallpaper {
     pub key: String,
@@ -98,6 +110,10 @@ struct Properties {
     selected_id: String,
     fields: ModelRc<Field>,
     source_names: ModelRc<String>,
+    capture_sources: ModelRc<CaptureSource>,
+    mic_level: f32,
+    camera_preview: Image,
+    options_height: f32,
     camera_names: ModelRc<String>,
     microphone_names: ModelRc<String>,
     source_index: i32,
@@ -179,6 +195,10 @@ impl Default for Properties {
             selected_id: String::new(),
             fields: ModelRc::default(),
             source_names: ModelRc::default(),
+            capture_sources: ModelRc::default(),
+            mic_level: f32::NEG_INFINITY,
+            camera_preview: Image::default(),
+            options_height: 264.,
             camera_names: ModelRc::default(),
             microphone_names: ModelRc::default(),
             source_index: 0,
@@ -244,20 +264,22 @@ impl UiHandle {
         (self.get_duration() / self.get_timeline_zoom().max(1.)).max(0.001)
     }
 
+    /// The options window is as wide as a card, and as tall as the open card
+    /// measures itself (`set_options_height`): cards differ in height, and
+    /// a list of windows differs with what is open on the Mac.
     pub fn get_options_width(&self) -> f32 {
-        match self.get_panel().as_str() {
-            "more" => 520.,
-            "sources" => 430.,
-            "audio" | "camera" => 420.,
-            _ => 400.,
-        }
+        subtake_theme::Theme::RECORDER_CARD_WIDTH
     }
 
     pub fn get_options_height(&self) -> f32 {
-        match self.get_panel().as_str() {
-            "more" => 284.,
-            "camera" => 276.,
-            _ => 264.,
+        self.0.props.borrow().options_height
+    }
+
+    pub fn set_options_height(&self, value: f32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.options_height != value {
+            props.options_height = value;
+            self.window().invalidate();
         }
     }
 
@@ -864,6 +886,47 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.fields != value {
             props.fields = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The recorder's sources with what the Source card draws for each, in
+    /// the same order as `source_names` (the index `source` options address).
+    pub fn get_capture_sources(&self) -> ModelRc<CaptureSource> {
+        self.0.props.borrow().capture_sources.clone()
+    }
+
+    pub fn set_capture_sources(&self, value: ModelRc<CaptureSource>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.capture_sources != value {
+            props.capture_sources = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The microphone's current peak in dBFS; negative infinity while
+    /// nothing is metering it.
+    pub fn get_mic_level(&self) -> f32 {
+        self.0.props.borrow().mic_level
+    }
+
+    pub fn set_mic_level(&self, value: f32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.mic_level != value {
+            props.mic_level = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// A frame from the selected camera; empty draws a placeholder.
+    pub fn get_camera_preview(&self) -> Image {
+        self.0.props.borrow().camera_preview.clone()
+    }
+
+    pub fn set_camera_preview(&self, value: Image) {
+        let mut props = self.0.props.borrow_mut();
+        if props.camera_preview != value {
+            props.camera_preview = value;
             self.window().invalidate();
         }
     }

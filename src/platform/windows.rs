@@ -97,6 +97,20 @@ pub fn position_launcher_options(
     let _ = (options, launcher);
     Ok(())
 }
+/// Put the recorder's options card over the bar control that opened it:
+/// `anchor` is that control's centre in points from the bar's left edge, or
+/// negative to centre the card on the bar. Moves an open card at once, so it
+/// must not be called while GPUI holds the app borrow (AppKit reports the
+/// move synchronously).
+pub fn set_launcher_options_anchor(anchor: f32) {
+    #[cfg(target_os = "macos")]
+    unsafe {
+        subtake_set_launcher_options_anchor(anchor as f64)
+    };
+    #[cfg(not(target_os = "macos"))]
+    let _ = anchor;
+}
+
 /// Check actual native window geometry rather than the runtime's cached logical
 /// coordinates, which can lag behind an AppKit child-window move.
 pub fn launcher_options_are_attached(
@@ -323,6 +337,7 @@ unsafe extern "C" {
         options: *mut std::ffi::c_void,
         launcher: *mut std::ffi::c_void,
     );
+    pub(super) fn subtake_set_launcher_options_anchor(anchor: f64);
     pub(super) fn subtake_launcher_options_are_attached(
         options: *mut std::ffi::c_void,
         launcher: *mut std::ffi::c_void,

@@ -25,6 +25,7 @@ mod editor;
 mod empty;
 mod inspector;
 mod menus;
+mod options;
 mod presets;
 mod preview;
 mod recorder;
@@ -211,6 +212,9 @@ pub struct RootView {
     preview_known_zoom: f32,
     /// The Presets dialog's unapplied selection; `None` while it is closed.
     presets: Option<presets::PresetsDraft>,
+    /// When the microphone meter last clipped, so its top bars can hold red
+    /// for a second after the peak has passed.
+    mic_clipped: Option<Instant>,
     theme: Theme,
 }
 
@@ -246,6 +250,7 @@ impl RootView {
             preview_context: None,
             preview_known_zoom: 1.,
             presets: None,
+            mic_clipped: None,
             theme,
         }
     }
