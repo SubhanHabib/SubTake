@@ -34,7 +34,7 @@ pub fn switch(
         .w(px(Theme::TOGGLE_WIDTH))
         .h(px(Theme::TOGGLE_HEIGHT))
         .rounded_full()
-        .bg(motion::blend(t.sunk2, t.accent, on))
+        .bg(motion::blend(t.sunk2, t.ink, on))
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
         .child(
             div()
@@ -47,11 +47,13 @@ pub fn switch(
                 )))
                 .size(px(Theme::TOGGLE_THUMB))
                 .rounded_full()
-                // White on both tracks, as the redesign specifies. On the
-                // off track that is white on a near-white `sunk2` in the
-                // light appearance, so the thumb's own drop shadow is what
+                // White on the off track, `on_ink` on the on track: the
+                // round-2 handoff makes "on" the `ink` plate the active
+                // segment of a segmented control uses, and accent never
+                // means "on". On the light off track that is white on a
+                // near-white `sunk2`, so the thumb's own drop shadow is what
                 // separates it — not a second fill.
-                .bg(t.thumb())
+                .bg(motion::blend(t.thumb(), t.on_ink, on))
                 .shadow(vec![BoxShadow {
                     color: hsla(0., 0., 0., 0.3),
                     offset: point(px(0.), px(1.)),

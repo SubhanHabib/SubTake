@@ -178,9 +178,9 @@ impl Theme {
         self.raise.opacity((self.raise.a * 1.6).min(1.))
     }
 
-    /// A toggle's thumb and the scrubber's dots. White in both appearances —
-    /// the redesign specifies `#ffffff` for the thumb on an accent track and
-    /// on a `sunk2` one alike, so this is not a palette entry.
+    /// An off toggle's thumb and the scrubber's dots. White in both
+    /// appearances — the redesign specifies `#ffffff` on a `sunk2` track in
+    /// both, so this is not a palette entry. An on toggle's thumb is `on_ink`.
     pub fn thumb(&self) -> Hsla {
         gpui::hsla(0., 0., 1., 1.)
     }
