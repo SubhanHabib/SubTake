@@ -28,8 +28,12 @@ fn with_app(f: impl FnOnce(&mut App, &EditorWindow)) {
         if let Some((state, weak)) = slot.borrow().as_ref() {
             if let Some(ui) = weak.upgrade() {
                 let mut app = state.borrow_mut();
+                let began = std::time::Instant::now();
                 f(&mut app, &ui);
+                subtake_ui::perf::log_took("with_app callback", began, 1.0);
+                let began = std::time::Instant::now();
                 app.sync_launcher(&ui);
+                subtake_ui::perf::log_took("with_app sync_launcher", began, 1.0);
             }
         }
     });

@@ -70,7 +70,10 @@ pub struct Theme {
     pub panel: Hsla,
     /// Raised control plate — button rest, slider track, cards.
     pub surface: Hsla,
-    /// Floating overlay tint (the material supplies the blur beneath it).
+    /// Floating overlay plate. The recorder's borderless windows carry no
+    /// vibrancy material — macOS gives a borderless window no corner mask, so
+    /// a blurred view fills the frame square behind a rounded plate — so this
+    /// tone is near-opaque like `popup` rather than a tint over glass.
     pub overlay: Hsla,
     /// Menu / popover plate, near-opaque so its rows stay legible.
     pub popup: Hsla,
@@ -96,6 +99,10 @@ pub struct Theme {
 
     // ---- state ----
     pub hover: Hsla,
+    /// The recess a text field sits in. A wash, like `hover` and `selection`,
+    /// rather than a plate: every surface tone is translucent over the window
+    /// glass, so an opaque fill here punches a solid hole through the material
+    /// instead of sitting on it.
     pub input: Hsla,
     pub unchecked: Hsla,
     pub toggle_thumb: Hsla,
@@ -126,6 +133,10 @@ impl Theme {
     // ---- metrics ---------------------------------------------------------
 
     pub const DISABLED_OPACITY: f32 = 0.4;
+    /// How far a control dims while held. A press is the one state that
+    /// must not fade: the feedback has to land with the finger, so this is
+    /// applied as an immediate style rather than through the tween store.
+    pub const PRESSED_OPACITY: f32 = 0.7;
 
     /// The whole type scale. Nothing in the interface may set a size that is
     /// not one of these four — `FONT_BODY` is the root default that every
@@ -150,6 +161,11 @@ impl Theme {
     /// One comfortable control height everywhere — the "unified control
     /// geometry" the product settled on.
     pub const CONTROL_HEIGHT: f32 = 40.0;
+    /// The quiet strips that frame a composer: the context chip above its
+    /// input and the affordance row beneath it. Both sit below the control
+    /// height so the input stays the only full-weight element on the card.
+    pub const CHIP_HEIGHT: f32 = 24.0;
+    pub const FOOTER_HEIGHT: f32 = 28.0;
     /// The whole icon scale, matching the type scale: `ICON_SIZE` is the
     /// default a control's glyph takes, `SMALL` is for marks inside a control
     /// (a dropdown caret, a resize grip) and `LARGE` for the transport and
@@ -171,11 +187,18 @@ impl Theme {
 
     /// Value input inside a scrub field.
     pub const SCRUB_VALUE_WIDTH: f32 = 70.0;
-    /// Rail button footprint: a round 40px action with its caption beneath.
-    pub const RAIL_BUTTON_WIDTH: f32 = 52.0;
-    pub const RAIL_BUTTON_HEIGHT: f32 = 56.0;
+    /// Rail button footprint: the 40px action plus the marker that shows
+    /// which panel it has open.
+    pub const RAIL_BUTTON_HEIGHT: f32 = Self::CONTROL_HEIGHT;
     /// Small marks: the unsaved dot, a progress rule, a colour sample and a
     /// picker thumbnail. Named here so no view invents its own.
+    /// A transient menu's list box: how tall it grows before it scrolls, and
+    /// the width it will not shrink below when its trigger is narrower than
+    /// its rows. Shared by the dropdown and the command palette so one is
+    /// never a different shape from the other.
+    pub const MENU_MAX_HEIGHT: f32 = 280.0;
+    pub const MENU_MIN_WIDTH: f32 = 180.0;
+
     pub const DOT_SIZE: f32 = 6.0;
     pub const PROGRESS_HEIGHT: f32 = 4.0;
     pub const SWATCH_SIZE: f32 = 26.0;
@@ -201,7 +224,7 @@ impl Theme {
             header: c(0xffffff55),
             panel: c(0xffffff48),
             surface: c(0xe7e7e766),
-            overlay: c(0xffffff24),
+            overlay: c(0xfcfcfcf7),
             popup: c(0xfafafaf5),
             overlay_shadow: c(0x00000018),
             border: c(0x2222221c),
@@ -213,7 +236,7 @@ impl Theme {
             selection: c(0x0000001a),
             on_accent: c(0xffffffff),
             hover: c(0x0000000c),
-            input: c(0xf1f1f0ff),
+            input: c(0x00000012),
             unchecked: c(0x00000030),
             toggle_thumb: c(0xffffffff),
             danger: c(0xd51e43ff),
@@ -231,7 +254,7 @@ impl Theme {
             header: c(0x15151766),
             panel: c(0x16161855),
             surface: c(0x20202466),
-            overlay: c(0x20212642),
+            overlay: c(0x1c1d21f7),
             popup: c(0x202126f5),
             overlay_shadow: c(0x00000055),
             border: c(0xffffff22),
@@ -243,7 +266,7 @@ impl Theme {
             selection: c(0xffffff1f),
             on_accent: c(0x171717ff),
             hover: c(0xffffff0e),
-            input: c(0x0e0e10ff),
+            input: c(0x00000038),
             unchecked: c(0xffffff22),
             toggle_thumb: c(0xffffffff),
             danger: c(0xf43f5eff),

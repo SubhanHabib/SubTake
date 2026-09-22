@@ -63,6 +63,18 @@ skia-safe = { version = "0.99", features = ["metal"] }
 [build-dependencies]
 cc = "1"
 
+# A development build is what `scripts/dev.py` installs, and gpui re-lays-out
+# the whole window through taffy on every frame — a hover fade is ~9 full
+# layouts. Unoptimised, that engine is slow enough to feel in the hand, so
+# dependencies build optimised while our own crates stay quick to recompile.
+# The zui fork's own workspace does the same (`taffy = { opt-level = 3 }`);
+# its profiles do not reach us, because only the root workspace's apply.
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.dev.package.taffy]
+opt-level = 3
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

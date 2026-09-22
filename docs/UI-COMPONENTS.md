@@ -71,12 +71,12 @@ Control geometry is defined by `Theme.control-height` (40px) and `Theme.radius-c
 
 Recorder frosting now uses a macOS `NSVisualEffectView` with the Popover material,
 BehindWindow blending and Active state. Its mask is the union of the 64px-high
-recorder bar and the current options card, both with 24px corners. It is inserted
+recording overlay and the current options card, both with 24px corners. It is inserted
 as a sibling behind winit's content view; that view's identity and event handling
 are preserved. The outer window has no background blur or native shadow. Slint
 supplies the translucent tint and individual card shadows. Mask generation is
 cached until card geometry changes. The system controls the material blur radius.
 
 Native regression: `clang -fobjc-arc -framework AppKit -framework QuartzCore scripts/recorder-glass-test.m -o /tmp/subtake-recorder-glass-test && /tmp/subtake-recorder-glass-test`.
-The launcher smoke suite also requires the native material installation marker,
+The recording-overlay smoke suite also requires the native material installation marker,
 so successful Slint layout snapshots alone cannot pass a missing-material build.

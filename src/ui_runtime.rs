@@ -557,12 +557,18 @@ fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 } else {
                     gpui::WindowKind::Floating
                 },
-                // `Blurred` gives the editor the reference's window glass. The
+                // `Blurred` gives the editor the reference's glass: the
                 // fork's macOS backend installs its blurred view on
                 // `UnderWindowBackground` (`8a8954c`) — the material macOS 26
                 // still vends — and composites translucent paint Porter-Duff
                 // OVER (`f596cde`), so the chrome tint lands instead of
                 // rendering see-through. See `Theme::WINDOW_GLASS_SUPPORTED`.
+                //
+                // The recorder windows cannot take it. That view fills the
+                // content view rectangularly and a borderless window gets no
+                // system corner mask, so the material paints a grey square
+                // around the rounded recorder plate. They stay transparent and
+                // their plates carry the near-opaque `overlay` tone instead.
                 window_background: if is_editor {
                     gpui::WindowBackgroundAppearance::Blurred
                 } else {
@@ -734,8 +740,12 @@ pub fn run_event_loop_until_quit() -> Result<()> {
                 )
                 .await;
                 // Run application callbacks outside GPUI's app borrow, allowing native modal dialogs.
+                subtake_ui::perf::log("pump wake");
+                let began = Instant::now();
                 drain_commands();
+                subtake_ui::perf::log_took("pump drain_commands", began, 1.0);
                 let quit = QUIT.with(Cell::get);
+                let began = Instant::now();
                 cx.update(|cx| {
                     if quit {
                         cx.quit();
@@ -743,6 +753,7 @@ pub fn run_event_loop_until_quit() -> Result<()> {
                         eprintln!("GPUI update: {error:#}");
                     }
                 });
+                subtake_ui::perf::log_took("pump sync_windows", began, 1.0);
                 if quit {
                     break;
                 }
@@ -776,15 +787,41 @@ fn install_menus(cx: &mut gpui::App) {
                 })
             });
             if let Some(ui) = editor {
-                if command == "export-panel" {
-                    ui.set_panel("Export".into());
-                    ui.invoke_panel_change("Export".into());
+                // `@Panel` opens an inspector; everything else is an action.
+                // The palette in `gpui_views` strips the prefix the same way.
+                if let Some(panel) = command.strip_prefix('@') {
+                    ui.set_panel(panel.into());
+                    ui.invoke_panel_change(panel.into());
                 } else {
                     ui.invoke_action(command);
                 }
             }
         });
     });
+    // Both menu bars are built from `gpui_views::menu_commands`, so the
+    // palette and the OS menu can no longer drift apart. Groups in that table
+    // become the separators here.
+    let menu = |name: &'static str| gpui::Menu {
+        name: name.into(),
+        items: crate::gpui_views::menu_commands(name)
+            .iter()
+            .enumerate()
+            .flat_map(|(group, commands)| {
+                (group > 0)
+                    .then(gpui::MenuItem::separator)
+                    .into_iter()
+                    .chain(commands.iter().map(|(label, command)| {
+                        gpui::MenuItem::action(
+                            (*label).to_owned(),
+                            EditorCommand {
+                                action: (*command).into(),
+                            },
+                        )
+                    }))
+            })
+            .collect(),
+        disabled: false,
+    };
     let action = |label: &str, command: &str| {
         gpui::MenuItem::action(
             label.to_owned(),
@@ -803,54 +840,37 @@ fn install_menus(cx: &mut gpui::App) {
             ],
             disabled: false,
         },
-        gpui::Menu {
-            name: "File".into(),
-            items: vec![
-                action("Open…", "open"),
-                action("Save", "save"),
-                action("Save As…", "save-as"),
-                action("Export…", "export-panel"),
-            ],
-            disabled: false,
-        },
-        gpui::Menu {
-            name: "Edit".into(),
-            items: vec![
-                action("Undo", "undo"),
-                action("Redo", "redo"),
-                gpui::MenuItem::separator(),
-                action("Add marker", "add-marker"),
-                action("Previous marker", "previous-marker"),
-                action("Next marker", "next-marker"),
-                action("Split clip at playhead", "split-clip"),
-                action("Select all regions", "select-all"),
-                action("Next overlapping annotation", "next-annotation"),
-                action("Previous overlapping annotation", "previous-annotation"),
-                gpui::MenuItem::separator(),
-                action("Copy region", "copy"),
-                action("Cut region", "cut"),
-                action("Paste region", "paste"),
-                action("Duplicate region", "duplicate"),
-                action("Delete region", "delete"),
-            ],
-            disabled: false,
-        },
-        gpui::Menu {
-            name: "Help".into(),
-            items: vec![
-                action("Keyboard shortcuts", "shortcut-reference"),
-                action("Feedback and issues", "feedback"),
-            ],
-            disabled: false,
-        },
+        menu("File"),
+        menu("Edit"),
+        menu("Help"),
     ]);
-    cx.bind_keys([gpui::KeyBinding::new(
-        "cmd-q",
-        EditorCommand {
-            action: "quit".into(),
-        },
-        None,
-    )]);
+    // The keymap is also what gpui reads to print a menu item's shortcut
+    // column, so anything listed in the menus above has to be bound here or
+    // it shows blank even though the keystroke works.
+    //
+    // Only the keys with no text-field meaning are bound. A key equivalent on
+    // an NSMenuItem is consumed by Cocoa in `performKeyEquivalent:`, BEFORE
+    // the window sees a key-down — so binding Copy/Cut/Paste/Select All here
+    // would take them away from a focused `TextInput`, which has its own
+    // scoped bindings for them. Those four stay on the key-down path in
+    // `RootView`, which already steps aside when an input holds focus.
+    let key = |keystroke: &str, command: &str| {
+        gpui::KeyBinding::new(
+            keystroke,
+            EditorCommand {
+                action: command.into(),
+            },
+            None,
+        )
+    };
+    cx.bind_keys([
+        key("cmd-q", "quit"),
+        key("cmd-o", "open"),
+        key("cmd-s", "save"),
+        key("cmd-shift-s", "save-as"),
+        key("cmd-z", "undo"),
+        key("cmd-shift-z", "redo"),
+    ]);
 }
 
 struct Assets;

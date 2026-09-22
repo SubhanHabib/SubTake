@@ -76,7 +76,7 @@ With the generated project open and paused, ten process-family samples reported 
 - Full frame-by-frame visual equivalence, all interaction details, complete translation coverage and manual acceptance of the new crop/library/preset controls are still listed in [PARITY.md](PARITY.md).
 - No Windows/Linux build, Intel Mac/Universal package, notarization, installer or updater was validated.
 
-Detailed generated media, images and raw logs are in ignored `test-output/`. The current app is left open at the recorder overlay for review. Windows-specific implementation and acceptance work is in [WINDOWS-HANDOFF.md](WINDOWS-HANDOFF.md).
+Detailed generated media, images and raw logs are in ignored `test-output/`. The current app is left open at the recording overlay for review. Windows-specific implementation and acceptance work is in [WINDOWS-HANDOFF.md](WINDOWS-HANDOFF.md).
 
 ## Recording/UI glitch follow-up
 

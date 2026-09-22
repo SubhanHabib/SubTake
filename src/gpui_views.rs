@@ -7,37 +7,100 @@ use std::{
     collections::HashMap,
     rc::Rc,
     sync::{Arc, OnceLock},
+    time::Instant,
 };
 use subtake_theme::{FONT_SANS, PANEL_WIDTH, RAIL_WIDTH, TRACK_HEIGHT, Theme};
 
 /// Title bar strip: tall enough to seat the 40px icon cluster with air.
 const TITLEBAR_HEIGHT: f32 = 56.0;
+/// The command palette card: wide enough for the longest Edit command
+/// without wrapping, and capped so a long menu scrolls rather than filling
+/// the window.
+const PALETTE_WIDTH: f32 = 300.0;
+const PALETTE_VISIBLE_ROWS: usize = 8;
+/// Chip, input, footer and the card's own padding — everything in the card
+/// that is not a command row.
+const PALETTE_CHROME_HEIGHT: f32 =
+    Theme::CHIP_HEIGHT + Theme::CONTROL_HEIGHT + Theme::FOOTER_HEIGHT + 4.0 * Theme::GAP_SMALL;
+
+/// The command sets behind both the in-window palette and the native menu
+/// bar, grouped so the menu bar can keep its separators. One table, because
+/// the two used to carry verbatim copies of these lists that could drift.
+///
+/// A command starting with `@` opens that inspector panel instead of firing
+/// an action; every consumer strips the prefix the same way.
+pub fn menu_commands(name: &str) -> &'static [&'static [(&'static str, &'static str)]] {
+    match name {
+        "File" => &[&[
+            ("Open…", "open"),
+            ("Save", "save"),
+            ("Save As…", "save-as"),
+            ("Export…", "@Export"),
+        ]],
+        "Edit" => &[
+            &[("Undo", "undo"), ("Redo", "redo")],
+            &[
+                ("Add marker", "add-marker"),
+                ("Previous marker", "previous-marker"),
+                ("Next marker", "next-marker"),
+                ("Split clip at playhead", "split-clip"),
+                ("Select all regions", "select-all"),
+                ("Next overlapping annotation", "next-annotation"),
+                ("Previous overlapping annotation", "previous-annotation"),
+            ],
+            &[
+                ("Copy region", "copy"),
+                ("Cut region", "cut"),
+                ("Paste region", "paste"),
+                ("Duplicate region", "duplicate"),
+                ("Delete region", "delete"),
+            ],
+        ],
+        "Add" => &[&[
+            ("Zoom", "add-zoom"),
+            ("Text", "add-text"),
+            ("Arrow", "add-figure"),
+            ("Blur", "add-blur"),
+            ("Audio", "add-audio"),
+            ("Caption", "add-caption"),
+            ("Trim", "add-trim"),
+            ("Speed", "add-speed"),
+            ("Marker", "add-marker"),
+        ]],
+        _ => &[&[
+            ("Keyboard shortcuts", "shortcut-reference"),
+            ("Feedback and issues", "feedback"),
+        ]],
+    }
+}
+
 
 /// The glyph a numeric field wears in its scrub plate. Keyed on the field so
 /// the inspector reads as a set of labelled dials rather than a list of rows.
-fn field_glyph(key: &str) -> &'static str {
-    let k = key.rsplit('.').next().unwrap_or(key).to_ascii_lowercase();
-    if k.contains("radius") || k.contains("corner") {
-        "Selection-regular"
-    } else if k.contains("shadow") {
-        "Drop-regular"
-    } else if k.contains("scale") || k.contains("zoom") || k.contains("size") {
-        "MagnifyingGlassPlus-regular"
-    } else if k.contains("volume") || k.contains("gain") || k.contains("audio") {
-        "SpeakerHigh-regular"
-    } else if k.contains("speed") || k.contains("duration") || k.contains("time") {
-        "Timer-regular"
-    } else if k.contains("opacity") {
-        "EyeSlash-regular"
-    } else {
-        "SlidersHorizontal-regular"
+/// How a slider's number should read. The model carries the raw value, so the
+/// unit is presentation: a 0-1 factor reads as a percentage, a multiplier as
+/// a cross, a length in points. Returned as (scale, suffix); anything not
+/// listed keeps the bare number it has today.
+fn field_unit(key: &str) -> (f32, &'static str) {
+    match key.rsplit('.').next().unwrap_or(key) {
+        "borderRadius" | "backgroundBlur" | "margin" => (1.0, " px"),
+        "cursorSize" | "cursorSmoothing" | "cursorSway" | "cursorMotionBlur"
+        | "cursorClickBounce" | "depth" | "speed" | "volume" => (1.0, "\u{00d7}"),
+        // Roundness is already carried as 0-100, so it takes the suffix
+        // without the rescale the other factors need.
+        "roundness" => (1.0, "%"),
+        "zoomSmoothness" | "shadowIntensity" | "shadow" | "cx" | "cy" => (100.0, "%"),
+        _ => (1.0, ""),
     }
 }
+
 use subtake_ui::{
     Button, ButtonVariant, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput,
-    button, choice_tile, column, empty_state, fade_edges, frosted, icon_button, measure,
-    media_tile, panel, panel_variant, progress_bar, rail_button, row, section_label,
-    segmented_control, status_dot, swatch, timeline_scrubber, toggle, tooltip,
+    button, caps_label, choice_tile, column, composer_footer, context_chip, empty_state,
+    fade_edges, frosted, group_card, icon, icon_button, measure, media_tile, menu_in,
+    menu_list, menu_row, menu_surface, panel, panel_variant, progress_bar, rail_button, row,
+    section_label, segmented_control, setting_card, status_dot, swatch, switch, tile_grid,
+    timeline_scrubber, toggle, tooltip,
 };
 
 fn macos_cursor_image() -> Arc<gpui::Image> {
@@ -77,6 +140,14 @@ impl Surface {
             Self::Launcher(s) => s.invoke_action(command),
             Self::Options(s) => s.invoke_action(command),
         });
+    }
+    /// Which window this is, for a perf timeline line.
+    fn kind_name(&self) -> &'static str {
+        match self {
+            Self::Editor(_) => "editor",
+            Self::Launcher(_) => "recorder",
+            Self::Options(_) => "options",
+        }
     }
     fn appearance(&self) -> String {
         match self {
@@ -204,6 +275,8 @@ deferred_commands!(RecordingOptions);
 
 pub struct RootView {
     surface: Surface,
+    /// When this view last rendered; only read while `SUBTAKE_PERF` is set.
+    last_render: Option<Instant>,
     focus: FocusHandle,
     inputs: HashMap<String, Entity<TextInput>>,
     dropdowns: HashMap<String, Entity<Dropdown>>,
@@ -214,6 +287,12 @@ pub struct RootView {
     pinch: Option<(bool, f32, f32, Point<Pixels>)>,
     gesture: Option<Gesture>,
     menu: Option<String>,
+    /// Where the palette's trigger sits, so the card opens against it
+    /// instead of at a fixed window coordinate.
+    menu_anchor: Rc<Cell<Bounds<Pixels>>>,
+    menu_filter: String,
+    /// Set when the palette opens so the next render hands it the keyboard.
+    menu_focus: bool,
     preview_pan: Point<Pixels>,
     preview_context: Option<PreviewContext>,
     preview_known_zoom: f32,
@@ -234,6 +313,7 @@ impl RootView {
         let theme = Theme::new(&surface.appearance(), window.appearance());
         Self {
             surface,
+            last_render: None,
             focus,
             inputs: HashMap::new(),
             dropdowns: HashMap::new(),
@@ -244,6 +324,9 @@ impl RootView {
             pinch: None,
             gesture: None,
             menu: None,
+            menu_anchor: Rc::new(Cell::new(Bounds::default())),
+            menu_filter: String::new(),
+            menu_focus: false,
             preview_pan: point(px(0.), px(0.)),
             preview_context: None,
             preview_known_zoom: 1.,
@@ -566,6 +649,7 @@ impl RootView {
         maximum: f32,
         value: f32,
         caption: (&str, &str),
+        unit: (f32, &str),
         cx: &mut Context<Self>,
         change: impl Fn(f32, bool, &mut Window, &mut App) + 'static,
     ) -> Entity<Slider> {
@@ -590,6 +674,7 @@ impl RootView {
             s.sync(value);
             s.theme = theme;
             s.set_caption(caption.0.to_owned(), caption.1.to_owned());
+            s.set_unit(unit.0, unit.1.to_owned());
         });
         control
     }
@@ -610,9 +695,11 @@ impl RootView {
         } else {
             label
         };
-        let mut body = column().gap_1();
+        let mut body = column().gap(px(Theme::GAP_SMALL));
         if key == "cursorStyle" {
-            let mut choices = row().flex_wrap();
+            // Five even tiles, four across: the reference's pickers are grids,
+            // and a wrap puts a ragged last row under an even first one.
+            let mut choices = tile_grid(4);
             for (value, label, asset) in [
                 (
                     "tahoe",
@@ -651,23 +738,27 @@ impl RootView {
                 };
                 choices = choices.child(
                     choice_tile(value, field.value == value, true, t)
-                        .w(px(70.))
                         .items_center()
+                        .justify_center()
+                        .h(px(Theme::TILE_HEIGHT + Theme::GAP_LARGE))
                         .child(cursor)
-                        .child(label)
+                        .tooltip(move |_, cx| tooltip(label, t, cx))
                         .on_click(move |_, _, _| {
                             editor.defer_field("cursorStyle".into(), value.into())
                         }),
                 );
             }
-            body = body.child(label).child(choices);
+            body = body.child(caps_label(label, t)).child(choices);
             if field.choice >= 5 {
                 body = body.child(format!("Current: {}", field.value));
             }
             return body.into_any_element();
         }
         if key == "webcam.positionPreset" {
-            let mut choices = row().flex_wrap();
+            // Nine cells, three across — the grid IS the picture of where the
+            // webcam lands, which is why the marker stays a dot rather than an
+            // arrow glyph the icon set does not carry.
+            let mut choices = tile_grid(3);
             for (i, value) in [
                 "top-left",
                 "top-center",
@@ -686,21 +777,34 @@ impl RootView {
                 let value = *value;
                 choices = choices.child(
                     choice_tile(value, field.value == value, true, t)
-                        .w(px(70.))
-                        .h(px(38.))
-                        .relative()
+                        .h(px(Theme::CONTROL_HEIGHT))
+                        .items_center()
+                        .justify_center()
                         .child(
                             div()
-                                .absolute()
-                                .left(px(8. + (i % 3) as f32 * 22.))
-                                .top(px(5. + (i / 3) as f32 * 9.))
-                                .size(px(10.))
-                                .rounded_sm()
-                                .bg(if field.value == value {
-                                    t.accent
-                                } else {
-                                    t.muted
-                                }),
+                                .flex()
+                                .w_full()
+                                .h_full()
+                                .map(|el| match i % 3 {
+                                    0 => el.justify_start(),
+                                    1 => el.justify_center(),
+                                    _ => el.justify_end(),
+                                })
+                                .map(|el| match i / 3 {
+                                    0 => el.items_start(),
+                                    1 => el.items_center(),
+                                    _ => el.items_end(),
+                                })
+                                .child(
+                                    div()
+                                        .size(px(Theme::DOT_SIZE + 2.0))
+                                        .rounded(px(Theme::RADIUS_SMALL / 2.0))
+                                        .bg(if field.value == value {
+                                            t.accent
+                                        } else {
+                                            t.muted
+                                        }),
+                                ),
                         )
                         .tooltip(move |_, cx| tooltip(format!("Webcam position {value}"), t, cx))
                         .on_click(move |_, _, _| {
@@ -710,7 +814,7 @@ impl RootView {
             }
             let editor = e.clone();
             return body
-                .child(label)
+                .child(caps_label(label, t))
                 .child(choices)
                 .child(
                     button("custom-position", "Custom position", t)
@@ -747,7 +851,6 @@ impl RootView {
                 .into_any_element();
             }
             4 => {
-                body = body.child(label);
                 // The model remains authoritative, including custom cursor/position choices.
                 let e = e.clone();
                 let values: Vec<_> = field.values.iter().collect();
@@ -763,7 +866,21 @@ impl RootView {
                         }
                     },
                 );
-                body = body.child(control);
+                // One row, not two: a label stacked over its control reads
+                // as a heading plus a thing, when it is one setting.
+                body = body.child(
+                    row()
+                        .h(px(Theme::CONTROL_HEIGHT))
+                        .child(
+                            div()
+                                .flex_none()
+                                .max_w(px(PANEL_WIDTH / 3.0))
+                                .text_ellipsis()
+                                .text_color(t.text)
+                                .child(label),
+                        )
+                        .child(div().flex_1().min_w_0().child(control)),
+                );
             }
             1 => {
                 let e1 = e.clone();
@@ -772,15 +889,18 @@ impl RootView {
                 let max = field.maximum;
                 let _ = (&e1, &k1);
                 let e2 = e.clone();
-                // One control, not three: the plate carries glyph, caption,
-                // level and value together (the product's "unified control
-                // geometry").
+                // One control, not three: the plate carries the caption, the
+                // level and the value together (the product's "unified
+                // control geometry"). No glyph -- a stack of these is a list
+                // of settings, and a pictogram on every row reads as
+                // decoration rather than as information.
                 let scrub = self.slider(
                     &id,
                     min,
                     max,
                     field.value.parse().unwrap_or(min),
-                    (&label, field_glyph(&key)),
+                    (&label, ""),
+                    field_unit(&key),
                     cx,
                     move |v, commit, _, _| {
                         if commit {
@@ -795,7 +915,19 @@ impl RootView {
                 let input = self.input(&id, &field.value, window, cx, move |v, _, _| {
                     e.defer_field(key.clone(), v)
                 });
-                body = body.child(label).child(input);
+                body = body.child(
+                    row()
+                        .h(px(Theme::CONTROL_HEIGHT))
+                        .child(
+                            div()
+                                .flex_none()
+                                .max_w(px(PANEL_WIDTH / 3.0))
+                                .text_ellipsis()
+                                .text_color(t.text)
+                                .child(label),
+                        )
+                        .child(div().flex_1().min_w_0().child(input)),
+                );
             }
         }
         body.into_any_element()
@@ -816,30 +948,32 @@ impl RootView {
             "Wallpapers" => "Background",
             _ => &name,
         };
-        let mut heading = row();
+        // The panel names itself the way the reference does: small caps
+        // rather than a heading that competes with the controls under it. A
+        // sub-panel keeps its way back, now as a caret rather than a button
+        // whose caption was a single guillemet character.
+        let mut heading = row().h(px(Theme::CONTROL_HEIGHT)).flex_none();
         if matches!(
             name.as_str(),
             "Crop" | "Wallpapers" | "Presets" | "Shortcuts"
         ) {
-            heading = heading.child(self.panel_button(
-                e,
-                "‹",
-                if name == "Shortcuts" {
-                    "Preferences"
-                } else {
-                    "Frame"
-                },
-            ));
+            let editor = e.clone();
+            let back = if name == "Shortcuts" {
+                "Preferences"
+            } else {
+                "Frame"
+            };
+            heading = heading.child(
+                icon_button("inspector-back", "CaretLeft-regular", "Back", t)
+                    .ghost()
+                    .on_click(move |_, _, _| {
+                        editor.set_panel(back.into());
+                        editor.defer_panel(back.into());
+                    }),
+            );
         }
-        heading = heading.child(
-            div()
-                .flex_1()
-                .text_size(px(Theme::FONT_HEADING))
-                .font_weight(FontWeight::SEMIBOLD)
-                .text_color(t.text)
-                .child(title.to_owned()),
-        );
-        let mut content = column().gap_3();
+        heading = heading.child(caps_label(title.to_owned(), t)).child(div().flex_1());
+        let mut content = column().gap(px(Theme::GAP));
         if name == "Frame" || name == "Wallpapers" {
             // Scene / Background is one segmented control, not two buttons.
             let editor = e.clone();
@@ -896,15 +1030,14 @@ impl RootView {
                     .child(item.on_click(move |_, _, _| editor.defer_action(key.clone())));
             }
             content = content
-                .child("Choose a background")
+                .child(caps_label("Choose a background", t))
                 .child(wallpapers)
                 .child(self.action(
                     "upload-background",
                     "Upload image or video",
                     "choose-background",
                     true,
-                ))
-                .child("Color");
+                ));
             let mut swatches = row();
             for value in [
                 "#17171c", "#22364a", "#253c32", "#54324a", "#784832", "#ededed",
@@ -930,53 +1063,70 @@ impl RootView {
                 cx,
                 move |v, _, _| editor.defer_field("wallpaper".into(), v),
             );
-            content = content
-                .child(swatches)
-                .child("Background color or gradient")
-                .child(input);
+            content = content.child(
+                group_card(t, "Background color or gradient")
+                    .child(swatches)
+                    .child(input),
+            );
         }
         if name == "Preferences" {
-            let mut appearances = row();
-            for (label, value) in [("Light", "light"), ("Dark", "dark"), ("System", "system")] {
-                let editor = e.clone();
-                appearances = appearances.child(
-                    button(value, label, t)
-                        .selected(e.get_appearance() == value)
-                        .on_click(move |_, _, _| {
-                            editor.defer_field("prefs.appearance".into(), value.into())
-                        }),
-                );
-            }
+            // Appearance is one choice of three, so it is one segmented
+            // control rather than three buttons that happen to sit together.
+            let editor = e.clone();
+            let appearances = ["light", "dark", "system"];
+            let chosen = appearances
+                .iter()
+                .position(|v| *v == e.get_appearance())
+                .unwrap_or(2);
             let e1 = e.clone();
             let e2 = e.clone();
             content = content
-                .child("Appearance")
-                .child(appearances)
-                .child(toggle(
-                    "auto-zooms",
-                    "Automatic recording zooms",
-                    e.get_auto_apply_zooms(),
-                    true,
+                .child(caps_label("Appearance", t))
+                .child(segmented_control(
+                    "appearance",
+                    &["Light", "Dark", "System"],
+                    chosen,
                     t,
-                    move |v, _, _| e1.defer_field("prefs.auto_apply_zooms".into(), v.to_string()),
+                    move |index, _, _| {
+                        editor.defer_field(
+                            "prefs.appearance".into(),
+                            appearances[index].to_owned(),
+                        )
+                    },
                 ))
+                .child(caps_label("Zooms", t))
+                // A setting and the sentence that explains it are one thing,
+                // so they share one plate. Loose muted lines under a control
+                // read as unattached commentary.
                 .child(
-                    div()
-                        .text_color(t.muted)
-                        .child("Suggest zooms when a new recording opens."),
+                    setting_card(
+                        t,
+                        "Automatic recording zooms",
+                        "Suggest zooms when a new recording opens.",
+                    )
+                    .child(switch(
+                        "auto-zooms",
+                        e.get_auto_apply_zooms(),
+                        true,
+                        t,
+                        move |v, _, _| {
+                            e1.defer_field("prefs.auto_apply_zooms".into(), v.to_string())
+                        },
+                    )),
                 )
-                .child(toggle(
-                    "connect-zooms",
-                    "Connect zooms",
-                    e.get_connect_zooms(),
-                    e.get_has_video(),
-                    t,
-                    move |v, _, _| e2.defer_field("connectZooms".into(), v.to_string()),
-                ))
                 .child(
-                    div()
-                        .text_color(t.muted)
-                        .child("Join nearby zooms into a continuous camera move."),
+                    setting_card(
+                        t,
+                        "Connect zooms",
+                        "Join nearby zooms into a continuous camera move.",
+                    )
+                    .child(switch(
+                        "connect-zooms",
+                        e.get_connect_zooms(),
+                        e.get_has_video(),
+                        t,
+                        move |v, _, _| e2.defer_field("connectZooms".into(), v.to_string()),
+                    )),
                 );
         }
         if name == "Presets" {
@@ -991,20 +1141,57 @@ impl RootView {
                         .selected(e.get_look_choice() == value),
                 );
             }
-            content = content.child("Choose a look").child(looks);
+            content = content.child(caps_label("Choose a look", t)).child(looks);
         }
         if matches!(name.as_str(), "Cursor" | "Preferences" | "Presets") {
-            content = content.child("Motion presets").child(
-                row()
-                    .child(
-                        self.action("focused", "Focused", "motion-focused", e.get_has_video())
-                            .selected(e.get_motion_choice() == "focused"),
-                    )
-                    .child(
-                        self.action("smooth", "Smooth", "motion-smooth", e.get_has_video())
-                            .selected(e.get_motion_choice() == "smooth"),
-                    ),
-            );
+            // A preset is a choice you make once and live with, so it states
+            // what it does rather than making the name carry it alone.
+            let mut presets = tile_grid(2);
+            for (value, title, glyph, detail) in [
+                (
+                    "focused",
+                    "Focused",
+                    "Cursor-regular",
+                    "Snappier motion for demos, walkthroughs and everyday recordings.",
+                ),
+                (
+                    "smooth",
+                    "Smooth",
+                    "FilmStrip-regular",
+                    "Gentler motion for presentations, keynote-style videos and polished reveals.",
+                ),
+            ] {
+                let surface = self.surface.clone();
+                let command = format!("motion-{value}");
+                presets = presets.child(
+                    choice_tile(value, e.get_motion_choice() == value, e.get_has_video(), t)
+                        .child(
+                            div()
+                                .flex()
+                                .items_center()
+                                .justify_center()
+                                .flex_none()
+                                .size(px(Theme::CONTROL_HEIGHT))
+                                .rounded(px(Theme::RADIUS_SMALL))
+                                .bg(t.surface)
+                                .child(icon(glyph, t.text)),
+                        )
+                        .child(
+                            div()
+                                .font_weight(FontWeight::MEDIUM)
+                                .text_color(t.text)
+                                .child(title),
+                        )
+                        .child(
+                            div()
+                                .text_size(px(Theme::FONT_SMALL))
+                                .text_color(t.muted)
+                                .child(detail),
+                        )
+                        .on_click(move |_, _, _| surface.action(&command)),
+                );
+            }
+            content = content.child(caps_label("Motion presets", t)).child(presets);
             if !e.get_has_video() {
                 content = content.child(
                     div()
@@ -1045,7 +1232,7 @@ impl RootView {
             let e2 = e.clone();
             let e3 = e.clone();
             content = content
-                .child("Capture source")
+                .child(caps_label("Capture source", t))
                 .child(source)
                 .child(self.action(
                     "sources",
@@ -1057,32 +1244,40 @@ impl RootView {
                     "sources",
                     !e.get_busy(),
                 ))
-                .child(toggle(
-                    "capture-camera",
-                    "Camera",
-                    e.get_capture_camera(),
-                    true,
-                    t,
-                    move |v, _, _| e1.set_capture_camera(v),
-                ))
-                .child(camera)
-                .child(toggle(
-                    "capture-mic",
-                    "Microphone",
-                    e.get_capture_mic(),
-                    true,
-                    t,
-                    move |v, _, _| e2.set_capture_mic(v),
-                ))
-                .child(microphone)
-                .child(toggle(
-                    "capture-system",
-                    "System audio",
-                    e.get_capture_system(),
-                    true,
-                    t,
-                    move |v, _, _| e3.set_capture_system(v),
-                ));
+                // Eight controls in one flat stack gave no clue which
+                // dropdown belonged to which switch. They are groups now.
+                .child(
+                    group_card(t, "Camera")
+                        .child(toggle(
+                            "capture-camera",
+                            "Record camera",
+                            e.get_capture_camera(),
+                            true,
+                            t,
+                            move |v, _, _| e1.set_capture_camera(v),
+                        ))
+                        .child(camera),
+                )
+                .child(
+                    group_card(t, "Audio")
+                        .child(toggle(
+                            "capture-mic",
+                            "Microphone",
+                            e.get_capture_mic(),
+                            true,
+                            t,
+                            move |v, _, _| e2.set_capture_mic(v),
+                        ))
+                        .child(microphone)
+                        .child(toggle(
+                            "capture-system",
+                            "System audio",
+                            e.get_capture_system(),
+                            true,
+                            t,
+                            move |v, _, _| e3.set_capture_system(v),
+                        )),
+                );
         }
         for field in e.get_fields().iter() {
             content = content.child(self.field(e, field, window, cx));
@@ -1179,95 +1374,214 @@ impl RootView {
         el.into_any_element()
     }
 
-    fn menu_button(&self, name: &'static str, cx: &mut Context<Self>) -> Button {
-        button(name, name, self.theme)
+    fn menu_button(&self, name: &'static str, cx: &mut Context<Self>) -> impl IntoElement {
+        let control = button(name, name, self.theme)
             .selected(self.menu.as_deref() == Some(name))
+            .glyph("Plus-regular")
             .on_click(cx.listener(move |s, _, _, cx| {
                 s.menu = if s.menu.as_deref() == Some(name) {
                     None
                 } else {
+                    s.menu_filter.clear();
+                    s.menu_focus = true;
                     Some(name.into())
                 };
                 cx.notify();
-            }))
+            }));
+        // The palette opens against these bounds. Measuring costs a wrapper,
+        // but the alternative is the fixed coordinate this replaced, which
+        // put the card at the top of the window while its trigger sat in the
+        // timeline strip at the bottom.
+        div()
+            .relative()
+            .flex_none()
+            .child(measure(self.menu_anchor.clone()))
+            .child(control)
     }
 
-    fn menu_overlay(&self, cx: &mut Context<Self>) -> AnyElement {
-        let Some(name) = self.menu.as_deref() else {
+    fn menu_commands(name: &str) -> &'static [&'static [(&'static str, &'static str)]] {
+        menu_commands(name)
+    }
+
+    /// Run `command` and close the palette.
+    fn run_command(&mut self, command: &str, cx: &mut Context<Self>) {
+        if let Some(panel) = command.strip_prefix('@') {
+            if let Surface::Editor(e) = &self.surface {
+                e.set_panel(panel.into());
+                e.defer_panel(panel.into());
+            }
+        } else {
+            self.surface.action(command);
+        }
+        self.menu = None;
+        self.menu_filter.clear();
+        cx.notify();
+    }
+
+    /// The command palette: a context chip, a filter input, the command
+    /// list, and a quiet row of the other menus beneath it.
+    ///
+    /// It anchors to the trigger's measured bounds and flips above it when
+    /// the trigger sits in the lower half of the window — the "Add" button
+    /// lives in the timeline strip, so a card that always dropped downward
+    /// would open off the bottom edge.
+    fn menu_overlay(&mut self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
+        let Some(name) = self.menu.clone() else {
             return div().into_any_element();
         };
-        let commands: &[(&str, &str)] = match name {
-            "File" => &[
-                ("Open…", "open"),
-                ("Save", "save"),
-                ("Save As…", "save-as"),
-                ("Export…", "@Export"),
-            ],
-            "Edit" => &[
-                ("Undo", "undo"),
-                ("Redo", "redo"),
-                ("Add marker", "add-marker"),
-                ("Previous marker", "previous-marker"),
-                ("Next marker", "next-marker"),
-                ("Split clip at playhead", "split-clip"),
-                ("Select all regions", "select-all"),
-                ("Next overlapping annotation", "next-annotation"),
-                ("Previous overlapping annotation", "previous-annotation"),
-                ("Copy region", "copy"),
-                ("Cut region", "cut"),
-                ("Paste region", "paste"),
-                ("Duplicate region", "duplicate"),
-                ("Delete region", "delete"),
-            ],
-            "Add" => &[
-                ("Text", "add-text"),
-                ("Image", "add-image"),
-                ("Arrow", "add-figure"),
-                ("Blur", "add-blur"),
-                ("Audio", "add-audio"),
-                ("Caption", "add-caption"),
-                ("Trim", "add-trim"),
-                ("Speed", "add-speed"),
-                ("Marker", "add-marker"),
-            ],
-            _ => &[
-                ("Keyboard shortcuts", "shortcut-reference"),
-                ("Feedback and issues", "feedback"),
-            ],
+        let t = self.theme;
+        let filter = self.menu_filter.to_lowercase();
+        let matches: Vec<_> = Self::menu_commands(&name)
+            .iter()
+            .flat_map(|group| group.iter())
+            .filter(|(label, _)| filter.is_empty() || label.to_lowercase().contains(&filter))
+            .collect();
+        let first = matches.first().map(|(_, command)| command.to_string());
+
+        let anchor = self.menu_anchor.get();
+        let viewport = window.viewport_size();
+        let left = f32::from(anchor.origin.x)
+            .min(f32::from(viewport.width) - PALETTE_WIDTH - Theme::GAP)
+            .max(Theme::GAP);
+        // Card height is content-driven, so cap it and reserve that much when
+        // deciding which way to open.
+        let rows = matches.len().clamp(1, PALETTE_VISIBLE_ROWS) as f32;
+        let height = PALETTE_CHROME_HEIGHT + rows * Theme::CONTROL_HEIGHT;
+        let below = f32::from(anchor.origin.y + anchor.size.height) + Theme::GAP;
+        let top = if below + height <= f32::from(viewport.height) - Theme::GAP {
+            below
+        } else {
+            (f32::from(anchor.origin.y) - Theme::GAP - height).max(Theme::GAP)
         };
+
+        let search = self.input("command-palette", "", window, cx, {
+            let first = first.clone();
+            move |_, _, _| {
+                let _ = &first;
+            }
+        });
+        // `cx.listener` hands the callback its event by reference; the input's
+        // callbacks take the text by value, so they go through a weak handle.
+        let view = cx.entity().downgrade();
+        search.update(cx, |input, _| {
+            input.set_placeholder("Type to filter commands");
+            let filtering = view.clone();
+            input.set_on_change(move |value, _, cx| {
+                filtering
+                    .update(cx, |s: &mut Self, cx| {
+                        s.menu_filter = value.clone();
+                        cx.notify();
+                    })
+                    .ok();
+            });
+            // Enter runs whatever is at the top of the filtered list, which
+            // is the only reason the field commits at all.
+            let running = view.clone();
+            let run = first.clone();
+            input.set_handler(move |_, _, cx| {
+                let Some(command) = run.clone() else { return };
+                running
+                    .update(cx, |s: &mut Self, cx| s.run_command(&command, cx))
+                    .ok();
+            });
+            // The field swallows escape, so it has to close the card itself.
+            let dismissing = view.clone();
+            input.set_on_cancel(move |_, cx| {
+                dismissing
+                    .update(cx, |s: &mut Self, cx| {
+                        s.menu = None;
+                        s.menu_filter.clear();
+                        cx.notify();
+                    })
+                    .ok();
+            });
+        });
+        if std::mem::take(&mut self.menu_focus) {
+            search.update(cx, |input, cx| {
+                input.reset("");
+                input.focus(window, cx);
+            });
+        }
+
+        let mut list = menu_list(
+            "palette-list",
+            PALETTE_VISIBLE_ROWS as f32 * Theme::CONTROL_HEIGHT,
+        )
+        .py(px(FADE_BAND));
+        if matches.is_empty() {
+            list = list.child(
+                div()
+                    .h(px(Theme::CONTROL_HEIGHT))
+                    .flex()
+                    .items_center()
+                    .px(px(Theme::CONTROL_PADDING))
+                    .text_color(t.muted)
+                    .child("No matching command"),
+            );
+        }
+        // Rows carry no glyph: a third of these commands have no icon in the
+        // set, and inventing one per row reads worse than a clean list.
+        for (label, command) in matches {
+            let command = command.to_string();
+            list = list.child(menu_row(
+                SharedString::from(format!("palette-{command}")),
+                *label,
+                false,
+                false,
+                t,
+                cx.listener(move |s, _, _, cx| s.run_command(&command, cx)),
+            ));
+        }
+
+        // The footer doubles as the menu switcher, which is what finally
+        // gives File, Edit and Help an entry point in the window itself.
+        let mut footer = composer_footer(t);
+        for (menu, glyph) in [
+            ("File", "FolderOpen-regular"),
+            ("Edit", "SlidersHorizontal-regular"),
+            ("Add", "Plus-regular"),
+            ("Help", "Question-regular"),
+        ] {
+            footer = footer.child(
+                icon_button(SharedString::from(format!("palette-menu-{menu}")), glyph, menu, t)
+                    .ghost()
+                    .selected(name == menu)
+                    .on_click(cx.listener(move |s, _, _, cx| {
+                        s.menu = Some(menu.into());
+                        s.menu_filter.clear();
+                        s.menu_focus = true;
+                        cx.notify();
+                    })),
+            );
+        }
+        footer = footer.child(
+            div()
+                .flex_1()
+                .text_ellipsis()
+                .min_w_0()
+                .child(SharedString::from(name.clone())),
+        );
+
         deferred(frosted(
-            Theme::RADIUS_PANEL,
+            Theme::RADIUS_CARD,
             MENU_BLUR,
-            panel_variant(self.theme, UiSurface::Popup).p(px(Theme::GAP_SMALL))
-                .id("command-menu")
-                .absolute()
-                .top(px(52.))
-                .left(px(100.))
-                .w(px(260.))
-                .max_h(px(540.))
-                .overflow_y_scroll()
-                .shadow_lg()
-                .on_mouse_down_out(cx.listener(|s, _, _, cx| {
-                    s.menu = None;
-                    cx.notify();
-                }))
-                .children(commands.iter().map(|(label, command)| {
-                    let command = command.to_string();
-                    button(SharedString::from(command.clone()), *label, self.theme).on_click(
-                        cx.listener(move |s, _, _, cx| {
-                            if let Some(panel) = command.strip_prefix('@') {
-                                if let Surface::Editor(e) = &s.surface {
-                                    e.set_panel(panel.into());
-                                    e.defer_panel(panel.into());
-                                }
-                            } else {
-                                s.surface.action(&command);
-                            }
-                            s.menu = None;
-                            cx.notify();
-                        }),
-                    )
-                })),
+            menu_in(
+                "command-menu-in",
+                top,
+                menu_surface(t)
+                    .id("command-menu")
+                    .absolute()
+                    .left(px(left))
+                    .w(px(PALETTE_WIDTH))
+                    .on_mouse_down_out(cx.listener(|s, _, _, cx| {
+                        s.menu = None;
+                        cx.notify();
+                    }))
+                    .child(context_chip(t, &[&name, "Commands"]))
+                    .child(search)
+                    .child(fade_edges(list))
+                    .child(footer),
+            ),
         ))
         .with_priority(30)
         .into_any_element()
@@ -1629,6 +1943,7 @@ impl RootView {
             100.,
             e.get_timeline_zoom(),
             ("Zoom", "MagnifyingGlassPlus-regular"),
+            (1.0, "\u{00d7}"),
             cx,
             move |v, _, _, _| {
                 editor.set_timeline_zoom(v);
@@ -1646,6 +1961,7 @@ impl RootView {
             (e.get_duration() - visible).max(0.001),
             offset,
             ("Position", "ArrowsOutSimple-regular"),
+            (1.0, " s"),
             cx,
             move |v, _, _, _| editor.set_timeline_offset(v),
         );
@@ -1674,7 +1990,7 @@ impl RootView {
                 "split-clip",
                 true,
             ))
-            .child(self.menu_button("Add", cx).glyph("Plus-regular"))
+            .child(self.menu_button("Add", cx))
             .child(div().flex_1())
             // Snap keeps the accent plate while engaged; the zoom cluster is
             // icon-only so the strip stays quiet.
@@ -2089,8 +2405,33 @@ impl RootView {
                     .primary()
                     .enabled(e.get_has_video() && !e.get_busy()),
             );
-        let mut rail = div()
+        // Only the panel list scrolls. Settings and Help used to sit after a
+        // `flex_1` spacer INSIDE the scroll region, which pins them to the
+        // bottom only while the content fits — the moment it overflows the
+        // spacer collapses and they scroll away with everything else, so at
+        // 980x680 they were unreachable. They now live outside the scroller.
+        let mut panels = div()
             .id("rail")
+            .flex()
+            .flex_col()
+            .items_center()
+            .gap(px(Theme::GAP_SMALL))
+            .w_full()
+            .flex_1()
+            .min_h_0()
+            .py(px(FADE_BAND))
+            .overflow_y_scroll();
+        // Icons only; the active panel keeps the accent plate and the marker.
+        for (label, name, glyph) in [
+            ("Scene", "Frame", "Sparkle-regular"),
+            ("Cursor", "Cursor", "Cursor-regular"),
+            ("Webcam", "Webcam", "Camera-regular"),
+            ("Captions", "Captions", "ClosedCaptioning-regular"),
+            ("Audio", "Audio", "SpeakerHigh-regular"),
+        ] {
+            panels = panels.child(self.rail_panel_button(e, label, name, glyph));
+        }
+        let rail = div()
             .flex()
             .flex_col()
             .items_center()
@@ -2099,22 +2440,10 @@ impl RootView {
             .h_full()
             .min_h_0()
             .flex_shrink_0()
-            .py(px(FADE_BAND))
-            .overflow_y_scroll();
-        // Icon over caption; the active panel keeps the accent plate.
-        for (label, name, glyph) in [
-            ("Scene", "Frame", "Sparkle-regular"),
-            ("Cursor", "Cursor", "Cursor-regular"),
-            ("Webcam", "Webcam", "Camera-regular"),
-            ("Captions", "Captions", "ClosedCaptioning-regular"),
-            ("Audio", "Audio", "SpeakerHigh-regular"),
-        ] {
-            rail = rail.child(self.rail_panel_button(e, label, name, glyph));
-        }
-        rail = rail
-            .child(div().flex_1())
+            .child(fade_edges(panels))
             .child(self.rail_panel_button(e, "Settings", "Preferences", "Gear-regular"))
-            .child(self.rail_panel_button(e, "Help", "shortcut-reference", "Question-regular"));
+            .child(self.rail_panel_button(e, "Help", "shortcut-reference", "Question-regular"))
+            .pb(px(Theme::GAP_SMALL));
         let preview = self.preview(e, window, cx);
         let inspector = self.inspector(e, window, cx);
         let mut root = div()
@@ -2131,7 +2460,7 @@ impl RootView {
                     .min_h_0()
                     .p(px(Theme::GAP))
                     .gap(px(Theme::GAP))
-                    .child(fade_edges(rail))
+                    .child(rail)
                     .child(preview)
                     .child(inspector),
             );
@@ -2160,7 +2489,7 @@ impl RootView {
             status = status.child(progress_bar(e.get_progress(), t));
         }
         root.child(status)
-            .child(self.menu_overlay(cx))
+            .child(self.menu_overlay(window, cx))
             .into_any_element()
     }
 
@@ -2174,21 +2503,32 @@ impl RootView {
 
     fn launcher(&self, s: &RecordingLauncher) -> AnyElement {
         let t = self.theme;
-        let mut bar = row()
+        // The bar IS the window's plate — the window itself is transparent and
+        // borderless, so there is nothing behind this to tint. An outer plate
+        // around it only drew a second, square box.
+        let mut bar = panel_variant(t, UiSurface::Overlay)
+            .flex_row()
+            .items_center()
             .size_full()
             .min_w_0()
             .overflow_hidden()
             .p(px(Theme::GAP))
             .gap(px(Theme::GAP_SMALL))
-            .rounded(px(Theme::RADIUS_PANEL))
-            .bg(t.panel)
-            .border_1()
-            .border_color(t.border)
             .child(
+                // Was a bare "⠿" text character: no size token, no colour
+                // token and no control geometry, so it sat misaligned beside
+                // the 40px controls. Same glyph, on the scale everything
+                // else uses.
                 div()
                     .id("launcher-drag")
+                    .flex()
+                    .flex_none()
+                    .items_center()
+                    .justify_center()
+                    .w(px(Theme::CONTROL_HEIGHT / 2.0))
+                    .h(px(Theme::CONTROL_HEIGHT))
                     .cursor(CursorStyle::ClosedHand)
-                    .child("⠿")
+                    .child(icon("DotsSixVertical-regular", t.muted))
                     .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
             );
         if !s.get_recording() && !s.get_busy() {
@@ -2269,21 +2609,30 @@ impl RootView {
                 bar = bar.child(self.action("cancel", "Cancel", "cancel", true));
             }
         }
+        // The quiet end of the bar. These were a bare "?" with no hit target
+        // and a full button plate whose caption was the literal character
+        // "×"; both are now icon controls at the shared geometry.
         let hint = s.get_status();
         bar = bar
             .child(
                 div()
                     .id("recorder-status")
-                    .child("?")
+                    .flex()
+                    .flex_none()
+                    .items_center()
+                    .justify_center()
+                    .size(px(Theme::CONTROL_HEIGHT))
+                    .child(icon("Question-regular", t.muted))
                     .tooltip(move |_, cx| tooltip(hint.clone(), t, cx)),
             )
-            .child(self.action("close", "×", "hide-launcher", true));
-        div()
-            .size_full()
-            .px_4()
-            .py_2()
-            .child(bar)
-            .into_any_element()
+            .child(self.icon_action(
+                "close",
+                "X-regular",
+                "Hide recorder",
+                "hide-launcher",
+                true,
+            ));
+        bar.into_any_element()
     }
 
     fn options(&mut self, s: &RecordingOptions, cx: &mut Context<Self>) -> AnyElement {
@@ -2297,18 +2646,23 @@ impl RootView {
             _ => "More",
         };
         let options = s.clone();
-        let mut body = panel(t).size_full().p_5().gap_3().child(
-            row()
-                .child(
-                    div()
-                        .flex_1()
-                        .font_weight(FontWeight::SEMIBOLD)
-                        .child(title),
-                )
-                .child(
-                    button("close", "×", t).on_click(move |_, _, _| options.defer_panel("".into())),
-                ),
-        );
+        // Composer structure: a context chip naming the surface, the controls
+        // beneath it, and a quiet footer row. The close control is an icon at
+        // the shared geometry rather than a button whose caption was the
+        // literal character "×".
+        let mut body = panel_variant(t, UiSurface::Overlay)
+            .size_full()
+            .p(px(Theme::GAP_LARGE))
+            .gap(px(Theme::GAP))
+            .child(
+                row()
+                    .child(context_chip(t, &["Recorder", title]).flex_1().min_w_0())
+                    .child(
+                        icon_button("close", "X-regular", "Close", t)
+                            .ghost()
+                            .on_click(move |_, _, _| options.defer_panel("".into())),
+                    ),
+            );
         match name.as_str() {
             "sources" => {
                 let options = s.clone();
@@ -2321,18 +2675,17 @@ impl RootView {
                     move |i, _, _| options.defer_option("source".into(), i.to_string()),
                 );
                 body = body
-                    .child("Capture source")
+                    .child(section_label("Capture source", t))
                     .child(sources)
-                    .child(
-                        div()
-                            .text_color(t.muted)
-                            .child("Choose a display or a visible window to record."),
-                    )
                     .child(self.action(
                         "refresh",
                         "Refresh displays and windows",
                         "sources",
                         !s.get_busy(),
+                    ))
+                    .child(div().flex_1())
+                    .child(composer_footer(t).child(
+                        "Choose a display or a visible window to record.",
                     ));
             }
             "audio" => {
@@ -2433,16 +2786,27 @@ impl RootView {
                                 s.get_has_project(),
                             )),
                     )
-                    .child(div().text_color(t.muted).child("Recordings path"))
+                    .child(div().flex_1())
+                    // The path and the control that changes it are one
+                    // setting; they were a muted line and a row a gap apart,
+                    // with the value drifting away from its own label.
                     .child(
-                        row()
-                            .child(div().flex_1().text_ellipsis().child(s.get_directory()))
-                            .child(self.action(
-                                "folder",
-                                "Choose folder…",
-                                "recording-folder",
-                                true,
-                            )),
+                        group_card(t, "Recordings path").child(
+                            row()
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .min_w_0()
+                                        .text_ellipsis()
+                                        .child(s.get_directory()),
+                                )
+                                .child(self.action(
+                                    "folder",
+                                    "Choose folder…",
+                                    "recording-folder",
+                                    true,
+                                )),
+                        ),
                     );
             }
         }
@@ -2453,19 +2817,51 @@ impl RootView {
 impl Render for RootView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.theme = Theme::new(&self.surface.appearance(), window.appearance());
+        // Element ids are unique within a window; the tween store is one
+        // thread-local shared by all three of ours. Scope it before anything
+        // in this tree asks it for a value.
+        subtake_ui::motion::enter_window(window.window_handle().window_id().as_u64());
+        let render_began = Instant::now();
+        if subtake_ui::perf::enabled() {
+            let since = self.last_render.map(|t| t.elapsed().as_secs_f64() * 1000.0);
+            subtake_ui::perf::log(format_args!(
+                "render {} begin (since last {})",
+                self.surface.kind_name(),
+                since.map_or("-".to_string(), |ms| format!("{ms:.1}ms"))
+            ));
+            self.last_render = Some(render_began);
+        }
         // Interface text is authored in rems against the reference's 16px
         // baseline, so `px(11.0)` resolves to 11px here.
-        
-        // Keep frames coming while any hover wash is mid-fade.
-        if subtake_ui::tick_hover_fades() {
-            cx.notify();
-        }
+
         let surface = self.surface.clone();
         let content = match &surface {
             Surface::Editor(e) => self.editor(e, window, cx),
             Surface::Launcher(s) => self.launcher(s),
             Surface::Options(s) => self.options(s, cx),
         };
+        // Keep frames coming while any wash or switch is mid-fade. This has
+        // to run AFTER the tree is built, not before: hover fades are kicked
+        // off by an event that refreshes the window anyway, but a tween that
+        // a control starts from its own render — a switch flipping, a tile
+        // being selected — is only visible to the store once that render has
+        // happened, and nothing else would ask for the frames to finish it.
+        //
+        // `request_animation_frame`, not `cx.notify()`. We are inside the
+        // draw: gpui's invalidator ignores a notify while a draw phase is
+        // active (it records the view and requests no frame), so a fade ran
+        // one frame and then froze until an unrelated event repainted the
+        // window — the hover that "took a while" to arrive. The next-frame
+        // callback schedules a real frame and notifies this view from it.
+        let fading = subtake_ui::tick_hover_fades();
+        if fading {
+            window.request_animation_frame();
+        }
+        subtake_ui::perf::log_took(
+            format_args!("render {} tree built (fading={fading})", surface.kind_name()),
+            render_began,
+            0.0,
+        );
         let editor_surface = matches!(surface, Surface::Editor(_));
         div()
             .id("subtake-root")

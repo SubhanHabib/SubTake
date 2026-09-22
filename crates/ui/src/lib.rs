@@ -14,12 +14,16 @@ use subtake_theme::Theme;
 mod fonts;
 mod frost;
 mod input;
-mod motion;
+pub mod motion;
+pub mod perf;
 pub use fonts::{families_available, register as register_fonts};
 pub use frost::{FADE_BAND, MENU_BLUR, fade_edges, frosted, layered};
 pub use input::TextInput;
 pub use input::init;
-pub use motion::{HOVER_FADE_MS, hover_blend, hover_listener, tick_hover_fades};
+pub use motion::{
+    HOVER_FADE_MS, MENU_IN_MS, blend, fade_in, hover_blend, hover_listener, menu_in, state_fade,
+    tick_hover_fades, tween_key,
+};
 
 // ---------------------------------------------------------------------------
 // icons
@@ -60,7 +64,8 @@ pub enum Surface {
     Card,
     /// Menu or popover.
     Popup,
-    /// Floating overlay; the material supplies the blur, this is only a tint.
+    /// Floating overlay: the plate a borderless recorder window draws, which
+    /// has no material behind it and so carries its own near-opaque tone.
     Overlay,
 }
 
@@ -89,6 +94,51 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     }
 }
 
+/// The plate a transient menu lands on: the dropdown's choices, the command
+/// palette. One definition, so no menu can drift from another.
+pub fn menu_surface(theme: Theme) -> Div {
+    panel_variant(theme, Surface::Popup)
+        .p(px(Theme::GAP_SMALL))
+        .gap(px(Theme::GAP_SMALL))
+        .shadow_lg()
+}
+
+/// The scrolling column of rows inside a menu surface. Rows sit closer than
+/// the surface's own gap — they are one list, not separate controls.
+pub fn menu_list(id: impl Into<ElementId>, max_height: f32) -> Stateful<Div> {
+    column()
+        .id(id)
+        .gap(px(2.0))
+        .min_h_0()
+        .max_h(px(max_height))
+        .overflow_y_scroll()
+}
+
+/// One row of a menu, with the keyboard cursor drawn behind it. The row
+/// itself is an ordinary ghost control; the wrapper only carries the cursor,
+/// which is a property of the list rather than of the control.
+pub fn menu_row(
+    id: impl Into<ElementId>,
+    label: impl Into<SharedString>,
+    selected: bool,
+    highlighted: bool,
+    theme: Theme,
+    on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+) -> Div {
+    div()
+        .flex()
+        .flex_none()
+        .rounded(px(Theme::RADIUS_CONTROL))
+        .when(highlighted && !selected, |el| el.bg(theme.hover))
+        .child(
+            button(id, label, theme)
+                .ghost()
+                .menu_item()
+                .selected(selected)
+                .on_click(on_click),
+        )
+}
+
 /// The default plane: an inspector / timeline panel.
 pub fn panel(theme: Theme) -> Div {
     panel_variant(theme, Surface::Panel).p(px(Theme::GAP_LARGE))
@@ -100,6 +150,111 @@ pub fn divider(theme: Theme) -> Div {
 }
 
 /// A small muted section caption ("Frame", "Padding", "Animation").
+/// The heading weight above `section_label`: a panel's own name and its major
+/// sections, set in caps at the small size. gpui at the pinned revision has no
+/// letter-spacing, so the caps and the weight carry it on their own.
+pub fn caps_label(text: impl Into<SharedString>, theme: Theme) -> Div {
+    div()
+        .flex_none()
+        .text_size(px(Theme::FONT_SMALL))
+        .font_weight(FontWeight::SEMIBOLD)
+        .text_color(theme.muted)
+        .child(SharedString::from(text.into().to_uppercase()))
+}
+
+/// A panel's heading strip: its name in caps, then whatever else the panel
+/// puts on that line — a reset link, a master switch.
+pub fn panel_header(theme: Theme, title: impl Into<SharedString>) -> Div {
+    row()
+        .h(px(Theme::CONTROL_HEIGHT))
+        .flex_none()
+        .gap(px(Theme::GAP))
+        .child(caps_label(title, theme))
+}
+
+/// A setting as a plate: its label on the left, its control on the right, at
+/// the shared control geometry. This is the shape almost every inspector row
+/// takes — a bare label above a bare control reads as two things, not one.
+pub fn field_row(theme: Theme, label: impl Into<SharedString>) -> Div {
+    row()
+        .h(px(Theme::CONTROL_HEIGHT))
+        .flex_none()
+        .px(px(Theme::CONTROL_PADDING))
+        .gap(px(Theme::GAP))
+        .rounded(px(Theme::RADIUS_CONTROL))
+        .bg(theme.surface)
+        .text_size(px(Theme::FONT_CONTROL))
+        .text_color(theme.text)
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .text_ellipsis()
+                .child(label.into()),
+        )
+}
+
+/// A setting that needs a sentence to explain it: title, detail and the
+/// control that changes it, together on one plate instead of a control with a
+/// loose muted line drifting underneath it.
+pub fn setting_card(
+    theme: Theme,
+    title: impl Into<SharedString>,
+    detail: impl Into<SharedString>,
+) -> Div {
+    row()
+        .items_start()
+        .flex_none()
+        .p(px(Theme::GAP_LARGE))
+        .gap(px(Theme::GAP))
+        .rounded(px(Theme::RADIUS_CARD))
+        .bg(theme.surface)
+        .child(
+            column()
+                .flex_1()
+                .min_w_0()
+                .gap(px(Theme::GAP_SMALL))
+                .child(
+                    div()
+                        .font_weight(FontWeight::MEDIUM)
+                        .text_color(theme.text)
+                        .child(title.into()),
+                )
+                .child(
+                    div()
+                        .text_size(px(Theme::FONT_SMALL))
+                        .text_color(theme.muted)
+                        .child(detail.into()),
+                ),
+        )
+}
+
+/// Related controls gathered under their own quiet label, on a recessed
+/// plate — the reference's "Webcam Crop", "Position", "Webcam Footage".
+pub fn group_card(theme: Theme, label: impl Into<SharedString>) -> Div {
+    column()
+        .flex_none()
+        .gap(px(Theme::GAP))
+        .p(px(Theme::GAP_LARGE))
+        .rounded(px(Theme::RADIUS_CARD))
+        .bg(theme.surface)
+        .child(
+            div()
+                .text_size(px(Theme::FONT_SMALL))
+                .text_color(theme.muted)
+                .child(label.into()),
+        )
+}
+
+/// An even grid of tiles `columns` across — a picker reads as a grid or as a
+/// ragged wrap, and the reference's are grids.
+pub fn tile_grid(columns: u16) -> Div {
+    div()
+        .grid()
+        .grid_cols(columns)
+        .gap(px(Theme::GAP_SMALL))
+}
+
 pub fn section_label(text: impl Into<SharedString>, theme: Theme) -> Div {
     row()
         .child(
@@ -124,6 +279,9 @@ pub enum ButtonVariant {
     Outline,
     Danger,
     Record,
+    /// Text-only accent action — the reference's "Reset" and "Advanced".
+    /// It carries no plate, so it never competes with the row it labels.
+    Link,
 }
 
 #[derive(IntoElement)]
@@ -138,6 +296,8 @@ pub struct Button {
     icon_only: bool,
     /// Pill the control fully (the rail's round actions).
     round: bool,
+    /// Full-width, left-aligned: the shape a control takes as a menu row.
+    menu_item: bool,
     selected: bool,
     enabled: bool,
     stretch: bool,
@@ -154,6 +314,7 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         glyph_size: Theme::ICON_SIZE,
         icon_only: false,
         round: false,
+        menu_item: false,
         selected: false,
         enabled: true,
         stretch: false,
@@ -188,6 +349,13 @@ impl Button {
         self.round = true;
         self
     }
+    /// A row in a menu: full width, caption left, ellipsised. Every list of
+    /// choices in the app is built from this, so the dropdown's rows and the
+    /// command palette's rows cannot drift apart.
+    pub fn menu_item(mut self) -> Self {
+        self.menu_item = true;
+        self
+    }
     pub fn variant(mut self, variant: ButtonVariant) -> Self {
         self.variant = variant;
         self
@@ -198,6 +366,10 @@ impl Button {
     }
     pub fn ghost(mut self) -> Self {
         self.variant = ButtonVariant::Ghost;
+        self
+    }
+    pub fn link(mut self) -> Self {
+        self.variant = ButtonVariant::Link;
         self
     }
     pub fn danger(mut self) -> Self {
@@ -230,6 +402,7 @@ impl RenderOnce for Button {
         let t = self.theme;
         let tip = self.label.clone();
         let danger = matches!(self.variant, ButtonVariant::Danger | ButtonVariant::Record);
+        let link = self.variant == ButtonVariant::Link;
 
         // Two states, no hues: a control is either FILLED — the solid
         // achromatic plate with its glyph inverted on top — or a translucent
@@ -237,43 +410,73 @@ impl RenderOnce for Button {
         // take the fill; everything else washes. Colour in the interface
         // comes from the desktop behind the glass, never from a control.
         let filled = self.variant == ButtonVariant::Primary || self.selected;
-        let (rest, hover) = if filled {
-            (t.accent, t.accent_hover)
-        } else if danger {
+        let (washed, washed_hover) = if danger {
             (t.danger.opacity(0.10), t.danger.opacity(0.22))
-        } else if matches!(self.variant, ButtonVariant::Ghost | ButtonVariant::Outline) {
+        } else if matches!(
+            self.variant,
+            ButtonVariant::Ghost | ButtonVariant::Outline | ButtonVariant::Link
+        ) {
             (t.hover.opacity(0.0), t.hover)
         } else {
             (t.surface, t.hover)
         };
-        let content = if filled {
-            t.on_accent
-        } else if danger {
+
+        // Selection is a state the control HOLDS, so it tweens from render;
+        // hover is an event, so it tweens from a listener. Both run in the
+        // same store, which is what lets a control that is hovered while it
+        // is switched on cross-fade along both axes at once instead of
+        // snapping to whichever the last frame happened to compute.
+        let fill = motion::state_fade(&motion::tween_key(&self.id, "fill"), filled);
+        let rest = motion::blend(washed, t.accent, fill);
+        let hover = motion::blend(washed_hover, t.accent_hover, fill);
+        let hover_key = motion::tween_key(&self.id, "hover");
+        let background = motion::hover_blend(&hover_key, rest, hover);
+        let resting = if danger {
             t.danger
+        } else if link {
+            t.accent
         } else {
             t.text
         };
+        let content = motion::blend(resting, t.on_accent, fill);
         // A ring drawn in the plate colour would vanish on a filled control.
-        let focus_ring = if filled { t.on_accent } else { t.accent };
+        let focus_ring = motion::blend(t.accent, t.on_accent, fill);
 
         let radius = if self.round {
             Theme::CONTROL_HEIGHT / 2.0
+        } else if link {
+            Theme::RADIUS_SMALL
         } else {
             Theme::RADIUS_CONTROL
         };
 
+        let click_id = self.id.clone();
         let mut el = div()
             .id(self.id)
             .flex()
             .flex_shrink_0()
             .items_center()
-            .justify_center()
+            .map(|el| {
+                if self.menu_item {
+                    el.w_full().justify_start()
+                } else {
+                    el.justify_center()
+                }
+            })
             .gap(px(Theme::GAP))
-            .h(px(Theme::CONTROL_HEIGHT))
+            .h(px(if link {
+                Theme::CHIP_HEIGHT
+            } else {
+                Theme::CONTROL_HEIGHT
+            }))
             .rounded(px(radius))
-            .bg(rest)
+            .bg(background)
             .text_color(content)
-            .text_size(px(Theme::FONT_CONTROL))
+            .text_size(px(if link {
+                Theme::FONT_SMALL
+            } else {
+                Theme::FONT_CONTROL
+            }))
             .font_weight(FontWeight::MEDIUM)
             .opacity(if self.enabled {
                 1.
@@ -283,10 +486,17 @@ impl RenderOnce for Button {
 
         if self.icon_only {
             el = el.w(px(Theme::CONTROL_HEIGHT));
+        } else if link {
+            el = el.px(px(Theme::GAP_SMALL));
         } else {
             el = el.px(px(Theme::CONTROL_PADDING));
             if self.stretch {
                 el = el.flex_1().min_w_0();
+            }
+            // A row is already full-width, and `flex_1` inside the menu's
+            // column would grow it along the wrong axis.
+            if self.menu_item {
+                el = el.flex_none();
             }
         }
         if self.variant == ButtonVariant::Outline {
@@ -302,22 +512,39 @@ impl RenderOnce for Button {
         if !self.icon_only {
             el = el.child(
                 div()
-                    .when(self.stretch, |s| s.flex_1().min_w_0())
+                    .when(self.stretch || self.menu_item, |s| s.flex_1().min_w_0())
                     .text_ellipsis()
                     .child(self.label.clone()),
             );
         }
-        el = el.tooltip(move |_, cx| tooltip(tip.clone(), t, cx));
+        // Only a control whose caption cannot be read needs a tooltip to name
+        // it: one with no caption at all, or a stretched one, which is
+        // exactly the case that ellipsizes. "Export" hovering to reveal a
+        // tooltip that says "Export" is noise.
+        if self.icon_only || self.stretch || self.menu_item {
+            el = el.tooltip(move |_, cx| tooltip(tip.clone(), t, cx));
+        }
 
         if self.enabled {
             // GPUI synthesizes ClickEvent::Keyboard for Enter/Space on focused divs.
             el = el
                 .cursor_pointer()
                 .tab_index(0)
-                .focus(move |s| s.border_2().border_color(focus_ring))
-                .hover(move |s| s.bg(hover));
+                // `focus_visible`, not `focus`: the fork gates this on
+                // `last_input_was_keyboard`, exactly like CSS
+                // `:focus-visible`. With plain `focus` every click left a
+                // ring behind on the control it just pressed.
+                .focus_visible(move |s| s.border_2().border_color(focus_ring))
+                // A press should land the instant the finger does, so it
+                // stays an immediate style; only the release fades back.
+                .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                .on_hover(motion::hover_listener(hover_key));
             if let Some(handler) = self.handler {
-                el = el.on_click(move |e, w, cx| handler(e, w, cx));
+                let id = click_id;
+                el = el.on_click(move |e, w, cx| {
+                    perf::log(format_args!("click button {id:?}"));
+                    handler(e, w, cx)
+                });
             }
         }
         el
@@ -328,7 +555,7 @@ impl RenderOnce for Button {
 // rail button
 // ---------------------------------------------------------------------------
 
-/// A round action with its caption beneath — the editor's left rail.
+/// The editor's left rail: an icon action and its open-panel marker.
 pub fn rail_button(
     id: impl Into<ElementId>,
     glyph: &str,
@@ -338,31 +565,28 @@ pub fn rail_button(
     on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 ) -> impl IntoElement {
     let label = label.into();
-    div()
-        .flex()
-        .flex_col()
-        .items_center()
-        .gap(px(2.0))
-        .w(px(Theme::RAIL_BUTTON_WIDTH))
-        .h(px(Theme::RAIL_BUTTON_HEIGHT))
+    let id = id.into();
+    // The rail is icons only: the captions cost a third of the rail's width
+    // for text that repeats the tooltip, and the panel they open names itself
+    // in its own heading. Which one is open reads from the marker instead.
+    let lit = motion::state_fade(&motion::tween_key(&id, "rail"), active);
+    row()
         .flex_none()
+        .gap(px(Theme::GAP_SMALL))
+        .h(px(Theme::RAIL_BUTTON_HEIGHT))
         .child(
-            button(id, label.clone(), theme)
+            button(id, label, theme)
                 .glyph(glyph)
                 .icon_only()
-                .round()
-                .ghost()
                 .selected(active)
                 .on_click(on_click),
         )
         .child(
             div()
-                .w_full()
-                .text_center()
-                .text_ellipsis()
-                .text_size(px(Theme::FONT_SMALL))
-                .text_color(if active { theme.text } else { theme.muted })
-                .child(label),
+                .flex_none()
+                .size(px(Theme::DOT_SIZE))
+                .rounded(px(Theme::DOT_SIZE / 2.0))
+                .bg(motion::blend(theme.accent.opacity(0.), theme.accent, lit)),
         )
 }
 
@@ -415,6 +639,7 @@ impl Render for Tooltip {
         frost::frosted(
             Theme::RADIUS_SMALL,
             frost::MENU_BLUR,
+            motion::fade_in("tooltip",
             div()
                 .max_w(px(320.))
                 .px(px(Theme::GAP))
@@ -427,6 +652,7 @@ impl Render for Tooltip {
                 .text_size(px(Theme::FONT_SMALL))
                 .text_color(t.text)
                 .child(self.text.clone()),
+            ),
         )
     }
 }
@@ -451,6 +677,48 @@ pub fn status_dot(theme: Theme) -> Div {
         .bg(theme.accent)
 }
 
+/// The quiet context strip that sits above a composer or palette input and
+/// names what the surface is acting on. Several short labels in one plate,
+/// separated by spacing rather than punctuation.
+pub fn context_chip(theme: Theme, parts: &[&str]) -> Div {
+    div()
+        .flex()
+        .items_center()
+        .gap(px(Theme::GAP_SMALL))
+        .h(px(Theme::CHIP_HEIGHT))
+        .px(px(Theme::GAP_LARGE))
+        .rounded(px(Theme::RADIUS_SMALL))
+        .bg(theme.surface)
+        .text_size(px(Theme::FONT_SMALL))
+        .text_color(theme.muted)
+        // A separator between the parts, or "Recorder More" reads as one
+        // phrase rather than as a trail.
+        .children(parts.iter().enumerate().flat_map(|(i, part)| {
+            let lead = (i > 0).then(|| {
+                div()
+                    .flex_none()
+                    .text_color(theme.muted.opacity(0.6))
+                    .child("/")
+            });
+            lead.into_iter()
+                .chain([div().text_ellipsis().min_w_0().child(part.to_string())])
+        }))
+}
+
+/// The muted strip of affordances under a composer input: small quiet
+/// controls on the left, a plain status word on the right of them. It is
+/// deliberately not a toolbar — nothing here carries a plate at rest.
+pub fn composer_footer(theme: Theme) -> Div {
+    div()
+        .flex()
+        .items_center()
+        .gap(px(Theme::GAP_SMALL))
+        .px(px(Theme::GAP_SMALL))
+        .h(px(Theme::FOOTER_HEIGHT))
+        .text_size(px(Theme::FONT_SMALL))
+        .text_color(theme.muted)
+}
+
 /// A determinate progress rule: a wash track with a filled bar over it.
 pub fn progress_bar(fraction: f32, theme: Theme) -> Div {
     div()
@@ -469,14 +737,17 @@ pub fn progress_bar(fraction: f32, theme: Theme) -> Div {
 /// A flat colour sample — the one place a literal colour is the content
 /// rather than the styling, so it carries a full-strength outline when picked.
 pub fn swatch(id: impl Into<ElementId>, colour: Hsla, selected: bool, theme: Theme) -> Stateful<Div> {
+    let id = id.into();
+    let pick = motion::state_fade(&motion::tween_key(&id, "fill"), selected);
     div()
-        .id(id.into())
+        .id(id)
         .size(px(Theme::SWATCH_SIZE))
         .rounded(px(Theme::RADIUS_SMALL))
         .bg(colour)
         .border_2()
-        .border_color(if selected { theme.accent } else { theme.border })
+        .border_color(motion::blend(theme.border, theme.accent, pick))
         .cursor_pointer()
+        .active(|s| s.opacity(Theme::PRESSED_OPACITY))
 }
 
 /// A captioned thumbnail in a picker grid (backgrounds, presets).
@@ -490,6 +761,7 @@ pub fn media_tile(id: impl Into<ElementId>, title: impl Into<SharedString>) -> S
         .overflow_hidden()
         .rounded(px(Theme::RADIUS_SMALL))
         .cursor_pointer()
+        .active(|s| s.opacity(Theme::PRESSED_OPACITY))
         .child(
             div()
                 .text_size(px(Theme::FONT_SMALL))
@@ -529,20 +801,24 @@ pub fn choice_tile(
     enabled: bool,
     theme: Theme,
 ) -> Stateful<Div> {
+    let id = id.into();
+    let pick = motion::state_fade(&motion::tween_key(&id, "fill"), selected);
+    let hover_key = motion::tween_key(&id, "hover");
+    let wash = motion::blend(theme.surface, theme.selection, pick);
     div()
         .flex()
         .flex_col()
         .gap(px(Theme::GAP_SMALL))
-        .id(id.into())
+        .id(id)
         .min_w_0()
         .p(px(Theme::GAP))
         .rounded(px(Theme::RADIUS_CARD))
         // A tile is too big to invert wholesale, so "selected" reads as the
         // deeper grey wash plus a full-strength outline — the outlined half
         // of the same filled/outlined language the buttons use.
-        .bg(if selected { theme.selection } else { theme.surface })
+        .bg(motion::hover_blend(&hover_key, wash, theme.hover))
         .border_1()
-        .border_color(if selected { theme.accent } else { theme.border })
+        .border_color(motion::blend(theme.border, theme.accent, pick))
         .opacity(if enabled {
             1.
         } else {
@@ -550,9 +826,11 @@ pub fn choice_tile(
         })
         .tab_index(0)
         .tab_stop(enabled)
-        .focus(move |s| s.border_2().border_color(theme.accent))
+        .focus_visible(move |s| s.border_2().border_color(theme.accent))
         .when(enabled, |s| {
-            s.cursor_pointer().hover(move |s| s.bg(theme.hover))
+            s.cursor_pointer()
+                .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                .on_hover(motion::hover_listener(hover_key))
         })
 }
 
@@ -560,24 +838,28 @@ pub fn choice_tile(
 // toggle
 // ---------------------------------------------------------------------------
 
-pub fn toggle(
+/// The bare switch, with no label and no plate of its own.
+pub fn switch(
     id: impl Into<ElementId>,
-    label: impl Into<SharedString>,
     checked: bool,
     enabled: bool,
     t: Theme,
     change: impl Fn(bool, &mut Window, &mut App) + 'static,
 ) -> impl IntoElement {
-    let label = label.into();
+    let id = id.into();
+    // The thumb slides and the track fills on one progress value, so the
+    // plate is never briefly filled under a thumb that has not moved yet.
+    let on = motion::state_fade(&motion::tween_key(&id, "switch"), checked);
+    let click_id = id.clone();
     // A 30px pill inside the 40px control slot, with a 24px thumb.
     let mut switch = div()
-        .id(id.into())
+        .id(id)
         .relative()
         .flex_none()
         .w(px(52.))
         .h(px(30.))
         .rounded(px(15.))
-        .bg(if checked { t.accent } else { t.unchecked })
+        .bg(motion::blend(t.unchecked, t.accent, on))
         .opacity(if enabled {
             1.
         } else {
@@ -587,27 +869,37 @@ pub fn toggle(
             div()
                 .absolute()
                 .top(px(3.))
-                .left(px(if checked { 25. } else { 3. }))
+                .left(px(motion::lerp(3., 25., on)))
                 .size(px(24.))
                 .rounded(px(12.))
                 // On a filled track the thumb takes the glyph colour, or it
                 // would be white-on-white in the dark appearance.
-                .bg(if checked { t.on_accent } else { t.toggle_thumb }),
+                .bg(motion::blend(t.toggle_thumb, t.on_accent, on)),
         );
     if enabled {
         switch = switch
             .tab_index(0)
-            .focus(move |s| s.border_2().border_color(t.accent))
+            .focus_visible(move |s| s.border_2().border_color(t.accent))
             .cursor_pointer()
-            .on_click(move |_, w, cx| change(!checked, w, cx));
+            .on_click(move |_, w, cx| {
+                perf::log(format_args!("click switch {click_id:?} -> {}", !checked));
+                change(!checked, w, cx)
+            });
     }
-    row()
-        .justify_between()
-        .h(px(Theme::CONTROL_HEIGHT))
-        .text_size(px(Theme::FONT_CONTROL))
-        .text_color(t.text)
-        .child(div().flex_1().min_w_0().text_ellipsis().child(label))
-        .child(switch)
+    switch
+}
+
+/// The switch on its own plate with its label — the shape a setting takes when
+/// it stands alone rather than inside a `setting_card`.
+pub fn toggle(
+    id: impl Into<ElementId>,
+    label: impl Into<SharedString>,
+    checked: bool,
+    enabled: bool,
+    t: Theme,
+    change: impl Fn(bool, &mut Window, &mut App) + 'static,
+) -> impl IntoElement {
+    field_row(t, label).child(switch(id, checked, enabled, t, change))
 }
 
 // ---------------------------------------------------------------------------
@@ -641,10 +933,17 @@ pub struct Slider {
     pub minimum: f32,
     pub maximum: f32,
     pub theme: Theme,
-    /// Glyph shown at the left of the plate.
+    /// Glyph shown at the left of the plate. Empty for an inspector row: the
+    /// caption already names the setting, and a glyph per row turns a stack
+    /// of them into a column of pictograms.
     pub glyph: SharedString,
-    /// Caption shown beside the glyph.
+    /// Caption shown inside the plate.
     pub label: SharedString,
+    /// What the number means. The model carries a raw value, so the unit is
+    /// presentation: `scale` takes it to display terms (a 0–1 factor reads as
+    /// a percentage) and `unit` is the suffix.
+    pub scale: f32,
+    pub unit: SharedString,
     bounds: Rc<Cell<Bounds<Pixels>>>,
     dragging: bool,
     change: Box<dyn Fn(f32, bool, &mut Window, &mut App)>,
@@ -663,6 +962,10 @@ impl Slider {
         self.label = label.into();
         self.glyph = glyph.into();
     }
+    pub fn set_unit(&mut self, scale: f32, unit: impl Into<SharedString>) {
+        self.scale = scale;
+        self.unit = unit.into();
+    }
     pub fn new(
         minimum: f32,
         maximum: f32,
@@ -675,8 +978,10 @@ impl Slider {
             maximum,
             value,
             theme,
-            glyph: "SlidersHorizontal-regular".into(),
+            glyph: SharedString::default(),
             label: SharedString::default(),
+            scale: 1.0,
+            unit: SharedString::default(),
             bounds: Rc::new(Cell::new(Bounds::default())),
             dragging: false,
             change: Box::new(change),
@@ -696,11 +1001,18 @@ impl Render for Slider {
         let t = self.theme;
         let fraction =
             ((self.value - self.minimum) / (self.maximum - self.minimum).max(0.001)).clamp(0., 1.);
-        let rounded = (self.value * 100.0).round() / 100.0;
-        let display = if rounded.fract() == 0.0 {
-            format!("{}", rounded as i64)
+        let shown = self.value * self.scale;
+        let display = if self.scale == 1.0 {
+            let rounded = (shown * 100.0).round() / 100.0;
+            if rounded.fract() == 0.0 {
+                format!("{}{}", rounded as i64, self.unit)
+            } else {
+                format!("{rounded}{}", self.unit)
+            }
         } else {
-            format!("{rounded}")
+            // A rescaled value is already coarse; two decimals of a
+            // percentage is noise the row has no room for.
+            format!("{}{}", shown.round() as i64, self.unit)
         };
 
         div()
@@ -713,7 +1025,7 @@ impl Render for Slider {
             .bg(t.surface)
             .overflow_hidden()
             .cursor(CursorStyle::ResizeLeftRight)
-            .focus(move |s| s.border_1().border_color(t.slider_focus()))
+            .focus_visible(move |s| s.border_1().border_color(t.slider_focus()))
             .on_key_down(cx.listener(|s, e: &KeyDownEvent, w, cx| {
                 let step =
                     (s.maximum - s.minimum) / if e.keystroke.modifiers.shift { 10. } else { 100. };
@@ -761,7 +1073,9 @@ impl Render for Slider {
                     .items_center()
                     .gap(px(Theme::GAP))
                     .px(px(Theme::CONTROL_PADDING))
-                    .child(icon(&self.glyph, t.text))
+                    .when(!self.glyph.is_empty(), |el| {
+                        el.child(icon(&self.glyph, t.text))
+                    })
                     .child(
                         div()
                             .flex_1()
@@ -930,6 +1244,11 @@ impl Dropdown {
 
 impl Render for Dropdown {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // A dropdown carries no caller-supplied id, and every one of them
+        // names its trigger "trigger"; the entity id is the thing that is
+        // actually unique per instance, so the tween keys hang off that.
+        let menu_key = format!("dropdown-{:?}", cx.entity_id());
+        let trigger_key = format!("{menu_key}-trigger");
         let t = self.theme;
         let open = self.open;
         let label = self
@@ -987,7 +1306,11 @@ impl Render for Dropdown {
                     .h(px(Theme::CONTROL_HEIGHT))
                     .px(px(Theme::CONTROL_PADDING))
                     .rounded(px(Theme::RADIUS_CONTROL))
-                    .bg(if open { t.hover } else { t.surface })
+                    .bg(motion::hover_blend(
+                        &trigger_key,
+                        if open { t.hover } else { t.surface },
+                        t.hover,
+                    ))
                     .text_size(px(Theme::FONT_CONTROL))
                     .font_weight(FontWeight::MEDIUM)
                     .text_color(t.text)
@@ -997,7 +1320,9 @@ impl Render for Dropdown {
                         Theme::DISABLED_OPACITY
                     })
                     .when(self.enabled, |s| {
-                        s.cursor_pointer().hover(move |s| s.bg(t.hover))
+                        s.cursor_pointer()
+                            .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                            .on_hover(motion::hover_listener(trigger_key))
                     })
                     .child(div().flex_1().min_w_0().text_ellipsis().child(label))
                     .child(icon_sized(
@@ -1021,53 +1346,40 @@ impl Render for Dropdown {
                 deferred(frost::frosted(
                     Theme::RADIUS_CARD,
                     frost::MENU_BLUR,
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap(px(2.0))
-                        .id("choices")
-                        .absolute()
-                        .top(px(Theme::CONTROL_HEIGHT + Theme::GAP_SMALL))
-                        .left_0()
-                        .min_w(px(180.))
-                        .max_h(px(280.))
-                        .overflow_y_scroll()
-                        .p(px(Theme::GAP_SMALL))
-                        .bg(t.popup)
-                        .border_1()
-                        .border_color(t.border)
-                        .rounded(px(Theme::RADIUS_CARD))
-                        .shadow_lg()
-                        .on_mouse_down_out(cx.listener(|this, event: &MouseDownEvent, _, cx| {
-                            if !this.bounds.get().contains(&event.position) {
-                                this.open = false;
-                                cx.notify();
-                            }
-                        }))
-                        .children(self.items.iter().enumerate().map(|(i, label)| {
-                            let highlighted = i == self.highlighted;
-                            let selected = i == self.selected;
-                            div()
-                                .id(("choice", i))
-                                .flex()
-                                .items_center()
-                                .h(px(32.))
-                                .px(px(Theme::GAP_LARGE))
-                                .rounded(px(Theme::RADIUS_SMALL))
-                                .text_size(px(Theme::FONT_CONTROL))
-                                .text_color(if selected { t.accent_text } else { t.text })
-                                .bg(if selected {
-                                    t.selection
-                                } else if highlighted {
-                                    t.hover
-                                } else {
-                                    t.hover.opacity(0.0)
-                                })
-                                .cursor_pointer()
-                                .hover(move |s| s.bg(t.hover))
-                                .child(label.clone())
-                                .on_click(cx.listener(move |this, _, w, cx| this.choose(i, w, cx)))
-                        })),
+                    menu_in(
+                        "dropdown-menu",
+                        Theme::CONTROL_HEIGHT + Theme::GAP_SMALL,
+                        menu_surface(t)
+                            .id("choices")
+                            .absolute()
+                            .left_0()
+                            // The menu tracks its trigger rather than sizing
+                            // itself to its longest row: a source list holds
+                            // whole window titles, and a menu that grows to
+                            // fit one runs off the edge of the window.
+                            .w_full()
+                            .min_w(px(Theme::MENU_MIN_WIDTH))
+                            .on_mouse_down_out(cx.listener(
+                                |this, event: &MouseDownEvent, _, cx| {
+                                    if !this.bounds.get().contains(&event.position) {
+                                        this.open = false;
+                                        cx.notify();
+                                    }
+                                },
+                            ))
+                            .child(menu_list("dropdown-choices", Theme::MENU_MAX_HEIGHT).children(
+                                self.items.iter().enumerate().map(|(i, label)| {
+                                    menu_row(
+                                        ("choice", i),
+                                        label.clone(),
+                                        i == self.selected,
+                                        i == self.highlighted,
+                                        t,
+                                        cx.listener(move |this, _, w, cx| this.choose(i, w, cx)),
+                                    )
+                                }),
+                            )),
+                    ),
                 ))
                 .with_priority(20),
             );

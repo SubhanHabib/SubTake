@@ -10,7 +10,7 @@ The header is 56px tall with centered project title, project/save/history contro
 
 The reference's AI brightness/upscale labels do not introduce new product features. Editor and recorder surfaces are translucent over native Mac window blur. The six-dot timeline handle uses blurred filmstrip artwork plus a translucent dark tint; it has no opaque gradient. The design adapts the supplied reference to SubTake's recording, cursor, caption and effect workflows; it does not claim a pixel-identical clone.
 
-Visual review uses native Slint window snapshots at 1360x880 and 980x680, light/dark component galleries, and recorder overlay snapshots. Pointer/key checks exercise the rail, shared controls and editing workflows. GUI tests must run sequentially: competing windows can steal focus from a dropdown popup. `docs/ui-validation.json`, `docs/launcher-validation.json` and `docs/primitives-validation.json` hold the latest machine-readable results. An isolated landscape project in `test-output/design-review/` uses a bundled wallpaper for a less distracting live comparison. User projects are not changed by that demo.
+Visual review uses native Slint window snapshots at 1360x880 and 980x680, light/dark component galleries, and recording-overlay snapshots. Pointer/key checks exercise the rail, shared controls and editing workflows. GUI tests must run sequentially: competing windows can steal focus from a dropdown popup. `docs/ui-validation.json`, `docs/launcher-validation.json` and `docs/primitives-validation.json` hold the latest machine-readable results. An isolated landscape project in `test-output/design-review/` uses a bundled wallpaper for a less distracting live comparison. User projects are not changed by that demo.
 
 ## Recorder entry point
 

@@ -33,6 +33,13 @@ actions!(
 pub struct TextInput {
     pub theme: Theme,
     accepted: Box<dyn Fn(String, &mut Window, &mut App)>,
+    /// Fires on every edit rather than on commit — for a field whose value
+    /// is consumed as it is typed (a palette filter) rather than accepted.
+    changed: Option<Box<dyn Fn(String, &mut Window, &mut App)>>,
+    /// Fires when the field is dismissed with escape. A field inside a
+    /// transient surface has to hand the key on: `cancel` stops propagation,
+    /// so the surface never sees the escape that was meant to close it.
+    cancelled: Option<Box<dyn Fn(&mut Window, &mut App)>>,
     focus_handle: FocusHandle,
     content: SharedString,
     placeholder: SharedString,
@@ -51,6 +58,29 @@ impl TextInput {
     pub fn set_handler(&mut self, accepted: impl Fn(String, &mut Window, &mut App) + 'static) {
         self.accepted = Box::new(accepted);
     }
+    pub fn set_on_change(&mut self, changed: impl Fn(String, &mut Window, &mut App) + 'static) {
+        self.changed = Some(Box::new(changed));
+    }
+    pub fn set_on_cancel(&mut self, cancelled: impl Fn(&mut Window, &mut App) + 'static) {
+        self.cancelled = Some(Box::new(cancelled));
+    }
+    /// Replace the contents outright, ignoring focus — `sync` deliberately
+    /// leaves a focused field alone, which is wrong when the caller is
+    /// reopening the surface the field lives in.
+    pub fn reset(&mut self, value: &str) {
+        self.content = value.to_owned().into();
+        self.selected_range = self.content.len()..self.content.len();
+        self.committed = value.to_owned();
+    }
+    pub fn set_placeholder(&mut self, placeholder: impl Into<SharedString>) {
+        self.placeholder = placeholder.into();
+    }
+    pub fn text(&self) -> &str {
+        &self.content
+    }
+    pub fn focus(&self, window: &mut Window, cx: &mut App) {
+        window.focus(&self.focus_handle, cx);
+    }
     pub fn new(
         cx: &mut Context<Self>,
         content: String,
@@ -60,6 +90,8 @@ impl TextInput {
         Self {
             theme,
             accepted: Box::new(accepted),
+            changed: None,
+            cancelled: None,
             focus_handle: cx.focus_handle(),
             committed: content.clone(),
             content: content.into(),
@@ -95,10 +127,14 @@ impl TextInput {
         }
     }
 
-    fn cancel(&mut self, _: &Cancel, _: &mut Window, cx: &mut Context<Self>) {
+    fn cancel(&mut self, _: &Cancel, window: &mut Window, cx: &mut Context<Self>) {
         self.content = self.committed.clone().into();
         self.selected_range = self.content.len()..self.content.len();
         self.marked_range = None;
+        if let Some(cancelled) = self.cancelled.take() {
+            cancelled(window, cx);
+            self.cancelled = Some(cancelled);
+        }
         cx.stop_propagation();
         cx.notify();
     }
@@ -353,7 +389,7 @@ impl EntityInputHandler for TextInput {
         &mut self,
         range_utf16: Option<Range<usize>>,
         new_text: &str,
-        _: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         let range = range_utf16
@@ -367,6 +403,12 @@ impl EntityInputHandler for TextInput {
                 .into();
         self.selected_range = range.start + new_text.len()..range.start + new_text.len();
         self.marked_range.take();
+        // Every edit path — typing, paste, backspace, delete — funnels
+        // through here, so this is the one place a live listener has to sit.
+        if let Some(changed) = self.changed.take() {
+            changed(self.content.to_string(), window, cx);
+            self.changed = Some(changed);
+        }
         cx.notify();
     }
 

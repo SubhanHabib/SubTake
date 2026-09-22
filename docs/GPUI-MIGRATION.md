@@ -207,7 +207,7 @@ control colour has zero saturation.
 
 A control is filled when it is a primary action or switched on, and washed
 otherwise — one rule covering buttons, rail items, segmented controls,
-launcher pills and the toggle. The toggle's thumb takes `on_accent` when the
+recording-overlay pills and the toggle. The toggle's thumb takes `on_accent` when the
 track is filled, or it would be white-on-white in the dark appearance. Focus
 rings likewise flip to `on_accent` on a filled plate.
 
@@ -235,3 +235,120 @@ Marks that had been hand-rolled in `gpui_views.rs` moved into
 `media_tile` and `empty_state`, with their metrics (`DOT_SIZE`,
 `PROGRESS_HEIGHT`, `SWATCH_SIZE`, `TILE_WIDTH`, `TILE_HEIGHT`) as theme
 tokens. The views now compose primitives rather than styling divs.
+
+## Motion — 22 September 2026
+
+The reference carries a full motion catalog (`crates/ui/src/motion.rs`, 1164
+lines): entrance fades, menu and dialog entrances, resize transitions, a
+splash exit, loader pulses, and Tailwind `transition-colors` parity on every
+interactive wash. The port took only the last of those, and until now it was
+dead code — `hover_blend` and `hover_listener` had no call sites, so every
+control snapped between its states through gpui's immediate `.hover()` style.
+That is what made the interface feel static.
+
+What is wired now:
+
+| Surface | Motion |
+| --- | --- |
+| Button, dropdown trigger, dropdown row, choice tile | Hover wash fades over 150 ms on `cubic-bezier(0.4, 0, 0.2, 1)` |
+| Button fill, choice tile, swatch, rail caption | Selected state cross-fades over the same curve |
+| Toggle | Track colour, thumb colour and thumb travel on one 150 ms progress |
+| Every pressable control | `PRESSED_OPACITY` while held — immediate, not faded |
+| Dropdown menu, command menu | 140 ms `ease_out_quint` fade with a 3 px settle |
+| Tooltip | 140 ms fade |
+| Slider, timeline scrubber | None, deliberately: a drag must stay 1:1 with the pointer |
+
+Two tween drivers share one store. Hover is an *event*, so it hangs off an
+`on_hover` listener. Selection, switch state and the rail's active panel are
+states the control *holds* with no enter/leave event to hang on, so
+`state_fade` drives them from render — which is why it re-anchors only when
+the target changes, and adopts its value outright the first time a key is
+seen (a panel that opens with a switch already on must not play the
+switch-on animation).
+
+Constraints worth recording:
+
+- gpui at the pinned revision has no scale transform for divs, only for
+  `svg`. The reference's `scale(0.96) → 1` menu entrance is approximated with
+  fade plus a 3 px vertical settle, applied to `top` — which means `menu_in`
+  is only safe on an absolutely positioned surface.
+- `tick_hover_fades()` runs at the *end* of `RootView::render`, not the
+  start. Hover fades get their frames from the `window.refresh()` in the
+  listener, but a tween a control starts from its own render is invisible to
+  the store until that render has happened, and nothing else would request
+  the frames needed to finish it.
+- Reduce-motion is honoured on both paths: the tween store snaps when
+  `reduced_motion()` is set, and gpui's `AnimationExt` skips scheduling
+  frames for the entrances on its own.
+
+Still absent relative to the reference: the resize/collapse transitions for
+panels and the rail, tab slides, and the shared `PulseClock` that the
+reference introduced to keep repeating loaders off a 120 Hz repaint loop. We
+have no repeating loaders yet, so the clock is not needed until we do.
+
+## Overlays — composer layout, 22 September 2026
+
+The three transient surfaces — the command menu, the recording overlay
+and the recorder options window — now share one structure, taken from the
+Claude Code composer the reference screenshots show: a grey context chip
+naming the surface, the working controls beneath it, and a quiet icon row as
+a footer. Two primitives carry it, both in `crates/ui/src/lib.rs`:
+
+- `context_chip(theme, parts)` — `CHIP_HEIGHT` (24 px), `RADIUS_SMALL`,
+  surface fill, `FONT_SMALL` muted text, parts joined with a separator.
+- `composer_footer(theme)` — a `FOOTER_HEIGHT` (28 px) row at `FONT_SMALL`
+  and muted, for icon controls and a hint.
+
+No primitive changed colour: both reuse existing `surface` and `muted`
+tokens.
+
+### Command menu
+
+`RootView::menu_overlay` was a fixed-position list. It is now a palette:
+
+- It anchors to its trigger. `menu_button` wraps the control in a `measure`
+  that writes the trigger's bounds into `RootView::menu_anchor`, and the card
+  opens under those bounds, clamped to the viewport and flipped above the
+  trigger when the card would not fit below. The old fixed coordinate put
+  the card at the top of the window while the trigger sat in the timeline
+  strip at the bottom.
+- It filters. The search field is a `TextInput` with a live `set_on_change`
+  that writes `RootView::menu_filter`; enter runs the first match. The field
+  takes the keyboard when the card opens (`menu_focus`), so filtering starts
+  with a keystroke rather than a click.
+- Its footer switches menus, which is the first entry point File, Edit and
+  Help have had inside the window.
+
+Rows carry no glyph: a third of the commands have no icon in the bundled
+Phosphor set, and inventing one per row reads worse than a clean list.
+
+Escape needed a new hook. `TextInput::cancel` stops propagation, so a focused
+field inside a transient surface swallows the key that was meant to close
+it; `set_on_cancel` hands it back, and the palette closes on it.
+
+### One command table
+
+`gpui_views::menu_commands` is now module-level and shared: the palette reads
+it, and `ui_runtime::install_menus` builds File/Edit/Help from the same
+groups, inserting a separator between them. A `@`-prefixed command opens a
+panel on both paths instead of dispatching an action.
+
+Only ⌘Q/⌘O/⌘S/⌘⇧S/⌘Z/⌘⇧Z are bound in the gpui keymap. Cocoa consumes an
+NSMenuItem key equivalent in `performKeyEquivalent:` *before* the window sees
+the key down, and gpui derives the menu's equivalents from the keymap — so
+binding ⌘C/⌘X/⌘V/⌘A there would steal them from a focused `TextInput`. Those
+keys keep reaching the editor through `invoke_keyboard`, as they already did.
+
+### Recorder surfaces
+
+The recording overlay's bare `⠿`, `?` and `×` characters had no hit target between
+them; they are now icon controls at `CONTROL_HEIGHT`
+(`DotsSixVertical`, `Question` with the status tooltip, `X`). The options
+window's title row became a context chip plus a ghost close icon, and the
+sources panel's muted hint moved into a `composer_footer`. Both moved off
+raw tailwind spacing onto `GAP`/`GAP_LARGE`.
+
+The options window sizes are unchanged: the tallest panel ("more") lays out
+to about 232 px against a 284 px window, and "sources" to about 228 px
+against 264 px, so the chip and footer both fit inside the existing defaults
+in `ui_state`.

@@ -18,9 +18,12 @@
 //! so entries are stamped with a frame counter on every read and pruned by
 //! [`tick_hover_fades`] when a full frame passes without a read.
 
-use gpui::{App, Hsla, SharedString, Window};
+use gpui::{
+    Animation, AnimationElement, AnimationExt, App, ElementId, Hsla, IntoElement, SharedString,
+    Styled, Window, ease_out_quint, px,
+};
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     collections::HashMap,
     time::{Duration, Instant},
 };
@@ -29,15 +32,61 @@ use std::{
 pub const HOVER_FADE_MS: u64 = 150;
 
 /// Tailwind's default transition curve — CSS `cubic-bezier(0.4, 0, 0.2, 1)`.
-const EASE: CubicBezier = CubicBezier {
+pub const EASE: Curve = Curve::Bezier(CubicBezier {
     x1: 0.4,
     y1: 0.0,
     x2: 0.2,
     y2: 1.0,
+});
+
+/// CSS `ease-out` — `cubic-bezier(0, 0, 0.58, 1)`.
+pub const EASE_OUT: Curve = Curve::Bezier(CubicBezier {
+    x1: 0.0,
+    y1: 0.0,
+    x2: 0.58,
+    y2: 1.0,
+});
+
+/// A gentle overshoot, in the shape CSS `linear()` springs are authored in:
+/// mass 1, and the stiffness/damping a UI spring usually wants.
+pub const SPRING: Curve = Curve::Spring {
+    stiffness: 180.0,
+    damping: 20.0,
 };
 
+/// How a tween gets from 0 to 1. `eval` takes normalised time and returns
+/// normalised progress, so a spring may legitimately return a value above 1
+/// while it overshoots.
 #[derive(Clone, Copy)]
-struct CubicBezier {
+pub enum Curve {
+    Bezier(CubicBezier),
+    /// A damped harmonic oscillator, as CSS spring easings and SwiftUI
+    /// `.spring` describe one. Mass is fixed at 1.
+    Spring { stiffness: f32, damping: f32 },
+}
+
+impl Curve {
+    pub fn eval(&self, t: f32) -> f32 {
+        match self {
+            Self::Bezier(bezier) => bezier.eval(t),
+            Self::Spring { stiffness, damping } => spring(t, *stiffness, *damping),
+        }
+    }
+}
+
+/// Progress of a unit spring at normalised time `t`.
+///
+/// Mass is 1, so the system is `x'' + damping * x' + stiffness * x = 0`
+/// released from rest at -1. Return displacement from the target expressed as
+/// progress: 0 at rest, 1 at the target, and above 1 while it overshoots.
+fn spring(t: f32, stiffness: f32, damping: f32) -> f32 {
+    // TODO(human)
+    let _ = (stiffness, damping);
+    t
+}
+
+#[derive(Clone, Copy)]
+pub struct CubicBezier {
     x1: f32,
     y1: f32,
     x2: f32,
@@ -46,7 +95,7 @@ struct CubicBezier {
 
 impl CubicBezier {
     /// Solve y for a given x by Newton iteration, as browsers do.
-    fn eval(&self, x: f32) -> f32 {
+    pub fn eval(&self, x: f32) -> f32 {
         let x = x.clamp(0.0, 1.0);
         let mut t = x;
         for _ in 0..8 {
@@ -75,7 +124,9 @@ impl CubicBezier {
     }
 }
 
-fn lerp(from: f32, to: f32, t: f32) -> f32 {
+/// Linear interpolation, also used by callers tweening geometry rather
+/// than colour (the toggle thumb's travel, a chevron's rotation).
+pub fn lerp(from: f32, to: f32, t: f32) -> f32 {
     from + (to - from) * t
 }
 
@@ -89,6 +140,8 @@ struct FadeEntry {
     started: Instant,
     /// Frame counter at the last read (liveness stamp).
     seen: u64,
+    /// Frame counter at the last re-anchor, used to catch a contested key.
+    anchored: u64,
 }
 
 impl FadeEntry {
@@ -137,8 +190,61 @@ impl HoverFades {
                 target,
                 started: now,
                 seen,
+                anchored: seen,
             },
         );
+    }
+
+    /// Drive `key` toward `on` from a RENDER pass rather than an event.
+    ///
+    /// [`Self::set_at`] re-anchors unconditionally, which is right for a
+    /// pointer flip but wrong here: render runs every frame, so re-anchoring
+    /// would restart the tween each frame and it would never arrive. This
+    /// only re-anchors when the target actually changes, and adopts the
+    /// state outright the first time a key is seen so a panel that opens
+    /// with a switch already on does not play the switch-on animation.
+    fn set_state_at(&mut self, key: &str, on: bool, reduced: bool, now: Instant) -> f32 {
+        let target = if on { 1.0 } else { 0.0 };
+        let duration = Self::duration();
+        let frame = self.frame;
+        if let Some(entry) = self.entries.get_mut(key) {
+            if entry.target != target {
+                // Two controls are driving one key and disagree — they share
+                // an element id. Each would re-anchor the other every render,
+                // so the tween would never settle and the root render would
+                // request frames forever: the window repaints at full rate
+                // with nothing moving on it. Snap instead. The controls still
+                // fight over the value, but only one of them looks wrong,
+                // which is a great deal cheaper than pegging a core.
+                let contested = entry.anchored == frame;
+                let origin = if reduced || contested {
+                    target
+                } else {
+                    entry.value(now, duration)
+                };
+                *entry = FadeEntry {
+                    origin,
+                    target,
+                    started: now,
+                    seen: frame,
+                    anchored: frame,
+                };
+            } else {
+                entry.seen = frame;
+            }
+            return entry.value(now, duration);
+        }
+        self.entries.insert(
+            key.to_string(),
+            FadeEntry {
+                origin: target,
+                target,
+                started: now,
+                seen: frame,
+                anchored: frame,
+            },
+        );
+        target
     }
 
     fn value_at(&mut self, key: &str, now: Instant) -> f32 {
@@ -168,6 +274,23 @@ impl HoverFades {
 
 thread_local! {
     static HOVER_FADES: RefCell<HoverFades> = RefCell::new(HoverFades::default());
+    static WINDOW: Cell<u64> = const { Cell::new(0) };
+}
+
+/// Scope the tween store to the window now rendering.
+///
+/// An element id is unique within a window, not across windows, and this
+/// store is one thread-local shared by every window on the main thread. The
+/// editor's close button and the recording overlay's are both `"close"`, so
+/// without a scope they share a tween key and disagree about it every frame.
+/// The root render calls this before it builds its tree; gpui draws one
+/// window at a time, so every element painted afterwards belongs to it.
+pub fn enter_window(id: u64) {
+    WINDOW.with(|window| window.set(id));
+}
+
+fn scope() -> u64 {
+    WINDOW.with(|window| window.get())
 }
 
 /// Hover progress (0..1) for `key` this frame.
@@ -197,6 +320,35 @@ fn mix(from: Hsla, to: Hsla, t: f32) -> Hsla {
         l: lerp(from.l, to.l, t),
         a,
     }
+}
+
+/// Progress (0..1) of `key`'s tween toward `on`, driven from render.
+///
+/// Use this for state a control *holds* — switched on, selected, expanded —
+/// where there is no enter/leave event to hang a listener on. Reading it is
+/// what advances it, so call it unconditionally in the render that uses it.
+pub fn state_fade(key: &str, on: bool) -> f32 {
+    let reduced = reduced_motion();
+    HOVER_FADES.with(|fades| {
+        fades
+            .borrow_mut()
+            .set_state_at(key, on, reduced, Instant::now())
+    })
+}
+
+/// Interpolate two colours at `t`, premultiplied so a fade out of a
+/// zero-alpha wash keeps its hue instead of dipping through transparent black.
+pub fn blend(from: Hsla, to: Hsla, t: f32) -> Hsla {
+    mix(from, to, t)
+}
+
+/// A stable tween key for `id`'s `slot`.
+///
+/// Element ids are already unique within a window, which is exactly the
+/// scope the tween store needs; `slot` separates the several tweens one
+/// control runs at once (its hover wash and its selected fill).
+pub fn tween_key(id: &ElementId, slot: &str) -> String {
+    format!("{}@{id:?}#{slot}", scope())
 }
 
 /// The standard hover blend: rest → hover colour at `key`'s current progress.
@@ -236,12 +388,57 @@ pub fn hover_listener(
 ) -> impl Fn(&bool, &mut Window, &mut App) + 'static {
     let key = key.into();
     move |hovered, window, _cx| {
+        crate::perf::log(format_args!("hover {} {key}", if *hovered { "in " } else { "out" }));
         set_hover(&key, *hovered, reduced_motion());
         // Event-dispatch context: `request_animation_frame` is draw-phase only,
         // so mark the whole window dirty and let the render tail keep frames
         // coming while the fade is mid-flight.
         window.refresh();
     }
+}
+
+// ---------------------------------------------------------------------------
+// entrances
+// ---------------------------------------------------------------------------
+
+/// How long a floating surface takes to arrive.
+pub const MENU_IN_MS: u64 = 140;
+
+/// The distance a menu travels as it settles, in pixels.
+const MENU_IN_RISE: f32 = 3.0;
+
+/// Fade `element` in over [`MENU_IN_MS`] — tooltips and other surfaces that
+/// appear in place.
+///
+/// gpui runs these through [`AnimationExt`], which honours the platform's
+/// reduce-motion setting on its own: the element is simply rendered in its
+/// end state and no frames are scheduled.
+pub fn fade_in<E>(id: impl Into<ElementId>, element: E) -> AnimationElement<E>
+where
+    E: IntoElement + Styled + 'static,
+{
+    element.with_animation(id, menu_curve(), |el, t| el.opacity(t))
+}
+
+/// Fade `element` in and settle it down onto `top`.
+///
+/// Only for a surface that is already absolutely positioned — the rise is
+/// applied to `top`, so on an in-flow element it would shove its siblings
+/// around for the length of the animation. gpui at this revision has no
+/// scale transform for divs (only svgs), so the reference's
+/// `scale(0.96) → 1` is approximated by this short travel, which reads the
+/// same at menu size.
+pub fn menu_in<E>(id: impl Into<ElementId>, top: f32, element: E) -> AnimationElement<E>
+where
+    E: IntoElement + Styled + 'static,
+{
+    element.with_animation(id, menu_curve(), move |el, t| {
+        el.opacity(t).top(px(top - MENU_IN_RISE * (1.0 - t)))
+    })
+}
+
+fn menu_curve() -> Animation {
+    Animation::new(Duration::from_millis(MENU_IN_MS)).with_easing(ease_out_quint())
 }
 
 /// Once-per-frame tick from the root render. Returns true while any fade is
@@ -253,6 +450,67 @@ pub fn tick_hover_fades() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_state_tween_adopts_its_first_value_without_animating() {
+        let mut fades = HoverFades::default();
+        let t0 = Instant::now();
+        // A panel opening with a switch already on must not play the
+        // switch-on animation, so the first read arrives at the end state.
+        assert_eq!(fades.set_state_at("s", true, false, t0), 1.0);
+    }
+
+    #[test]
+    fn a_state_tween_keeps_running_when_render_re_reads_it() {
+        let mut fades = HoverFades::default();
+        let t0 = Instant::now();
+        fades.set_state_at("s", false, false, t0);
+        // A state flip happens BETWEEN renders, so the frame counter moves
+        // with it; two anchors inside one frame mean two controls fighting
+        // over one key, which `set_state_at` deliberately snaps.
+        fades.tick_at(t0);
+        fades.set_state_at("s", true, false, t0);
+        let half = t0 + Duration::from_millis(HOVER_FADE_MS / 2);
+        let mid = fades.set_state_at("s", true, false, half);
+        assert!(mid > 0.0 && mid < 1.0, "mid-flight value was {mid}");
+        // Re-reading with an unchanged target must not re-anchor the tween:
+        // render runs every frame, so that would freeze it at its origin.
+        assert_eq!(
+            fades.set_state_at("s", true, false, t0 + Duration::from_millis(HOVER_FADE_MS)),
+            1.0
+        );
+    }
+
+    #[test]
+    fn reversing_a_state_tween_mid_flight_stays_continuous() {
+        let mut fades = HoverFades::default();
+        let t0 = Instant::now();
+        fades.set_state_at("s", false, false, t0);
+        fades.tick_at(t0);
+        fades.set_state_at("s", true, false, t0);
+        let half = t0 + Duration::from_millis(HOVER_FADE_MS / 2);
+        let mid = fades.set_state_at("s", true, false, half);
+        fades.tick_at(half);
+        assert_eq!(fades.set_state_at("s", false, false, half), mid);
+    }
+
+    #[test]
+    fn two_controls_sharing_a_key_never_settle() {
+        // The failure mode this guards: if two controls end up with the same
+        // tween key and disagree about their state, each render re-anchors
+        // the other's tween, `tick_at` never reports settled, and the root
+        // render requests a frame forever — the window repaints at full rate
+        // while nothing on screen is moving.
+        let mut fades = HoverFades::default();
+        let t0 = Instant::now();
+        let long_after = t0 + Duration::from_secs(10);
+        fades.set_state_at("shared", true, false, long_after);
+        fades.set_state_at("shared", false, false, long_after);
+        assert!(
+            !fades.tick_at(long_after),
+            "a key whose target flips every render pegs the frame loop"
+        );
+    }
 
     #[test]
     fn fade_runs_from_rest_to_hover_over_the_duration() {

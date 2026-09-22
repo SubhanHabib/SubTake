@@ -756,7 +756,20 @@ unsafe extern "C" {
 pub fn update_recorder_glass(window: &crate::ui_runtime::Window, bar: f32, options: f32, height: f32, expanded: bool) {
     #[cfg(target_os = "macos")]
     {
+        // `sync_launcher` runs after every callback, so this is on the path of
+        // every click and keystroke; the mask itself changes only when the
+        // recorder is resized. Re-sending an identical geometry still costs an
+        // objc dispatch and makes AppKit redo the layer mask, so skip it.
+        thread_local! {
+            static LAST: std::cell::Cell<Option<(*mut std::ffi::c_void, u64, u64, u64, bool)>> =
+                const { std::cell::Cell::new(None) };
+        }
         if let Ok(view) = native_view(window) {
+            let shape = (view, bar.to_bits() as u64, options.to_bits() as u64,
+                         height.to_bits() as u64, expanded);
+            if LAST.with(|last| last.replace(Some(shape))) == Some(shape) {
+                return;
+            }
             unsafe {
                 subtake_update_recorder_glass(view, bar as f64,
                     options as f64, height as f64, expanded);
