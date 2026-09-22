@@ -21,6 +21,7 @@ mod layout;
 pub mod motion;
 pub mod perf;
 mod typography;
+pub mod unused;
 
 pub use controls::*;
 pub use fonts::{families_available, register as register_fonts};
