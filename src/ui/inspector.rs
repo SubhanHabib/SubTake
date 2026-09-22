@@ -23,7 +23,8 @@ pub(super) fn field_unit(key: &str) -> (f32, &'static str) {
 }
 
 impl RootView {
-    /// A rail entry: round icon over its caption, accented while active.
+    /// A tool-pod entry: one round button, accent-filled while its panel is
+    /// the open one.
     pub(super) fn rail_panel_button(
         &self,
         editor: &EditorWindow,
@@ -43,7 +44,7 @@ impl RootView {
         } else {
             caption
         };
-        rail_button(
+        tool_button(
             SharedString::from(format!("rail-{target}")),
             glyph,
             caption,
@@ -863,9 +864,8 @@ impl RootView {
         // the band and pushing the first row down.
         let mut el = content_panel(theme)
             .py_0()
-            .w(px(PANEL_WIDTH))
-            .h_full()
-            .flex_shrink_0()
+            .w_full()
+            .min_h_0()
             .child(heading.pt(px(Theme::GAP_LARGE)))
             .child(fade_edges(
                 div()
@@ -886,6 +886,24 @@ impl RootView {
         // `panel_variant`: the blur is painted by an element that wraps the
         // whole subtree in one scene layer, and `panel_variant` returns a
         // builder the caller is still adding children to.
-        frosted(UiSurface::Content.radius(), UiSurface::Content.blur(), el).into_any_element()
+        //
+        // It floats over the stage rather than occupying a column of it: 24
+        // from the window's right edge, 20 down, and no taller than the stage
+        // it sits on. The picture runs underneath, and the stage reserves the
+        // width back so the two never overlap.
+        div()
+            .absolute()
+            .right(px(Theme::INSET))
+            .top(px(Theme::INSET_TOP))
+            .bottom(px(Theme::INSET))
+            .w(px(PANEL_WIDTH))
+            .flex()
+            .occlude()
+            .child(frosted(
+                UiSurface::Content.radius(),
+                UiSurface::Content.blur(),
+                el,
+            ))
+            .into_any_element()
     }
 }

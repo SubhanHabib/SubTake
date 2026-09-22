@@ -11,14 +11,14 @@ use std::{
     sync::{Arc, OnceLock},
     time::Instant,
 };
-use subtake_theme::{FONT_SANS, PANEL_WIDTH, RAIL_WIDTH, Theme};
+use subtake_theme::{FONT_SANS, PANEL_WIDTH, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, Theme};
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
     caps_label, choice_tile, column, composer_footer, content_panel, context_chip, divider,
     empty_state, fade_edges, frosted, group_card, hairline, icon, icon_button, measure, media_tile,
     menu_in, menu_list, menu_row, menu_surface, mono, mono_small, panel, panel_variant, pod,
-    progress_bar, rail_button, row, section_label, segmented_control, setting_card, status_dot,
-    swatch, switch, tile_grid, toggle, tooltip,
+    progress_bar, row, section_label, segmented_control, setting_card, status_dot, swatch, switch,
+    tile_grid, toggle, tool_button, tooltip,
 };
 
 /// Title bar strip: tall enough to seat the 40px icon cluster with air.

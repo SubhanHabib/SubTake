@@ -144,8 +144,11 @@ impl Theme {
     /// A pod's padding. A pod is a holder for 40px controls, not a container
     /// with a layout of its own, so it gives them 8 and nothing more.
     pub const POD_PADDING: f32 = 8.0;
-    /// The shell's inset from the window edge, and a float's from the shell.
+    /// A float's inset from the window edge.
     pub const INSET: f32 = 24.0;
+    /// A float hanging from the top of the stage sits a step tighter than one
+    /// at its side: the titlebar above it is already air.
+    pub const INSET_TOP: f32 = 20.0;
 
     /// Side padding by control height. A labelled control is a pill, so its
     /// padding is what gives it its width.
@@ -241,9 +244,10 @@ impl Theme {
 
     /// Value input inside a scrub field.
     pub const SCRUB_VALUE_WIDTH: f32 = 70.0;
-    /// Rail button footprint: the action plus the marker that shows which
-    /// panel it has open.
-    pub const RAIL_BUTTON_HEIGHT: f32 = Self::CONTROL_HEIGHT_LARGE;
+    /// The tool pod: one 44px round button with the pod's own padding either
+    /// side of it, and nothing else. The pod is a holder for the buttons, so
+    /// its width is theirs plus its padding rather than a figure of its own.
+    pub const POD_WIDTH: f32 = Self::CONTROL_HEIGHT_LARGE + Self::POD_PADDING * 2.0;
     /// A transient menu's list box: how tall it grows before it scrolls, and
     /// the width it will not shrink below when its trigger is narrower than
     /// its rows. Shared by the dropdown and the command palette so one is
@@ -341,7 +345,14 @@ pub const SPACE_GROTESK_FACES: [&str; 1] = ["SpaceGrotesk-Medium.ttf"];
 // layout metrics
 // ---------------------------------------------------------------------------
 
-/// Left rail column.
-pub const RAIL_WIDTH: f32 = 64.0;
-/// Inspector column.
-pub const PANEL_WIDTH: f32 = 300.0;
+/// The inspector float.
+pub const PANEL_WIDTH: f32 = 340.0;
+
+/// What the stage keeps clear at each side for the floats over it: the float's
+/// own inset from the window edge, its width, and the same inset again as air
+/// between it and the picture. The preview centres in what is left, so it
+/// reads slightly left of the window's true centre — the handoff's choice,
+/// over centring in the window and letting the inspector cover the picture's
+/// right edge.
+pub const STAGE_RESERVE_LEFT: f32 = Theme::INSET * 2.0 + Theme::POD_WIDTH;
+pub const STAGE_RESERVE_RIGHT: f32 = Theme::INSET * 2.0 + PANEL_WIDTH;

@@ -123,11 +123,16 @@ impl RootView {
                     .primary()
                     .enabled(e.get_has_video() && !e.get_busy()),
             );
+        // The tool pod. The handoff docks nothing: the rail is a 60-wide
+        // float 24 from the window's left edge, vertically centred, and the
+        // picture runs under it. It was a full-height column in the content
+        // flex, which is the layout the redesign exists to replace.
+        //
         // Only the panel list scrolls. Settings and Help used to sit after a
         // `flex_1` spacer INSIDE the scroll region, which pins them to the
         // bottom only while the content fits — the moment it overflows the
         // spacer collapses and they scroll away with everything else, so at
-        // 980x680 they were unreachable. They now live outside the scroller.
+        // 980x680 they were unreachable. They live outside the scroller.
         let mut panels = div()
             .id("rail")
             .flex()
@@ -135,11 +140,9 @@ impl RootView {
             .items_center()
             .gap(px(Theme::GAP_SMALL))
             .w_full()
-            .flex_1()
             .min_h_0()
-            .py(px(FADE_BAND))
             .overflow_y_scroll();
-        // Icons only; the active panel keeps the accent plate and the marker.
+        // Icons only; the active panel takes the accent fill.
         for (label, name, glyph) in [
             ("Scene", "Frame", "Sparkle-regular"),
             ("Cursor", "Cursor", "Cursor-regular"),
@@ -149,19 +152,31 @@ impl RootView {
         ] {
             panels = panels.child(self.rail_panel_button(e, label, name, glyph));
         }
-        let rail = div()
-            .flex()
+        // A hairline before the two that are not tools, as the pod is drawn.
+        let rail = pod(theme)
             .flex_col()
-            .items_center()
-            .gap(px(Theme::GAP_SMALL))
-            .w(px(RAIL_WIDTH))
-            .h_full()
-            .min_h_0()
-            .flex_shrink_0()
-            .child(fade_edges(panels))
+            .w(px(Theme::POD_WIDTH))
+            .max_h_full()
+            .child(panels)
+            .child(divider(theme).mx(px(Theme::GAP_SMALL)))
             .child(self.rail_panel_button(e, "Settings", "Preferences", "Gear-regular"))
-            .child(self.rail_panel_button(e, "Help", "shortcut-reference", "Question-regular"))
-            .pb(px(Theme::GAP_SMALL));
+            .child(self.rail_panel_button(e, "Help", "shortcut-reference", "Question-regular"));
+        // Centred on the stage's own height. gpui at the pinned revision has
+        // no transform, so a float is centred by a full-height strip around
+        // it rather than by a half-height offset.
+        let rail = div()
+            .absolute()
+            .left(px(Theme::INSET))
+            .top_0()
+            .bottom_0()
+            .py(px(Theme::INSET))
+            .flex()
+            .items_center()
+            .child(frosted(
+                UiSurface::Pod.radius(),
+                UiSurface::Pod.blur(),
+                rail,
+            ));
         let preview = self.preview(e, window, cx);
         let inspector = self.inspector(e, window, cx);
         let mut root = div()
@@ -171,15 +186,16 @@ impl RootView {
             .gap_0()
             .child(header)
             .child(
+                // The stage. Everything over it is absolute, so the preview
+                // measures the picture area and nothing else — the zoom and
+                // the pan both read that measurement.
                 div()
+                    .relative()
                     .flex()
-                    .items_start()
                     .flex_1()
                     .min_h_0()
-                    .p(px(Theme::GAP))
-                    .gap(px(Theme::GAP))
-                    .child(rail)
                     .child(preview)
+                    .child(rail)
                     .child(inspector),
             );
         let status = self.status_strip(e);

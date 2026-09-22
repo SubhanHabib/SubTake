@@ -25,6 +25,30 @@ pub(super) fn macos_cursor_image() -> Arc<gpui::Image> {
         .clone()
 }
 
+/// The picture area. The handoff docks nothing over the stage, so the tool pod
+/// and the inspector float on top of it and the stage keeps each one's width
+/// clear instead. The preview centres in what is left, which reads slightly
+/// left of the window's true centre — the handoff's own choice, over centring
+/// in the window and letting the inspector cover the picture's right edge.
+fn stage_reserve(el: impl IntoElement) -> Div {
+    div()
+        .flex()
+        .flex_1()
+        .min_w_0()
+        .h_full()
+        .pl(px(STAGE_RESERVE_LEFT))
+        .pr(px(STAGE_RESERVE_RIGHT))
+        .child(
+            div()
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_w_0()
+                .h_full()
+                .child(el),
+        )
+}
+
 impl RootView {
     pub(super) fn sync_preview_context(&mut self, editor: &EditorWindow) {
         // The frame image changes during playback; use the source thumbnail strip instead.
@@ -174,33 +198,35 @@ impl RootView {
         let theme = self.theme;
         self.sync_preview_context(e);
         if !e.get_has_video() {
-            return empty_state(
-                theme,
-                "No Video Loaded",
-                "Open a video or start a recording",
-            )
-            .child(
-                row()
-                    .gap(px(Theme::GAP))
-                    .child(
-                        self.action("open-video", "Open video", "open", !e.get_busy())
-                            .raised()
-                            .hero(),
-                    )
-                    // The hero size exists for exactly this: the one action an
-                    // otherwise empty screen is asking for. It had been built
-                    // and never used, so the emptiest screen in the app wore
-                    // the same 44px button as a dialog's footer.
-                    .child(
-                        self.action(
-                            "new-recording",
-                            "New recording",
-                            "record",
-                            !e.get_busy() && !e.get_recording(),
+            return stage_reserve(
+                empty_state(
+                    theme,
+                    "No Video Loaded",
+                    "Open a video or start a recording",
+                )
+                .child(
+                    row()
+                        .gap(px(Theme::GAP))
+                        .child(
+                            self.action("open-video", "Open video", "open", !e.get_busy())
+                                .raised()
+                                .hero(),
                         )
-                        .primary()
-                        .hero(),
-                    ),
+                        // The hero size exists for exactly this: the one action an
+                        // otherwise empty screen is asking for. It had been built
+                        // and never used, so the emptiest screen in the app wore
+                        // the same 44px button as a dialog's footer.
+                        .child(
+                            self.action(
+                                "new-recording",
+                                "New recording",
+                                "record",
+                                !e.get_busy() && !e.get_recording(),
+                            )
+                            .primary()
+                            .hero(),
+                        ),
+                ),
             )
             .into_any_element();
         }
@@ -208,7 +234,8 @@ impl RootView {
         let available_w = if viewport.size.width > px(0.) {
             f32::from(viewport.size.width) - 16.
         } else {
-            (f32::from(window.viewport_size().width) - PANEL_WIDTH - 120.).max(100.)
+            (f32::from(window.viewport_size().width) - STAGE_RESERVE_LEFT - STAGE_RESERVE_RIGHT)
+                .max(100.)
         };
         let available_h = if viewport.size.height > px(0.) {
             f32::from(viewport.size.height) - 16.
@@ -367,11 +394,8 @@ impl RootView {
                     })),
                 ),
         );
-        column()
-            .flex_1()
-            .min_w_0()
-            .h_full()
-            .child(
+        stage_reserve(
+            div().flex().flex_col().child(
                 div()
                     .id("preview-viewport")
                     .relative()
@@ -473,7 +497,8 @@ impl RootView {
                                 ),
                         ),
                     ),
-            )
-            .into_any_element()
+            ),
+        )
+        .into_any_element()
     }
 }

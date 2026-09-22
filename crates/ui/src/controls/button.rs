@@ -10,7 +10,7 @@
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
-use crate::{icon_sized, motion, perf, row, tooltip};
+use crate::{icon_sized, motion, perf, tooltip};
 
 /// Private on purpose: every variant has a named builder, so a caller says
 /// `.primary()` rather than naming an enum, and there is one way to ask for
@@ -466,36 +466,21 @@ impl RenderOnce for Button {
 // ---------------------------------------------------------------------------
 
 /// The editor's left rail: an icon action and its open-panel marker.
-pub fn rail_button(
+/// A tool-pod entry: one round button carrying a glyph and nothing else.
+///
+/// The active tool is one of the four things the accent is allowed to mark, so
+/// it takes the accent fill outright. That is the exception to "selection is an
+/// inset edge, never a fill swap": the pod has no captions and no other state
+/// to read, so the fill *is* the state.
+pub fn tool_button(
     id: impl Into<ElementId>,
     glyph: &str,
     label: impl Into<SharedString>,
     active: bool,
     theme: Theme,
     on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-) -> impl IntoElement {
-    let label = label.into();
-    let id = id.into();
-    // The rail is icons only: the captions cost a third of the rail's width
-    // for text that repeats the tooltip, and the panel they open names itself
-    // in its own heading. Which one is open reads from the marker instead.
-    let lit = motion::state_fade(&motion::tween_key(&id, "rail"), active);
-    row()
-        .flex_none()
-        .gap(px(Theme::GAP_SMALL))
-        .h(px(Theme::RAIL_BUTTON_HEIGHT))
-        .child(
-            button(id, label, theme)
-                .glyph(glyph)
-                .icon_only()
-                .selected(active)
-                .on_click(on_click),
-        )
-        .child(
-            div()
-                .flex_none()
-                .size(px(Theme::DOT_SIZE))
-                .rounded_full()
-                .bg(motion::blend(theme.accent.opacity(0.), theme.accent, lit)),
-        )
+) -> Button {
+    let mut el = button(id, label, theme).glyph(glyph).icon_only();
+    el = if active { el.primary() } else { el.ghost() };
+    el.on_click(on_click)
 }

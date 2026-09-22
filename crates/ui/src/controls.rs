@@ -14,7 +14,7 @@ mod switch;
 mod tile;
 mod tooltip;
 
-pub use button::{Button, button, focus_ring, hairline, icon_button, rail_button};
+pub use button::{Button, button, focus_ring, hairline, icon_button, tool_button};
 pub use dropdown::Dropdown;
 pub use field_row::{field_row, group_card, setting_card, tile_grid};
 pub use input::{TextInput, init};
