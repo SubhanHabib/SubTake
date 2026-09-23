@@ -475,17 +475,16 @@ impl RenderOnce for Button {
                 _ => shadows.push(glow(theme.accent_soft, 20., 8.)),
             }
         }
-        if !shadows.is_empty() {
-            el = el.shadow(shadows.clone());
-        }
         // A raised control lifts under the pointer: the same hairline plus a
-        // `0 2 6`. gpui's `.shadow` replaces the whole stack rather than
-        // appending to it, so the hovered state restates what the resting one
-        // already carries.
+        // `0 2 6`, whose shadow fades in with the hover wash rather than
+        // landing at once.
         if self.variant == ButtonVariant::Raised && self.enabled {
-            let mut lifted = shadows;
-            lifted.push(theme.lift_shadow());
-            el = el.hover(move |s| s.shadow(lifted.clone()));
+            let mut lift = theme.lift_shadow();
+            lift.color = motion::hover_blend(&hover_key, lift.color.opacity(0.), lift.color);
+            shadows.push(lift);
+        }
+        if !shadows.is_empty() {
+            el = el.shadow(shadows);
         }
 
         // Record wears its state: a white dot ahead of whatever the caption
