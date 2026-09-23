@@ -72,8 +72,9 @@ pill centred on the window, and Record / Presets / Export at the right: Record
 a 44 `sunk` pill with its glyph and caption, Presets a 44 round `sunk` plate
 with the Stack glyph, in both themes. While the document has a status — a
 running job, an error, "Gallery mode" in the gallery — it is a chip at the end
-of the title pill: 26 tall, `sunk2`, the small size in `muted`, with the pill's
-right padding closing to 6 around it. Not drawn by the design: a running job's
+of the title pill: 26 tall, `sunk2`, the small size in `muted`, 12 after the
+title to match the pill's left padding, with the pill's right padding closing
+to 6 around it. Not drawn by the design: a running job's
 small X, which cancels it, and the chip's tooltip with the whole status. Then
 one stage filling the rest, with three floats over it: the tool pod at the left
 (60 wide, inset 24, centred on the stage's height), the aspect and crop

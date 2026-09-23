@@ -172,6 +172,10 @@ impl Theme {
     /// in the pill's end as a nested round.
     pub const STATUS_CHIP_PADDING: f32 = 10.0;
     pub const TITLE_PILL_CHIP_PADDING: f32 = 6.0;
+    /// The air between the document title and the status chip after it, on
+    /// top of the pill's own gap: together they match the pill's left
+    /// padding.
+    pub const TITLE_PILL_CHIP_GAP: f32 = Self::CONTROL_PADDING_SMALL - Self::GAP_SMALL;
     pub const TOOLTIP_HEIGHT: f32 = 28.0;
     /// The widest a tooltip grows before its text wraps.
     pub const TOOLTIP_MAX_WIDTH: f32 = 320.0;

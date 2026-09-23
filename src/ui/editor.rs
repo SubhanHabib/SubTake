@@ -377,6 +377,9 @@ impl RootView {
         let surface = self.surface.clone();
         Some(
             status_chip(theme)
+                // It stands off the title by the pill's own side padding,
+                // so the title has the same air on both sides.
+                .ml(px(Theme::TITLE_PILL_CHIP_GAP))
                 .id("document-status")
                 .tooltip(move |_, cx| tooltip(tip.clone(), theme, cx))
                 .child(div().min_w_0().text_ellipsis().child(text))
