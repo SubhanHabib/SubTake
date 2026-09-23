@@ -48,6 +48,7 @@ impl Preferences {
         // UI smoke runs have isolated settings/recovery and never change the user's language or recents.
         if std::env::var_os("SUBTAKE_UI_SNAPSHOT").is_some()
             || std::env::var_os("SUBTAKE_LAUNCHER_SMOKE").is_some()
+            || std::env::var_os("SUBTAKE_WALKTHROUGH").is_some()
         {
             return Ok(std::env::temp_dir().join(format!("SubTake-ui-test-{}", std::process::id())));
         }

@@ -66,6 +66,7 @@ mod playback;
 mod recorder;
 mod run;
 mod smoke;
+mod walkthrough;
 
 pub use run::run;
 

@@ -9,6 +9,10 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     ui.on_translate(|text, locale| subtake_native::localization::translate(&text, &locale));
     let state = Rc::new(RefCell::new(App::new()));
     STATE.with(|s| *s.borrow_mut() = Some((state.clone(), ui.as_weak())));
+    // A walkthrough is filmed in one appearance from its first frame.
+    if let Ok(appearance) = std::env::var("SUBTAKE_WALKTHROUGH") {
+        state.borrow_mut().preferences.appearance = appearance;
+    }
     let wallpaper_paths = state.borrow().wallpapers.clone();
     std::thread::spawn(move || {
         let tiles = wallpaper_paths
@@ -762,6 +766,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     }
     if std::env::var_os("SUBTAKE_LAUNCHER_SMOKE").is_some() {
         Timer::single_shot(Duration::from_secs(3), || launcher_smoke_step(0));
+    }
+    if std::env::var_os("SUBTAKE_WALKTHROUGH").is_some() {
+        Timer::single_shot(Duration::from_secs(3), walkthrough::start);
     }
     ui_runtime::run_event_loop_until_quit()?;
     state.borrow().recovery.flush();
