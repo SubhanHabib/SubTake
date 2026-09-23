@@ -133,6 +133,25 @@ pub fn lerp(from: f32, to: f32, t: f32) -> f32 {
     from + (to - from) * t
 }
 
+/// How far through a move that began at `started` and lasts `ms` it is at
+/// `now`, from 0 to 1 and held at 1 once it is over.
+pub fn progress(started: Instant, ms: u64, now: Instant) -> f32 {
+    (now.saturating_duration_since(started).as_secs_f32() * 1000. / ms as f32).min(1.)
+}
+
+/// Where a move from `from` to `to` over `ms`, begun at `started`, stands at
+/// `now` on [`EASE_OUT`] — exactly `to` once it is over. For the moves the
+/// app times itself: the recorder card's height, a sliding inspector, the
+/// export tick.
+pub fn ease_toward(from: f32, to: f32, started: Instant, ms: u64, now: Instant) -> f32 {
+    let t = progress(started, ms, now);
+    if t >= 1. {
+        to
+    } else {
+        lerp(from, to, EASE_OUT.eval(t))
+    }
+}
+
 /// One element's hover fade: progress runs `origin → target` over the fade
 /// duration, re-anchored whenever the pointer flips direction mid-flight so
 /// the blend stays continuous.
@@ -442,12 +461,12 @@ impl Leave {
         if std::mem::take(&mut self.was_open) && !reduced_motion() {
             self.closed = Some(Instant::now());
         }
-        let t = self.closed?.elapsed().as_secs_f32() * 1000. / MENU_OUT_MS as f32;
-        if t >= 1. {
+        let opacity = ease_toward(1., 0., self.closed?, MENU_OUT_MS, Instant::now());
+        if opacity == 0. {
             self.closed = None;
             return None;
         }
-        Some(1. - EASE_OUT.eval(t))
+        Some(opacity)
     }
 }
 
@@ -484,6 +503,9 @@ where
     })
 }
 
+/// Menus alone settle on a quint rather than [`EASE_OUT`]: nearly all of
+/// their short travel lands in the first frames, so a menu is there the
+/// moment it is asked for and only its last pixel eases.
 fn menu_curve() -> Animation {
     Animation::new(Duration::from_millis(MENU_IN_MS)).with_easing(ease_out_quint())
 }

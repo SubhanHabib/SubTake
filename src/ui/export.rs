@@ -290,16 +290,19 @@ impl RootView {
             "done" => {
                 // The moment it lands: the tick draws itself on, the label
                 // fades in, and the pill gives one soft accent pulse.
-                let since = self
+                let done = self
                     .export_done
-                    .filter(|_| !subtake_ui::motion::reduced_motion())
-                    .map_or(f32::INFINITY, |at| at.elapsed().as_secs_f32() * 1000.);
-                let tick = (since / EXPORT_DONE_TICK_MS as f32).min(1.);
-                let glow = (since / EXPORT_DONE_GLOW_MS as f32).min(1.);
+                    .filter(|_| !subtake_ui::motion::reduced_motion());
+                let now = std::time::Instant::now();
+                let tick = done.map_or(1., |at| {
+                    subtake_ui::motion::ease_toward(0., 1., at, EXPORT_DONE_TICK_MS, now)
+                });
+                let glow = done.map_or(1., |at| {
+                    subtake_ui::motion::progress(at, EXPORT_DONE_GLOW_MS, now)
+                });
                 if glow < 1. {
                     window.request_animation_frame();
                 }
-                let tick = subtake_ui::motion::EASE_OUT.eval(tick);
                 let swell = (glow * std::f32::consts::PI).sin();
                 pill.on_hover(cx.listener(|s, hovered: &bool, _, _| {
                     if *hovered && let Some(timer) = &s.export_dismiss {

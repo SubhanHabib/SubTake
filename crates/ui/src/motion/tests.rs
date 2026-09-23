@@ -99,3 +99,17 @@ fn tailwind_curve_is_monotonic_between_the_endpoints() {
         previous = value;
     }
 }
+
+#[test]
+fn an_eased_move_starts_where_it_left_and_lands_exactly_on_its_target() {
+    let t0 = Instant::now();
+    let at = |ms| t0 + Duration::from_millis(ms);
+    assert_eq!(ease_toward(40., 200., t0, 100, t0), 40.);
+    let mid = ease_toward(40., 200., t0, 100, at(50));
+    // Ease-out: more than half the travel is done by half the time.
+    assert!(mid > 120. && mid < 200.);
+    assert_eq!(ease_toward(40., 200., t0, 100, at(100)), 200.);
+    assert_eq!(ease_toward(40., 200., t0, 100, at(500)), 200.);
+    assert_eq!(progress(t0, 100, at(25)), 0.25);
+    assert_eq!(progress(t0, 100, at(900)), 1.);
+}

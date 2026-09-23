@@ -389,15 +389,9 @@ pub(super) fn slide_toward(
     window: &mut Window,
 ) -> f32 {
     let now = Instant::now();
-    let duration = std::time::Duration::from_millis(ms);
     let at = |(target, origin, started): (bool, f32, Instant)| {
-        let raw = now.saturating_duration_since(started).as_secs_f32() / duration.as_secs_f32();
         let to = if target { 1. } else { 0. };
-        if raw >= 1. {
-            to
-        } else {
-            subtake_ui::motion::lerp(origin, to, subtake_ui::motion::EASE_OUT.eval(raw))
-        }
+        subtake_ui::motion::ease_toward(origin, to, started, ms, now)
     };
     let slide = match *slot {
         Some(slide) if slide.0 == on => slide,

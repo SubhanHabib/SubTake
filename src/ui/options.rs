@@ -113,12 +113,7 @@ impl RootView {
         let target = if open { natural } else { 0. };
         let now = Instant::now();
         let at_time = |now: Instant, (from, to, started, ms): (f32, f32, Instant, u64)| {
-            let raw = now.saturating_duration_since(started).as_secs_f32() * 1000. / ms as f32;
-            if raw >= 1. {
-                to
-            } else {
-                subtake_ui::motion::lerp(from, to, subtake_ui::motion::EASE_OUT.eval(raw))
-            }
+            subtake_ui::motion::ease_toward(from, to, started, ms, now)
         };
         let at = |ease| at_time(now, ease);
         let still = subtake_ui::motion::reduced_motion();
