@@ -61,6 +61,9 @@ pub struct Theme {
     pub slider_fill: Hsla,
     /// A timeline lane's track, under its regions.
     pub lane_track: Hsla,
+    /// The round plate an icon sits on inside a timeline region or a clip's
+    /// label chip: a white wash, so it lifts off any lane tint alike.
+    pub plate: Hsla,
     /// A toggle's track while it is on. A mid-grey, not `ink` and not the
     /// accent: on and off are the plate and the thumb's side.
     pub switch_on: Hsla,
@@ -88,6 +91,9 @@ pub struct Theme {
     /// Focus ring, region fill, glow.
     pub accent_soft: Hsla,
     pub on_accent: Hsla,
+    /// The soft light around the timeline's playhead: its bubble, line and
+    /// grab handle. The accent at a third of its strength or so.
+    pub accent_glow: Hsla,
 
     // ---- ink ----
     //

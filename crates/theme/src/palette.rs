@@ -39,6 +39,7 @@ impl Theme {
             seg_active: css("#ffffff"),
             slider_fill: css("#14141a0f"),
             lane_track: css("#14141a12"),
+            plate: css("#ffffff8c"),
             switch_on: css("#5b5d65"),
 
             hover: css("#14141a0d"),
@@ -56,6 +57,8 @@ impl Theme {
             accent_press: css("#004eb6"),
             accent_soft: css("#2370db24"),
             on_accent: css("#ffffff"),
+            // oklch(0.56 0.18 258 / 0.35)
+            accent_glow: css("#2370db59"),
 
             ink: css("#1b1c20"),
             on_ink: css("#ffffff"),
@@ -83,6 +86,7 @@ impl Theme {
             seg_active: css("#ffffff24"),
             slider_fill: css("#ffffff12"),
             lane_track: css("#ffffff0d"),
+            plate: css("#ffffff1f"),
             switch_on: css("#6e707a"),
 
             hover: css("#ffffff12"),
@@ -100,6 +104,8 @@ impl Theme {
             accent_press: css("#99cdff"),
             accent_soft: css("#66a5ff2e"),
             on_accent: css("#0c1022"),
+            // oklch(0.72 0.15 258 / 0.45)
+            accent_glow: css("#66a5ff73"),
 
             ink: css("#f2f2f4"),
             on_ink: css("#17171a"),
