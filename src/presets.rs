@@ -10,6 +10,8 @@ use std::{
 const KEYS: &[&str] = &[
     "wallpaper",
     "shadowIntensity",
+    "shadowColor",
+    "frameEdgeColor",
     "backgroundBlur",
     "zoomMotionBlur",
     "zoomMotionBlurTuning",
@@ -230,6 +232,10 @@ pub struct Look {
     pub padding: u32,
     pub radius: u32,
     pub shadow: f64,
+    /// The shadow's tint and the frame's hairline. A look sets both, so
+    /// one applied over a tinted project does not keep its tint.
+    pub shadow_color: &'static str,
+    pub edge: &'static str,
 }
 
 pub const LOOKS: [Look; 3] = [
@@ -240,6 +246,8 @@ pub const LOOKS: [Look; 3] = [
         padding: 24,
         radius: 16,
         shadow: 0.35,
+        shadow_color: "#000000",
+        edge: "transparent",
     },
     Look {
         name: "minimal",
@@ -248,6 +256,8 @@ pub const LOOKS: [Look; 3] = [
         padding: 12,
         radius: 6,
         shadow: 0.1,
+        shadow_color: "#000000",
+        edge: "transparent",
     },
     Look {
         name: "bold",
@@ -256,6 +266,8 @@ pub const LOOKS: [Look; 3] = [
         padding: 40,
         radius: 28,
         shadow: 0.5,
+        shadow_color: "#000000",
+        edge: "transparent",
     },
 ];
 
@@ -265,6 +277,8 @@ pub fn appearance(project: &mut Project, name: &str) -> Result<()> {
         padding,
         radius,
         shadow,
+        shadow_color,
+        edge,
         ..
     }) = LOOKS.iter().find(|look| look.name == name)
     else {
@@ -275,6 +289,8 @@ pub fn appearance(project: &mut Project, name: &str) -> Result<()> {
         ("padding", json!(padding)),
         ("borderRadius", json!(radius)),
         ("shadowIntensity", json!(shadow)),
+        ("shadowColor", json!(shadow_color)),
+        ("frameEdgeColor", json!(edge)),
     ] {
         project.set(key, value);
     }

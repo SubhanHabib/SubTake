@@ -51,7 +51,15 @@ fn appearance_cards_preserve_media_timing_and_motion() {
         assert_eq!(p.video_path, original.video_path);
         assert_eq!(p.extra, original.extra);
         for (key, value) in &original.editor {
-            if !["wallpaper", "padding", "borderRadius", "shadowIntensity"].contains(&key.as_str())
+            if ![
+                "wallpaper",
+                "padding",
+                "borderRadius",
+                "shadowIntensity",
+                "shadowColor",
+                "frameEdgeColor",
+            ]
+            .contains(&key.as_str())
             {
                 assert_eq!(p.editor.get(key), Some(value));
             }

@@ -345,7 +345,7 @@ impl App {
                     0,
                     0.,
                     0.,
-                    json!("#171c35"),
+                    json!(subtake_native::project::DEFAULT_WALLPAPER),
                 );
                 add(
                     "choose-background",
@@ -370,11 +370,11 @@ impl App {
                         1,
                         0.,
                         250.,
-                        json!(20),
+                        json!(56),
                     );
                 }
-                add("borderRadius", "Rounded corners", 1, 0., 100., json!(8));
-                add("shadowIntensity", "Shadow", 1, 0., 1., json!(0.3));
+                add("borderRadius", "Rounded corners", 1, 0., 100., json!(4));
+                add("shadowIntensity", "Shadow", 1, 0., 1., json!(0.5));
                 add("backgroundBlur", "Background blur", 1, 0., 100., json!(0));
                 for (key, default) in [("x", 0.), ("y", 0.), ("width", 1.), ("height", 1.)] {
                     add(

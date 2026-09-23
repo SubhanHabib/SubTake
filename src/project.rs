@@ -20,11 +20,20 @@ pub struct Project {
     pub extra: Map<String, Value>,
 }
 
+/// Apricot: a warm peach-to-rose gradient, the look a new recording opens
+/// in. Its shadow is tinted from the wallpaper and a hairline keeps a light
+/// recording's edge on it.
+///
+/// Not wired: `shadowColor` and `frameEdgeColor` have no inspector control.
+/// A new project and the built-in looks set them; the Scene panel cannot.
+pub const DEFAULT_WALLPAPER: &str = "linear-gradient(135deg, #f7dcc2, #eda88f, #d27b86)";
+
 impl Project {
     pub fn new(video: &Path) -> Self {
         let editor = json!({
-            "wallpaper":"#171c35", "padding":{"top":20,"bottom":20,"left":20,"right":20,"linked":true},
-            "borderRadius":8,"shadowIntensity":0.3,"backgroundBlur":0,
+            "wallpaper":DEFAULT_WALLPAPER, "padding":{"top":56,"bottom":56,"left":56,"right":56,"linked":true},
+            "borderRadius":4,"shadowIntensity":0.5,"shadowColor":"#5c2224","frameEdgeColor":"#4614141a",
+            "backgroundBlur":0,
             "cropRegion":{"x":0,"y":0,"width":1,"height":1},
             "zoomRegions":[],"trimRegions":[],"clipRegions":[],"speedRegions":[],
             "annotationRegions":[],"audioRegions":[],"autoCaptions":[],

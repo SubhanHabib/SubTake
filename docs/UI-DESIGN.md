@@ -104,6 +104,15 @@ in the panel's right padding while it has more than fits, so the fade reads as
 it only shows where the view is. `SUBTAKE_GALLERY_SCREEN=export` shows one at
 the gallery's size.
 
+A new recording opens on Apricot: a 135° peach-to-rose gradient
+(`#f7dcc2`, `#eda88f`, `#d27b86`), padding 56, radius 4 and shadow 50%. The
+shadow is three layers — a contact shadow at the edge, a key shadow under it
+and a wide ambient one — tinted `#5c2224` from the wallpaper rather than
+black, with a 10% hairline just inside the frame's edge. Not drawn by the
+design: the handoff gives no default scene. Not wired: `shadowColor` and
+`frameEdgeColor` have no control in Scene; a new project and the built-in
+looks set them (the looks back to black with no hairline).
+
 Background's wallpaper thumbnails are 48 tall at radius 14, and the one in use
 wears the accent ring the handoff gives the picked colour. Not drawn by the
 design: each thumbnail's caption, and the faint ring the pointer brings up.
