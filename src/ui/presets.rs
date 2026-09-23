@@ -269,7 +269,14 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         .gap(px(Theme::GAP_BLOCK))
         .p(px(Theme::CONTROL_PADDING_SMALL))
         .rounded(px(Theme::RADIUS_ROW))
-        .map(|row| pressable(row, selected, theme))
+        .map(|row| {
+            subtake_ui::pressable(
+                row,
+                theme,
+                (!selected).then_some(theme.press),
+                hover_key.clone(),
+            )
+        })
         .child(preview)
         .child(
             column()
@@ -296,13 +303,11 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
             .child(selection_ring(Theme::RADIUS_ROW, theme));
     } else {
         // The hover wash fades, as every other row's does.
-        row = row
-            .bg(subtake_ui::motion::hover_blend(
-                &hover_key,
-                theme.hover.opacity(0.),
-                theme.hover,
-            ))
-            .on_hover(subtake_ui::motion::hover_listener(hover_key));
+        row = row.bg(subtake_ui::motion::hover_blend(
+            &hover_key,
+            theme.hover.opacity(0.),
+            theme.hover,
+        ));
     }
     row
 }
@@ -333,8 +338,9 @@ fn motion_tile(
             theme.sunk,
             theme.sunk2,
         ))
-        .on_hover(subtake_ui::motion::hover_listener(hover_key))
-        .map(|tile| pressable(tile, selected, theme))
+        .map(|tile| {
+            subtake_ui::pressable(tile, theme, (!selected).then_some(theme.press), hover_key)
+        })
         .child(
             div()
                 .font_weight(FontWeight::MEDIUM)
@@ -350,18 +356,6 @@ fn motion_tile(
         tile = tile.child(selection_ring(Theme::RADIUS_MENU, theme));
     }
     tile
-}
-
-/// A look row's or motion tile's pointer, press and keyboard focus, as a
-/// `Button` carries them. The one in use only dims when pressed: its fill is
-/// what says it is picked, and pressing it again picks nothing new.
-fn pressable(el: Stateful<Div>, selected: bool, theme: Theme) -> Stateful<Div> {
-    let ring = subtake_ui::focus_ring(theme);
-    let press = theme.press;
-    el.cursor_pointer()
-        .tab_index(0)
-        .focus_visible(move |s| s.shadow(vec![ring]))
-        .active(move |s| if selected { s } else { s.bg(press) }.opacity(Theme::PRESSED_OPACITY))
 }
 
 /// The 1.5 accent inset a selected row or tile carries, on a layer of its

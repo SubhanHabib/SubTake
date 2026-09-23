@@ -285,6 +285,33 @@ pub fn focus_ring(theme: Theme) -> BoxShadow {
     }
 }
 
+/// A hand-built control's pointer, press, keyboard focus and hover, as a
+/// `Button` carries them, for the rows, tiles and pills that are not
+/// buttons: the press is `press` (or only the dim, for a control whose fill
+/// already says it is picked), the ring shows only when the keyboard put
+/// focus there, and `hover_key` drives whatever `motion::hover_blend` the
+/// caller painted with. GPUI turns Enter and Space on a focused control into
+/// its click.
+pub fn pressable(
+    el: Stateful<Div>,
+    theme: Theme,
+    press: Option<Hsla>,
+    hover_key: String,
+) -> Stateful<Div> {
+    let ring = focus_ring(theme);
+    el.cursor_pointer()
+        .tab_index(0)
+        .focus_visible(move |s| s.shadow(vec![ring]))
+        .active(move |s| {
+            match press {
+                Some(press) => s.bg(press),
+                None => s,
+            }
+            .opacity(Theme::PRESSED_OPACITY)
+        })
+        .on_hover(motion::hover_listener(hover_key))
+}
+
 /// A glow under a filled control. Only the accent and Record carry one — it
 /// is how those two say they are the action, without another colour.
 fn glow(color: Hsla, blur: f32, offset: f32) -> BoxShadow {

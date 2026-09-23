@@ -353,7 +353,9 @@ impl RootView {
                 .text_color(white())
                 .font_weight(FontWeight::MEDIUM)
                 .whitespace_nowrap()
-                .when(enabled, |s| pressable(s, theme, resume_hover))
+                .when(enabled, |s| {
+                    subtake_ui::pressable(s, theme, Some(theme.press), resume_hover)
+                })
                 .when(!enabled, |s| s.opacity(Theme::DISABLED_OPACITY))
                 .child(icon_sized("Play-fill", Theme::ICON_SIZE_POD, white()))
                 .child("Resume")
@@ -475,7 +477,7 @@ impl RootView {
                     theme.sunk,
                     theme.sunk2,
                 ))
-                .map(|s| pressable(s, theme, cancel_hover))
+                .map(|s| subtake_ui::pressable(s, theme, Some(theme.press), cancel_hover))
                 .whitespace_nowrap()
                 .child("Cancel")
                 .child(
@@ -559,7 +561,9 @@ impl RootView {
             .size(px(Theme::RECORD_HEIGHT))
             .rounded_full()
             .bg(subtake_ui::motion::hover_blend(&hover_key, rest, hover))
-            .when(enabled == Some(true), |s| pressable(s, theme, hover_key))
+            .when(enabled == Some(true), |s| {
+                subtake_ui::pressable(s, theme, Some(theme.press), hover_key)
+            })
             .when(enabled == Some(false), |s| {
                 s.opacity(Theme::DISABLED_OPACITY)
             })
@@ -573,19 +577,6 @@ impl RootView {
         state.set_panel(value.into());
         state.defer_panel(value.into());
     }
-}
-
-/// A bar control's pointer, hover, press and keyboard focus, as a `Button`
-/// carries them: the press is the `press` fill plus a dim, and the ring shows
-/// only when the keyboard put focus there.
-fn pressable(el: Stateful<Div>, theme: Theme, hover_key: String) -> Stateful<Div> {
-    let ring = subtake_ui::focus_ring(theme);
-    let press = theme.press;
-    el.cursor_pointer()
-        .tab_index(0)
-        .focus_visible(move |s| s.shadow(vec![ring]))
-        .active(move |s| s.bg(press).opacity(Theme::PRESSED_OPACITY))
-        .on_hover(subtake_ui::motion::hover_listener(hover_key))
 }
 
 /// The bar's 60 round `sunk` plate: it holds the count, or the spinner.
