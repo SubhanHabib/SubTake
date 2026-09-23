@@ -19,7 +19,7 @@ never name the file.
 
 | Family | File | Contract |
 | --- | --- | --- |
-| Buttons | `button.rs` | `Button` owns every variant — primary, secondary, raised, ghost, danger, record, transport — plus the icon-only form and `tool_button`, the tool pod's entry, which takes the accent fill outright while its panel is open. Also focus, hover tweening, the glow under a filled plate and the accent inset a selected control carries. `focus_ring` and `hairline` live here because every other control's edge is built from them. |
+| Buttons | `button.rs` | `Button` owns every variant — primary, secondary, raised, ghost, danger, record, transport — plus the icon-only form (not drawn by the design: its idle glyph is `text`, as a lane header's is, not `muted`; only an off toggle goes `muted`) and `tool_button`, the tool pod's entry, which takes the accent fill outright while its panel is open. Also focus, hover tweening, the glow under a filled plate and the accent inset a selected control carries. `focus_ring` and `hairline` live here because every other control's edge is built from them. |
 | Dropdowns | `dropdown.rs` | Trigger plus anchored popup. Stable index/value mapping, keyboard arrows, Home/End, Enter/Space, Escape, and a menu that occludes what is behind it. |
 | Menus | `menu.rs` | The plate, the scrolling list, the row and the separator every transient menu is built from. A row is **not** a `Button`: a menu's current item is marked by an accent tick in a fixed gutter over a `sunk` fill, never by an accent pill. |
 | Inputs | `input.rs` | `TextInput`: value entry, placeholder, focus, disabled, edit and commit callbacks. |

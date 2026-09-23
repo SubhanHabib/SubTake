@@ -235,7 +235,6 @@ impl RootView {
                     .glyph("DotsThree-regular")
                     .icon_only()
                     .ghost()
-                    .strong()
                     .on_click(move |_, _, _| Self::toggle_panel(&launcher, "more")),
             );
             let launcher = state.clone();
@@ -276,7 +275,6 @@ impl RootView {
             icon_button("close", "X-regular", "Hide recorder", theme)
                 .large()
                 .ghost()
-                .strong()
                 .on_click(self.command("hide-launcher")),
         );
         swap(bar)

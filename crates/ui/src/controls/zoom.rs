@@ -104,7 +104,6 @@ impl RenderOnce for ZoomControl {
                 )
                 .ghost()
                 .small()
-                .strong()
                 .enabled(enabled);
                 match handler {
                     Some(handler) => button.on_click(handler),

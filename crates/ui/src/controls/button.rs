@@ -84,8 +84,6 @@ pub struct Button {
     height: Option<f32>,
     /// Side padding in place of the variant's own.
     padding: Option<f32>,
-    /// An icon-only control's glyph at full strength rather than `muted`.
-    strong: bool,
     /// Hide the caption and render a round icon-only control.
     icon_only: bool,
     /// A quieter second line under the caption: a display's resolution, a
@@ -117,7 +115,6 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         glyph_size: None,
         height: None,
         padding: None,
-        strong: false,
         icon_only: false,
         detail: None,
         caret: false,
@@ -163,14 +160,6 @@ impl Button {
     /// reads as one thing with a name and a detail rather than two labels.
     pub fn detail(mut self, detail: impl Into<SharedString>) -> Self {
         self.detail = Some(detail.into());
-        self
-    }
-
-    /// The glyph at the caption's full strength: an icon control set among
-    /// captioned ones, where the pod's quiet `muted` read as already dimmed
-    /// and left nothing for the disabled state to take away.
-    pub fn strong(mut self) -> Self {
-        self.strong = true;
         self
     }
 
@@ -443,13 +432,12 @@ impl RenderOnce for Button {
         let hover = motion::blend(fill_hover, accent_hover, fill);
         let hover_key = motion::tween_key(&self.id, "hover");
         let background = motion::hover_blend(&hover_key, rest, hover);
-        // Idle icon-only controls sit at `muted` so a pod of six of them
-        // reads as one object; anything with a caption is at full strength.
+        // Not drawn by the design: idle icon-only and ghost controls are at
+        // `text`, as a timeline lane header's glyph is, not the handoff's
+        // `muted`, which read as already disabled over glass. Only an off
+        // toggle goes `muted`, as an off lane header does.
         let resting = match self.variant {
             ButtonVariant::Danger => theme.danger,
-            _ if self.strong => theme.text,
-            ButtonVariant::Ghost => theme.muted,
-            _ if self.icon_only => theme.muted,
             _ => theme.text,
         };
         let resting = match on {
