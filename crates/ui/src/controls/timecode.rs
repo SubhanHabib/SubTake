@@ -8,6 +8,7 @@
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
+use super::input::{Copy, Cut, Paste, SelectAll, Undo};
 use crate::focus_ring;
 
 /// How far one pixel of drag moves the time, and how far with Shift held.
@@ -132,6 +133,15 @@ impl Render for TimecodeField {
         };
         div()
             .id("timecode")
+            // The text field's context, so ⌘A, ⌘C, ⌘X, ⌘V and ⌘Z reach this
+            // field as they would any other, instead of the editor's
+            // timeline behind it.
+            .key_context("SubTakeInput")
+            .on_action(cx.listener(Self::select_all))
+            .on_action(cx.listener(Self::copy))
+            .on_action(cx.listener(Self::cut))
+            .on_action(cx.listener(Self::paste))
+            .on_action(cx.listener(Self::undo))
             .track_focus(&self.focus)
             .tab_index(0)
             .flex()
@@ -183,11 +193,7 @@ impl Render for TimecodeField {
                         let Some(ch) = e.keystroke.key_char.as_deref() else {
                             return;
                         };
-                        if e.keystroke.modifiers.platform
-                            || !ch
-                                .chars()
-                                .all(|c| c.is_ascii_digit() || c == ':' || c == '.')
-                        {
+                        if e.keystroke.modifiers.platform || !ch.chars().all(is_time) {
                             return;
                         }
                         s.typed.get_or_insert_with(String::new).push_str(ch);
@@ -247,6 +253,63 @@ impl TimecodeField {
                 cx.notify();
             }
             None => {}
+        }
+    }
+}
+
+/// What a typed or pasted time may hold.
+fn is_time(c: char) -> bool {
+    c.is_ascii_digit() || c == ':' || c == '.'
+}
+
+impl TimecodeField {
+    /// The text a copy takes: what is typed, or the whole time.
+    fn shown(&self) -> String {
+        match &self.typed {
+            Some(typed) if !typed.is_empty() => typed.clone(),
+            _ => format_timecode(self.value),
+        }
+    }
+
+    fn select_all(&mut self, _: &SelectAll, _: &mut Window, cx: &mut Context<Self>) {
+        if self.enabled {
+            self.typed = Some(String::new());
+            cx.notify();
+        }
+    }
+
+    fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
+        cx.write_to_clipboard(ClipboardItem::new_string(self.shown()));
+    }
+
+    /// Cut takes the time and leaves the whole field selected, so the next
+    /// key starts a fresh one. A timecode cannot be empty.
+    fn cut(&mut self, _: &Cut, _: &mut Window, cx: &mut Context<Self>) {
+        cx.write_to_clipboard(ClipboardItem::new_string(self.shown()));
+        if self.enabled {
+            self.typed = Some(String::new());
+            cx.notify();
+        }
+    }
+
+    fn paste(&mut self, _: &Paste, _: &mut Window, cx: &mut Context<Self>) {
+        let Some(text) = cx.read_from_clipboard().and_then(|item| item.text()) else {
+            return;
+        };
+        let time: String = text.trim().chars().filter(|c| is_time(*c)).collect();
+        if self.enabled && !time.is_empty() {
+            self.typed.get_or_insert_with(String::new).push_str(&time);
+            cx.notify();
+        }
+    }
+
+    /// Undo while typing puts the old time back; otherwise it is the
+    /// editor's undo, and goes on to it.
+    fn undo(&mut self, _: &Undo, _: &mut Window, cx: &mut Context<Self>) {
+        if self.typed.take().is_some() {
+            cx.notify();
+        } else {
+            cx.propagate();
         }
     }
 }
