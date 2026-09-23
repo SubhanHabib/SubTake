@@ -30,5 +30,5 @@ pub use status::{composer_footer, context_chip, progress_bar, status_chip, statu
 pub use switch::{switch, toggle};
 pub use tile::{choice_tile, empty_state, media_tile, swatch};
 pub use timecode::{TimecodeField, format_timecode};
-pub use tooltip::tooltip;
+pub use tooltip::{tooltip, tooltip_detail};
 pub use zoom::{ZoomControl, zoom_control};

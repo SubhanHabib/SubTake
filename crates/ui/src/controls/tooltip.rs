@@ -12,6 +12,8 @@ use crate::motion;
 
 struct Tooltip {
     text: SharedString,
+    /// A second part in Geist Mono at a lower strength: a region's range.
+    detail: Option<SharedString>,
     theme: Theme,
 }
 
@@ -23,6 +25,7 @@ impl Render for Tooltip {
             div()
                 .flex()
                 .items_center()
+                .gap(px(Theme::GAP))
                 .max_w(px(Theme::TOOLTIP_MAX_WIDTH))
                 .min_h(px(Theme::TOOLTIP_HEIGHT))
                 .py(px(Theme::TOOLTIP_PADDING_Y))
@@ -32,12 +35,41 @@ impl Render for Tooltip {
                 .text_size(px(Theme::FONT_SECONDARY))
                 .line_height(relative(Theme::MESSAGE_LEADING))
                 .text_color(theme.on_ink)
-                .child(self.text.clone()),
+                .child(self.text.clone())
+                .when_some(self.detail.clone(), |el, detail| {
+                    el.child(
+                        crate::mono(detail)
+                            .flex_none()
+                            .opacity(Theme::TOOLTIP_DETAIL_ALPHA),
+                    )
+                }),
         )
     }
 }
 
 pub fn tooltip(text: impl Into<SharedString>, theme: Theme, cx: &mut App) -> AnyView {
     let text = text.into();
-    cx.new(|_| Tooltip { text, theme }).into()
+    cx.new(|_| Tooltip {
+        text,
+        detail: None,
+        theme,
+    })
+    .into()
+}
+
+/// A tooltip with a second, quieter part after the text: a timeline
+/// region's name and then its range, `2× Speed  0:26–0:34`.
+pub fn tooltip_detail(
+    text: impl Into<SharedString>,
+    detail: impl Into<SharedString>,
+    theme: Theme,
+    cx: &mut App,
+) -> AnyView {
+    let (text, detail) = (text.into(), Some(detail.into()));
+    cx.new(|_| Tooltip {
+        text,
+        detail,
+        theme,
+    })
+    .into()
 }

@@ -30,7 +30,7 @@ never name the file.
 | Tiles | `tile.rs` | Colour swatches, captioned thumbnails, selection cards and the empty-state plane. |
 | Field rows | `field_row.rs` | The label/control row, the group card, the setting card and the tile grid. |
 | Status | `status.rs` | The unsaved dot, the progress rule, the title pill's status chip, the context chip and the composer footer. |
-| Tooltips | `tooltip.rs` | A 28-tall `ink` pill. Only a control whose caption cannot be read gets one. |
+| Tooltips | `tooltip.rs` | A 28-tall `ink` pill. Only a control whose caption cannot be read gets one. `tooltip_detail` adds a second part in Geist Mono at 60% — a timeline region's range. |
 
 Shared, outside `controls/`: `layout.rs` (`row`, `column`, `measure`),
 `icon.rs`, `typography.rs` (`mono`, `title` and the two families nothing else

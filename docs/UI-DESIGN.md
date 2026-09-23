@@ -183,10 +183,16 @@ app's transport still reads milliseconds (`00:37.150`); the gallery's reads
 hundredths, as the chip does.
 
 A region's label sits on one line and ends in an ellipsis when the region is
-shorter than it. A region under 48 wide shows no label at all, since there is
-room only for "…" there. Not drawn by the design: the tooltip that gives every
-region its full name. `SUBTAKE_GALLERY_SCREEN=panel-Frame` has both kinds of
-region.
+shorter than it. Speed, trim, annotation and caption regions carry their
+kind's icon at 13 before the label (`Timer`, `Scissors`, `TextT`,
+`ClosedCaptioning`), 6 apart; zoom, clip and audio carry none. A region under
+48 wide, or one that would leave its label fewer than four letters, shows
+only the icon, centred. The tooltip names the region and gives its range in
+Geist Mono at 60%, `2× Speed  0:33–0:41`. Not drawn by the design: the tooltip
+shows on every region, not only a cut or icon-only one, since whether a
+label is cut is only known after layout; and it sits by the pointer rather
+than 8 above the region, centred, as gpui places tooltips.
+`SUBTAKE_GALLERY_SCREEN=panel-Frame` has both kinds of region.
 
 The console has no status row: the document's status is the title pill's
 chip. `SUBTAKE_GALLERY_SCREEN=status-cycle` swaps the chip between a running

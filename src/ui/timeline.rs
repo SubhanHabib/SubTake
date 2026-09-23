@@ -23,6 +23,18 @@ fn ruler_clock(seconds: f32, hundredths: bool) -> String {
     }
 }
 
+/// The icon a region of this kind shows beside its label, and alone when the
+/// region is too short for one. Zoom, clip and audio regions have none.
+fn region_icon(kind: &str) -> Option<&'static str> {
+    match kind {
+        "speedRegions" => Some("Timer-regular"),
+        "trimRegions" => Some("Scissors-regular"),
+        "annotationRegions" => Some("TextT-regular"),
+        "autoCaptions" => Some("ClosedCaptioning-regular"),
+        _ => None,
+    }
+}
+
 /// How wide a label is in the small mono face, known before layout.
 fn mono_small_width(text: &str) -> f32 {
     text.chars().count() as f32 * Theme::FONT_SMALL * Theme::MONO_ADVANCE
@@ -533,20 +545,39 @@ impl RootView {
                 .tab_index(0)
                 .focus_visible(move |s| s.shadow(edges.iter().cloned().chain([ring]).collect()))
                 .cursor(CursorStyle::ClosedHand)
-                .child(
+                .child({
+                    // Below the label width a region shows only its kind's
+                    // icon, centred; at or above it the icon, if the kind
+                    // has one, then the label. A label that would get fewer
+                    // than four letters is left off rather than cut to a
+                    // fragment, and the tooltip names the region either way.
+                    let icon = region_icon(&region.kind);
+                    let room = width
+                        - 2. * Theme::REGION_PADDING
+                        - icon.map_or(0., |_| Theme::REGION_ICON_SIZE + Theme::REGION_ICON_GAP);
+                    let labelled = width >= Theme::REGION_LABEL_MIN_WIDTH
+                        && room >= Theme::REGION_LABEL_MIN_ROOM;
                     div()
                         .size_full()
                         .flex()
                         .items_center()
-                        .px(px(Theme::REGION_PADDING))
+                        .when(!labelled, |el| el.justify_center())
+                        .gap(px(Theme::REGION_ICON_GAP))
+                        .when(labelled, |el| el.px(px(Theme::REGION_PADDING)))
                         .text_size(px(Theme::FONT_SMALL))
                         .font_weight(FontWeight::MEDIUM)
                         .text_color(ink)
                         .overflow_hidden()
+                        .when_some(icon, |el, name| {
+                            el.child(
+                                subtake_ui::icon_sized(name, Theme::REGION_ICON_SIZE, ink)
+                                    .flex_none(),
+                            )
+                        })
                         // On one line, in a box that may shrink below it: a
                         // flex row gives bare text its full width, and a
                         // short region cut its label off mid-letter instead.
-                        .when(width >= Theme::REGION_LABEL_MIN_WIDTH, |el| {
+                        .when(labelled, |el| {
                             el.child(
                                 div()
                                     .min_w_0()
@@ -554,13 +585,24 @@ impl RootView {
                                     .text_ellipsis()
                                     .child(region.label.clone()),
                             )
-                        }),
-                );
-            // Not drawn by the design: the tooltip, which names a region
-            // whose label is cut short or left off.
+                        })
+                });
+            // The tooltip names the region and gives its range, for one
+            // shown as an icon or with its label cut short. Not drawn by the
+            // design: it shows on every region, since whether a label is cut
+            // is only known after layout, and it sits under the pointer
+            // rather than 8 above the region, centred, as gpui places a
+            // tooltip.
             if !region.label.is_empty() {
                 let label = region.label.clone();
-                block = block.tooltip(move |_, cx| tooltip(label.clone(), theme, cx));
+                let range = format!(
+                    "{}\u{2013}{}",
+                    ruler_clock(region.start, false),
+                    ruler_clock(region.end, false)
+                );
+                block = block.tooltip(move |_, cx| {
+                    subtake_ui::tooltip_detail(label.clone(), range.clone(), theme, cx)
+                });
             }
             let key_region = region.clone();
             block = block.on_click(cx.listener(move |s, event: &ClickEvent, _, cx| {

@@ -175,6 +175,9 @@ impl Theme {
     pub const TOOLTIP_HEIGHT: f32 = 28.0;
     /// The widest a tooltip grows before its text wraps.
     pub const TOOLTIP_MAX_WIDTH: f32 = 320.0;
+    /// A tooltip's second part — a region's time range — sits one gap after
+    /// the name, at this strength, so the name is read first.
+    pub const TOOLTIP_DETAIL_ALPHA: f32 = 0.6;
     /// A tooltip's padding above and below its text, so one line comes out
     /// exactly `TOOLTIP_HEIGHT` and a wrapped one grows by whole lines.
     pub const TOOLTIP_PADDING_Y: f32 =
@@ -283,10 +286,15 @@ impl Theme {
     pub const WAVEFORM_ALPHA: f32 = 0x55 as f32 / 255.0;
     pub const WAVEFORM_INSET: f32 = 6.0;
     pub const REGION_PADDING: f32 = 10.0;
-    /// The narrowest region that still shows its label: room for the
-    /// padding and three letters with the ellipsis. Below it a label is only
-    /// "…", so it is left off and the tooltip carries it.
-    pub const REGION_LABEL_MIN_WIDTH: f32 = 2.0 * Self::REGION_PADDING + 24.0;
+    /// The narrowest region that still shows its label. Below it a region
+    /// shows only its kind's icon, centred, and the tooltip carries the name.
+    pub const REGION_LABEL_MIN_WIDTH: f32 = 48.0;
+    /// The least room a label is given before it is left off: four letters
+    /// of the small face, so no region ends in a fragment like "An…".
+    pub const REGION_LABEL_MIN_ROOM: f32 = 4.0 * Self::FONT_SMALL * Self::MONO_ADVANCE;
+    /// A region's kind icon, and the gap between it and the label.
+    pub const REGION_ICON_SIZE: f32 = 13.0;
+    pub const REGION_ICON_GAP: f32 = 6.0;
     /// A trim handle: a bar 3 wide, inset 3 from the region's end, running
     /// the lane's height less 6 of air at each end.
     pub const REGION_HANDLE_WIDTH: f32 = 3.0;
