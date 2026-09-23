@@ -12,6 +12,15 @@
     share one zoom control, with Fit as an icon.
   - Fix 3's fill clipped by the track's round end is drawn as a
     track-sized pill cut to the level's width, which needs no rounded clip.
+
+  Superseded by Timeline 3a (`Screen Recorder Redesign (3).zip` →
+  `Timeline 3a.md`), which docs/UI-DESIGN.md describes as built:
+  - Fix 4's playhead chip on the line and hidden ticks: the bubble sits
+    above the ruler, and no tick is hidden.
+  - Fix 6's 16px strip for an empty lane: an empty lane is not drawn.
+  - Fixes 7–8's `lane_track` behind the lanes: there is no lane track.
+  - The region kind icons and `2× Speed` tooltip below: every region has
+    a plate, and a speed region is labelled `2×`.
 -->
 
 # Handoff: SubTake implementation fixes (review of 23 Sep)
