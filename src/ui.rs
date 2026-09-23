@@ -18,7 +18,7 @@ use subtake_theme::{
     DIALOG_OUT_MS, DIALOG_RISE, EXPORT_DONE_GLOW, EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS,
     FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT,
     PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PAUSED_CLOCK_OPACITY, PILL_MORPH_MS,
-    STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
+    STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, STATUS_SLIDE_MS, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
@@ -263,6 +263,13 @@ pub struct RootView {
     /// The card last open, which a closing card keeps drawing as it folds
     /// away, and the window's `opens` it was opened under.
     card_last: (String, u32),
+    /// The console's status line growing in and folding away, as
+    /// `inspector_slide`; what it last said, busy or not and how far along,
+    /// which it keeps showing while it folds; and its own height, which the
+    /// fold runs down from.
+    status_slide: Option<(bool, f32, Instant)>,
+    status_kept: (SharedString, bool, f32),
+    status_bounds: Rc<Cell<Bounds<Pixels>>>,
     /// The document pill's turn into the export pill, as `inspector_slide`.
     pill_morph: Option<(bool, f32, Instant)>,
     /// The document pill's own size, for the export pill to grow out of.
@@ -317,6 +324,9 @@ impl RootView {
             card_ease: None,
             card_unfit: false,
             card_last: (String::new(), 0),
+            status_slide: None,
+            status_kept: (SharedString::default(), false, 0.),
+            status_bounds: Rc::new(Cell::new(Bounds::default())),
             pill_morph: None,
             title_pill: Rc::new(Cell::new(Bounds::default())),
             titlebar_cluster: Rc::new(Cell::new(Bounds::default())),

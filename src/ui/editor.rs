@@ -320,16 +320,12 @@ impl RootView {
                     .children(e.get_has_video().then_some(rail))
                     .children(inspector),
             );
-        let status = self.status_strip(e);
-        if e.get_has_video() {
+        let divided = e.get_has_video();
+        let status = self.status_strip(e, divided, window);
+        if divided {
             root = root.child(self.timeline(e, status, cx));
         } else if let Some(status) = status {
-            root = root.child(
-                div()
-                    .px(px(Theme::GAP_LARGE))
-                    .pb(px(Theme::GAP))
-                    .child(status),
-            );
+            root = root.child(div().px(px(Theme::GAP_LARGE)).child(status));
         }
         root.children(self.presets_dialog(e, window, cx))
             .child(self.menu_overlay(window, cx))
@@ -345,18 +341,34 @@ impl RootView {
     /// the other jobs still need somewhere to speak until the round that
     /// draws toasts gives them one, so it stays, inside the console and only
     /// while it has something to report.
-    fn status_strip(&mut self, e: &EditorWindow) -> Option<AnyElement> {
+    ///
+    /// It grows in and folds away rather than popping, which moved the
+    /// console's top edge and the whole stage above it in one frame. On the
+    /// way out it keeps showing what it last said. `divided` puts it under a
+    /// hairline, inside the console; without, it sits under the stage.
+    fn status_strip(
+        &mut self,
+        e: &EditorWindow,
+        divided: bool,
+        window: &mut Window,
+    ) -> Option<AnyElement> {
         let theme = self.theme;
         let busy = e.get_busy();
         let text = e.get_status();
-        if !busy && text.is_empty() {
+        let live = busy || !text.is_empty();
+        if live {
+            self.status_kept = (text.into(), busy, e.get_progress());
+        }
+        let shown = super::slide_toward(&mut self.status_slide, live, STATUS_SLIDE_MS, window);
+        if shown <= 0. {
             return None;
         }
+        let (text, busy, progress) = self.status_kept.clone();
         let mut line = row()
             .text_size(px(Theme::FONT_SMALL))
             .text_color(theme.muted)
             .child(div().flex_1().text_ellipsis().child(text));
-        if busy {
+        if busy && live {
             line = line.child(self.action("cancel", "Cancel", "cancel", true));
         }
         let mut status = div()
@@ -365,8 +377,33 @@ impl RootView {
             .gap(px(Theme::GAP_SMALL))
             .child(line);
         if busy {
-            status = status.child(progress_bar(e.get_progress(), theme));
+            status = status.child(progress_bar(progress, theme));
         }
-        Some(status.into_any_element())
+        // The hairline and the gap above it fold with the line, so both sit
+        // inside what folds; the console holds the line in one box with the
+        // lanes, so no gap of its own is left standing when it has gone.
+        let body = div()
+            .relative()
+            .flex()
+            .flex_col()
+            .flex_none()
+            .gap(px(Theme::GAP_BLOCK))
+            .when(divided, |el| {
+                el.pt(px(Theme::GAP_BLOCK)).child(divider(theme))
+            })
+            .when(!divided, |el| el.pb(px(Theme::GAP)))
+            .child(status)
+            .child(measure(self.status_bounds.clone()));
+        let full = f32::from(self.status_bounds.get().size.height);
+        Some(
+            div()
+                .flex()
+                .flex_col()
+                .flex_none()
+                .overflow_hidden()
+                .when(shown < 1., |el| el.h(px(full * shown)).opacity(shown))
+                .child(body)
+                .into_any_element(),
+        )
     }
 }

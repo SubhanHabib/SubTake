@@ -539,37 +539,47 @@ impl RootView {
             .mb(px(Theme::INSET))
             .flex_shrink_0()
             .child(toolbar)
-            .child(fade_edges(
-                row()
-                    .id("track-scroll")
-                    .gap(px(Theme::LANE_GUTTER_GAP))
-                    .items_start()
-                    .h(px(Theme::LANE_STACK_HEIGHT))
+            // The lanes and the export/transcription line share one box, so
+            // the line folds away without leaving the console's gap behind.
+            // It sits inside the console rather than under it so the console
+            // keeps the shell's own inset on all three of its edges.
+            .child(
+                column()
+                    .gap_0()
                     .flex_none()
-                    .overflow_y_scroll()
-                    .pb(px(FADE_BAND))
-                    .child(
-                        column()
-                            .w(px(Theme::LANE_GUTTER))
-                            .flex_shrink_0()
-                            .gap_0()
-                            // The gutter runs on the track column's own grid,
-                            // row for row: a spacer the height of the ruler
-                            // and the gap under it, then one box per lane at
-                            // that lane's height with the same gap below. A
-                            // label is centred on its lane rather than set at
-                            // its top, so the name and the blocks it names
-                            // read as one line.
-                            .child(div().h(px(Theme::RULER_HEIGHT + Theme::LANE_GAP)))
-                            .child(lane_label("Source", Theme::LANE_SOURCE_HEIGHT, theme))
-                            .children(
-                                labels
-                                    .into_iter()
-                                    .map(|label| lane_label(label, Theme::LANE_HEIGHT, theme)),
-                            ),
-                    )
-                    .child(timeline),
-            ))
+                    .child(fade_edges(
+                        row()
+                            .id("track-scroll")
+                            .gap(px(Theme::LANE_GUTTER_GAP))
+                            .items_start()
+                            .h(px(Theme::LANE_STACK_HEIGHT))
+                            .flex_none()
+                            .overflow_y_scroll()
+                            .pb(px(FADE_BAND))
+                            .child(
+                                column()
+                                    .w(px(Theme::LANE_GUTTER))
+                                    .flex_shrink_0()
+                                    .gap_0()
+                                    // The gutter runs on the track column's own grid,
+                                    // row for row: a spacer the height of the ruler
+                                    // and the gap under it, then one box per lane at
+                                    // that lane's height with the same gap below. A
+                                    // label is centred on its lane rather than set at
+                                    // its top, so the name and the blocks it names
+                                    // read as one line.
+                                    .child(div().h(px(Theme::RULER_HEIGHT + Theme::LANE_GAP)))
+                                    .child(lane_label("Source", Theme::LANE_SOURCE_HEIGHT, theme))
+                                    .children(
+                                        labels.into_iter().map(|label| {
+                                            lane_label(label, Theme::LANE_HEIGHT, theme)
+                                        }),
+                                    ),
+                            )
+                            .child(timeline),
+                    ))
+                    .children(status),
+            )
             .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
                 if let Surface::Editor(window) = &s.surface {
                     let delta = event.delta.pixel_delta(px(20.));
@@ -611,10 +621,6 @@ impl RootView {
                     }
                 }
             }))
-            // The export/transcription line, when there is one. It sits
-            // inside the console rather than under it so the console keeps
-            // the shell's own inset on all three of its edges.
-            .when_some(status, |el, status| el.child(divider(theme)).child(status))
             .into_any_element();
         frosted(UiSurface::Panel.radius(), UiSurface::Panel.blur(), console).into_any_element()
     }

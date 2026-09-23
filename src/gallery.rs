@@ -26,6 +26,7 @@
 //! inspector in, with `SUBTAKE_GALLERY_WIDTH=1100` (any width under 1280)
 //! folding it; `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen);
+//! `=status-cycle` brings the console's status line in and out on a timer;
 //! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
 use crate::{
     CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
@@ -71,6 +72,21 @@ struct Gallery {
     playback: Timer,
     /// Handle for timers, which run from the pump loop and never re-enter a callback.
     me: Weak<RefCell<Gallery>>,
+}
+
+/// Bring the status line in as a running transcription, or clear it, and
+/// schedule the opposite.
+fn cycle_status(editor: EditorWindow, on: bool) {
+    editor.set_busy(on);
+    editor.set_progress(if on { 0.4 } else { 0. });
+    editor.set_status(if on {
+        "Transcribing… 40%".into()
+    } else {
+        String::new()
+    });
+    Timer::single_shot(Duration::from_millis(1500), move || {
+        cycle_status(editor, !on)
+    });
 }
 
 pub fn run() -> Result<()> {
@@ -129,6 +145,9 @@ pub fn run() -> Result<()> {
                 editor.set_preview_zoom(percent / 100.);
             }
         }
+        // The console's status line coming and going every second and a
+        // half, for its fold.
+        Ok("status-cycle") => cycle_status(editor.clone(), true),
         // Any other panel by its name, `panel-Frame` through `panel-Recent`.
         Ok(screen) if screen.starts_with("panel-") => editor.set_panel(screen[6..].into()),
         // A style the project names that has no tile.
