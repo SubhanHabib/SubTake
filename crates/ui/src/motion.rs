@@ -380,12 +380,18 @@ pub fn hover_blend(key: &str, rest: Hsla, hover: Hsla) -> Hsla {
 
 /// Whether the OS asks for reduced motion.
 ///
-/// The reference reads gpui's `cx.is_reduce_motion()`, which its fork adds;
-/// stock gpui 0.2.2 has no such API, so read the macOS accessibility setting
-/// once instead. Other platforms fall back to full motion.
+/// gpui keeps a reduce-motion flag of its own for [`AnimationExt`] but never
+/// reads the platform's setting into it, so this reads the macOS
+/// accessibility setting once and the app hands it to gpui at launch.
+/// `SUBTAKE_REDUCE_MOTION=1` turns it on without changing the Mac's setting,
+/// for checking every transition lands in place. Other platforms fall back to
+/// full motion.
 pub fn reduced_motion() -> bool {
     static REDUCED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *REDUCED.get_or_init(|| {
+        if std::env::var_os("SUBTAKE_REDUCE_MOTION").is_some_and(|v| v == "1") {
+            return true;
+        }
         #[cfg(target_os = "macos")]
         {
             std::process::Command::new("defaults")

@@ -10,6 +10,9 @@ pub fn quit_event_loop() -> Result<()> {
 
 pub fn run_event_loop_until_quit() -> Result<()> {
     gpui_platform::application().with_assets(Assets).run(|cx| {
+        // gpui's own animations (panel entrances, menus, the Presets dialog)
+        // only land in place when told to.
+        cx.set_reduce_motion(subtake_ui::motion::reduced_motion());
         install_menus(cx);
         CONTEXT.with(|c| *c.borrow_mut() = Some(cx.to_async()));
         if let Err(error) = sync_windows(cx) {
