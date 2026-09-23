@@ -350,11 +350,17 @@ impl RootView {
             let width = (f32::from(self.timeline_bounds.get().size.width) * (end - start)
                 / visible)
                 .max(Theme::GAP);
+            let block_id: ElementId =
+                SharedString::from(format!("region-{}-{}", region.kind, region.id)).into();
+            let hover_key = subtake_ui::motion::tween_key(&block_id, "hover");
+            let hover_fill = tint.opacity(if region.selected {
+                Theme::REGION_FILL_SELECTED_HOVER
+            } else {
+                Theme::REGION_FILL_HOVER
+            });
+            let ring = subtake_ui::focus_ring(theme);
             let mut block = div()
-                .id(SharedString::from(format!(
-                    "region-{}-{}",
-                    region.kind, region.id
-                )))
+                .id(block_id)
                 .group("region")
                 .absolute()
                 .left(relative((start - offset) / visible))
@@ -364,11 +370,17 @@ impl RootView {
                 .h(px(Theme::LANE_HEIGHT))
                 .rounded(px(Theme::RADIUS_REGION))
                 .overflow_hidden()
-                .bg(fill)
-                .when(!region.selected, |el| {
-                    el.hover(move |s| s.bg(tint.opacity(Theme::REGION_FILL_HOVER)))
-                })
+                .bg(subtake_ui::motion::hover_blend(
+                    &hover_key, fill, hover_fill,
+                ))
+                .on_hover(subtake_ui::motion::hover_listener(hover_key))
                 .shadow(vec![hairline(edge, Theme::BORDER_WIDTH)])
+                // Held, a region dims as every pressed control does, and
+                // stays dimmed while it is dragged. Tab reaches it, and Enter
+                // or Space selects it, which is what a click does.
+                .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                .tab_index(0)
+                .focus_visible(move |s| s.shadow(vec![hairline(edge, Theme::BORDER_WIDTH), ring]))
                 .cursor(CursorStyle::ClosedHand)
                 .child(
                     div()
@@ -398,6 +410,20 @@ impl RootView {
                 let label = region.label.clone();
                 block = block.tooltip(move |_, cx| tooltip(label.clone(), theme, cx));
             }
+            let key_region = region.clone();
+            block = block.on_click(cx.listener(move |s, event: &ClickEvent, _, cx| {
+                if !event.is_keyboard() {
+                    return;
+                }
+                if let Surface::Editor(window) = &s.surface {
+                    window.invoke_select_region(
+                        key_region.kind.clone(),
+                        key_region.id.clone(),
+                        false,
+                    );
+                }
+                cx.notify();
+            }));
             let drag_region = region.clone();
             block = block.on_mouse_down(
                 MouseButton::Left,
@@ -433,9 +459,11 @@ impl RootView {
                     .top_0()
                     .w(px(Theme::REGION_HANDLE_TARGET))
                     .h_full()
+                    .group("region-handle")
                     .cursor(CursorStyle::ResizeLeftRight)
                     .child(
                         div()
+                            .id("mark")
                             .absolute()
                             .left(px(Theme::REGION_HANDLE_INSET))
                             .top(px(Theme::REGION_HANDLE_MARGIN))
@@ -449,7 +477,11 @@ impl RootView {
                             }))
                             .group_hover("region", move |s| {
                                 s.bg(tint.opacity(Theme::REGION_HANDLE_ALPHA))
-                            }),
+                            })
+                            // Not drawn by the design: a held handle's mark
+                            // goes to the full tint, so the grab reads before
+                            // the edge has moved.
+                            .group_active("region-handle", move |s| s.bg(tint)),
                     );
                 handle = if right {
                     handle.right_0()

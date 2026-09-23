@@ -257,6 +257,9 @@ impl Theme {
     pub const REGION_FILL: f32 = 0x22 as f32 / 255.0;
     pub const REGION_FILL_HOVER: f32 = 0x2e as f32 / 255.0;
     pub const REGION_FILL_SELECTED: f32 = 0x3d as f32 / 255.0;
+    /// Not drawn by the design: a selected region under the pointer, one
+    /// step past `3d` as `2e` is one step past `22`.
+    pub const REGION_FILL_SELECTED_HOVER: f32 = 0x4a as f32 / 255.0;
     pub const REGION_EDGE: f32 = 0x66 as f32 / 255.0;
     pub const REGION_HANDLE_ALPHA: f32 = 0xcc as f32 / 255.0;
     pub const REGION_PADDING: f32 = 12.0;
