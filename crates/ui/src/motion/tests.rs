@@ -113,3 +113,22 @@ fn an_eased_move_starts_where_it_left_and_lands_exactly_on_its_target() {
     assert_eq!(progress(t0, 100, at(25)), 0.25);
     assert_eq!(progress(t0, 100, at(900)), 1.);
 }
+
+#[test]
+fn a_blend_between_hues_does_not_turn_through_a_third() {
+    // A warm grey toward a blue: halfway, green must not lead.
+    let grey = gpui::hsla(20. / 360., 0.08, 0.85, 1.);
+    let blue = gpui::hsla(220. / 360., 0.6, 0.8, 1.);
+    let half = super::blend(grey, blue, 0.5).to_rgb();
+    assert!(half.g <= half.b && half.g <= half.r.max(half.b));
+}
+
+#[test]
+fn a_blend_out_of_a_clear_wash_keeps_the_target_colour() {
+    let blue = gpui::hsla(220. / 360., 0.6, 0.5, 1.);
+    let clear = gpui::hsla(90. / 360., 1., 0.5, 0.);
+    let half = super::blend(clear, blue, 0.5).to_rgb();
+    let full = blue.to_rgb();
+    assert!((half.a - 0.5).abs() < 1e-4);
+    assert!((half.r - full.r).abs() < 1e-3 && (half.g - full.g).abs() < 1e-3);
+}

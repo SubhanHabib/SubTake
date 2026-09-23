@@ -19,8 +19,8 @@
 //! [`tick_hover_fades`] when a full frame passes without a read.
 
 use gpui::{
-    Animation, AnimationElement, AnimationExt, App, ElementId, Hsla, IntoElement, SharedString,
-    Styled, Window, ease_out_quint, px,
+    Animation, AnimationElement, AnimationExt, App, ElementId, Hsla, IntoElement, Rgba,
+    SharedString, Styled, Window, ease_out_quint, px,
 };
 use std::{
     cell::{Cell, RefCell},
@@ -353,19 +353,23 @@ fn set_hover(key: &str, hovered: bool, reduced: bool) {
     });
 }
 
-/// Premultiplied-alpha mix so a fade from a zero-alpha wash keeps its hue
-/// instead of dipping toward transparent black.
+/// A premultiplied mix in RGB, so a fade from a zero-alpha wash keeps its
+/// hue instead of dipping toward transparent black. Mixing the HSL channels
+/// themselves turned the hue on its own: a warm grey (about 20°) easing to
+/// the selection blue (about 220°) swept through green on the way.
 fn mix(from: Hsla, to: Hsla, t: f32) -> Hsla {
+    let (from, to) = (from.to_rgb(), to.to_rgb());
     let a = lerp(from.a, to.a, t);
     if a <= f32::EPSILON {
-        return Hsla { a: 0.0, ..to };
+        return Hsla::from(Rgba { a: 0.0, ..to });
     }
-    Hsla {
-        h: lerp(from.h, to.h, t),
-        s: lerp(from.s, to.s, t),
-        l: lerp(from.l, to.l, t),
+    let channel = |f: f32, g: f32| (lerp(f * from.a, g * to.a, t) / a).clamp(0.0, 1.0);
+    Hsla::from(Rgba {
+        r: channel(from.r, to.r),
+        g: channel(from.g, to.g),
+        b: channel(from.b, to.b),
         a,
-    }
+    })
 }
 
 /// Progress (0..1) of `key`'s tween toward `on`, driven from render.
