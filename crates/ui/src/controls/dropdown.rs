@@ -43,6 +43,12 @@ impl Dropdown {
         self.change = Box::new(change);
     }
 
+    /// Open the menu on the current choice, as a click on the trigger does.
+    pub fn show(&mut self) {
+        self.open = true;
+        self.highlighted = self.selected;
+    }
+
     pub fn is_focused(&self, window: &Window) -> bool {
         self.focus.is_focused(window)
     }

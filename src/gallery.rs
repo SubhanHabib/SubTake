@@ -33,6 +33,8 @@
 //! `SUBTAKE_GALLERY_LANES=100` and `SUBTAKE_GALLERY_INSPECTOR=460` start the
 //! lane region and the inspector at a height and width their edges could be
 //! dragged to (`SUBTAKE_HOVER_PIN=resize` shows both grips).
+//! `SUBTAKE_GALLERY_OPEN=aspect` opens the inspector dropdown with that id
+//! (the aspect pod's menu), as a click on its trigger would.
 //! `SUBTAKE_HOVER_PIN=switch,look` holds every control whose tween key
 //! contains one of those words hovered, since the gallery's unfocused windows
 //! never receive the pointer's hover.

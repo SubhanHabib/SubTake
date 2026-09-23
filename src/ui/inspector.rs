@@ -224,13 +224,18 @@ impl RootView {
             .entry(id.to_owned())
             .or_insert_with(|| {
                 cx.new(|cx| {
-                    Dropdown::new(
+                    let mut control = Dropdown::new(
                         cx,
                         items.clone(),
                         selected.max(0) as usize,
                         theme,
                         move |v, w, cx| initial(v, w, cx),
-                    )
+                    );
+                    // The gallery can open one by id, as the pointer would.
+                    if std::env::var("SUBTAKE_GALLERY_OPEN").is_ok_and(|open| open == id) {
+                        control.show();
+                    }
+                    control
                 })
             })
             .clone();
