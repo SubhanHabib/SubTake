@@ -196,10 +196,15 @@ from Add over the timeline to show its lane. Zoomed in, the lanes run on past
 the track column, out to the console's own edge on the right and under the
 headers on the left, as a region's pill runs under its plate; the ruler keeps
 to the track column. The headers blur what runs under them by 16. A lane is
-cut at its header's centre, and what runs past it ends there in a round end
-the lane's height, inside the header's circle; its label and frames stay put
-rather than sliding along, a frame cropped at the cut, and its start has no
-trim handle while it is under the header.
+cut half its height before its header's centre, so what runs past it ends in
+a round end on the header's circle, a clip lane's 4 past it all round for its
+extra height. Its label and frames stay put rather than sliding along, a frame
+cropped at the cut, and its start has no trim handle while it is under the
+header. Not drawn by the design: gpui clips only to a rectangle, so what sits
+over a lane's fill, its label, plate, sound and chip, is cut straight at the
+header's centre, where the circle covers it; a clip's frames are rounded or
+shortened to stay inside the round end, and a cut frame narrower than the
+lane is tall is drawn that wide under the next, its picture slid along.
 `SUBTAKE_GALLERY_SCREEN=timeline-zoomed` shows the timeline at 300%, 30
 seconds in. Not drawn by the design, whose lanes stop at the track column.
 

@@ -71,9 +71,10 @@ fn split_frames(strip: &RenderImage) -> Vec<Arc<RenderImage>> {
 /// round the clip's ends; a last tile too short to take the curve is folded
 /// into the one before it. Only the tiles in sight are built: over the
 /// track, under the headers to their centres and out to the console's
-/// edge. `cut` is how much of the clip is tucked away past the headers'
-/// centres; the tile it falls in is cropped there and takes the rounded
-/// end.
+/// edge. `cut` is how much of the clip is tucked away under the headers;
+/// the tile it falls in is cropped there and takes the round end. A tile
+/// or divider that starts within the round end's curve is rounded or
+/// shortened to stay inside it, since gpui clips only to a rectangle.
 fn clip_tiles(
     frames: &[Arc<RenderImage>],
     (start, end): (f32, f32),
@@ -114,16 +115,16 @@ fn clip_tiles(
                 );
             }
         } else {
+            // Rounded to the round end's curve where it starts inside it:
+            // an arc `radius - x` across at its left runs on the curve.
             let mut frame = img(frames[index].clone())
                 .absolute()
                 .left(px(x))
                 .top_0()
                 .w(px(w))
                 .h(px(height))
-                .object_fit(ObjectFit::Cover);
-            if tile == 0 {
-                frame = frame.rounded_l(px(radius));
-            }
+                .object_fit(ObjectFit::Cover)
+                .rounded_l(px((radius - (x - cut)).max(0.)));
             if closing {
                 frame = frame.rounded_r(px(radius));
             }
@@ -132,13 +133,21 @@ fn clip_tiles(
         if closing {
             break;
         }
+        // A divider inside the round end's curve is as tall as the curve is
+        // there.
+        let into = x + Theme::CLIP_TILE_WIDTH - cut;
+        let tall = if into < radius {
+            2. * (radius * radius - (radius - into).max(0.).powi(2)).sqrt()
+        } else {
+            height
+        };
         tiles.push(
             div()
                 .absolute()
                 .left(px(x + Theme::CLIP_TILE_WIDTH))
-                .top_0()
+                .top(px((height - tall) / 2.))
                 .w(px(Theme::CLIP_TILE_DIVIDER))
-                .h(px(height))
+                .h(px(tall))
                 .bg(gpui::black().opacity(Theme::CLIP_DIVIDER_ALPHA))
                 .into_any_element(),
         );
@@ -146,20 +155,30 @@ fn clip_tiles(
     tiles
 }
 
-/// A tile whose left `cut` is tucked past the headers' centres: its frame
-/// cropped there rather than refitted to what is left, so it does not
-/// slide as the timeline scrolls, and rounded at the cut as the clip's
-/// own end is. `closing` rounds its right end too.
+/// A tile whose left `cut` is tucked under the headers: its frame cropped
+/// there rather than refitted to what is left, so it does not slide as the
+/// timeline scrolls, and rounded at the cut as the clip's own end is.
+/// `closing` rounds its right end too. Left narrower than the lane is
+/// tall, it is drawn that wide under the tiles after it, its frame slid
+/// along to fill it, since gpui rounds a corner no wider than half the
+/// quad; what is left of it is under a header.
 fn cut_tile(frame: Arc<RenderImage>, cut: f32, (radius, closing): (f32, bool)) -> Canvas<()> {
     canvas(
         |_, _, _| {},
         move |bounds, _, window, _| {
-            let fitted = ObjectFit::Cover.get_bounds(bounds, frame.size(0));
-            let shown = Bounds::from_corners(
-                point(bounds.left() + px(cut), bounds.top()),
-                bounds.bottom_right(),
-            )
-            .intersect(&fitted);
+            let mut fitted = ObjectFit::Cover.get_bounds(bounds, frame.size(0));
+            let left = bounds.left() + px(cut);
+            let right = if closing {
+                bounds.right()
+            } else {
+                bounds.right().max(left + px(2. * radius))
+            };
+            if right > fitted.right() {
+                fitted.origin.x += right - fitted.right();
+            }
+            let shown =
+                Bounds::from_corners(point(left, bounds.top()), point(right, bounds.bottom()))
+                    .intersect(&fitted);
             let end = if closing { px(radius) } else { px(0.) };
             let radii = Corners {
                 top_left: px(radius),
@@ -290,7 +309,7 @@ fn waveform(
             // does not paint thousands of bars out of sight. The lanes are
             // seen past the track column: under the headers to their
             // centres, and out to the console's edge.
-            let seen_left = f32::from(track.left()) + TUCK;
+            let seen_left = f32::from(track.left()) + HEADER_CENTRE;
             let seen_right = f32::from(track.right()) + Theme::PANEL_PADDING;
             let left = f32::from(bounds.left());
             let skipped = ((seen_left - left) / Theme::WAVEFORM_PITCH).floor().max(0.);
@@ -330,34 +349,44 @@ fn waveform(
     .h(px(Theme::WAVEFORM_HEIGHT))
 }
 
-/// Where a lane is cut on the left, from the track column's left: the centre
-/// of its header, so what runs under the header ends in a pill's round end
-/// inside the header's circle, as a region's pill does under its plate.
-const TUCK: f32 = -Theme::LANE_HEADER_GAP - Theme::LANE_HEADER / 2.;
+/// The centre of a lane's header, from the track column's left. What a lane
+/// shows over its fill, its label, plate, sound and chip, is cut there,
+/// where the header's circle covers it top to bottom.
+const HEADER_CENTRE: f32 = -Theme::LANE_HEADER_GAP - Theme::LANE_HEADER / 2.;
 
-/// A lane's span from `start` to `end`, cut at [`TUCK`]: its left edge
+/// Where a lane `height` tall is cut on the left, from the track column's
+/// left: half its height before its header's centre, so what runs under the
+/// header ends in a round end on the header's circle, as a region's pill
+/// does under its plate. A lane taller than its header runs past the
+/// circle by the difference.
+fn tuck(height: f32) -> f32 {
+    HEADER_CENTRE - height / 2.
+}
+
+/// A lane's span from `start` to `end`, cut at [`tuck`]: its left edge
 /// there when it starts before it. `None` when it ends before it, out of
 /// sight. `cut` is how much of the span is tucked away.
 fn tucked<E: Styled>(
     el: E,
-    (start, end): (f32, f32),
+    (start, end, height): (f32, f32, f32),
     (offset, visible, track_width): (f32, f32, f32),
 ) -> Option<(E, f32)> {
+    let edge = tuck(height);
     let (left, right) = (
         track_width * (start - offset) / visible,
         track_width * (end - offset) / visible,
     );
-    if track_width > 0. && right <= TUCK {
+    if track_width > 0. && right <= edge {
         return None;
     }
     let cut = if track_width > 0. {
-        (TUCK - left).max(0.)
+        (edge - left).max(0.)
     } else {
         0.
     };
     Some(if cut > 0. {
         (
-            el.left(px(TUCK))
+            el.left(px(edge))
                 .right(relative(1. - (end - offset) / visible)),
             cut,
         )
@@ -1068,7 +1097,7 @@ impl RootView {
             if moving
                 && let Some((ghost, _)) = tucked(
                     div().absolute(),
-                    (region.start, region.end),
+                    (region.start, region.end, height),
                     (offset, visible, track_width),
                 )
             {
@@ -1089,7 +1118,7 @@ impl RootView {
             let ring = subtake_ui::focus_ring(theme);
             let Some((block, cut)) = tucked(
                 div().id(block_id).absolute(),
-                (start, end),
+                (start, end, height),
                 (offset, visible, track_width),
             ) else {
                 continue;
@@ -1114,25 +1143,47 @@ impl RootView {
             // What the region shows, at its full length and cut where the
             // region is: a region tucked under the headers keeps its label
             // and frames where they were rather than sliding them along.
-            let body = div()
-                .absolute()
-                .top_0()
-                .h(px(height))
-                .when(cut > 0., |el| el.left(px(-cut)).w(px(width)))
-                .when(cut <= 0., |el| el.left_0().w_full())
-                // A clip is its frames under a label chip; the tint shows
-                // while they load. Not drawn by the design: each tile's
-                // frame is the recording's at the tile's place on the
-                // timeline, not at its place in the clip's source.
-                .when(clip, |el| {
-                    let left = track_width * (start - offset) / visible;
-                    el.children(clip_tiles(
+            // A clip's frames are its fill, cut with it at the round end;
+            // what shows over the fill is cut at the header's centre,
+            // `centre` into the region.
+            let centre = if cut > 0. { height / 2. } else { 0. };
+            let sheet = |at: f32| {
+                div()
+                    .absolute()
+                    .top_0()
+                    .h(px(height))
+                    .when(cut > 0., |el| el.left(px(-(cut + at))).w(px(width)))
+                    .when(cut <= 0., |el| el.left_0().w_full())
+            };
+            let cut_at = |at: f32, sheet: Div| {
+                div()
+                    .absolute()
+                    .top_0()
+                    .bottom_0()
+                    .left(px(at))
+                    .right_0()
+                    .overflow_hidden()
+                    .child(sheet)
+            };
+            // A clip is its frames under a label chip; the tint shows while
+            // they load. Not drawn by the design: each tile's frame is the
+            // recording's at the tile's place on the timeline, not at its
+            // place in the clip's source.
+            let frames = clip.then(|| {
+                let left = track_width * (start - offset) / visible;
+                cut_at(
+                    0.,
+                    sheet(0.).children(clip_tiles(
                         &frames,
                         (start, end),
                         (left, width, height, cut),
                         (track_width, duration),
-                    ))
-                    .children(clip_chip(&region.label, width, theme))
+                    )),
+                )
+            });
+            let over = sheet(centre)
+                .when(clip, |el| {
+                    el.children(clip_chip(&region.label, width, theme))
                 })
                 .when(!clip, |el| {
                     el.child({
@@ -1209,7 +1260,7 @@ impl RootView {
                             })
                     })
                 });
-            let mut block = block.child(div().absolute().inset_0().overflow_hidden().child(body));
+            let mut block = block.children(frames).child(cut_at(centre, over));
             // The selected ring, over the fill and under the handles: a
             // bordered overlay, not the block's own border, which would shift
             // its label by the ring's width; and not an inset shadow, which
@@ -1602,7 +1653,10 @@ impl RootView {
                             .id("track-scroll")
                             .relative()
                             .items_start()
-                            .pl(px(Theme::LANE_HEADER + Theme::LANE_HEADER_GAP))
+                            .ml(px(-Theme::LANE_TUCK_OUTSET))
+                            .pl(px(Theme::LANE_TUCK_OUTSET
+                                + Theme::LANE_HEADER
+                                + Theme::LANE_HEADER_GAP))
                             .mr(px(-Theme::PANEL_PADDING))
                             .pr(px(Theme::PANEL_PADDING))
                             .overflow_x_hidden()
@@ -1626,7 +1680,7 @@ impl RootView {
                             .child(layered(
                                 column()
                                     .absolute()
-                                    .left_0()
+                                    .left(px(Theme::LANE_TUCK_OUTSET))
                                     .top_0()
                                     .w(px(Theme::LANE_HEADER))
                                     .flex_shrink_0()

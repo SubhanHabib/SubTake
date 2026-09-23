@@ -274,6 +274,10 @@ impl Theme {
     /// tracks. A header is a 44 circle with a 17 glyph.
     pub const LANE_HEADER: f32 = 44.0;
     pub const LANE_HEADER_GAP: f32 = 10.0;
+    /// How far the lane stack's clip reaches past the headers on the left: the
+    /// clip lane's round end, concentric with its header, stands out past the
+    /// circle by the difference in their radii.
+    pub const LANE_TUCK_OUTSET: f32 = (Self::CLIP_LANE_HEIGHT - Self::LANE_HEADER) / 2.0;
     pub const LANE_HEADER_ICON: f32 = 17.0;
     /// A zoomed lane runs on under the headers, blurred by 16 behind them.
     /// Not drawn by the design, whose lanes stop at the track column.
