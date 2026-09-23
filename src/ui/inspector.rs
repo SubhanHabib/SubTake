@@ -539,13 +539,8 @@ impl RootView {
             .h(px(Theme::CONTROL_HEIGHT_SMALL))
             .flex_none()
             .gap(px(Theme::ICON_GAP_ROW));
-        if matches!(name.as_str(), "Crop" | "Wallpapers" | "Shortcuts") {
+        if let Some(back) = sub_panel_of(&name) {
             let editor = e.clone();
-            let back = if name == "Shortcuts" {
-                "Preferences"
-            } else {
-                "Frame"
-            };
             heading = heading.child(
                 icon_button("inspector-back", "CaretLeft-regular", "Back", theme)
                     .ghost()
@@ -996,7 +991,25 @@ impl RootView {
         };
         // A newly picked panel fades in and rises into place; the card
         // around it stays put. Keyed by the panel, so each pick starts over.
-        let enter = Animation::new(std::time::Duration::from_millis(PANEL_ENTER_MS))
+        // Into a sub-panel it slides in from the right instead, and back out
+        // from the left, so the caret's way back reads as a way back.
+        if self.panel_drill.0 != name {
+            let from = std::mem::replace(&mut self.panel_drill.0, name.clone());
+            self.panel_drill.1 = if sub_panel_of(&name) == Some(&*from) {
+                1.
+            } else if sub_panel_of(&from) == Some(&*name) {
+                -1.
+            } else {
+                0.
+            };
+        }
+        let drill = self.panel_drill.1;
+        let ms = if drill == 0. {
+            PANEL_ENTER_MS
+        } else {
+            PANEL_DRILL_MS
+        };
+        let enter = Animation::new(std::time::Duration::from_millis(ms))
             .with_easing(|t| subtake_ui::motion::EASE_OUT.eval(t));
         let el = content_panel(theme)
             .py_0()
@@ -1007,7 +1020,14 @@ impl RootView {
             .child(body.with_animation(
                 SharedString::from(format!("panel-enter-{name}")),
                 enter,
-                |body, t| body.opacity(t).top(px(PANEL_ENTER_RISE * (1. - t))),
+                move |body, t| {
+                    let body = body.opacity(t);
+                    if drill == 0. {
+                        body.top(px(PANEL_ENTER_RISE * (1. - t)))
+                    } else {
+                        body.left(px(drill * PANEL_DRILL_SHIFT * (1. - t)))
+                    }
+                },
             ));
         // The panel takes its backdrop blur here rather than inside
         // `panel_variant`: the blur is painted by an element that wraps the
@@ -1070,5 +1090,14 @@ impl RootView {
             .child(toggle)
             .when(shown > 0., |el| el.child(float(Theme::INSET - away)))
             .into_any_element()
+    }
+}
+
+/// The panel a sub-panel's caret goes back to, or `None` for a top panel.
+fn sub_panel_of(name: &str) -> Option<&'static str> {
+    match name {
+        "Crop" | "Wallpapers" => Some("Frame"),
+        "Shortcuts" => Some("Preferences"),
+        _ => None,
     }
 }

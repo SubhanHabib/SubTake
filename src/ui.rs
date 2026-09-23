@@ -14,9 +14,9 @@ use std::{
     time::Instant,
 };
 use subtake_theme::{
-    FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_ENTER_MS, PANEL_ENTER_RISE,
-    PANEL_WIDTH, PILL_MORPH_MS, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT,
-    STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
+    FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT,
+    PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PILL_MORPH_MS, STAGE_RESERVE_LEFT,
+    STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
@@ -236,6 +236,9 @@ pub struct RootView {
     /// Each inspector panel's scroll position, so its edges fade by how much
     /// of it is scrolled out of sight.
     inspector_scroll: HashMap<String, ScrollHandle>,
+    /// The inspector panel last drawn and which way the current one came
+    /// in: 1 drilled into, -1 backed out to, 0 picked alongside.
+    panel_drill: (String, f32),
     /// The folded inspector's slide: where it is heading (in or out), where
     /// it set off from (0 out, 1 in) and when. `None` until first drawn, so
     /// a window that opens narrow starts folded rather than sliding shut.
@@ -285,6 +288,7 @@ impl RootView {
             mic_clipped: None,
             export_dismiss: None,
             inspector_scroll: HashMap::new(),
+            panel_drill: (String::new(), 0.),
             inspector_slide: None,
             pill_morph: None,
             title_pill: Rc::new(Cell::new(Bounds::default())),

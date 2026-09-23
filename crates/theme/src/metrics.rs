@@ -592,3 +592,8 @@ pub const PILL_MORPH_MS: u64 = 240;
 /// distance below into place.
 pub const PANEL_ENTER_MS: u64 = 180;
 pub const PANEL_ENTER_RISE: f32 = 6.0;
+/// Drilling into a sub-panel (Crop, Background, Shortcuts) slides it in
+/// from this far to the right, and going back slides the parent in from the
+/// left, over a little longer than a plain switch.
+pub const PANEL_DRILL_MS: u64 = 220;
+pub const PANEL_DRILL_SHIFT: f32 = 24.0;
