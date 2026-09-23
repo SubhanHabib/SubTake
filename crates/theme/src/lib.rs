@@ -214,9 +214,9 @@ impl Theme {
         gpui::hsla(225. / 360., 0.25, 0.063, 0.55)
     }
 
-    /// An off toggle's thumb and the scrubber's dots. White in both
-    /// appearances — the redesign specifies `#ffffff` on a `sunk2` track in
-    /// both, so this is not a palette entry. An on toggle's thumb is `on_ink`.
+    /// A toggle's thumb, on or off, and the scrubber's dots. White in both
+    /// appearances — the review specifies `#ffffff` on the `sunk2` and
+    /// `switch_on` tracks in both, so this is not a palette entry.
     pub fn thumb(&self) -> Hsla {
         gpui::hsla(0., 0., 1., 1.)
     }

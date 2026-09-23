@@ -247,6 +247,8 @@ impl Theme {
     pub const TOGGLE_INSET: f32 = 3.0;
     pub const TOGGLE_THUMB: f32 = Self::TOGGLE_HEIGHT - Self::TOGGLE_INSET * 2.0;
     pub const TOGGLE_THUMB_HELD: f32 = 26.0;
+    /// The white wash an on toggle's track takes under the pointer.
+    pub const SWITCH_ON_HOVER: f32 = 0.12;
     pub const TOGGLE_TRAVEL: f32 =
         Self::TOGGLE_WIDTH - Self::TOGGLE_INSET * 2.0 - Self::TOGGLE_THUMB;
 

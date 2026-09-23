@@ -1,18 +1,19 @@
 //! A row of mutually exclusive options, on one recessed track.
 //!
-//! The active segment is an `ink` pill, not an accent one. The accent marks
-//! four things in this interface — the playhead, the selection, the active
-//! tool and the primary action — and "which of these two views you are
-//! looking at" is none of them, so the segmented control says it in the
-//! achromatic fill instead. That is also why this is not built from `Button`:
-//! a selected button fills with accent, which is the right answer everywhere
-//! except here.
+//! The active segment is a raised `seg_active` pill — white on light, a lift
+//! of white on dark — with a faint shadow and a hairline, and its label goes
+//! to `text` at weight 500. It was an `ink` pill, and that made it the
+//! heaviest mark in any panel it sat in, heavier than Export. Accent is not
+//! used either: it marks four things in this interface — the playhead, the
+//! selection, the active tool and the primary action — and "which of these
+//! two views you are looking at" is none of them. That is also why this is
+//! not built from `Button`: a selected button fills with accent.
 
 use gpui::{prelude::*, *};
 use std::rc::Rc;
 use subtake_theme::Theme;
 
-use crate::{focus_ring, motion, perf};
+use crate::{focus_ring, hairline, motion, perf};
 
 pub fn segmented_control(
     id: &str,
@@ -23,68 +24,117 @@ pub fn segmented_control(
 ) -> impl IntoElement {
     let on_select = Rc::new(on_select);
     let id = SharedString::from(id.to_owned());
+    let count = options.len().max(1) as f32;
+    // Each segment runs a 0..1 tween toward being the current one. Summing
+    // index × progress gives the pill's position along the track: while it
+    // moves, the old segment's progress falls as the new one's rises on the
+    // same curve, so the sum slides from one index to the other.
+    let position: f32 = (0..options.len())
+        .map(|index| {
+            let key = motion::tween_key(&ElementId::from((id.clone(), index)), "segment");
+            index as f32 * motion::state_fade(&key, index == selected)
+        })
+        .sum();
+    // The track's padding is split: half on the track, half inside each
+    // slot. The slots then divide the track exactly, so the pill can be
+    // placed and sized as a fraction of it, and half a gap on each side of
+    // neighbouring slots is the whole gap between them.
+    let half_gap = px(Theme::GAP_SMALL / 2.);
+    let pill = div()
+        .absolute()
+        .top_0()
+        .bottom_0()
+        .left(relative(position / count))
+        .w(relative(1. / count))
+        .px(half_gap)
+        .child(
+            div()
+                .size_full()
+                .rounded_full()
+                .bg(theme.seg_active)
+                .shadow(vec![
+                    BoxShadow {
+                        color: hsla(0.65, 0.33, 0.12, 0.12),
+                        offset: point(px(0.), px(1.)),
+                        blur_radius: px(3.),
+                        spread_radius: px(0.),
+                        inset: false,
+                    },
+                    hairline(theme.line, Theme::HAIRLINE_WIDTH),
+                ]),
+        );
     div()
         .flex()
         .flex_none()
         .h(px(Theme::CONTROL_HEIGHT_LARGE))
-        .p(px(Theme::GAP_SMALL))
-        .gap(px(Theme::GAP_SMALL))
+        .py(px(Theme::GAP_SMALL))
+        .px(half_gap)
         .rounded_full()
         .bg(theme.sunk)
-        .children(
-            options
-                .iter()
-                .map(|s| s.to_string())
-                .collect::<Vec<_>>()
-                .into_iter()
-                .enumerate()
-                .map(|(index, label)| {
-                    let pick = on_select.clone();
-                    let element_id = ElementId::from((id.clone(), index));
-                    let active = index == selected;
-                    // The pill is meant to slide between positions. It
-                    // cross-fades instead: gpui lays the segments out, so
-                    // there is no single element to animate along the track,
-                    // and a fade at the same 160ms reads as the same move.
-                    let on = motion::state_fade(&motion::tween_key(&element_id, "segment"), active);
-                    let hover_key = motion::tween_key(&element_id, "hover");
-                    let idle = motion::hover_blend(&hover_key, theme.muted, theme.text);
-                    let ring = focus_ring(theme);
-                    let press = theme.press;
-                    let click_id = element_id.clone();
-                    div()
-                        .id(element_id)
-                        .flex_1()
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .min_w_0()
-                        .px(px(Theme::CONTROL_PADDING))
-                        .rounded_full()
-                        .bg(motion::blend(theme.ink.opacity(0.), theme.ink, on))
-                        .text_color(motion::blend(idle, theme.on_ink, on))
-                        .text_size(px(Theme::FONT_BODY))
-                        .font_weight(if active {
-                            FontWeight::MEDIUM
-                        } else {
-                            FontWeight::NORMAL
-                        })
-                        .cursor_pointer()
-                        // Pressed as a button presses: the `press` wash and a
-                        // dim. The current segment keeps its `ink` pill and
-                        // only dims, since a wash would show as a grey pill
-                        // swapped in for a black one.
-                        .active(move |s| {
-                            if active { s } else { s.bg(press) }.opacity(Theme::PRESSED_OPACITY)
-                        })
-                        .tab_index(0)
-                        .focus_visible(move |s| s.shadow(vec![ring]))
-                        .on_hover(motion::hover_listener(hover_key))
-                        .child(div().text_ellipsis().child(label))
-                        .on_click(move |_, w, cx| {
-                            perf::log(format_args!("click segment {click_id:?}"));
-                            pick(index, w, cx)
-                        })
-                }),
+        .child(
+            div()
+                .relative()
+                .flex()
+                .flex_1()
+                .min_w_0()
+                .child(pill)
+                .children(
+                    options
+                        .iter()
+                        .map(|s| s.to_string())
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .enumerate()
+                        .map(|(index, label)| {
+                            let pick = on_select.clone();
+                            let element_id = ElementId::from((id.clone(), index));
+                            let active = index == selected;
+                            let hover_key = motion::tween_key(&element_id, "hover");
+                            let idle = motion::hover_blend(&hover_key, theme.muted, theme.text);
+                            let ring = focus_ring(theme);
+                            let press = theme.press;
+                            let click_id = element_id.clone();
+                            div()
+                                .id(element_id)
+                                .flex_1()
+                                .flex()
+                                .min_w_0()
+                                .px(half_gap)
+                                .rounded_full()
+                                .cursor_pointer()
+                                // Pressed as a button presses: the `press`
+                                // wash and a dim. The current segment keeps
+                                // its pill and only dims, since a wash would
+                                // show as a grey pill over a white one.
+                                .active(move |s| {
+                                    if active { s } else { s.bg(press) }
+                                        .opacity(Theme::PRESSED_OPACITY)
+                                })
+                                .tab_index(0)
+                                .focus_visible(move |s| s.shadow(vec![ring]))
+                                .on_hover(motion::hover_listener(hover_key))
+                                .on_click(move |_, w, cx| {
+                                    perf::log(format_args!("click segment {click_id:?}"));
+                                    pick(index, w, cx)
+                                })
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .min_w_0()
+                                        .px(px(Theme::CONTROL_PADDING))
+                                        .text_color(if active { theme.text } else { idle })
+                                        .text_size(px(Theme::FONT_BODY))
+                                        .font_weight(if active {
+                                            FontWeight::MEDIUM
+                                        } else {
+                                            FontWeight::NORMAL
+                                        })
+                                        .child(div().text_ellipsis().child(label)),
+                                )
+                        }),
+                ),
         )
 }

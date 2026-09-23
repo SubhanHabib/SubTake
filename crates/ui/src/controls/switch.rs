@@ -29,10 +29,11 @@ pub fn switch(
     let ring = focus_ring(t);
     // Hover lays a wash over the track rather than swapping its fill: the
     // off track is already `sunk2`, the top of the fill scale, so there is
-    // no firmer tone to move to. On the `ink` track the wash is `on_ink`,
-    // which is the one tone that shows against it in both appearances.
+    // no firmer tone to move to. On the mid-grey `switch_on` track the wash
+    // is a lift of the thumb's white, which shows against it in both
+    // appearances.
     let hover_key = motion::tween_key(&id, "hover");
-    let wash = motion::blend(t.hover, t.on_ink.opacity(0.12), on);
+    let wash = motion::blend(t.hover, t.thumb().opacity(Theme::SWITCH_ON_HOVER), on);
     let mut switch = div()
         .id(id)
         .relative()
@@ -40,7 +41,7 @@ pub fn switch(
         .w(px(Theme::TOGGLE_WIDTH))
         .h(px(Theme::TOGGLE_HEIGHT))
         .rounded_full()
-        .bg(motion::blend(t.sunk2, t.ink, on))
+        .bg(motion::blend(t.sunk2, t.switch_on, on))
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
         .child(
             div()
@@ -60,13 +61,13 @@ pub fn switch(
                 )))
                 .size(px(Theme::TOGGLE_THUMB))
                 .rounded_full()
-                // White on the off track, `on_ink` on the on track: the
-                // round-2 handoff makes "on" the `ink` plate the active
-                // segment of a segmented control uses, and accent never
-                // means "on". On the light off track that is white on a
-                // near-white `sunk2`, so the thumb's own drop shadow is what
-                // separates it — not a second fill.
-                .bg(motion::blend(t.thumb(), t.on_ink, on))
+                // White in both states and both appearances: on and off are
+                // the track's tone and the thumb's side, never the thumb's
+                // colour. An `ink` track with an `on_ink` thumb read as off
+                // in dark, where it was a black dot on white. On the light
+                // off track that is white on a near-white `sunk2`, so the
+                // thumb's own drop shadow is what separates it.
+                .bg(t.thumb())
                 .shadow(vec![BoxShadow {
                     color: hsla(0., 0., 0., 0.3),
                     offset: point(px(0.), px(1.)),
