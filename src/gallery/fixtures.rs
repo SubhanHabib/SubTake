@@ -31,13 +31,7 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
     ui.set_look_choice("studio".into());
     ui.set_background_value("wallpaper-1".into());
     ui.set_aspect_index(0);
-    ui.set_preview(gradient(
-        PREVIEW_W,
-        PREVIEW_H,
-        [0x1f, 0x3b, 0x73],
-        [0xd9, 0x6c, 0x9d],
-        Style::Preview,
-    ));
+    ui.set_preview(scene(PREVIEW_W, PREVIEW_H));
     ui.set_thumbnails(gradient(
         1600,
         48,
@@ -69,6 +63,7 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
     ui.set_audio_row(3);
     ui.set_wallpapers(ModelRc::new(VecModel::from(
         [
+            ("Apricot", [0xf7, 0xdc, 0xc2], [0xd2, 0x7b, 0x86]),
             ("Dusk", [0x1f, 0x3b, 0x73], [0xd9, 0x6c, 0x9d]),
             ("Meadow", [0x1a, 0x6b, 0x4a], [0xd8, 0xe3, 0x6b]),
             ("Ember", [0x6b, 0x1a, 0x1a], [0xf5, 0xbb, 0x6b]),
@@ -456,10 +451,10 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
     match panel {
         "Frame" => vec![
             section("Layout"),
-            slider("padding.all", "Padding", "64", 0., 320.),
+            slider("padding.all", "Padding", "56", 0., 320.),
             toggle("padding.linked", "Link all sides", true),
-            slider("borderRadius", "Radius", "18", 0., 64.),
-            slider("shadow", "Shadow", "0.4", 0., 1.),
+            slider("borderRadius", "Radius", "4", 0., 64.),
+            slider("shadow", "Shadow", "0.5", 0., 1.),
             section("Cursor"),
             toggle("showCursor", "Show cursor", true),
             dropdown(
