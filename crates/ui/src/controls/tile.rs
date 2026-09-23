@@ -106,7 +106,13 @@ pub fn choice_tile(
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
         .tab_index(0)
         .tab_stop(enabled)
-        .focus_visible(move |s| s.border_2().border_color(theme.accent))
+        // The ring thickens inward, as a second hairline inside the border,
+        // rather than by widening the border: a wider border is layout, and
+        // took a pixel off every side of what the tile holds.
+        .focus_visible(move |s| {
+            s.border_color(theme.accent)
+                .shadow(vec![crate::hairline(theme.accent, Theme::BORDER_WIDTH)])
+        })
         .when(enabled, |s| {
             s.cursor_pointer()
                 .active(|s| s.opacity(Theme::PRESSED_OPACITY))
