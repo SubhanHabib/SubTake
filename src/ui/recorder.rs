@@ -89,14 +89,39 @@ impl RootView {
         // It is one row of `RECORD_HEIGHT` controls: the handoff draws the
         // bar as a single line of the app's largest controls, so a 40px or
         // 44px control anywhere on it reads as a control that shrank.
-        let mut bar = panel_variant(theme, UiSurface::Overlay)
-            .flex_row()
-            .items_center()
+        let plate = panel_variant(theme, UiSurface::Overlay)
             .size_full()
             .min_w_0()
-            .overflow_hidden()
+            .overflow_hidden();
+        // The controls sit on their own row inside the plate, so when the bar
+        // turns from one job to the next its controls can fade in while the
+        // plate stays still.
+        let mut bar = row()
+            .size_full()
+            .min_w_0()
             .p(px(Theme::RECORDER_PADDING))
             .gap(px(Theme::GAP));
+        let phase = if state.get_recording() {
+            "recording"
+        } else if state.get_counting() > 0 {
+            "counting"
+        } else if state.get_busy() {
+            "working"
+        } else {
+            "ready"
+        };
+        let swap = |bar: Div| {
+            plate
+                .child(
+                    bar.with_animation(
+                        SharedString::from(format!("bar-{phase}")),
+                        Animation::new(std::time::Duration::from_millis(BAR_SWAP_MS))
+                            .with_easing(|t| subtake_ui::motion::EASE_OUT.eval(t)),
+                        |bar, t| bar.opacity(t),
+                    ),
+                )
+                .into_any_element()
+        };
         // The grip is drawn on the idle and capturing bars only: while the
         // count runs or the file is written the bar is a message, and a
         // message is not something to pick up and move.
@@ -233,7 +258,7 @@ impl RootView {
             bar = self.working_controls(bar, state);
         }
         if state.get_recording() || state.get_busy() {
-            return bar.into_any_element();
+            return swap(bar);
         }
         // The bar's last control. The handoff draws a 44 close button and
         // nothing else after Record.
@@ -248,7 +273,7 @@ impl RootView {
                 .ghost()
                 .on_click(self.command("hide-launcher")),
         );
-        bar.into_any_element()
+        swap(bar)
     }
 
     /// Recording and paused. The Record button's place becomes the clock —

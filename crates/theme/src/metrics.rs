@@ -604,3 +604,7 @@ pub const CARD_RESIZE_MS: u64 = 220;
 /// folds back down into it over the shorter time as it closes.
 pub const CARD_OPEN_MS: u64 = 260;
 pub const CARD_CLOSE_MS: u64 = 140;
+/// The recorder bar's controls fade in over this long when it changes what
+/// it is — ready, counting, recording, writing the file. The bar itself
+/// keeps its size and place.
+pub const BAR_SWAP_MS: u64 = 180;
