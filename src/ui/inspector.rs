@@ -1009,8 +1009,13 @@ impl RootView {
         } else {
             PANEL_DRILL_MS
         };
+        // The old panel is gone the frame the new one arrives, and gpui
+        // draws an animation's first frame at its start, so a fade from
+        // nothing left the card empty for a frame — 33ms while the editor is
+        // in the background. It starts a 60Hz frame in instead.
+        let lead = 1000. / 60. / ms as f32;
         let enter = Animation::new(std::time::Duration::from_millis(ms))
-            .with_easing(|t| subtake_ui::motion::EASE_OUT.eval(t));
+            .with_easing(move |t| subtake_ui::motion::EASE_OUT.eval(lead + (1. - lead) * t));
         let el = content_panel(theme)
             .py_0()
             .gap_0()
