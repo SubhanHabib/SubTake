@@ -167,6 +167,11 @@ impl Theme {
 
     /// A chip: a context label, a piece of metadata on a plate.
     pub const CHIP_HEIGHT: f32 = 26.0;
+    /// The document status chip inside the title pill: 10 either side, and
+    /// the pill's own right padding closing to 6 around it so the chip sits
+    /// in the pill's end as a nested round.
+    pub const STATUS_CHIP_PADDING: f32 = 10.0;
+    pub const TITLE_PILL_CHIP_PADDING: f32 = 6.0;
     pub const TOOLTIP_HEIGHT: f32 = 28.0;
     /// The widest a tooltip grows before its text wraps.
     pub const TOOLTIP_MAX_WIDTH: f32 = 320.0;

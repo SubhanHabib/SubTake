@@ -28,7 +28,7 @@
 //! folding it, and `SUBTAKE_GALLERY_HEIGHT` sets the height the same way
 //! (for a panel too long for 880); `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen);
-//! `=status-cycle` brings the console's status line in and out on a timer;
+//! `=status-cycle` swaps the title pill's status chip to a running job and back on a timer;
 //! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
 //! `SUBTAKE_GALLERY_LANES=100` and `SUBTAKE_GALLERY_INSPECTOR=460` start the
 //! lane region and the inspector at a height and width their edges could be
@@ -84,15 +84,15 @@ struct Gallery {
     me: Weak<RefCell<Gallery>>,
 }
 
-/// Bring the status line in as a running transcription, or clear it, and
-/// schedule the opposite.
+/// Show the status chip as a running transcription, or put it back to
+/// "Gallery mode", and schedule the opposite.
 fn cycle_status(editor: EditorWindow, on: bool) {
     editor.set_busy(on);
     editor.set_progress(if on { 0.4 } else { 0. });
     editor.set_status(if on {
         "Transcribing… 40%".into()
     } else {
-        String::new()
+        "Gallery mode".into()
     });
     Timer::single_shot(Duration::from_millis(1500), move || {
         cycle_status(editor, !on)
@@ -126,6 +126,8 @@ pub fn run() -> Result<()> {
 
     seed_editor(&editor);
     seed_recorder(&launcher, &options);
+    // The title pill's status chip says where the window's data comes from.
+    editor.set_status("Gallery mode".into());
     match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
         Ok("empty") => editor.set_has_video(false),
         Ok("presets") => editor.set_dialog("presets".into()),
@@ -155,8 +157,8 @@ pub fn run() -> Result<()> {
                 editor.set_preview_zoom(percent / 100.);
             }
         }
-        // The console's status line coming and going every second and a
-        // half, for its fold.
+        // The title pill's status chip as a running transcription, coming
+        // and going every second and a half.
         Ok("status-cycle") => cycle_status(editor.clone(), true),
         // Any other panel by its name, `panel-Frame` through `panel-Recent`.
         Ok(screen) if screen.starts_with("panel-") => editor.set_panel(screen[6..].into()),

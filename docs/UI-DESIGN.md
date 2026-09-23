@@ -68,7 +68,13 @@ Nothing is docked. That is the change the redesign is named for, and every
 other difference follows from it.
 
 A titlebar with no fill of its own — traffic lights, the document on a `sunk`
-pill centred on the window, and Record / Presets / Export at the right. Then
+pill centred on the window, and Record / Presets / Export at the right: Record
+a 44 `sunk` pill with its glyph and caption, Presets a 44 round `sunk` plate
+with the Stack glyph, in both themes. While the document has a status — a
+running job, an error, "Gallery mode" in the gallery — it is a chip at the end
+of the title pill: 26 tall, `sunk2`, the small size in `muted`, with the pill's
+right padding closing to 6 around it. Not drawn by the design: a running job's
+small X, which cancels it, and the chip's tooltip with the whole status. Then
 one stage filling the rest, with three floats over it: the tool pod at the left
 (60 wide, inset 24, centred on the stage's height), the aspect and crop
 controls centred along the stage's bottom, and the 340-wide inspector on `card` at the
@@ -124,8 +130,8 @@ the gallery's size.
 
 Each edge's fade can be turned off (`fade_edges(..).top(false)` /
 `.bottom(false)`), cutting hard at the edge instead. The console's lanes fade
-at the top and cut hard at the bottom, where the status line's hairline or the
-console's edge already closes them. `SUBTAKE_GALLERY_LANES=130` shows the cut,
+at the top and cut hard at the bottom, where the console's edge already closes
+them. `SUBTAKE_GALLERY_LANES=130` shows the cut,
 and `SUBTAKE_GALLERY_HEIGHT=850` with `=panel-Frame` shows a panel's.
 
 A new recording opens on Apricot: a 135° peach-to-rose gradient
@@ -167,14 +173,11 @@ room only for "…" there. Not drawn by the design: the tooltip that gives every
 region its full name. `SUBTAKE_GALLERY_SCREEN=panel-Frame` has both kinds of
 region.
 
-The status line has no counterpart in the redesign, which puts progress on the
-thing that is progressing. It is carried because export and transcription still
-need somewhere to speak, and it lives inside the console, only while it has
-something to report. It is a footnote: 8 above its hairline, 8 below, and 8
-from the line to the console's bottom edge, in the small size; the console's
-bottom padding gives way to it and comes back as it folds. It grows in and folds away over 180ms, keeping its last
-words while it folds, so the stage above it eases rather than jumping.
-`SUBTAKE_GALLERY_SCREEN=status-cycle` brings it in and out on a timer.
+The console has no status row: the document's status is the title pill's
+chip. `SUBTAKE_GALLERY_SCREEN=status-cycle` swaps the chip between a running
+transcription and "Gallery mode" on a timer. With nothing open there is no
+title pill, so the empty state keeps a status line under the stage, growing in
+and folding away over 180ms. Not drawn by the design: that empty-state line.
 
 ## The empty state
 
@@ -247,9 +250,8 @@ the failure's headline, which is always "Export failed" because the reason
 comes from the encoder as one line and is shown under it rather than split.
 Not wired: queueing a second export — Export waits while one runs.
 
-The console's status line no longer speaks for export. Not drawn by the
-design: that line itself, kept for transcription and the other background
-jobs until toasts are drawn.
+The title pill's status chip does not speak for export; the export pill
+does.
 
 `SUBTAKE_GALLERY_SCREEN=export` (or `export-gif`, `export-frame`) opens the
 gallery on the panel, where Export runs a fake eight-second export;

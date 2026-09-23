@@ -15,6 +15,25 @@ pub fn status_dot(theme: Theme) -> Div {
         .bg(theme.accent)
 }
 
+/// The document's status, as a chip at the end of the title pill: a
+/// running job, an error, "Gallery mode". `sunk2` on the pill's `sunk`, in
+/// the small face at `muted`, so it is read after the title and never
+/// instead of it.
+pub fn status_chip(theme: Theme) -> Div {
+    div()
+        .flex()
+        .min_w_0()
+        .items_center()
+        .gap(px(Theme::GAP_SMALL))
+        .h(px(Theme::CHIP_HEIGHT))
+        .px(px(Theme::STATUS_CHIP_PADDING))
+        .rounded_full()
+        .bg(theme.sunk2)
+        .text_size(px(Theme::FONT_SMALL))
+        .text_color(theme.muted)
+        .whitespace_nowrap()
+}
+
 /// The quiet context strip that sits above a composer, a palette or a card
 /// and names what the surface is acting on: a trail of short labels, the
 /// last — where you are — in `text` and the rest muted, with a half-strength

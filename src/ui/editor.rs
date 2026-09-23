@@ -125,6 +125,7 @@ impl RootView {
             // window, which the system takes over mid-press, and there is
             // nothing for the keyboard to do with it.
             let title_hover = subtake_ui::motion::tween_key(&"title-drag".into(), "hover");
+            let status = self.status_chip(e);
             let title_pill = row()
                 .id("title-drag")
                 .on_hover(subtake_ui::motion::hover_listener(title_hover.clone()))
@@ -132,6 +133,9 @@ impl RootView {
                 .max_w(relative(Theme::TITLE_PILL_SHARE))
                 .h(px(Theme::TITLE_PILL_HEIGHT))
                 .px(px(Theme::CONTROL_PADDING_SMALL))
+                .when(status.is_some(), |el| {
+                    el.pr(px(Theme::TITLE_PILL_CHIP_PADDING))
+                })
                 .gap(px(Theme::GAP_SMALL))
                 .rounded_full()
                 // The handoff's dot is decoration. This one says
@@ -157,6 +161,7 @@ impl RootView {
                         })
                         .child(title)
                 })
+                .children(status)
                 .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move())
                 .child(measure(self.title_pill.clone()));
             // While an export runs or has just ended its pill takes the
@@ -343,11 +348,9 @@ impl RootView {
                     .children(e.get_has_video().then_some(rail))
                     .children(inspector),
             );
-        let divided = e.get_has_video();
-        let status = self.status_strip(e, divided, window);
-        if divided {
-            root = root.child(self.timeline(e, status, window, cx));
-        } else if let Some((status, _)) = status {
+        if e.get_has_video() {
+            root = root.child(self.timeline(e, window, cx));
+        } else if let Some(status) = self.status_strip(e, window) {
             root = root.child(div().px(px(Theme::GAP_LARGE)).child(status));
         }
         root.children(self.presets_dialog(e, window, cx))
@@ -355,26 +358,56 @@ impl RootView {
             .into_any_element()
     }
 
-    /// The transcription and background-job line, with how far it has
-    /// grown in. `None` when there is nothing to say, so the console keeps
-    /// the shell's own bottom margin instead of reserving a strip under it.
+    /// The document's status as a chip at the end of the title pill — a
+    /// running transcription, an error, "Gallery mode" — or `None` when
+    /// there is nothing to say. It replaced a status row at the foot of the
+    /// console and the hairline over it.
     ///
-    /// Not drawn by the design: the handoff has no status strip at all.
-    /// Export has left it for the titlebar pill; transcription, captions and
-    /// the other jobs still need somewhere to speak until the round that
-    /// draws toasts gives them one, so it stays, inside the console and only
-    /// while it has something to report.
+    /// Not drawn by the design: the job's Cancel and its progress. The
+    /// review's chip is a label; a running job still has to be stoppable,
+    /// so it carries a small X, and the percentage is already in the words.
+    /// The full status is its tooltip, since the pill's cap can cut it short.
+    fn status_chip(&self, e: &EditorWindow) -> Option<AnyElement> {
+        let theme = self.theme;
+        let text: SharedString = e.get_status().into();
+        if text.is_empty() && !e.get_busy() {
+            return None;
+        }
+        let tip = text.clone();
+        let surface = self.surface.clone();
+        Some(
+            status_chip(theme)
+                .id("document-status")
+                .tooltip(move |_, cx| tooltip(tip.clone(), theme, cx))
+                .child(div().min_w_0().text_ellipsis().child(text))
+                .when(e.get_busy(), |el| {
+                    el.child(
+                        div()
+                            .id("cancel-status")
+                            .flex_none()
+                            .cursor_pointer()
+                            .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                            .on_click(move |_, _, _| surface.action("cancel"))
+                            .child(subtake_ui::icon_sized(
+                                "X-regular",
+                                Theme::ICON_SIZE_SMALL,
+                                theme.muted,
+                            )),
+                    )
+                })
+                .into_any_element(),
+        )
+    }
+
+    /// The empty state's status line, with nothing open and so no title
+    /// pill to carry it, and how far it has grown in. `None` when there is
+    /// nothing to say.
     ///
-    /// It grows in and folds away rather than popping, which moved the
-    /// console's top edge and the whole stage above it in one frame. On the
-    /// way out it keeps showing what it last said. `divided` puts it under a
-    /// hairline, inside the console; without, it sits under the stage.
-    fn status_strip(
-        &mut self,
-        e: &EditorWindow,
-        divided: bool,
-        window: &mut Window,
-    ) -> Option<(AnyElement, f32)> {
+    /// Not drawn by the design: the handoff has no status line on the empty
+    /// state. Opening a file and failing to still need somewhere to speak.
+    /// It grows in and folds away rather than popping, and on the way out
+    /// keeps showing what it last said.
+    fn status_strip(&mut self, e: &EditorWindow, window: &mut Window) -> Option<AnyElement> {
         let theme = self.theme;
         let busy = e.get_busy();
         let text = e.get_status();
@@ -402,23 +435,16 @@ impl RootView {
         if busy {
             status = status.child(progress_bar(progress, theme));
         }
-        // The hairline and the gap above it fold with the line, so both sit
-        // inside what folds; the console holds the line in one box with the
-        // lanes, so no gap of its own is left standing when it has gone.
         let body = div()
             .relative()
             .flex()
             .flex_col()
             .flex_none()
-            // A footnote, not a section: a gap either side of its hairline,
-            // not the block gap a panel puts between groups.
-            .gap(px(Theme::GAP))
-            .when(divided, |el| el.pt(px(Theme::GAP)).child(divider(theme)))
-            .when(!divided, |el| el.pb(px(Theme::GAP)))
+            .pb(px(Theme::GAP))
             .child(status)
             .child(measure(self.status_bounds.clone()));
         let full = f32::from(self.status_bounds.get().size.height);
-        Some((
+        Some(
             div()
                 .flex()
                 .flex_col()
@@ -427,7 +453,6 @@ impl RootView {
                 .when(shown < 1., |el| el.h(px(full * shown)).opacity(shown))
                 .child(body)
                 .into_any_element(),
-            shown,
-        ))
+        )
     }
 }

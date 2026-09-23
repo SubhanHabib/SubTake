@@ -29,7 +29,7 @@ never name the file.
 | Panels | `panel.rs` | `Surface` — `Panel` (glass, holds controls), `Content` (card, holds text), `Pod` (glass, holds icons), `Card`, `Popup`, `Overlay` — plus each one's radius and blur, the caps labels and the dividers drawn on them. A float takes its blur by being wrapped in `frosted` at its own surface's radius and blur; `panel_variant` only paints the plate. |
 | Tiles | `tile.rs` | Colour swatches, captioned thumbnails, selection cards and the empty-state plane. |
 | Field rows | `field_row.rs` | The label/control row, the group card, the setting card and the tile grid. |
-| Status | `status.rs` | The unsaved dot, the progress rule, the context chip and the composer footer. |
+| Status | `status.rs` | The unsaved dot, the progress rule, the title pill's status chip, the context chip and the composer footer. |
 | Tooltips | `tooltip.rs` | A 28-tall `ink` pill. Only a control whose caption cannot be read gets one. |
 
 Shared, outside `controls/`: `layout.rs` (`row`, `column`, `measure`),
