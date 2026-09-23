@@ -75,7 +75,11 @@ impl RootView {
                         },
                         theme,
                     )
-                    .glyph("Pause-regular")
+                    .glyph(if e.get_recording_paused() {
+                        "Play-regular"
+                    } else {
+                        "Pause-regular"
+                    })
                     .on_click(self.command("pause-recording")),
                 );
             }

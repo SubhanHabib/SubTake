@@ -351,11 +351,11 @@ impl RootView {
                 .when(!enabled, |s| s.opacity(Theme::DISABLED_OPACITY))
                 .child(icon_sized("Play-fill", Theme::ICON_SIZE_POD, white()))
                 .child("Resume")
-                .on_click(self.command("pause-recording"))
+                .when(enabled, |s| s.on_click(self.command("pause-recording")))
                 .into_any_element()
         } else {
             self.bar_round("pause", "Pause-fill", "Pause", theme.text, true, enabled)
-                .on_click(self.command("pause-recording"))
+                .when(enabled, |s| s.on_click(self.command("pause-recording")))
                 .into_any_element()
         };
         // Pause and Resume fade in as they trade places.
@@ -372,7 +372,7 @@ impl RootView {
             .child(pause)
             .child(
                 self.bar_round("stop", "Stop-fill", "Stop", theme.text, true, enabled)
-                    .on_click(self.command("stop-recording")),
+                    .when(enabled, |s| s.on_click(self.command("stop-recording"))),
             )
             .child(div().flex_1())
             .child(self.bar_round(
@@ -416,7 +416,7 @@ impl RootView {
                     false,
                     enabled,
                 )
-                .on_click(self.command("discard-recording")),
+                .when(enabled, |s| s.on_click(self.command("discard-recording"))),
             )
     }
 
