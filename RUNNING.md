@@ -43,8 +43,11 @@ environment.
 ## Real-app walkthrough
 
 The walkthrough is the gallery tour on the real app. It records the built-in
-display, opens the take in the editor, visits every panel, adds a zoom, opens
-Presets and exports, then quits. It needs no clicks, so it can be filmed.
+display with a pause, opens the take in the editor and fills every lane: zooms,
+split clips, speed, trim, text, arrow and blur annotations, captions and a
+music bed. It moves and trims a region, undoes and redoes, zooms and pans the
+timeline and the picture, plays the edit back, visits every panel, crops,
+opens Presets and exports, then quits. It needs no clicks, so it can be filmed.
 
 ```sh
 SUBTAKE_WALKTHROUGH=light SUBTAKE_WALKTHROUGH_DIR="$PWD/test-output/walkthrough" python3 scripts/dev.py --once
@@ -53,11 +56,13 @@ SUBTAKE_WALKTHROUGH=light SUBTAKE_WALKTHROUGH_DIR="$PWD/test-output/walkthrough"
 Use `dark` for the dark appearance. The recording and `walkthrough-<theme>.mp4`
 land in the directory. The run prints `WALKTHROUGH_PASSED` with the export's
 size and length, or `WALKTHROUGH_FAILED` with the step and exits 1. It runs in
-about 110 seconds.
+about 165 seconds.
 
 The microphone and camera stay off, and settings and recovery are isolated, so
-your preferences are untouched. It fires the callbacks the controls fire;
-pointer hit testing is not exercised. Screen Recording permission is needed,
+your preferences are untouched. Scrolls and pinches go to the window as real
+input, through its hit testing; everything else fires the callbacks the
+controls fire, so clicks and drags are not hit tested. Screen Recording
+permission is needed,
 and the Mac must be unlocked: a locked screen records only the lock screen.
 
 ## Debug vs release

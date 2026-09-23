@@ -96,13 +96,27 @@ The native capture helper now uses an explicit selected-window inclusion filter 
 
 ## GPUI real-app walkthrough
 
-On 23 September 2026, the GPUI build passed `SUBTAKE_WALKTHROUGH` (see [RUNNING.md](../RUNNING.md)) in both appearances. The run went through launcher cards, countdown, a capture of the laptop's built-in display with pause and resume, stop and finalisation, the editor with playback, every inspector panel, visual crop, a zoom region, Presets and an export. Both exports probed at **3240 × 1820** and ran 9.4 s. The camera and microphone were off, and settings were isolated.
+On 23 September 2026, the GPUI build passed `SUBTAKE_WALKTHROUGH` (see [RUNNING.md](../RUNNING.md)) in both appearances. The run went through:
 
-The runs were filmed on the built-in display with the desktop behind the app, and other apps' windows were hidden. Input came from the controls' callbacks; pointer hit testing was not exercised.
+- The launcher cards and the countdown.
+- A capture of the laptop's built-in display, with a pause and a resume.
+- Stopping and finalisation.
+- The editor, with every lane filled: two zooms, a take split into three clips, speed and trim, text, arrow and blur annotations, three captions, and a generated music bed on a second audio lane.
+- A region moved and trimmed, then an undo and a redo.
+- The timeline zoomed to 537 % about the pointer, panned and fitted.
+- The picture pinched to 300 %, panned and fitted.
+- Playback of the whole edit, every inspector panel, visual crop, Presets and an export.
+
+Both exports probed at **3240 × 1820** and ran about 15.8 s. The camera and microphone were off, and settings were isolated.
+
+The runs were filmed on the built-in display with the desktop behind the app, and other apps' windows were hidden. Scrolls and pinches were dispatched to the window as platform input, so they went through its hit testing. Clicks and drags came from the controls' callbacks, so pointer hit testing for those was not exercised.
 
 A first attempt had matched sources by a "Built-in" name. Sources are named "Display N", so it recorded an external display instead, and that explained a 5414 × 3044 export. The walkthrough now asks CoreGraphics which display is built in.
 
-One issue is still open: the clip lane shows flat mint until its thumbnails load.
+Two issues are still open:
+
+- The clip lane shows flat mint until its thumbnails load.
+- Added music lands on a lane below the console's fold, so the run scrolls the lanes to show it.
 
 ## Repository root migration
 
