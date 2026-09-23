@@ -195,7 +195,11 @@ press on one seeks rather than selecting it. Not wired: dragging a new region
 from Add over the timeline to show its lane. Zoomed in, the lanes run on past
 the track column, out to the console's own edge on the right and under the
 headers on the left, as a region's pill runs under its plate; the ruler keeps
-to the track column. The headers blur what runs under them by 16.
+to the track column. The headers blur what runs under them by 16. A lane is
+cut at its header's centre, and what runs past it ends there in a round end
+the lane's height, inside the header's circle; its label and frames stay put
+rather than sliding along, a frame cropped at the cut, and its start has no
+trim handle while it is under the header.
 `SUBTAKE_GALLERY_SCREEN=timeline-zoomed` shows the timeline at 300%, 30
 seconds in. Not drawn by the design, whose lanes stop at the track column.
 
