@@ -206,13 +206,19 @@ impl RootView {
 /// A 60-tall `sunk` tile, ringed in accent when it is the chosen position.
 fn position_tile(index: usize, label: &str, chosen: bool, theme: Theme) -> Stateful<Div> {
     let radius = px(Theme::CAMERA_TILE_RADIUS);
+    let id = ElementId::from(SharedString::from(format!("camera-position-{index}")));
+    let hover_key = subtake_ui::motion::tween_key(&id, "hover");
     // Inside a frosted card an inset edge set on the tile would draw under
     // its own fill, so the ring and the hover wash are layers over it.
     let wash = div()
         .absolute()
         .inset_0()
         .rounded(radius)
-        .group_hover("position", |s| s.bg(theme.hover));
+        .bg(subtake_ui::motion::hover_blend(
+            &hover_key,
+            theme.hover.opacity(0.),
+            theme.hover,
+        ));
     let ring = div()
         .absolute()
         .inset_0()
@@ -223,8 +229,8 @@ fn position_tile(index: usize, label: &str, chosen: bool, theme: Theme) -> State
     // Palette churn: no `scale .98` under the press, since gpui has no
     // transform on an element; the wash goes to `press` instead.
     div()
-        .id(SharedString::from(format!("camera-position-{index}")))
-        .group("position")
+        .id(id)
+        .on_hover(subtake_ui::motion::hover_listener(hover_key))
         .relative()
         .h(px(Theme::CAMERA_TILE_HEIGHT))
         .rounded(radius)
