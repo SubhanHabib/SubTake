@@ -320,9 +320,16 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
         if runtime.0.handle.get().is_none() && runtime.is_visible() {
             let dimensions = runtime.0.size.get();
             let is_editor = runtime.0.kind == WindowKind::Editor;
+            // `SUBTAKE_DISPLAY=<id>` opens every window on that display
+            // instead of the main one, to check motion at other refresh rates.
+            let display = std::env::var("SUBTAKE_DISPLAY")
+                .ok()
+                .and_then(|id| id.parse::<u64>().ok())
+                .and_then(|id| cx.displays().into_iter().find(|d| u64::from(d.id()) == id))
+                .map(|d| d.id());
             let options = WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
+                    display,
                     size(px(dimensions.width), px(dimensions.height)),
                     cx,
                 ))),
@@ -362,6 +369,7 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 is_resizable: is_editor,
                 focus: runtime.0.kind != WindowKind::Countdown,
                 show: true,
+                display_id: display,
                 ..Default::default()
             };
             let rt = runtime.clone();
