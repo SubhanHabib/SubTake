@@ -13,8 +13,8 @@
 //! is structural: blur first, then shadow, tint, border, rows, text.
 
 use gpui::{
-    AnyElement, App, Bounds, Corners, EdgeFade, Element, GlobalElementId, InspectorElementId,
-    IntoElement, LayoutId, Pixels, ScrollHandle, Window, px,
+    AnyElement, App, Bounds, Corners, EdgeFade, Element, GlobalElementId, Hsla, InspectorElementId,
+    IntoElement, LayoutId, Pixels, ScrollHandle, Window, fill, point, px, size,
 };
 
 use subtake_theme::Theme;
@@ -222,6 +222,7 @@ pub fn fade_edges(child: impl IntoElement) -> FadeEdges {
     FadeEdges {
         band: FADE_BAND,
         scroll: None,
+        thumb: None,
         child: child.into_any_element(),
     }
 }
@@ -229,6 +230,7 @@ pub fn fade_edges(child: impl IntoElement) -> FadeEdges {
 pub struct FadeEdges {
     band: f32,
     scroll: Option<ScrollHandle>,
+    thumb: Option<(Hsla, f32)>,
     child: AnyElement,
 }
 
@@ -243,6 +245,15 @@ impl FadeEdges {
     /// `handle` must be the one the scrolled child tracks.
     pub fn tracking(mut self, handle: &ScrollHandle) -> Self {
         self.scroll = Some(handle.clone());
+        self
+    }
+
+    /// With [`tracking`](Self::tracking), a thumb in `color` while there is
+    /// more than fits, centred in the `gutter` of padding to the region's
+    /// right. Not wired: it only shows where the view is — it cannot be
+    /// dragged.
+    pub fn thumb(mut self, color: Hsla, gutter: f32) -> Self {
+        self.thumb = Some((color, gutter));
         self
     }
 }
@@ -314,6 +325,28 @@ impl Element for FadeEdges {
             right: false,
         });
         window.with_edge_fade(fade, |window| self.child.paint(window, cx));
+        if let (Some((color, gutter)), Some(handle)) = (self.thumb, &self.scroll) {
+            let extent = f32::from(handle.max_offset().y);
+            if extent > 0.5 {
+                let view = f32::from(bounds.size.height);
+                let track = view - 2. * Theme::SCROLL_THUMB_INSET;
+                let length = (track * view / (view + extent))
+                    .max(Theme::SCROLL_THUMB_MIN)
+                    .min(track);
+                let along = (above / extent).clamp(0., 1.);
+                let origin = point(
+                    bounds.right() + px((gutter - Theme::SCROLL_THUMB_WIDTH) / 2.),
+                    bounds.top() + px(Theme::SCROLL_THUMB_INSET + (track - length) * along),
+                );
+                window.paint_quad(
+                    fill(
+                        Bounds::new(origin, size(px(Theme::SCROLL_THUMB_WIDTH), px(length))),
+                        color,
+                    )
+                    .corner_radii(px(Theme::SCROLL_THUMB_WIDTH / 2.)),
+                );
+            }
+        }
     }
 }
 

@@ -91,6 +91,13 @@ does not time. Scene and Background take a close while folded, since there
 closing has somewhere to go. `SUBTAKE_GALLERY_WIDTH=1100` shows the folded
 editor in the gallery, and `=inspector-open` the inspector slid in.
 
+A panel with more rows than the float has room for scrolls, its cut edge fading
+by as much as is hidden past it. Not drawn by the design: a 4-wide round thumb
+in the panel's right padding while it has more than fits, so the fade reads as
+"more below" and not as the end (`SCROLL_THUMB_*`). Not wired: dragging it —
+it only shows where the view is. `SUBTAKE_GALLERY_SCREEN=export` shows one at
+the gallery's size.
+
 Below the stage the console, inset 24 on all three of its edges. Its first row
 is the transport: SkipBack, Play on `ink`, SkipForward, the timecode in Geist
 Mono, then Suggest zooms / Split / Add as raised buttons, then snap, fit and

@@ -979,7 +979,8 @@ impl RootView {
                         .child(content),
                 )
                 .band(Theme::SCROLL_FADE_BAND)
-                .tracking(&scroll),
+                .tracking(&scroll)
+                .thumb(theme.muted.opacity(0.5), Theme::PANEL_PADDING),
             );
         // Without a footer the band is the bottom edge, and the rest of the
         // panel's padding makes it up to the sides'.

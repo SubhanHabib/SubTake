@@ -504,6 +504,14 @@ impl Theme {
     /// on, and it is long enough that a row cut by the edge dissolves rather
     /// than showing as a faded copy of itself.
     pub const SCROLL_FADE_BAND: f32 = 32.0;
+    /// The thumb a scroller that knows its extent shows while it has more
+    /// than fits: thin and round-ended, macOS's overlay thumb at rest, so a
+    /// row the fade dissolves reads as "more below" rather than as the end.
+    pub const SCROLL_THUMB_WIDTH: f32 = 4.0;
+    /// The thumb's shortest, so a long panel still shows one worth seeing.
+    pub const SCROLL_THUMB_MIN: f32 = 24.0;
+    /// How far the thumb's track stops short of the region's top and bottom.
+    pub const SCROLL_THUMB_INSET: f32 = 6.0;
 
     /// The lane region's height: the stack the handoff draws — a ruler, the
     /// source lane and five lanes — plus the fade band the scroller rests on.
