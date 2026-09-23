@@ -465,8 +465,14 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
             dropdown(
                 "cursorStyle",
                 "Style",
-                &[("arrow", "Arrow"), ("hand", "Hand"), ("dot", "Dot")],
-                "arrow",
+                &[
+                    ("tahoe", "macOS Tahoe"),
+                    ("macos", "macOS"),
+                    ("windows11", "Windows 11"),
+                    ("dot", "Dot"),
+                    ("figma", "Figma"),
+                ],
+                "tahoe",
             ),
             dropdown(
                 "cursorClickEffect",
