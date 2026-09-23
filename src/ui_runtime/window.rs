@@ -465,7 +465,16 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 let resizing = runtime.0.resize.replace(false);
                 if resizing {
                     let s = runtime.0.size.get();
-                    window.resize(size(px(s.width), px(s.height)));
+                    match runtime.native_view() {
+                        Some(view) if runtime.0.kind == WindowKind::Options => unsafe {
+                            crate::platform::ui_resize_launcher_options(
+                                view,
+                                s.width.into(),
+                                s.height.into(),
+                            );
+                        },
+                        _ => window.resize(size(px(s.width), px(s.height))),
+                    }
                 }
                 if !resizing {
                     let dimensions = window.viewport_size();

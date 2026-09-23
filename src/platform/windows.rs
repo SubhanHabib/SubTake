@@ -200,6 +200,7 @@ ui_window_operation!(ui_window_make_key, subtake_window_make_key);
 ui_window_operation!(ui_window_minimize, subtake_window_minimize, minimized: bool);
 ui_window_operation!(ui_window_set_transparent, subtake_window_set_transparent, transparent: bool);
 ui_window_operation!(ui_window_set_blur, subtake_window_set_blur, enabled: bool);
+ui_window_operation!(ui_resize_launcher_options, subtake_resize_launcher_options, width: f64, height: f64);
 
 /// Main-thread callback: borrowed NSView identity, logical content top-left x/y,
 /// incremental native magnification (positive = expand), raw NSEventPhase bits.
@@ -346,6 +347,11 @@ unsafe extern "C" {
     pub(super) fn subtake_window_minimize(view: *mut std::ffi::c_void, minimized: bool);
     pub(super) fn subtake_window_set_transparent(view: *mut std::ffi::c_void, transparent: bool);
     pub(super) fn subtake_window_set_blur(view: *mut std::ffi::c_void, enabled: bool);
+    pub(super) fn subtake_resize_launcher_options(
+        view: *mut std::ffi::c_void,
+        width: f64,
+        height: f64,
+    );
     pub(super) fn subtake_window_get_position(
         view: *mut std::ffi::c_void,
         x: *mut f64,

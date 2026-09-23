@@ -177,8 +177,8 @@ void subtake_set_countdown_display(uint32_t display) {
 // on the bar.
 static CGFloat subtake_options_anchor = -1;
 
-static NSPoint subtake_options_origin(NSWindow *options, NSWindow *launcher) {
-    NSRect bar = launcher.frame, menu = options.frame;
+static NSPoint subtake_options_origin_for(NSSize size, NSWindow *launcher) {
+    NSRect bar = launcher.frame, menu = {NSZeroPoint, size};
     NSRect screen = (launcher.screen ?: NSScreen.mainScreen).visibleFrame;
     CGFloat y = NSMaxY(bar) + 14;
     if (y + menu.size.height > NSMaxY(screen)) y = NSMinY(bar) - menu.size.height - 14;
@@ -192,6 +192,10 @@ static NSPoint subtake_options_origin(NSWindow *options, NSWindow *launcher) {
     }
     x = MAX(NSMinX(screen), MIN(x, NSMaxX(screen) - menu.size.width));
     return NSMakePoint(x, y);
+}
+
+static NSPoint subtake_options_origin(NSWindow *options, NSWindow *launcher) {
+    return subtake_options_origin_for(options.frame.size, launcher);
 }
 
 static void subtake_place_options_above_launcher(NSWindow *options, NSWindow *launcher) {
@@ -208,6 +212,28 @@ void subtake_set_launcher_options_anchor(double anchor) {
     if (subtake_follow_options && subtake_follow_options.parentWindow == subtake_follow_launcher) {
         subtake_place_options_above_launcher(subtake_follow_options, subtake_follow_launcher);
     }
+}
+
+// The card's window changes size in one move that also puts it back above
+// the bar. Sized the usual way, AppKit keeps its top edge where it was and
+// the card is only put back a frame later — under Reduce motion, the one
+// move there is, that shows as the card jumping down and back.
+void subtake_resize_launcher_options(void *rawOptionsView, double width, double height) {
+    __weak NSWindow *weakOptions = ((__bridge NSView *)rawOptionsView).window;
+    // Outside the caller's GPUI update: the resize calls back into GPUI.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSWindow *options = weakOptions;
+        if (!options) return;
+        NSRect was = options.frame;
+        NSRect frame = [options frameRectForContentRect:NSMakeRect(0, 0, width, height)];
+        if (options == subtake_follow_options && options.parentWindow == subtake_follow_launcher) {
+            frame.origin = subtake_options_origin_for(frame.size, subtake_follow_launcher);
+        } else {
+            frame.origin = NSMakePoint(NSMinX(was), NSMaxY(was) - frame.size.height);
+        }
+        if (NSEqualRects(frame, was)) return;
+        [options setFrame:frame display:NO];
+    });
 }
 
 void subtake_position_launcher_options(void *rawOptionsView, void *rawLauncherView) {
