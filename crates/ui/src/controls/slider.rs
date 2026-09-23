@@ -7,8 +7,9 @@ use subtake_theme::Theme;
 use crate::{focus_ring, icon, measure, motion};
 
 /// A filled slider that *is* the row: glyph and label on the left, the level
-/// painted as a fill across the whole 40px plate, a hairline at the fill edge,
-/// and the value shown in place on the right.
+/// painted as a flat fill from the left end of the 44px plate, and the value
+/// shown in place on the right. A thumb marks the fill edge only while the
+/// pointer is over the row or holding it.
 pub struct Slider {
     pub value: f32,
     pub minimum: f32,
@@ -176,51 +177,56 @@ impl Render for Slider {
                 cx.notify();
             }))
             .child(measure(self.bounds.clone()))
-            // The level, painted across the plate rather than on a rail.
-            .child(
+            // The level, painted across the plate rather than on a rail: full
+            // height, left-anchored, square at its right edge and rounded
+            // only where the track is. gpui clips to rectangles, so the fill
+            // is a track-sized pill cut to the level's width rather than a
+            // shape of its own — at a low level that leaves a sliver of the
+            // track's left end, not a blob that reads as a knob.
+            .when(fraction > 0., |el| {
+                el.child(
+                    div()
+                        .absolute()
+                        .top_0()
+                        .bottom_0()
+                        .left_0()
+                        .w(relative(fraction))
+                        .overflow_hidden()
+                        .child(
+                            div()
+                                .absolute()
+                                .top_0()
+                                .bottom_0()
+                                .left_0()
+                                .w(relative(1. / fraction))
+                                .rounded_full()
+                                .bg(theme.slider_fill),
+                        ),
+                )
+            })
+            // The thumb: a short bar centred on the fill edge, `muted` under
+            // the pointer and taller in `text` while held. At rest there is
+            // nothing on the edge, so no line ever crosses the label.
+            .child({
+                let inset = if self.dragging {
+                    Theme::SLIDER_THUMB_INSET_HELD
+                } else {
+                    Theme::SLIDER_THUMB_INSET
+                };
                 div()
                     .absolute()
-                    .top(px(Theme::SLIDER_FILL_INSET))
-                    .left(px(Theme::SLIDER_FILL_INSET))
-                    .h(px(
-                        Theme::CONTROL_HEIGHT_LARGE - 2.0 * Theme::SLIDER_FILL_INSET
-                    ))
-                    .w(relative(fraction))
-                    .rounded_full()
-                    // Three fills, one per state, as the Slider row card
-                    // gives them: `sunk2` at rest, `press` under the pointer,
-                    // `accent_soft` while the user is actually dragging it —
-                    // the level is the primary action for as long as a hand
-                    // is on it, and nothing else in the row may say so.
-                    .map(|el| {
-                        if self.dragging {
-                            el.bg(theme.accent_soft)
-                        } else {
-                            el.bg(motion::hover_blend(
-                                &hover_key,
-                                theme.slider_fill(),
-                                theme.press,
-                            ))
-                        }
-                    }),
-            )
-            // Hairline at the fill edge so the exact level stays readable.
-            //
-            // Not drawn by the design: the card gives the fill and nothing
-            // marking where it ends. `sunk2` over `sunk` is a two-percent
-            // step in lightness, and at a low level the fill was invisible —
-            // the row read as an empty plate. Kept deliberately.
-            .child(
-                div()
-                    .absolute()
-                    .top(px(Theme::GAP_LARGE))
+                    .top(px(inset))
+                    .bottom(px(inset))
                     .left(relative(fraction))
-                    .ml(px(-Theme::BORDER_WIDTH))
-                    .w(px(Theme::BORDER_WIDTH * 2.0))
-                    .h(px(Theme::CONTROL_HEIGHT_LARGE - Theme::GAP_LARGE * 2.0))
+                    .ml(px(-Theme::SLIDER_THUMB_WIDTH / 2.))
+                    .w(px(Theme::SLIDER_THUMB_WIDTH))
                     .rounded_full()
-                    .bg(theme.slider_marker()),
-            )
+                    .bg(if self.dragging {
+                        theme.text
+                    } else {
+                        motion::hover_blend(&hover_key, theme.muted.opacity(0.), theme.muted)
+                    })
+            })
             .child(
                 div()
                     .absolute()

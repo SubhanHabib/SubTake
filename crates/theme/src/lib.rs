@@ -122,18 +122,6 @@ impl Theme {
     }
     // ---- derived ---------------------------------------------------------
 
-    /// The fill painted over a filled slider's plate: the recess one step up
-    /// the fill scale, so the level reads without the row becoming a
-    /// coloured control.
-    pub fn slider_fill(&self) -> Hsla {
-        self.sunk2
-    }
-
-    /// The hairline marking the fill edge in a scrub field.
-    pub fn slider_marker(&self) -> Hsla {
-        self.muted.opacity(0.6)
-    }
-
     pub fn slider_focus(&self) -> Hsla {
         self.accent_soft
     }

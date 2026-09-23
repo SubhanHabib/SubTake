@@ -300,9 +300,11 @@ impl Theme {
     pub const PLAYHEAD_DOT: f32 = 16.0;
     pub const PLAYHEAD_RING: f32 = 4.0;
 
-    /// The filled slider's fill is inset by a hair so the plate's radius still
-    /// reads at the edges.
-    pub const SLIDER_FILL_INSET: f32 = 1.0;
+    /// A slider row's thumb: a 4 × 20 bar on the fill edge under the pointer,
+    /// taller — inset 10 rather than 12 — while it is held.
+    pub const SLIDER_THUMB_WIDTH: f32 = 4.0;
+    pub const SLIDER_THUMB_INSET: f32 = 12.0;
+    pub const SLIDER_THUMB_INSET_HELD: f32 = 10.0;
 
     /// Value input inside a scrub field.
     pub const SCRUB_VALUE_WIDTH: f32 = 70.0;
