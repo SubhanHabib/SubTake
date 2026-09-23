@@ -21,7 +21,8 @@
 //! nothing selected (clicking any region opens it too); `=cursor` and
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
-//! opens that recorder card; `=panel-<name>` opens any other panel by its
+//! opens that recorder card (`=card-sources-busy` with its controls off);
+//! `=panel-<name>` opens any other panel by its
 //! model name (`=panel-Preferences`); `=inspector-open` slides the folded
 //! inspector in, with `SUBTAKE_GALLERY_WIDTH=1100` (any width under 1280)
 //! folding it, and `SUBTAKE_GALLERY_HEIGHT` sets the height the same way
@@ -190,13 +191,17 @@ pub fn run() -> Result<()> {
             editor.set_panel("Export".into());
         }
         // A recorder card open over the bar: `card-sources`, `card-audio`,
-        // `card-camera`, `card-countdown` or `card-more`.
+        // `card-camera`, `card-countdown` or `card-more`. A `-busy` suffix
+        // (`card-sources-busy`) holds the card mid-change, its controls off.
         Ok(screen) if screen.starts_with("card-") => {
-            let panel = screen.trim_start_matches("card-").to_owned();
+            let panel = screen.trim_start_matches("card-");
+            let busy = panel.ends_with("-busy");
+            let panel = panel.trim_end_matches("-busy").to_owned();
             let g = gallery.clone();
             Timer::single_shot(Duration::from_millis(400), move || {
                 let g = g.borrow();
                 show_recorder(&g.launcher, &g.options);
+                g.options.set_busy(busy);
                 g.launcher.set_panel(panel.clone().into());
                 g.options.set_panel(panel.into());
                 g.position_options();
