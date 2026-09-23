@@ -20,6 +20,7 @@ impl RootView {
         // Closing, the card keeps what it last showed while it folds away.
         let open = !state.get_panel().is_empty();
         let fresh = open && self.card_last.1 != state.window().opens();
+        let swapped = open && !fresh && self.card_last.0 != state.get_panel();
         if open {
             self.card_last = (state.get_panel(), state.window().opens());
         }
@@ -65,7 +66,7 @@ impl RootView {
         // card around it eases to that height from the bar's side up, so a
         // swap to a taller or shorter card grows or shrinks rather than
         // jumping.
-        let height = self.card_height(state, open, fresh, window);
+        let height = self.card_height(state, open, fresh, swapped, window);
         let from = self.card_ease.map_or(height, |ease| ease.0);
         let fade = if open || from <= 0. {
             1.
@@ -88,7 +89,7 @@ impl RootView {
                     .left_0()
                     .right_0()
                     .p(px(Theme::PANEL_PADDING))
-                    .opacity(fade)
+                    .opacity(if self.card_swap.is_some() { 0. } else { fade })
                     .child(fade_in(
                         SharedString::from(format!("options-{name}-{}", self.card_last.1)),
                         content,
@@ -107,6 +108,7 @@ impl RootView {
         state: &RecordingOptions,
         open: bool,
         fresh: bool,
+        swapped: bool,
         window: &mut Window,
     ) -> f32 {
         let natural = state.get_options_height();
@@ -117,6 +119,7 @@ impl RootView {
         };
         let at = |ease| at_time(now, ease);
         let still = subtake_ui::motion::reduced_motion();
+        let before = self.card_ease.map(at);
         let ease = match self.card_ease {
             _ if still => (target, target, now, CARD_RESIZE_MS),
             _ if fresh => (0., target, now, CARD_OPEN_MS),
@@ -143,6 +146,25 @@ impl RootView {
                 window.request_animation_frame();
             } else {
                 self.card_unfit = false;
+            }
+        }
+        // The same under Reduce motion when one card replaces another: the
+        // new card's rows are measured a frame after they are drawn, so for
+        // that frame they would sit in the old card's plate. The plate holds
+        // its old height with nothing in it until the new card is measured
+        // and the window fits it.
+        if !(still && open) {
+            self.card_swap = None;
+        } else if swapped && let Some(old) = before {
+            self.card_swap = Some((old, false));
+        }
+        if let Some((old, measured)) = self.card_swap {
+            if !measured || f32::from(window.viewport_size().height) + 0.5 < height {
+                self.card_swap = Some((old, true));
+                height = old;
+                window.request_animation_frame();
+            } else {
+                self.card_swap = None;
             }
         }
         if !open && height == 0. {

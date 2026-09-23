@@ -260,6 +260,9 @@ pub struct RootView {
     /// Under Reduce motion, a card just opened whose window has yet to grow
     /// to fit it.
     card_unfit: bool,
+    /// Under Reduce motion, the height of a card just replaced by another,
+    /// held empty until the new one is measured (the flag) and fits.
+    card_swap: Option<(f32, bool)>,
     /// The card last open, which a closing card keeps drawing as it folds
     /// away, and the window's `opens` it was opened under.
     card_last: (String, u32),
@@ -323,6 +326,7 @@ impl RootView {
             inspector_slide: None,
             card_ease: None,
             card_unfit: false,
+            card_swap: None,
             card_last: (String::new(), 0),
             status_slide: None,
             status_kept: (SharedString::default(), false, 0.),
