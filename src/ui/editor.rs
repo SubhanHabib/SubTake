@@ -120,8 +120,14 @@ impl RootView {
             //
             // The strip itself takes no pointer events — only the pill has a
             // listener — so the buttons underneath it stay clickable.
+            // Not drawn by the design: the pill's hover, which says it can
+            // be grabbed. It takes no press and no focus: it only moves the
+            // window, which the system takes over mid-press, and there is
+            // nothing for the keyboard to do with it.
+            let title_hover = subtake_ui::motion::tween_key(&"title-drag".into(), "hover");
             let title_pill = row()
                 .id("title-drag")
+                .on_hover(subtake_ui::motion::hover_listener(title_hover.clone()))
                 .relative()
                 .max_w(relative(Theme::TITLE_PILL_SHARE))
                 .h(px(Theme::TITLE_PILL_HEIGHT))
@@ -178,7 +184,13 @@ impl RootView {
                 Some(pill) if shown >= 1. => {
                     pill.w(px(export_width)).bg(theme.sunk).into_any_element()
                 }
-                None if shown <= 0. => title_pill.bg(theme.sunk).into_any_element(),
+                None if shown <= 0. => title_pill
+                    .bg(subtake_ui::motion::hover_blend(
+                        &title_hover,
+                        theme.sunk,
+                        theme.sunk2,
+                    ))
+                    .into_any_element(),
                 export => {
                     let title_width = f32::from(self.title_pill.get().size.width);
                     // The title holds the first half whichever way it runs;
