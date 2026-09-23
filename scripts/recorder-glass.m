@@ -71,6 +71,7 @@
 @end
 
 static char glassKey;
+static char glassDarkKey;
 static char blurKey;
 
 void subtake_window_set_blur(void *pointer, bool enabled) {
@@ -96,6 +97,22 @@ void subtake_window_set_blur(void *pointer, bool enabled) {
     // and GPUI's rendered background are controlled independently by the caller.
     blur.frame = view.frame;
 }
+// The material follows the app's theme, not the system's: a dark card over
+// the light-mode frost reads washed out, and a light one over dark frost
+// reads grey.
+static NSAppearance *subtake_recorder_glass_appearance(NSView *gpuiView) {
+    BOOL dark = [objc_getAssociatedObject(gpuiView, &glassDarkKey) boolValue];
+    return [NSAppearance appearanceNamed:dark ? NSAppearanceNameDarkAqua : NSAppearanceNameAqua];
+}
+void subtake_set_recorder_glass_dark(void *pointer, bool dark) {
+    NSCAssert([NSThread isMainThread], @"Recorder material must run on the UI thread");
+    NSView *gpuiView = (__bridge NSView *)pointer;
+    NSNumber *was = objc_getAssociatedObject(gpuiView, &glassDarkKey);
+    if (was && was.boolValue == dark) return;
+    objc_setAssociatedObject(gpuiView, &glassDarkKey, @(dark), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    SubTakeRecorderGlass *glass = objc_getAssociatedObject(gpuiView, &glassKey);
+    glass.appearance = subtake_recorder_glass_appearance(gpuiView);
+}
 void subtake_update_recorder_glass(void *pointer, double radius) {
     NSCAssert([NSThread isMainThread], @"Recorder material must run on the UI thread");
     NSView *gpuiView = (__bridge NSView *)pointer;
@@ -116,6 +133,7 @@ void subtake_update_recorder_glass(void *pointer, double radius) {
         glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
         glass.state = NSVisualEffectStateActive;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+        glass.appearance = subtake_recorder_glass_appearance(gpuiView);
         // Preserve GPUI's content view and responder identity.
         [parent addSubview:glass positioned:NSWindowBelow relativeTo:gpuiView];
         objc_setAssociatedObject(gpuiView, &glassKey, glass, OBJC_ASSOCIATION_RETAIN_NONATOMIC);

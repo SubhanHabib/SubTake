@@ -406,8 +406,25 @@ pub fn set_recorder_glass_height(window: &crate::ui_runtime::Window, height: f32
     let _ = (window, height);
 }
 
+/// Tint a recorder window's material for a dark or a light theme, whatever
+/// the system's own appearance.
+pub fn set_recorder_glass_dark(window: &crate::ui_runtime::Window, dark: bool) {
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(view) = native_view(window) {
+            unsafe {
+                subtake_set_recorder_glass_dark(view, dark);
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, dark);
+}
+
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
+    pub(super) fn subtake_set_recorder_glass_dark(view: *mut std::ffi::c_void, dark: bool);
     pub(super) fn subtake_update_recorder_glass(view: *mut std::ffi::c_void, radius: f64);
     pub(super) fn subtake_set_recorder_glass_height(view: *mut std::ffi::c_void, height: f64);
 }

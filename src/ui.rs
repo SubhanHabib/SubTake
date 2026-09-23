@@ -433,6 +433,14 @@ impl Render for RootView {
         // baseline, so `px(11.0)` resolves to 11px here.
 
         let surface = self.surface.clone();
+        let recorder = match &surface {
+            Surface::Launcher(s) => Some(s.window()),
+            Surface::Options(s) => Some(s.window()),
+            _ => None,
+        };
+        if let Some(recorder) = recorder {
+            crate::platform::set_recorder_glass_dark(recorder, self.theme.appearance.is_dark());
+        }
         let content = match &surface {
             Surface::Editor(e) => self.editor(e, window, cx),
             Surface::Launcher(s) => self.launcher(s),
