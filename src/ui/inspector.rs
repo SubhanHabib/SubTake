@@ -983,21 +983,26 @@ impl RootView {
                         .min_h_0()
                         .overflow_y_scroll()
                         .track_scroll(&scroll)
-                        .py(px(Theme::GAP_LARGE))
+                        .pt(px(Theme::GAP_LARGE))
+                        .pb(px(if has_footer {
+                            Theme::GAP_LARGE
+                        } else {
+                            Theme::PANEL_PADDING
+                        }))
                         .child(content),
                 )
                 .band(Theme::SCROLL_FADE_BAND)
                 .tracking(&scroll)
+                .bottom(has_footer)
                 .thumb(theme.muted.opacity(0.5), Theme::PANEL_PADDING),
             );
-        // Without a footer the band is the bottom edge, and the rest of the
-        // panel's padding makes it up to the sides'.
-        let bottom = if has_footer {
+        // Without a footer the scroll region runs to the glass's bottom edge
+        // and cuts there, unfaded: the edge of the card is the clip line, and
+        // the content's own padding keeps the last row the panel's padding
+        // clear of it at rest. Above a footer it still fades into the footer.
+        if has_footer {
             body = body.child(footer.pb(px(Theme::PANEL_PADDING)));
-            0.
-        } else {
-            Theme::PANEL_PADDING - Theme::GAP_LARGE
-        };
+        }
         // A newly picked panel fades in and rises into place; the card
         // around it stays put. Keyed by the panel, so each pick starts over.
         // Into a sub-panel it slides in from the right instead, and back out
@@ -1030,7 +1035,6 @@ impl RootView {
             .gap_0()
             .size_full()
             .min_h_0()
-            .pb(px(bottom))
             .child(body.with_animation(
                 SharedString::from(format!("panel-enter-{name}")),
                 enter,

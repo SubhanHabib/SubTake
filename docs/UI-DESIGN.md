@@ -108,8 +108,9 @@ are fixed. Not wired: remembering the sizes between launches.
 `SUBTAKE_GALLERY_LANES=100 SUBTAKE_GALLERY_INSPECTOR=460` starts the gallery
 resized, and `SUBTAKE_HOVER_PIN=resize` shows the grips.
 
-A panel with more rows than the float has room for scrolls, its cut edge fading
-by as much as is hidden past it. Not drawn by the design: a 4-wide round thumb
+A panel with more rows than the float has room for scrolls. Its top fades by as
+much as is hidden past it; its bottom runs to the glass's edge and cuts there,
+unfaded, unless a footer closes the panel, when it fades into the footer. Not drawn by the design: a 4-wide round thumb
 in the panel's right padding while it has more than fits, so the fade reads as
 "more below" and not as the end (`SCROLL_THUMB_*`). Not wired: dragging it —
 it only shows where the view is. `SUBTAKE_GALLERY_SCREEN=export` shows one at
@@ -118,7 +119,8 @@ the gallery's size.
 Each edge's fade can be turned off (`fade_edges(..).top(false)` /
 `.bottom(false)`), cutting hard at the edge instead. The console's lanes fade
 at the top and cut hard at the bottom, where the status line's hairline or the
-console's edge already closes them. `SUBTAKE_GALLERY_LANES=130` shows the cut.
+console's edge already closes them. `SUBTAKE_GALLERY_LANES=130` shows the cut,
+and `SUBTAKE_GALLERY_HEIGHT=850` with `=panel-Frame` shows a panel's.
 
 A new recording opens on Apricot: a 135° peach-to-rose gradient
 (`#f7dcc2`, `#eda88f`, `#d27b86`), padding 56, radius 4 and shadow 50%. The
