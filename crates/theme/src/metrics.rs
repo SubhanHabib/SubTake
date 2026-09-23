@@ -616,3 +616,9 @@ pub const PAUSED_CLOCK_OPACITY: f32 = 0.6;
 pub const DIALOG_IN_MS: u64 = 200;
 pub const DIALOG_OUT_MS: u64 = 140;
 pub const DIALOG_RISE: f32 = 12.0;
+/// A finished export's tick draws itself on left to right over the first
+/// time, while its label fades in; the pill swells a soft accent glow out
+/// to the spread below and back over the second.
+pub const EXPORT_DONE_TICK_MS: u64 = 300;
+pub const EXPORT_DONE_GLOW_MS: u64 = 500;
+pub const EXPORT_DONE_GLOW: f32 = 6.0;

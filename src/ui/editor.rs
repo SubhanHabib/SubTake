@@ -40,7 +40,7 @@ impl RootView {
             // handoff draws it filling a titlebar of its own, so it stands in
             // for the document pill while it shows, centred on the window as
             // the document is and narrowed where the buttons would meet it.
-            let export = self.export_pill(e, cx);
+            let export = self.export_pill(e, window, cx);
             header = header.child(div().flex_1());
             let mut cluster = row()
                 .relative()

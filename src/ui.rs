@@ -15,9 +15,10 @@ use std::{
 };
 use subtake_theme::{
     BAR_SWAP_MS, CARD_CLOSE_MS, CARD_OPEN_MS, CARD_RESIZE_MS, DIALOG_IN_MS, DIALOG_OUT_MS,
-    DIALOG_RISE, FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS,
-    PANEL_DRILL_SHIFT, PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PAUSED_CLOCK_OPACITY,
-    PILL_MORPH_MS, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
+    DIALOG_RISE, EXPORT_DONE_GLOW, EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS, FONT_SANS,
+    INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT,
+    PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PAUSED_CLOCK_OPACITY, PILL_MORPH_MS,
+    STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
@@ -241,6 +242,8 @@ pub struct RootView {
     /// A finished export's auto-dismiss, held from when its pill first
     /// shows until it goes; stopped, not dropped, once hovered.
     export_dismiss: Option<crate::ui_runtime::Timer>,
+    /// When the export pill turned to done, for its tick and glow.
+    export_done: Option<Instant>,
     /// Each inspector panel's scroll position, so its edges fade by how much
     /// of it is scrolled out of sight.
     inspector_scroll: HashMap<String, ScrollHandle>,
@@ -304,6 +307,7 @@ impl RootView {
             presets_slide: Some((false, 0., Instant::now())),
             mic_clipped: None,
             export_dismiss: None,
+            export_done: None,
             inspector_scroll: HashMap::new(),
             panel_drill: (String::new(), 0.),
             inspector_slide: None,

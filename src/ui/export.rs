@@ -196,6 +196,7 @@ impl RootView {
     pub(super) fn export_pill(
         &mut self,
         e: &EditorWindow,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Option<Stateful<Div>> {
         let theme = self.theme;
@@ -204,7 +205,9 @@ impl RootView {
         // over it: once looked at, it waits to be dismissed.
         if state != "done" {
             self.export_dismiss = None;
+            self.export_done = None;
         } else if self.export_dismiss.is_none() {
+            self.export_done = Some(std::time::Instant::now());
             let timer = crate::ui_runtime::Timer::default();
             let editor = e.clone();
             timer.start(
@@ -284,25 +287,61 @@ impl RootView {
                         .small()
                         .on_click(self.command("cancel-export")),
                 ),
-            "done" => pill
-                .on_hover(cx.listener(|s, hovered: &bool, _, _| {
+            "done" => {
+                // The moment it lands: the tick draws itself on, the label
+                // fades in, and the pill gives one soft accent pulse.
+                let since = self
+                    .export_done
+                    .filter(|_| !subtake_ui::motion::reduced_motion())
+                    .map_or(f32::INFINITY, |at| at.elapsed().as_secs_f32() * 1000.);
+                let tick = (since / EXPORT_DONE_TICK_MS as f32).min(1.);
+                let glow = (since / EXPORT_DONE_GLOW_MS as f32).min(1.);
+                if glow < 1. {
+                    window.request_animation_frame();
+                }
+                let tick = subtake_ui::motion::EASE_OUT.eval(tick);
+                let swell = (glow * std::f32::consts::PI).sin();
+                pill.on_hover(cx.listener(|s, hovered: &bool, _, _| {
                     if *hovered && let Some(timer) = &s.export_dismiss {
                         timer.stop();
                     }
                 }))
-                .child(icon_sized(
-                    "Check-regular",
-                    Theme::EXPORT_CHECK_SIZE,
-                    theme.accent,
-                ))
-                .child(caption(format!("Exported {name}")).flex_1().min_w_0())
+                .when(swell > 0., |pill| {
+                    pill.shadow(vec![BoxShadow {
+                        color: theme.accent.opacity(0.35 * swell),
+                        offset: point(px(0.), px(0.)),
+                        blur_radius: px(EXPORT_DONE_GLOW * swell),
+                        spread_radius: px(EXPORT_DONE_GLOW * swell / 2.),
+                        inset: false,
+                    }])
+                })
+                .child(
+                    div().flex_none().size(px(Theme::EXPORT_CHECK_SIZE)).child(
+                        div()
+                            .h_full()
+                            .w(px(Theme::EXPORT_CHECK_SIZE * tick))
+                            .overflow_hidden()
+                            .child(icon_sized(
+                                "Check-regular",
+                                Theme::EXPORT_CHECK_SIZE,
+                                theme.accent,
+                            )),
+                    ),
+                )
+                .child(
+                    caption(format!("Exported {name}"))
+                        .flex_1()
+                        .min_w_0()
+                        .opacity(tick),
+                )
                 .child(
                     button("export-reveal", "Reveal in Finder", theme)
                         .raised()
                         .small()
                         .on_click(self.command("reveal-export")),
                 )
-                .child(dismiss),
+                .child(dismiss)
+            }
             "failed" => pill
                 .shadow(vec![hairline(theme.danger, 1.)])
                 .child(
