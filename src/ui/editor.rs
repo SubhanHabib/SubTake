@@ -402,10 +402,10 @@ impl RootView {
             .flex()
             .flex_col()
             .flex_none()
-            .gap(px(Theme::GAP_BLOCK))
-            .when(divided, |el| {
-                el.pt(px(Theme::GAP_BLOCK)).child(divider(theme))
-            })
+            // A footnote, not a section: a gap either side of its hairline,
+            // not the block gap a panel puts between groups.
+            .gap(px(Theme::GAP))
+            .when(divided, |el| el.pt(px(Theme::GAP)).child(divider(theme)))
             .when(!divided, |el| el.pb(px(Theme::GAP)))
             .child(status)
             .child(measure(self.status_bounds.clone()));
