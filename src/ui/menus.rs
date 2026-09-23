@@ -231,7 +231,6 @@ impl RootView {
             "palette-list",
             PALETTE_VISIBLE_ROWS as f32 * Theme::CONTROL_HEIGHT,
         )
-        .py(px(FADE_BAND))
         .track_scroll(&self.menu_scroll);
         if matches.is_empty() {
             list = list.child(
@@ -311,7 +310,7 @@ impl RootView {
                     }))
                     .child(context_chip(theme, &[&name, "Commands"]))
                     .child(search)
-                    .child(fade_edges(list))
+                    .child(fade_edges(list).tracking(&self.menu_scroll))
                     .child(footer),
             ),
         ))

@@ -28,6 +28,7 @@ pub struct Dropdown {
     open: bool,
     leave: motion::Leave,
     highlighted: usize,
+    scroll: ScrollHandle,
     bounds: Rc<Cell<Bounds<Pixels>>>,
     change: Box<dyn Fn(usize, &mut Window, &mut App)>,
 }
@@ -60,6 +61,7 @@ impl Dropdown {
             open: false,
             leave: motion::Leave::default(),
             highlighted: selected,
+            scroll: ScrollHandle::new(),
             bounds: Rc::new(Cell::new(Bounds::default())),
             change: Box::new(change),
         }
@@ -117,10 +119,12 @@ impl Render for Dropdown {
                         this.open = true;
                         this.highlighted =
                             (this.highlighted + 1).min(this.items.len().saturating_sub(1));
+                        this.scroll.scroll_to_item(this.highlighted);
                     }
                     "up" => {
                         this.open = true;
                         this.highlighted = this.highlighted.saturating_sub(1);
+                        this.scroll.scroll_to_item(this.highlighted);
                     }
                     "enter" | "space" => {
                         if this.open {
@@ -272,24 +276,32 @@ impl Render for Dropdown {
                                             }
                                         },
                                     ))
-                                    .child(fade_edges(
-                                        menu_list("dropdown-choices", max_height)
-                                            .py(px(crate::FADE_BAND))
-                                            .children(self.items.iter().enumerate().map(
-                                                |(i, label)| {
-                                                    menu_row(
-                                                        ("choice", i),
-                                                        label.clone(),
-                                                        i == self.selected,
-                                                        i == self.highlighted,
-                                                        theme,
-                                                        cx.listener(move |this, _, w, cx| {
-                                                            this.choose(i, w, cx)
-                                                        }),
-                                                    )
-                                                },
-                                            )),
-                                    )),
+                                    // Each edge fades only by what is
+                                    // scrolled out past it, so a list that
+                                    // fits keeps the surface's own padding
+                                    // above its first row and below its last,
+                                    // the same as at its sides.
+                                    .child(
+                                        fade_edges(
+                                            menu_list("dropdown-choices", max_height)
+                                                .track_scroll(&self.scroll)
+                                                .children(self.items.iter().enumerate().map(
+                                                    |(i, label)| {
+                                                        menu_row(
+                                                            ("choice", i),
+                                                            label.clone(),
+                                                            i == self.selected,
+                                                            i == self.highlighted,
+                                                            theme,
+                                                            cx.listener(move |this, _, w, cx| {
+                                                                this.choose(i, w, cx)
+                                                            }),
+                                                        )
+                                                    },
+                                                )),
+                                        )
+                                        .tracking(&self.scroll),
+                                    ),
                             ),
                         )),
                 )
