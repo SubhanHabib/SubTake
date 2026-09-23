@@ -111,14 +111,6 @@ impl RootView {
                                 && e.get_export_state() != "exporting",
                         ),
                 );
-            // The document pill, centred on the window rather than on the gap
-            // between the two clusters: a `flex_1` between them centres it in
-            // whatever they leave, which moves every time a button appears.
-            // gpui at the pinned revision has no transform, so it is a
-            // full-width absolute strip with the pill centred inside it.
-            //
-            // The strip itself takes no pointer events — only the pill has a
-            // listener — so the buttons underneath it stay clickable.
             header = header.child(cluster);
             // The document pill, centred on the window rather than on the gap
             // between the two clusters: a `flex_1` between them centres it in
