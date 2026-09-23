@@ -14,10 +14,10 @@ use std::{
     time::Instant,
 };
 use subtake_theme::{
-    BAR_SWAP_MS, CARD_CLOSE_MS, CARD_OPEN_MS, CARD_RESIZE_MS, FONT_SANS, INSPECTOR_COLLAPSE_WIDTH,
-    INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT, PANEL_ENTER_MS, PANEL_ENTER_RISE,
-    PANEL_WIDTH, PAUSED_CLOCK_OPACITY, PILL_MORPH_MS, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT,
-    STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
+    BAR_SWAP_MS, CARD_CLOSE_MS, CARD_OPEN_MS, CARD_RESIZE_MS, DIALOG_IN_MS, DIALOG_OUT_MS,
+    DIALOG_RISE, FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS,
+    PANEL_DRILL_SHIFT, PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PAUSED_CLOCK_OPACITY,
+    PILL_MORPH_MS, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
@@ -228,6 +228,9 @@ pub struct RootView {
     preview_known_zoom: f32,
     /// The Presets dialog's unapplied selection; `None` while it is closed.
     presets: Option<presets::PresetsDraft>,
+    /// The Presets dialog's fade in and out, as `inspector_slide`. It starts
+    /// closed rather than `None`, so the first opening plays too.
+    presets_slide: Option<(bool, f32, Instant)>,
     /// When the microphone meter last clipped, so its top bars can hold red
     /// for a second after the peak has passed.
     mic_clipped: Option<Instant>,
@@ -292,6 +295,7 @@ impl RootView {
             preview_context: None,
             preview_known_zoom: 1.,
             presets: None,
+            presets_slide: Some((false, 0., Instant::now())),
             mic_clipped: None,
             export_dismiss: None,
             inspector_scroll: HashMap::new(),

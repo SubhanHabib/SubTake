@@ -312,7 +312,7 @@ impl RootView {
                     .child(status),
             );
         }
-        root.children(self.presets_dialog(e, cx))
+        root.children(self.presets_dialog(e, window, cx))
             .child(self.menu_overlay(window, cx))
             .into_any_element()
     }

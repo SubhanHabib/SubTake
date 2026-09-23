@@ -22,9 +22,17 @@ impl RootView {
     pub(super) fn presets_dialog(
         &mut self,
         e: &EditorWindow,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Option<AnyElement> {
-        if e.get_dialog() != "presets" {
+        // Closing, the dialog keeps its draft on screen while it fades out.
+        let open = e.get_dialog() == "presets";
+        if !open && self.presets.is_none() {
+            return None;
+        }
+        let ms = if open { DIALOG_IN_MS } else { DIALOG_OUT_MS };
+        let shown = super::slide_toward(&mut self.presets_slide, open, ms, window);
+        if !open && shown == 0. {
             self.presets = None;
             return None;
         }
@@ -179,6 +187,9 @@ impl RootView {
         // went under the card's own `card` fill and all but vanished.
         let card = panel_variant(theme, UiSurface::Content)
             .id("presets-dialog")
+            .relative()
+            .top(px(DIALOG_RISE * (1. - shown)))
+            .opacity(shown)
             .w(px(Theme::DIALOG_WIDTH))
             .p(px(Theme::DIALOG_PADDING))
             .occlude()
@@ -190,20 +201,22 @@ impl RootView {
 
         // The scrim takes the pointer from everything under the dialog; it
         // draws nothing, because the handoff sets the dialog straight over
-        // the stage.
+        // the stage. A closing dialog lets the pointer through at once. Its
+        // frost is a backdrop blur, which opacity does not reach, so the
+        // blur itself eases with the fade.
         Some(
             deferred(
                 div()
                     .id("presets-scrim")
                     .absolute()
                     .inset_0()
-                    .occlude()
+                    .when(open, |s| s.occlude())
                     .flex()
                     .items_center()
                     .justify_center()
                     .child(frosted(
                         UiSurface::Content.radius(),
-                        subtake_ui::BAR_BLUR,
+                        subtake_ui::BAR_BLUR * shown,
                         card,
                     )),
             )

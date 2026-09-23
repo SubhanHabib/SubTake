@@ -611,3 +611,8 @@ pub const BAR_SWAP_MS: u64 = 180;
 /// A paused capture's clock digits sit at this opacity: the count is held,
 /// not running.
 pub const PAUSED_CLOCK_OPACITY: f32 = 0.6;
+/// The Presets dialog fades in and rises the distance below into place over
+/// the first time, and sinks back out over the second as it closes.
+pub const DIALOG_IN_MS: u64 = 200;
+pub const DIALOG_OUT_MS: u64 = 140;
+pub const DIALOG_RISE: f32 = 12.0;
