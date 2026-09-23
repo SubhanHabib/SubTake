@@ -260,6 +260,10 @@ impl Theme {
     pub const REGION_EDGE: f32 = 0x66 as f32 / 255.0;
     pub const REGION_HANDLE_ALPHA: f32 = 0xcc as f32 / 255.0;
     pub const REGION_PADDING: f32 = 12.0;
+    /// The narrowest region that still shows its label: room for the
+    /// padding and three letters with the ellipsis. Below it a label is only
+    /// "…", so it is left off and the tooltip carries it.
+    pub const REGION_LABEL_MIN_WIDTH: f32 = 2.0 * Self::REGION_PADDING + 24.0;
     /// A trim handle: a bar 3 wide, inset 3 from the region's end, running
     /// the lane's height less 6 of air at each end.
     pub const REGION_HANDLE_WIDTH: f32 = 3.0;

@@ -347,6 +347,9 @@ impl RootView {
             } else {
                 tint.opacity(Theme::REGION_EDGE)
             };
+            let width = (f32::from(self.timeline_bounds.get().size.width) * (end - start)
+                / visible)
+                .max(Theme::GAP);
             let mut block = div()
                 .id(SharedString::from(format!(
                     "region-{}-{}",
@@ -376,9 +379,25 @@ impl RootView {
                         .text_size(px(Theme::FONT_SMALL))
                         .text_color(theme.text)
                         .overflow_hidden()
-                        .text_ellipsis()
-                        .child(region.label.clone()),
+                        // On one line, in a box that may shrink below it: a
+                        // flex row gives bare text its full width, and a
+                        // short region cut its label off mid-letter instead.
+                        .when(width >= Theme::REGION_LABEL_MIN_WIDTH, |el| {
+                            el.child(
+                                div()
+                                    .min_w_0()
+                                    .whitespace_nowrap()
+                                    .text_ellipsis()
+                                    .child(region.label.clone()),
+                            )
+                        }),
                 );
+            // Not drawn by the design: the tooltip, which names a region
+            // whose label is cut short or left off.
+            if !region.label.is_empty() {
+                let label = region.label.clone();
+                block = block.tooltip(move |_, cx| tooltip(label.clone(), theme, cx));
+            }
             let drag_region = region.clone();
             block = block.on_mouse_down(
                 MouseButton::Left,

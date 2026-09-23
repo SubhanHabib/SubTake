@@ -116,6 +116,12 @@ at four strengths: `22` at rest, `2e` under the pointer, `3d` when selected,
 `66` for the edge. The playhead is a 2px accent rule the full height of the
 stack with a 16px dot and a soft accent ring.
 
+A region's label sits on one line and ends in an ellipsis when the region is
+shorter than it. A region under 48 wide shows no label at all, since there is
+room only for "…" there. Not drawn by the design: the tooltip that gives every
+region its full name. `SUBTAKE_GALLERY_SCREEN=panel-Frame` has both kinds of
+region.
+
 The status line has no counterpart in the redesign, which puts progress on the
 thing that is progressing. It is carried because export and transcription still
 need somewhere to speak, and it lives inside the console, only while it has
