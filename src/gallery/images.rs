@@ -50,13 +50,11 @@ pub(super) fn gradient(width: u32, height: u32, from: [u8; 3], to: [u8; 3], styl
                     }
                     (lerp(c, window, cover), 255)
                 }
+                // Ten frames side by side, as `media::timeline_artwork`
+                // lays out the real strip.
                 Style::Strip => {
-                    let cell = (fx * 24.).floor() / 24.;
-                    let mut c = lerp(from, to, cell);
-                    if (x % (width / 24).max(1)) < 2 {
-                        c = [0x10, 0x10, 0x14];
-                    }
-                    (c, 255)
+                    let frames = crate::media::TIMELINE_FRAMES as f32;
+                    (lerp(from, to, (fx * frames).floor() / frames), 255)
                 }
                 Style::Waveform => {
                     let amp =

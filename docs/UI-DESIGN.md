@@ -200,10 +200,24 @@ started. The waveform sits over the audio regions, 6 in from the lane's top
 and bottom, at a third strength. `SUBTAKE_GALLERY_SCREEN=selection` has a
 selected zoom; add `SUBTAKE_GALLERY_GESTURE=move` or `trim` to see it moved
 or its end handle held, or `scrub` for the playhead held. Not drawn by the
-design: the clip and trim regions' plates, until the clip lane draws the
-recording's frames; and a native marker, which has no icon and so no plate.
-Not wired: the waveform in the region's ink; it is an ffmpeg image and gpui
-can't tint one.
+design: a native marker, which has no icon and so no plate. Not wired: the
+waveform in the region's ink; it is an ffmpeg image and gpui can't tint one.
+
+A clip shows the recording's frames rather than its tint: tiles 88 wide and
+the lane's height, each followed by a 2 divider in black at 35%, the first and
+last rounding the clip's ends. A last tile too short to take the curve is
+folded into the one before it; the tint shows while the frames load. Its name
+sits on a chip 4 in from the clip's start, top and bottom: a `card` pill with
+a hairline over the frames blurred by 16, a 36 `plate` with `FilmStrip` at 15
+in `text`, then, 8 on, the name in Geist 500 at 13 in `text`, 14 short of the
+chip's end. A clip too short to leave the name four letters shows the chip's
+plate alone. Not drawn by the design: a tile's frame is the recording's at the
+tile's place on the timeline, not at its place in the clip's source; the
+chip's `saturate()`, which gpui has no filter for, and its blur where the
+window has no glass; and a clip shorter than the chip, which shows frames
+alone. Not wired: the frames are ten thumbnails across the take, stretched to
+the tiles, rather than a cache decoded at 88 by 52 per tile and kept across
+zoom levels.
 
 The ruler is a 32-tall `sunk` band, fully round, with a hairline. It counts in
 `m:ss`, Geist Mono at 11, at the smallest of 1, 2, 5, 10, 15, 30, 60, 120 or

@@ -378,6 +378,10 @@ pub fn capture_output_cancellable(
     Ok(bytes)
 }
 
+/// How many frames the timeline's thumbnail strip holds, side by side, each
+/// taken from the middle of its tenth of the recording.
+pub const TIMELINE_FRAMES: u32 = 10;
+
 /// Source thumbnails and waveform are cached outside the document. Cache identity
 /// includes file metadata so replacing media cannot reuse the previous artwork.
 pub fn timeline_artwork(source: &Path, info: &MediaInfo) -> Result<(PathBuf, Option<PathBuf>)> {
@@ -397,15 +401,15 @@ pub fn timeline_artwork(source: &Path, info: &MediaInfo) -> Result<(PathBuf, Opt
             .round()
             .max(2.) as u32;
         let mut decoder = Decoder::new(source.into(), 128, height);
-        let mut strip = image::RgbaImage::new(1280, 72);
-        for i in 0..10 {
-            let time = (i as f64 + 0.5) * info.duration / 10.;
+        let mut strip = image::RgbaImage::new(128 * TIMELINE_FRAMES, 72);
+        for i in 0..TIMELINE_FRAMES {
+            let time = (i as f64 + 0.5) * info.duration / TIMELINE_FRAMES as f64;
             let pixels = decoder.frame(time)?;
             let frame = image::RgbaImage::from_raw(128, height, pixels)
                 .context("Invalid thumbnail pixels")?;
             let frame =
                 image::imageops::resize(&frame, 128, 72, image::imageops::FilterType::Triangle);
-            image::imageops::overlay(&mut strip, &frame, i * 128, 0);
+            image::imageops::overlay(&mut strip, &frame, i64::from(i) * 128, 0);
         }
         let mut temp = tempfile::NamedTempFile::new_in(&directory)?;
         strip.write_to(&mut temp, image::ImageFormat::Png)?;

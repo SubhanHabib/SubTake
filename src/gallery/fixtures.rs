@@ -33,15 +33,15 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
     ui.set_aspect_index(0);
     ui.set_preview(scene(PREVIEW_W, PREVIEW_H));
     ui.set_thumbnails(gradient(
-        1600,
-        48,
+        1280,
+        72,
         [0x1f, 0x3b, 0x73],
         [0xd9, 0x6c, 0x9d],
         Style::Strip,
     ));
     ui.set_frosted_thumbnails(gradient(
-        1600,
-        48,
+        1280,
+        72,
         [0x4a, 0x5c, 0x86],
         [0xc7, 0x9a, 0xb4],
         Style::Strip,

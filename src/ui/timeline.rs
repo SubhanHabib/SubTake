@@ -1,6 +1,7 @@
 //! The timeline: tracks, regions, the scrubber and its drag gestures.
 
 use super::*;
+use subtake_ui::layered;
 
 /// How far the console's zoom out and in step, and the most the timeline
 /// magnifies: a hundredth of the take across the lanes.
@@ -40,6 +41,161 @@ fn region_icon(region: &Region) -> Option<&'static str> {
         "clipRegions" | Region::TAKE_CLIP => Some("FilmStrip-regular"),
         _ => None,
     }
+}
+
+/// The thumbnail strip cut into its frames, so a clip's tile can fit one
+/// frame and round its own corners, which a crop of the whole strip cannot.
+fn split_frames(strip: &RenderImage) -> Vec<Arc<RenderImage>> {
+    let size = strip.size(0);
+    let (width, height) = (size.width.0 as u32, size.height.0 as u32);
+    let Some(strip) = strip
+        .as_bytes(0)
+        .and_then(|bytes| image::RgbaImage::from_raw(width, height, bytes.to_vec()))
+    else {
+        return Vec::new();
+    };
+    let frames = crate::media::TIMELINE_FRAMES;
+    let frame = width / frames;
+    (0..frames)
+        .map(|i| {
+            let pixels = image::imageops::crop_imm(&strip, i * frame, 0, frame, height).to_image();
+            Arc::new(RenderImage::new(smallvec::smallvec![image::Frame::new(
+                pixels
+            )]))
+        })
+        .collect()
+}
+
+/// A clip: the recording's frames, one tile per 88 across, the frame each
+/// shows the one nearest the time at its middle. The first and last tiles
+/// round the clip's ends; a last tile too short to take the curve is folded
+/// into the one before it. Only the tiles over the visible track are built.
+fn clip_tiles(
+    frames: &[Arc<RenderImage>],
+    (start, end): (f32, f32),
+    (left, width, height): (f32, f32, f32),
+    (track_width, duration): (f32, f32),
+) -> Vec<AnyElement> {
+    let pitch = Theme::CLIP_TILE_WIDTH + Theme::CLIP_TILE_DIVIDER;
+    let radius = height / 2.;
+    let first = ((-left).max(0.) / pitch).floor() as usize;
+    let last = ((track_width - left).min(width) / pitch).ceil() as usize;
+    let mut tiles = Vec::new();
+    for tile in first..=last {
+        let x = tile as f32 * pitch;
+        if x >= width || frames.is_empty() {
+            break;
+        }
+        let rest = width - x - Theme::CLIP_TILE_WIDTH;
+        let closing = rest < Theme::CLIP_TILE_DIVIDER + radius;
+        let w = if closing {
+            width - x
+        } else {
+            Theme::CLIP_TILE_WIDTH
+        };
+        let time = start + (x + w / 2.) / width * (end - start);
+        let index = ((time / duration.max(f32::EPSILON) * frames.len() as f32).floor() as usize)
+            .min(frames.len() - 1);
+        let mut frame = img(frames[index].clone())
+            .absolute()
+            .left(px(x))
+            .top_0()
+            .w(px(w))
+            .h(px(height))
+            .object_fit(ObjectFit::Cover);
+        if tile == 0 {
+            frame = frame.rounded_l(px(radius));
+        }
+        if closing {
+            frame = frame.rounded_r(px(radius));
+        }
+        tiles.push(frame.into_any_element());
+        if closing {
+            break;
+        }
+        tiles.push(
+            div()
+                .absolute()
+                .left(px(x + Theme::CLIP_TILE_WIDTH))
+                .top_0()
+                .w(px(Theme::CLIP_TILE_DIVIDER))
+                .h(px(height))
+                .bg(gpui::black().opacity(Theme::CLIP_DIVIDER_ALPHA))
+                .into_any_element(),
+        );
+    }
+    tiles
+}
+
+/// A clip's name on a `card` chip over its frames, with the `FilmStrip`
+/// plate. A clip too short to leave its name four letters shows the plate
+/// alone. Not drawn by the design: the `saturate()` beside the chip's blur,
+/// which gpui has no filter for; the blur itself, where the window has no
+/// glass; and a clip shorter than the chip itself, which shows its frames
+/// with no chip.
+fn clip_chip(label: &str, width: f32, theme: Theme) -> Option<impl IntoElement> {
+    let inset = Theme::CLIP_CHIP_INSET;
+    if width < Theme::CLIP_CHIP_HEIGHT + 2. * inset {
+        return None;
+    }
+    let room = width
+        - 2. * inset
+        - Theme::REGION_PLATE_INSET
+        - Theme::CLIP_CHIP_PLATE
+        - Theme::CLIP_CHIP_GAP
+        - Theme::REGION_PADDING_END;
+    let labelled = room >= Theme::REGION_LABEL_MIN_ROOM;
+    // Blurring the frames under it, in a layer of its own: the console is
+    // one layer, and in one layer the frames paint over the chip's fill.
+    Some(layered(frosted(
+        Theme::CLIP_CHIP_HEIGHT / 2.,
+        Theme::CLIP_CHIP_BLUR,
+        div()
+            .absolute()
+            .left(px(inset))
+            .top(px(inset))
+            .h(px(Theme::CLIP_CHIP_HEIGHT))
+            .max_w(px(width - 2. * inset))
+            .flex()
+            .items_center()
+            .gap(px(Theme::CLIP_CHIP_GAP))
+            .pl(px(Theme::REGION_PLATE_INSET))
+            .when(labelled, |el| el.pr(px(Theme::REGION_PADDING_END)))
+            .when(!labelled, |el| el.pr(px(Theme::REGION_PLATE_INSET)))
+            .rounded_full()
+            .bg(theme.card)
+            // A border rather than an inset hairline, which gpui paints
+            // under the chip's own fill.
+            .border(px(Theme::HAIRLINE_WIDTH))
+            .border_color(theme.line)
+            .text_size(px(Theme::FONT_BODY))
+            .font_weight(FontWeight::MEDIUM)
+            .text_color(theme.text)
+            .child(
+                div()
+                    .flex_none()
+                    .size(px(Theme::CLIP_CHIP_PLATE))
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .rounded_full()
+                    .bg(theme.plate)
+                    .child(subtake_ui::icon_sized(
+                        "FilmStrip-regular",
+                        Theme::CLIP_CHIP_ICON,
+                        theme.text,
+                    )),
+            )
+            .when(labelled, |el| {
+                el.child(
+                    div()
+                        .min_w_0()
+                        .whitespace_nowrap()
+                        .text_ellipsis()
+                        .child(label.to_string()),
+                )
+            }),
+    )))
 }
 
 /// The glyph on a lane's header: what the lane holds.
@@ -594,6 +750,17 @@ impl RootView {
             stack += lane_height(&labels[row]) + Theme::LANE_GAP;
         }
         let stack = (stack - Theme::LANE_GAP).max(0.);
+        // The recording's frames, cut once per strip rather than per frame.
+        let frames = match (window.get_thumbnails().0, &self.clip_frames) {
+            (Some(strip), Some((cut, frames))) if Arc::ptr_eq(&strip, cut) => frames.clone(),
+            (Some(strip), _) => {
+                let frames = split_frames(&strip);
+                self.clip_frames = Some((strip, frames.clone()));
+                frames
+            }
+            (None, _) => Vec::new(),
+        };
+        let duration = window.get_duration();
         let mut tracks = div().relative().h(px(stack));
         for region in regions.iter() {
             let Some(top) = tops.get(region.row as usize).copied().flatten() else {
@@ -629,6 +796,7 @@ impl RootView {
                     if dragged.id == region.id && dragged.kind == region.kind
             );
             let width = (track_width * (end - start) / visible).max(Theme::GAP);
+            let clip = matches!(region.kind.as_str(), "clipRegions" | Region::TAKE_CLIP);
             if moving {
                 tracks = tracks.child(
                     div()
@@ -670,82 +838,100 @@ impl RootView {
                         .focus_visible(move |s| s.shadow(vec![ring]))
                         .cursor(CursorStyle::ClosedHand)
                 })
-                .child({
-                    // The kind's icon on a `plate` circle, then the label in
-                    // the ink. A label that would get fewer than four
-                    // letters is left off rather than cut to a fragment, and
-                    // the region shows its plate alone, 4 in at both ends;
-                    // the tooltip names it either way. Not drawn by the
-                    // design: a region too short for its plate shrinks the
-                    // plate to fit, and drops the icon once the plate is
-                    // smaller than it.
-                    let icon = region_icon(region);
-                    let inset = Theme::REGION_PLATE_INSET;
-                    let plate = (height - 2. * inset).min(width - 2. * inset).max(0.);
-                    let room = width
-                        - Theme::REGION_PADDING_START
-                        - icon.map_or(0., |_| plate + Theme::REGION_GAP)
-                        - Theme::REGION_PADDING_END;
-                    let labelled = room >= Theme::REGION_LABEL_MIN_ROOM;
-                    div()
-                        .size_full()
-                        .flex()
-                        .items_center()
-                        .gap(px(Theme::REGION_GAP))
-                        .when(labelled, |el| {
-                            el.pl(px(Theme::REGION_PADDING_START))
-                                .pr(px(Theme::REGION_PADDING_END))
-                        })
-                        .when(!labelled, |el| el.justify_center())
-                        .text_size(px(Theme::FONT_BODY))
-                        .font_weight(FontWeight::MEDIUM)
-                        .text_color(ink)
-                        .when_some(icon, |el, name| {
-                            el.child(
-                                div()
-                                    .flex_none()
-                                    .size(px(plate))
-                                    .flex()
-                                    .items_center()
-                                    .justify_center()
-                                    .rounded_full()
-                                    .bg(theme.plate)
-                                    .when(plate >= Theme::REGION_ICON_SIZE, |el| {
-                                        el.child(subtake_ui::icon_sized(
-                                            name,
-                                            Theme::REGION_ICON_SIZE,
-                                            ink,
-                                        ))
-                                    }),
-                            )
-                        })
-                        // On one line, in a box that may shrink below it: a
-                        // flex row gives bare text its full width, and a
-                        // short region cut its label off mid-letter instead.
-                        .when(labelled, |el| {
-                            el.child(
-                                div()
-                                    .min_w_0()
-                                    .whitespace_nowrap()
-                                    .text_ellipsis()
-                                    .child(region.label.clone()),
-                            )
-                        })
+                // A clip is its frames under a label chip; the tint shows
+                // while they load. Not drawn by the design: each tile's
+                // frame is the recording's at the tile's place on the
+                // timeline, not at its place in the clip's source.
+                .when(clip, |el| {
+                    let left = track_width * (start - offset) / visible;
+                    el.children(clip_tiles(
+                        &frames,
+                        (start, end),
+                        (left, width, height),
+                        (track_width, duration),
+                    ))
+                    .children(clip_chip(&region.label, width, theme))
+                })
+                .when(!clip, |el| {
+                    el.child({
+                        // The kind's icon on a `plate` circle, then the label in
+                        // the ink. A label that would get fewer than four
+                        // letters is left off rather than cut to a fragment, and
+                        // the region shows its plate alone, 4 in at both ends;
+                        // the tooltip names it either way. Not drawn by the
+                        // design: a region too short for its plate shrinks the
+                        // plate to fit, and drops the icon once the plate is
+                        // smaller than it.
+                        let icon = region_icon(region);
+                        let inset = Theme::REGION_PLATE_INSET;
+                        let plate = (height - 2. * inset).min(width - 2. * inset).max(0.);
+                        let room = width
+                            - Theme::REGION_PADDING_START
+                            - icon.map_or(0., |_| plate + Theme::REGION_GAP)
+                            - Theme::REGION_PADDING_END;
+                        let labelled = room >= Theme::REGION_LABEL_MIN_ROOM;
+                        div()
+                            .size_full()
+                            .flex()
+                            .items_center()
+                            .gap(px(Theme::REGION_GAP))
+                            .when(labelled, |el| {
+                                el.pl(px(Theme::REGION_PADDING_START))
+                                    .pr(px(Theme::REGION_PADDING_END))
+                            })
+                            .when(!labelled, |el| el.justify_center())
+                            .text_size(px(Theme::FONT_BODY))
+                            .font_weight(FontWeight::MEDIUM)
+                            .text_color(ink)
+                            .when_some(icon, |el, name| {
+                                el.child(
+                                    div()
+                                        .flex_none()
+                                        .size(px(plate))
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .rounded_full()
+                                        .bg(theme.plate)
+                                        .when(plate >= Theme::REGION_ICON_SIZE, |el| {
+                                            el.child(subtake_ui::icon_sized(
+                                                name,
+                                                Theme::REGION_ICON_SIZE,
+                                                ink,
+                                            ))
+                                        }),
+                                )
+                            })
+                            // On one line, in a box that may shrink below it: a
+                            // flex row gives bare text its full width, and a
+                            // short region cut its label off mid-letter instead.
+                            .when(labelled, |el| {
+                                el.child(
+                                    div()
+                                        .min_w_0()
+                                        .whitespace_nowrap()
+                                        .text_ellipsis()
+                                        .child(region.label.clone()),
+                                )
+                            })
+                    })
                 });
             // The selected ring, over the fill and under the handles: a
             // bordered overlay, not the block's own border, which would shift
             // its label by the ring's width; and not an inset shadow, which
             // gpui paints under the element's own fill, so an opaque region
-            // hid it.
+            // hid it. In its own layer, as the handles are, since the console
+            // is one layer and in one layer a clip's frames paint over every
+            // fill and border whatever order they come in.
             if region.selected {
-                block = block.child(
+                block = block.child(layered(
                     div()
                         .absolute()
                         .inset_0()
                         .rounded_full()
                         .border(px(Theme::REGION_SELECTED_RING))
                         .border_color(theme.accent),
-                );
+                ));
             }
             // The tooltip names the region and gives its range, for one
             // shown as an icon or with its label cut short. Not drawn by the
@@ -869,7 +1055,7 @@ impl RootView {
                 } else {
                     handle.left(edge)
                 };
-                block = block.child(handle.on_mouse_down(
+                block = block.child(layered(handle.on_mouse_down(
                     MouseButton::Left,
                     cx.listener(move |s, event: &MouseDownEvent, w, cx| {
                         w.focus(&s.focus, cx);
@@ -889,7 +1075,7 @@ impl RootView {
                         cx.stop_propagation();
                         cx.notify();
                     }),
-                ));
+                )));
             }
             tracks = tracks.child(block);
         }
@@ -975,9 +1161,10 @@ impl RootView {
             // Bottom to top: the line over the regions, the dot on the
             // ruler's top edge, the bubble with its tail, and the handle.
             // The line keeps a 12-wide hit area that scrubs and shows the
-            // resize cursor, since 1.5 is not a target.
+            // resize cursor, since 1.5 is not a target. The line and the
+            // handle paint in layers of their own, over a clip's frames.
             timeline = timeline
-                .child(
+                .child(layered(
                     div()
                         .absolute()
                         .left(px(x - Theme::PLAYHEAD_LINE_WIDTH / 2.))
@@ -987,7 +1174,7 @@ impl RootView {
                         .rounded(px(Theme::PLAYHEAD_LINE_RADIUS))
                         .bg(theme.accent)
                         .shadow(vec![glow(theme, Theme::PLAYHEAD_LINE_GLOW)]),
-                )
+                ))
                 .child(
                     div()
                         .id("playhead-line")
@@ -1055,7 +1242,7 @@ impl RootView {
                         .on_mouse_down(MouseButton::Left, grab()),
                 )
                 .when_some(handle_top, |el, top| {
-                    el.child(
+                    el.child(layered(
                         div()
                             .id("playhead-handle")
                             .absolute()
@@ -1086,7 +1273,7 @@ impl RootView {
                                     .bg(theme.on_accent)
                             }))
                             .on_mouse_down(MouseButton::Left, grab()),
-                    )
+                    ))
                 });
         }
         let console = panel(theme)

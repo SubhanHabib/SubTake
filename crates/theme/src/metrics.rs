@@ -204,7 +204,7 @@ impl Theme {
     /// hangs over the picture and so gives it as little as it can.
     pub const POD_PADDING_SMALL: f32 = 4.0;
     /// A float's inset from the window edge.
-    pub const INSET: f32 = 24.0;
+    pub const INSET: f32 = 16.0;
     /// A float hanging from the top of the stage sits a step tighter than one
     /// at its side: the titlebar above it is already air.
     pub const INSET_TOP: f32 = 20.0;
@@ -322,6 +322,21 @@ impl Theme {
     pub const REGION_HANDLE_TARGET: f32 = 10.0;
     /// A dragged region's source position: a 1 dashed outline in `line`.
     pub const REGION_GHOST_WIDTH: f32 = 1.0;
+    /// A clip shows the recording's frames: tiles 88 wide the lane's height,
+    /// each followed by a 2 divider in black at 35%.
+    pub const CLIP_TILE_WIDTH: f32 = 88.0;
+    pub const CLIP_TILE_DIVIDER: f32 = 2.0;
+    pub const CLIP_DIVIDER_ALPHA: f32 = 0.35;
+    /// The clip's label chip, 4 in from the clip's top, bottom and start: a
+    /// `card` pill with a hairline, its 36 plate 4 in with the `FilmStrip`
+    /// icon at 15, then the name 8 on and 14 short of the chip's end.
+    pub const CLIP_CHIP_INSET: f32 = 4.0;
+    pub const CLIP_CHIP_HEIGHT: f32 = Self::CLIP_LANE_HEIGHT - 2.0 * Self::CLIP_CHIP_INSET;
+    pub const CLIP_CHIP_PLATE: f32 = Self::CLIP_CHIP_HEIGHT - 2.0 * Self::REGION_PLATE_INSET;
+    pub const CLIP_CHIP_ICON: f32 = 15.0;
+    pub const CLIP_CHIP_GAP: f32 = 8.0;
+    /// The frames under the chip are blurred by 16.
+    pub const CLIP_CHIP_BLUR: f32 = 16.0;
 
     /// The playhead, in four parts on one x. A bubble with the time, 26
     /// tall and 12 in, glowing 18 (24 while scrubbed), with a 10 × 6 tail
