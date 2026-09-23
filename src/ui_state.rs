@@ -55,6 +55,8 @@ pub struct CaptureSource {
 pub struct Wallpaper {
     pub key: String,
     pub title: String,
+    /// What the project's `wallpaper` field holds while this one is in use.
+    pub value: String,
     pub source: Image,
 }
 

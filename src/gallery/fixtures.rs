@@ -81,6 +81,7 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
         .map(|(i, (title, a, b))| Wallpaper {
             key: format!("wallpaper-{}", i + 1),
             title: title.into(),
+            value: format!("wallpaper-{}", i + 1),
             source: gradient(160, 90, a, b, Style::Preview),
         })
         .collect::<Vec<_>>(),

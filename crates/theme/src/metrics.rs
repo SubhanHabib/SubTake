@@ -344,6 +344,8 @@ impl Theme {
     pub const SWATCH_SIZE: f32 = 26.0;
     pub const TILE_WIDTH: f32 = 68.0;
     pub const TILE_HEIGHT: f32 = 48.0;
+    /// The ring a picked thumbnail or swatch wears: `border_2`.
+    pub const TILE_RING_WIDTH: f32 = 2.0;
 
     // ---- dialogs ----------------------------------------------------------
 

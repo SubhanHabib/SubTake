@@ -27,21 +27,60 @@ pub fn swatch(
         .active(|s| s.opacity(Theme::PRESSED_OPACITY))
 }
 
-/// A captioned thumbnail in a picker grid (backgrounds, presets).
-pub fn media_tile(id: impl Into<ElementId>, title: impl Into<SharedString>) -> Stateful<Div> {
+/// A captioned thumbnail in a picker grid: 48 tall at radius 14, as the
+/// handoff draws the wallpaper row. The one in use takes the accent ring the
+/// handoff gives the picked colour, and the pointer brings up a faint one.
+///
+/// Not drawn by the design: the caption, which the handoff leaves off, and
+/// the hover ring.
+pub fn media_tile(
+    id: impl Into<ElementId>,
+    title: impl Into<SharedString>,
+    picture: Option<Img>,
+    selected: bool,
+    theme: Theme,
+) -> Stateful<Div> {
+    let id = id.into();
+    let pick = motion::state_fade(&motion::tween_key(&id, "ring"), selected);
+    let hover_key = motion::tween_key(&id, "hover");
+    let ring = motion::blend(
+        motion::hover_blend(&hover_key, theme.line, theme.muted),
+        theme.accent,
+        pick,
+    );
+    // The border sits inside the frame, so the picture's own corners are
+    // rounded to the border's inner edge: gpui's clip is square, and would
+    // leave the picture's corners poking past a rounded frame.
+    let inner = Theme::RADIUS_INNER - Theme::TILE_RING_WIDTH;
+    let frame = div()
+        .h(px(Theme::TILE_HEIGHT))
+        .w_full()
+        .rounded(px(Theme::RADIUS_INNER))
+        .border_2()
+        .border_color(ring)
+        .bg(theme.sunk)
+        .when_some(picture, |frame, picture| {
+            frame.child(
+                picture
+                    .size_full()
+                    .rounded(px(inner))
+                    .object_fit(ObjectFit::Cover),
+            )
+        });
     div()
         .flex()
         .flex_col()
         .gap(px(Theme::GAP_SMALL))
-        .id(id.into())
+        .id(id)
         .w(px(Theme::TILE_WIDTH))
-        .overflow_hidden()
-        .rounded(px(Theme::RADIUS_LANE))
         .cursor_pointer()
         .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+        .on_hover(motion::hover_listener(hover_key))
+        .child(frame)
         .child(
             div()
                 .text_size(px(Theme::FONT_SMALL))
+                .text_color(if selected { theme.text } else { theme.muted })
                 .text_ellipsis()
                 .child(title.into()),
         )

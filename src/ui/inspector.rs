@@ -621,16 +621,13 @@ impl RootView {
             for tile in e.get_wallpapers().iter() {
                 let editor = e.clone();
                 let key = tile.key.clone();
-                let mut item =
-                    media_tile(SharedString::from(format!("wallpaper-{key}")), tile.title);
-                if let Some(image) = tile.source.0 {
-                    item = item.child(
-                        img(image)
-                            .w_full()
-                            .h(px(Theme::TILE_HEIGHT))
-                            .object_fit(ObjectFit::Cover),
-                    );
-                }
+                let item = media_tile(
+                    SharedString::from(format!("wallpaper-{key}")),
+                    tile.title,
+                    tile.source.0.map(img),
+                    tile.value == e.get_background_value(),
+                    theme,
+                );
                 wallpapers = wallpapers
                     .child(item.on_click(move |_, _, _| editor.defer_action(key.clone())));
             }

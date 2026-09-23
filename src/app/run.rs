@@ -33,9 +33,15 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                 .ok()?
                 .thumbnail(160, 100)
                 .to_rgba8();
+                // The same string picking it writes into the project.
+                let value = path
+                    .strip_prefix(media::resources().join("public"))
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_else(|_| path.to_string_lossy().to_string());
                 Some((
                     index,
                     path.file_stem()?.to_string_lossy().replace(['-', '_'], " "),
+                    value,
                     img.width(),
                     img.height(),
                     img.into_raw(),
@@ -46,9 +52,10 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             ui.set_wallpapers(ModelRc::new(VecModel::from(
                 tiles
                     .into_iter()
-                    .map(|(index, title, w, h, pixels)| Wallpaper {
+                    .map(|(index, title, value, w, h, pixels)| Wallpaper {
                         key: format!("wallpaper-{index}"),
                         title,
+                        value,
                         source: ui_runtime::Image::from_rgba8(ui_runtime::SharedPixelBuffer::<
                             ui_runtime::Rgba8Pixel,
                         >::clone_from_slice(

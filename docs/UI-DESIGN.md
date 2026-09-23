@@ -98,6 +98,11 @@ in the panel's right padding while it has more than fits, so the fade reads as
 it only shows where the view is. `SUBTAKE_GALLERY_SCREEN=export` shows one at
 the gallery's size.
 
+Background's wallpaper thumbnails are 48 tall at radius 14, and the one in use
+wears the accent ring the handoff gives the picked colour. Not drawn by the
+design: each thumbnail's caption, and the faint ring the pointer brings up.
+`SUBTAKE_GALLERY_SCREEN=panel-Wallpapers` opens the gallery on them.
+
 Below the stage the console, inset 24 on all three of its edges. Its first row
 is the transport: SkipBack, Play on `ink`, SkipForward, the timecode in Geist
 Mono, then Suggest zooms / Split / Add as raised buttons, then snap, fit and
