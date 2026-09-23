@@ -27,6 +27,12 @@ pub fn switch(
     let on = motion::state_fade(&motion::tween_key(&id, "switch"), checked);
     let click_id = id.clone();
     let ring = focus_ring(t);
+    // Hover lays a wash over the track rather than swapping its fill: the
+    // off track is already `sunk2`, the top of the fill scale, so there is
+    // no firmer tone to move to. On the `ink` track the wash is `on_ink`,
+    // which is the one tone that shows against it in both appearances.
+    let hover_key = motion::tween_key(&id, "hover");
+    let wash = motion::blend(t.hover, t.on_ink.opacity(0.12), on);
     let mut switch = div()
         .id(id)
         .relative()
@@ -36,6 +42,13 @@ pub fn switch(
         .rounded_full()
         .bg(motion::blend(t.sunk2, t.ink, on))
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
+        .child(
+            div()
+                .absolute()
+                .inset_0()
+                .rounded_full()
+                .bg(motion::hover_blend(&hover_key, wash.opacity(0.), wash)),
+        )
         .child(
             div()
                 .absolute()
@@ -67,6 +80,8 @@ pub fn switch(
             .tab_index(0)
             .focus_visible(move |s| s.shadow(vec![ring]))
             .cursor_pointer()
+            .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+            .on_hover(motion::hover_listener(hover_key))
             .on_click(move |_, w, cx| {
                 perf::log(format_args!("click switch {click_id:?} -> {}", !checked));
                 change(!checked, w, cx)
