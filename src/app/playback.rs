@@ -350,6 +350,8 @@ impl App {
                 }
                 for r in history.project.regions(key) {
                     let [red, green, blue, _] = subtake_native::project::parse_color(tint);
+                    // A speed region is labelled by its speed, `2×`.
+                    let speed = format!("{}×", n(r, "speed", 1.));
                     regions.push(Region {
                         id: r["id"].as_str().unwrap_or("").into(),
                         kind: key.into(),
@@ -357,7 +359,7 @@ impl App {
                             .as_str()
                             .or(r["textContent"].as_str())
                             .filter(|s| !s.is_empty())
-                            .unwrap_or(title)
+                            .unwrap_or(if key == "speedRegions" { &speed } else { title })
                             .into(),
                         start: (n(r, "startMs", 0.) / 1000.) as f32,
                         end: ((n(r, "startMs", 0.)

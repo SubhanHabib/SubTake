@@ -312,7 +312,7 @@ pub(super) fn fixture_regions() -> Vec<Region> {
         region("zoomRegions", "z3", "Zoom", 98., 111., 0, 0x397afa),
         region("nativeMarkers", "m1", "◆", 60., 60.4, 0, 0xf5bb6b),
         region("clipRegions", "c1", "Intro", 0., 33., 1, 0x357c65),
-        region("speedRegions", "s1", "2× Speed", 33., 41., 1, 0xdc922d),
+        region("speedRegions", "s1", "2×", 33., 41., 1, 0xdc922d),
         region("trimRegions", "t1", "Trim", 71., 76., 1, 0xee5261),
         region(
             "clipRegions",

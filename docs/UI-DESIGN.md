@@ -211,13 +211,13 @@ sits on a chip 4 in from the clip's start, top and bottom: a `card` pill with
 a hairline over the frames blurred by 16, a 36 `plate` with `FilmStrip` at 15
 in `text`, then, 8 on, the name in Geist 500 at 13 in `text`, 14 short of the
 chip's end. A clip too short to leave the name four letters shows the chip's
-plate alone. Not drawn by the design: a tile's frame is the recording's at the
-tile's place on the timeline, not at its place in the clip's source; the
-chip's `saturate()`, which gpui has no filter for, and its blur where the
-window has no glass; and a clip shorter than the chip, which shows frames
-alone. Not wired: the frames are ten thumbnails across the take, stretched to
-the tiles, rather than a cache decoded at 88 by 52 per tile and kept across
-zoom levels.
+plate alone. A speed region is labelled by its speed, `2×`. Not drawn by the
+design: a tile's frame is the recording's at the tile's place on the timeline,
+not at its place in the clip's source; the chip's `saturate()`, which gpui has
+no filter for, and its blur where the window has no glass; and a clip shorter
+than the chip, which shows frames alone. Not wired: the frames are ten
+thumbnails across the take, stretched to the tiles, rather than a cache
+decoded at 88 by 52 per tile and kept across zoom levels.
 
 The ruler is a 32-tall `sunk` band, fully round, with a hairline. It counts in
 `m:ss`, Geist Mono at 11, at the smallest of 1, 2, 5, 10, 15, 30, 60, 120 or
@@ -247,7 +247,7 @@ the bubble does.
 A region's label sits on one line and ends in an ellipsis when the region is
 shorter than it. A region that would leave its label fewer than four letters
 shows only its plate, centred, 4 in at both ends. The tooltip names the
-region and gives its range in Geist Mono at 60%, `2× Speed  0:33–0:41`. Not
+region and gives its range in Geist Mono at 60%, `2×  0:33–0:41`. Not
 drawn by the design: a region too short for its plate shrinks the plate to
 fit, and drops the icon once the plate is smaller than it; the tooltip shows
 on every region, not only a cut or plate-only one, since whether a label is
