@@ -198,7 +198,7 @@ impl RootView {
             }
         }
 
-        content = content.child(inert(rows, shown));
+        content = content.child(inert("camera-rows", rows, shown));
         (heading, content)
     }
 }

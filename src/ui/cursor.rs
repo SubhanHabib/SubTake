@@ -6,6 +6,7 @@
 
 use super::inspector::field_unit;
 use super::*;
+use subtake_ui::motion;
 
 /// The click effects the renderer draws (`src/render/cursor.rs`).
 const CLICK_EFFECTS: [(&str, &str); 4] = [
@@ -160,7 +161,7 @@ impl RootView {
             }
         }
 
-        content = content.child(inert(rows, shown));
+        content = content.child(inert("cursor-rows", rows, shown));
         (heading, content)
     }
 }
@@ -193,13 +194,19 @@ pub(super) fn panel_heading(name: &'static str, e: &EditorWindow, theme: Theme) 
 }
 
 /// Rows that stand for something switched off: dimmed, and under a sheet
-/// that takes the pointer so nothing in them can be changed.
+/// that takes the pointer so nothing in them can be changed. The dimming
+/// fades with the switch that caused it rather than landing before the
+/// switch's thumb has moved.
 ///
 /// Not wired: Tab still reaches the controls under the sheet, since gpui
 /// has no way to take a whole subtree out of the tab order.
-pub(super) fn inert(rows: Div, enabled: bool) -> Div {
-    div().relative().child(rows).when(!enabled, |el| {
-        el.opacity(Theme::DISABLED_OPACITY)
-            .child(div().absolute().inset_0().occlude())
-    })
+pub(super) fn inert(id: &'static str, rows: Div, enabled: bool) -> Div {
+    let dim = motion::state_fade(&motion::tween_key(&id.into(), "dim"), !enabled);
+    div()
+        .relative()
+        .opacity(motion::lerp(1., Theme::DISABLED_OPACITY, dim))
+        .child(rows)
+        .when(!enabled, |el| {
+            el.child(div().absolute().inset_0().occlude())
+        })
 }
