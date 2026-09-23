@@ -337,3 +337,33 @@ pointer. Pinch over the stage magnifies from Fit to 8x, anchoring the image
 point under the gesture; two-finger scroll pans, and Fit resets both. All of it
 is viewport state — none of it touches project content, the playhead, or the
 exported framing.
+
+## Motion
+
+Not drawn by the design: every transition below. The handoff draws still
+screens; these were chosen on a motion board and live as tokens in
+`crates/theme/src/metrics.rs`. All of them honour the Mac's Reduce motion
+setting and land in place when it is on.
+
+- A picked inspector panel fades in and rises 6 (`PANEL_ENTER_*`, 180 ms).
+  Into a sub-panel (Crop, Background, Shortcuts) it slides in from 24 to the
+  right instead, and back out to its parent from the left (`PANEL_DRILL_*`).
+- A recorder card grows up out of the bar as it opens (`CARD_OPEN_MS`) and
+  folds back as it closes (`CARD_CLOSE_MS`); a swap to a taller or shorter
+  card eases between the heights (`CARD_RESIZE_MS`). The options window
+  holds the taller height while it eases, and its frosted material follows
+  the card rather than the window.
+- The recorder bar keeps its size and place; when it turns from ready to
+  counting to recording to writing, its controls fade in (`BAR_SWAP_MS`).
+- Pausing eases the clock from red to `sunk` and dims its count to 60%
+  (`PAUSED_CLOCK_OPACITY`); Pause and Resume fade in as they swap.
+- The Presets dialog fades in rising 12 and fades back out
+  (`DIALOG_*`); its frost eases with it, since opacity does not reach a
+  backdrop blur.
+- Dropdowns and the command menu drop 4 as they open and fade out over
+  `MENU_OUT_MS` when dismissed.
+- A finished export's tick draws itself on, its label fades in, and the pill
+  gives one soft accent pulse (`EXPORT_DONE_*`).
+
+Not wired: the card's sideways move when it swaps to a control further
+along the bar — the window is placed natively and jumps.
