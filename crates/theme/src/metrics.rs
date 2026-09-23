@@ -241,9 +241,9 @@ impl Theme {
     pub const TOGGLE_TRAVEL: f32 =
         Self::TOGGLE_WIDTH - Self::TOGGLE_INSET * 2.0 - Self::TOGGLE_THUMB;
 
-    /// The lane stack: the source lane is taller than the rest.
-    pub const LANE_HEIGHT: f32 = 30.0;
-    pub const LANE_SOURCE_HEIGHT: f32 = 42.0;
+    /// The lane stack: every lane at one height, the source lane with them.
+    /// The handoff draws 42 for the source and 30 for the rest.
+    pub const LANE_HEIGHT: f32 = 36.0;
     pub const LANE_GAP: f32 = 4.0;
     /// The column of lane names, and its gap to the tracks.
     pub const LANE_GUTTER: f32 = 78.0;
@@ -554,12 +554,8 @@ impl Theme {
     /// region plus its own padding, its transport row, and whatever else it
     /// is carrying at the time — so a line it only sometimes shows adds to
     /// its height instead of being taken out of the lanes.
-    pub const LANE_STACK_HEIGHT: f32 = Self::RULER_HEIGHT
-        + Self::LANE_GAP
-        + Self::LANE_SOURCE_HEIGHT
-        + Self::LANE_GAP
-        + 5.0 * Self::LANE_PITCH
-        + Self::FADE_BAND;
+    pub const LANE_STACK_HEIGHT: f32 =
+        Self::RULER_HEIGHT + Self::LANE_GAP + 6.0 * Self::LANE_PITCH + Self::FADE_BAND;
 }
 
 // ---------------------------------------------------------------------------

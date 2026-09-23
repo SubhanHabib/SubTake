@@ -256,31 +256,24 @@ impl RootView {
                     .left(relative(i as f32 / 8.)),
             );
         }
-        // The source lane: 42, against 30 for every other lane. It is the
-        // only lane that carries a picture rather than blocks, and the strip
-        // fills it below the title.
+        // The source lane: the recording's frames, on the same 36 as every
+        // other lane. It carried the document's title over a shorter strip,
+        // which the titlebar already names, and it stood taller than the
+        // lanes for it.
         let mut source = div()
             .relative()
-            .h(px(Theme::LANE_SOURCE_HEIGHT))
+            .h(px(Theme::LANE_HEIGHT))
             .overflow_hidden()
             .rounded(px(Theme::RADIUS_REGION))
-            .bg(theme.sunk)
-            .child(
-                div()
-                    .px(px(Theme::REGION_PADDING))
-                    .text_size(px(Theme::FONT_SMALL))
-                    .text_color(theme.muted)
-                    .child(window.get_document_title()),
-            );
+            .bg(theme.sunk);
         if let Some(image) = window.get_thumbnails().0 {
-            let strip = Theme::LANE_SOURCE_HEIGHT - Theme::RULER_HEIGHT;
             source = source.child(
                 img(image)
                     .absolute()
-                    .top(px(Theme::RULER_HEIGHT))
+                    .top_0()
                     .left(relative(-offset / visible))
                     .w(relative(window.get_timeline_zoom()))
-                    .h(px(strip))
+                    .h(px(Theme::LANE_HEIGHT))
                     .object_fit(ObjectFit::Fill),
             );
         }
@@ -566,98 +559,97 @@ impl RootView {
                     ),
             );
         }
-        let console = panel(theme)
-            .id("timeline")
-            // A zoomed picture runs on under the console; the console's
-            // presses are its own.
-            .occlude()
-            .mx(px(Theme::INSET))
-            .mb(px(Theme::INSET))
-            .flex_shrink_0()
-            .child(toolbar)
-            // The lanes and the export/transcription line share one box, so
-            // the line folds away without leaving the console's gap behind.
-            // It sits inside the console rather than under it so the console
-            // keeps the shell's own inset on all three of its edges.
-            .child(
-                column()
-                    .gap_0()
-                    .flex_none()
-                    .child(fade_edges(
-                        row()
-                            .id("track-scroll")
-                            .gap(px(Theme::LANE_GUTTER_GAP))
-                            .items_start()
-                            .h(px(Theme::LANE_STACK_HEIGHT))
-                            .flex_none()
-                            .overflow_y_scroll()
-                            .pb(px(FADE_BAND))
-                            .child(
-                                column()
-                                    .w(px(Theme::LANE_GUTTER))
-                                    .flex_shrink_0()
-                                    .gap_0()
-                                    // The gutter runs on the track column's own grid,
-                                    // row for row: a spacer the height of the ruler
-                                    // and the gap under it, then one box per lane at
-                                    // that lane's height with the same gap below. A
-                                    // label is centred on its lane rather than set at
-                                    // its top, so the name and the blocks it names
-                                    // read as one line.
-                                    .child(div().h(px(Theme::RULER_HEIGHT + Theme::LANE_GAP)))
-                                    .child(lane_label("Source", Theme::LANE_SOURCE_HEIGHT, theme))
-                                    .children(
-                                        labels.into_iter().map(|label| {
+        let console =
+            panel(theme)
+                .id("timeline")
+                // A zoomed picture runs on under the console; the console's
+                // presses are its own.
+                .occlude()
+                .mx(px(Theme::INSET))
+                .mb(px(Theme::INSET))
+                .flex_shrink_0()
+                .child(toolbar)
+                // The lanes and the export/transcription line share one box, so
+                // the line folds away without leaving the console's gap behind.
+                // It sits inside the console rather than under it so the console
+                // keeps the shell's own inset on all three of its edges.
+                .child(
+                    column()
+                        .gap_0()
+                        .flex_none()
+                        .child(fade_edges(
+                            row()
+                                .id("track-scroll")
+                                .gap(px(Theme::LANE_GUTTER_GAP))
+                                .items_start()
+                                .h(px(Theme::LANE_STACK_HEIGHT))
+                                .flex_none()
+                                .overflow_y_scroll()
+                                .pb(px(FADE_BAND))
+                                .child(
+                                    column()
+                                        .w(px(Theme::LANE_GUTTER))
+                                        .flex_shrink_0()
+                                        .gap_0()
+                                        // The gutter runs on the track column's own grid,
+                                        // row for row: a spacer the height of the ruler
+                                        // and the gap under it, then one box per lane at
+                                        // that lane's height with the same gap below. A
+                                        // label is centred on its lane rather than set at
+                                        // its top, so the name and the blocks it names
+                                        // read as one line.
+                                        .child(div().h(px(Theme::RULER_HEIGHT + Theme::LANE_GAP)))
+                                        .child(lane_label("Source", Theme::LANE_HEIGHT, theme))
+                                        .children(labels.into_iter().map(|label| {
                                             lane_label(label, Theme::LANE_HEIGHT, theme)
-                                        }),
-                                    ),
-                            )
-                            .child(timeline),
-                    ))
-                    .children(status),
-            )
-            .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
-                if let Surface::Editor(window) = &s.surface {
-                    let delta = event.delta.pixel_delta(px(20.));
-                    if event.modifiers.control || event.modifiers.platform {
-                        let b = s.timeline_bounds.get();
-                        let fraction = (f32::from(event.position.x - b.left())
-                            / f32::from(b.size.width).max(1.))
-                        .clamp(0., 1.);
-                        let anchor =
-                            window.get_timeline_offset() + fraction * window.get_timeline_visible();
-                        window.set_timeline_zoom(
-                            (window.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
-                                .clamp(1., 100.),
-                        );
-                        window.set_timeline_offset(
-                            (anchor - fraction * window.get_timeline_visible()).clamp(
-                                0.,
-                                (window.get_duration() - window.get_timeline_visible()).max(0.),
-                            ),
-                        );
-                        cx.stop_propagation();
-                    } else if delta.x != px(0.) || event.modifiers.shift {
-                        let dx = if event.modifiers.shift {
-                            delta.y
-                        } else {
-                            delta.x
-                        };
-                        window.set_timeline_offset(
-                            (window.get_timeline_offset()
-                                - f32::from(dx)
-                                    / f32::from(s.timeline_bounds.get().size.width).max(1.)
-                                    * window.get_timeline_visible())
-                            .clamp(
-                                0.,
-                                (window.get_duration() - window.get_timeline_visible()).max(0.),
-                            ),
-                        );
-                        cx.stop_propagation();
+                                        })),
+                                )
+                                .child(timeline),
+                        ))
+                        .children(status),
+                )
+                .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
+                    if let Surface::Editor(window) = &s.surface {
+                        let delta = event.delta.pixel_delta(px(20.));
+                        if event.modifiers.control || event.modifiers.platform {
+                            let b = s.timeline_bounds.get();
+                            let fraction = (f32::from(event.position.x - b.left())
+                                / f32::from(b.size.width).max(1.))
+                            .clamp(0., 1.);
+                            let anchor = window.get_timeline_offset()
+                                + fraction * window.get_timeline_visible();
+                            window.set_timeline_zoom(
+                                (window.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
+                                    .clamp(1., 100.),
+                            );
+                            window.set_timeline_offset(
+                                (anchor - fraction * window.get_timeline_visible()).clamp(
+                                    0.,
+                                    (window.get_duration() - window.get_timeline_visible()).max(0.),
+                                ),
+                            );
+                            cx.stop_propagation();
+                        } else if delta.x != px(0.) || event.modifiers.shift {
+                            let dx = if event.modifiers.shift {
+                                delta.y
+                            } else {
+                                delta.x
+                            };
+                            window.set_timeline_offset(
+                                (window.get_timeline_offset()
+                                    - f32::from(dx)
+                                        / f32::from(s.timeline_bounds.get().size.width).max(1.)
+                                        * window.get_timeline_visible())
+                                .clamp(
+                                    0.,
+                                    (window.get_duration() - window.get_timeline_visible()).max(0.),
+                                ),
+                            );
+                            cx.stop_propagation();
+                        }
                     }
-                }
-            }))
-            .into_any_element();
+                }))
+                .into_any_element();
         frosted(UiSurface::Panel.radius(), UiSurface::Panel.blur(), console).into_any_element()
     }
 }

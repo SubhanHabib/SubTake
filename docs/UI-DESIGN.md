@@ -125,9 +125,11 @@ the two zoom steps as round icon buttons. The transport belongs here and not on
 a pod: the thing that moves the playhead sits on the same surface as the
 playhead.
 
-The lane stack is 42 for the source lane and 30 for every other, 4 between
-them, with a 78px label gutter 14 from the tracks. A region is its lane's tint
-at four strengths: `22` at rest, `2e` under the pointer, `3d` when selected,
+Every lane is 36, the source lane with them, 4 between them. Not drawn by
+the design: the handoff draws the source 42 over a 30 for the rest, with the
+document's title over a shorter strip of frames; the titlebar already names
+the document, so the source lane is only its frames. The stack has a 78px
+label gutter 14 from the tracks. A region is its lane's tint at four strengths: `22` at rest, `2e` under the pointer, `3d` when selected,
 `66` for the edge. The playhead is a 2px accent rule the full height of the
 stack with a 16px dot and a soft accent ring.
 
