@@ -57,6 +57,7 @@ impl RootView {
                 } else {
                     "Record-regular"
                 })
+                .icon_only()
                 .enabled(!e.get_busy())
                 .on_click(self.command(if e.get_recording() {
                     "stop-recording"
@@ -80,6 +81,7 @@ impl RootView {
                     } else {
                         "Pause-regular"
                     })
+                    .icon_only()
                     .on_click(self.command("pause-recording")),
                 );
             }
@@ -101,6 +103,7 @@ impl RootView {
                 .child(
                     self.panel_button(e, "Export", "Export")
                         .glyph("Export-regular")
+                        .icon_only()
                         .primary()
                         // Not wired: a second export queued behind the first.
                         // The handoff moves progress out of the panel so one

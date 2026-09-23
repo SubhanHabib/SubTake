@@ -68,9 +68,10 @@ Nothing is docked. That is the change the redesign is named for, and every
 other difference follows from it.
 
 A titlebar with no fill of its own — traffic lights, the document on a `sunk`
-pill centred on the window, and Record / Presets / Export at the right: Record
-a 44 `sunk` pill with its glyph and caption, Presets a 44 round `sunk` plate
-with the Stack glyph, in both themes. While the document has a status — a
+pill centred on the window, and Record / Presets / Export at the right as 44
+round icon-only controls, each named by its tooltip: Record and Presets on
+`sunk` plates, Export on the accent. Not drawn by the design: the handoff
+gives Record and Export their captions. While the document has a status — a
 running job, an error, "Gallery mode" in the gallery — it is a chip at the end
 of the title pill: 26 tall, `sunk2`, the small size in `muted`, 12 after the
 title to match the pill's left padding, with the pill's right padding closing
