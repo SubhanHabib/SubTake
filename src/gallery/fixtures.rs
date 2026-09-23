@@ -60,7 +60,6 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
         "Caption".into(),
         "Audio".into(),
     ])));
-    ui.set_audio_row(4);
     ui.set_wallpapers(ModelRc::new(VecModel::from(
         [
             ("Apricot", [0xf7, 0xdc, 0xc2], [0xd2, 0x7b, 0x86]),

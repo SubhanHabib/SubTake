@@ -258,6 +258,9 @@ pub struct RootView {
     /// The thumbnail strip, cut into its frames for the clip lane's tiles,
     /// with the strip they were cut from so a new one is cut again.
     clip_frames: Option<(Arc<RenderImage>, Vec<Arc<RenderImage>>)>,
+    /// The waveform image read back into a peak per column, with the image
+    /// it was read from so a new one is read again.
+    wave_peaks: Option<(Arc<RenderImage>, Arc<[f32]>)>,
     /// The lane region's height and the inspector's width, as their edges
     /// were last dragged. Not wired: remembering them between launches.
     lane_height: f32,
@@ -362,6 +365,7 @@ impl RootView {
             timeline_bounds: Rc::new(Cell::new(Bounds::default())),
             lane_scroll: ScrollHandle::new(),
             clip_frames: None,
+            wave_peaks: None,
             // The gallery cannot drag, so it can start either edge where a
             // drag would have left it.
             lane_height: env_size("SUBTAKE_GALLERY_LANES").unwrap_or(Theme::LANE_STACK_HEIGHT),

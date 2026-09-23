@@ -410,7 +410,6 @@ impl App {
                 }
                 labels.extend((0..ends.len()).map(|_| SharedString::from(label)));
             }
-            ui.set_audio_row(labels.iter().position(|l| l == "Audio").unwrap_or(4) as i32);
             ui.set_track_labels(ModelRc::new(VecModel::from(labels)));
             ui.set_regions(ModelRc::new(VecModel::from(regions)));
             ui.set_selected_id(

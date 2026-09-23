@@ -123,7 +123,6 @@ struct Properties {
     snap: bool,
     time_label: String,
     regions: ModelRc<Region>,
-    audio_row: i32,
     track_labels: ModelRc<String>,
     selected_id: String,
     fields: ModelRc<Field>,
@@ -209,7 +208,6 @@ impl Default for Properties {
             snap: true,
             time_label: "00:00.000".into(),
             regions: ModelRc::default(),
-            audio_row: 3,
             track_labels: ModelRc::new(VecModel::from(vec![
                 "Zoom".into(),
                 "Clip".into(),
@@ -883,18 +881,6 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.regions != value {
             props.regions = value;
-            self.window().invalidate();
-        }
-    }
-
-    pub fn get_audio_row(&self) -> i32 {
-        self.0.props.borrow().audio_row
-    }
-
-    pub fn set_audio_row(&self, value: i32) {
-        let mut props = self.0.props.borrow_mut();
-        if props.audio_row != value {
-            props.audio_row = value;
             self.window().invalidate();
         }
     }

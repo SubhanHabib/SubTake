@@ -184,24 +184,28 @@ press on one seeks rather than selecting it. Not wired: dragging a new region
 from Add over the timeline to show its lane.
 
 A region is a pill the lane's height, a solid fill with an ink, both from its
-lane's hue: in light the fill at 75% saturation and 82% lightness under an
-ink at 65% and 25%, in dark the fill at 35% and 34% under an ink at 60% and
-88%. It floats on the console's glass with no edge at rest. 4 in from its
-start sits a `plate` circle 4 short of the lane at each end (36, or 44 in
-the clip lane) with the kind's icon at 16 in the ink — `MagnifyingGlassPlus`,
-`Timer`, `Scissors`, `TextT` (`ArrowUpRight` for an arrow), `ClosedCaptioning`,
+lane's hue: in light the fill at 75% saturation and 82% lightness under an ink
+at 65% and 25%, in dark the fill at 35% and 34% under an ink at 60% and 88%.
+It floats on the console's glass with no edge at rest. 4 in from its start
+sits a `plate` circle 4 short of the lane at each end (36, or 44 in the clip
+lane) with the kind's icon at 16 in the ink — `MagnifyingGlassPlus`, `Timer`,
+`Scissors`, `TextT` (`ArrowUpRight` for an arrow), `ClosedCaptioning`,
 `MusicNotes`, `FilmStrip` — then, 10 on, the label in Geist 500 at 13 in the
 ink, 14 short of the end. Selected, it takes a 2px accent ring and a trim
 handle at each end: a 5 by 18 accent bar, radius 3, with a 1.5 white ring,
 standing 3 out past the end. Under the pointer the handles show at half
-strength; the one being dragged grows to 6 by 22 at full. A region being
-moved lifts on the panel shadow over a 1px dashed `line` outline where it
-started. The waveform sits over the audio regions, 6 in from the lane's top
-and bottom, at a third strength. `SUBTAKE_GALLERY_SCREEN=selection` has a
-selected zoom; add `SUBTAKE_GALLERY_GESTURE=move` or `trim` to see it moved
-or its end handle held, or `scrub` for the playhead held. Not drawn by the
-design: a native marker, which has no icon and so no plate. Not wired: the
-waveform in the region's ink; it is an ffmpeg image and gpui can't tint one.
+strength; the one being dragged grows to 6 by 22 at full. A region being moved
+lifts on the panel shadow over a 1px dashed `line` outline where it started.
+The recording's sound fills the rest of its region as bars, 10 after its label
+in a 26 row: 2.5 wide at radius 2 on a 4.5 pitch, each 22% to 94% of the row
+by the loudest peak in its span, in the ink, and at 35% once past the
+playhead. `SUBTAKE_GALLERY_SCREEN=selection` has a selected zoom; add
+`SUBTAKE_GALLERY_GESTURE=move` or `trim` to see it moved or its end handle
+held, or `scrub` for the playhead held. Not drawn by the design: a native
+marker, which has no icon and so no plate. Not wired: an imported sound's
+waveform, which is never read; and the peaks, which are read back from
+ffmpeg's waveform picture of the take, one per column of its 1280, rather than
+decoded.
 
 A clip shows the recording's frames rather than its tint: tiles 88 wide and
 the lane's height, each followed by a 2 divider in black at 35%, the first and

@@ -287,10 +287,16 @@ impl Theme {
     //
     // A region is a solid fill and an ink, both taken from its lane's hue
     // by `Theme::region_tones`, so seven lane tints stay seven pairs.
-    /// The audio waveform over its region, in the region's ink at `55`, 6
-    /// in from the lane's top and bottom.
-    pub const WAVEFORM_ALPHA: f32 = 0x55 as f32 / 255.0;
-    pub const WAVEFORM_INSET: f32 = 6.0;
+    /// The recording's sound as bars after its label: a 26 row, bars 2.5
+    /// wide at radius 2 on a 4.5 pitch, each 22% to 94% of the row by its
+    /// peak, and at 35% once past the playhead.
+    pub const WAVEFORM_HEIGHT: f32 = 26.0;
+    pub const WAVEFORM_BAR: f32 = 2.5;
+    pub const WAVEFORM_PITCH: f32 = 4.5;
+    pub const WAVEFORM_BAR_RADIUS: f32 = 2.0;
+    pub const WAVEFORM_FLOOR: f32 = 0.22;
+    pub const WAVEFORM_CEILING: f32 = 0.94;
+    pub const WAVEFORM_AHEAD_ALPHA: f32 = 0.35;
     /// A region is a pill the lane's height: 4 in at its start, where the
     /// icon plate sits, 14 at its end, and 10 between the plate and the
     /// label. A region showing only its plate is 4 in at both ends.

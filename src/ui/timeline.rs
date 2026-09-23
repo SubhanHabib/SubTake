@@ -198,6 +198,91 @@ fn clip_chip(label: &str, width: f32, theme: Theme) -> Option<impl IntoElement> 
     )))
 }
 
+/// The waveform image read back into its peaks: for each column, how much
+/// of its height is drawn, 0 to 1. ffmpeg draws the sound mirrored about the
+/// middle, so the drawn span is the peak.
+fn read_peaks(image: &RenderImage) -> Arc<[f32]> {
+    let size = image.size(0);
+    let (width, height) = (size.width.0 as usize, size.height.0 as usize);
+    let Some(bytes) = image.as_bytes(0) else {
+        return Arc::from([]);
+    };
+    (0..width)
+        .map(|x| {
+            let drawn = (0..height)
+                .filter(|y| bytes[(y * width + x) * 4 + 3] > 0)
+                .count();
+            drawn as f32 / height.max(1) as f32
+        })
+        .collect()
+}
+
+/// The recording's sound over its region: bars on a 4.5 pitch across the
+/// row, each as tall as the loudest peak in its span, in the region's ink,
+/// and at 35% past the playhead. `track` is the track column, to read each
+/// bar's time from where it is drawn.
+fn waveform(
+    peaks: Arc<[f32]>,
+    track: Rc<Cell<Bounds<Pixels>>>,
+    (offset, visible, duration, playhead): (f32, f32, f32, f32),
+    ink: Hsla,
+) -> impl IntoElement {
+    canvas(
+        |_, _, _| {},
+        move |bounds, _, window, _| {
+            let track = track.get();
+            let track_width = f32::from(track.size.width).max(f32::EPSILON);
+            let time = |x: f32| offset + (x - f32::from(track.left())) / track_width * visible;
+            let index = |t: f32| {
+                ((t / duration.max(f32::EPSILON) * peaks.len() as f32).max(0.) as usize)
+                    .min(peaks.len().saturating_sub(1))
+            };
+            let row = f32::from(bounds.size.height);
+            // From the first bar over the track to the last, so a zoomed
+            // take does not paint thousands of bars out of sight.
+            let left = f32::from(bounds.left());
+            let skipped = ((f32::from(track.left()) - left) / Theme::WAVEFORM_PITCH)
+                .floor()
+                .max(0.);
+            let mut x = left + skipped * Theme::WAVEFORM_PITCH;
+            let right = f32::from(bounds.right());
+            while !peaks.is_empty()
+                && x + Theme::WAVEFORM_BAR <= right
+                && x < f32::from(track.right())
+            {
+                let (from, to) = (index(time(x)), index(time(x + Theme::WAVEFORM_PITCH)));
+                let peak = peaks[from..=to.max(from)]
+                    .iter()
+                    .copied()
+                    .fold(0., f32::max);
+                let bar = row
+                    * (Theme::WAVEFORM_FLOOR
+                        + (Theme::WAVEFORM_CEILING - Theme::WAVEFORM_FLOOR) * peak);
+                let past = time(x + Theme::WAVEFORM_BAR / 2.) <= playhead;
+                let color = if past {
+                    ink
+                } else {
+                    ink.opacity(Theme::WAVEFORM_AHEAD_ALPHA)
+                };
+                window.paint_quad(
+                    fill(
+                        Bounds::new(
+                            point(px(x), bounds.top() + px((row - bar) / 2.)),
+                            size(px(Theme::WAVEFORM_BAR), px(bar)),
+                        ),
+                        color,
+                    )
+                    .corner_radii(px(Theme::WAVEFORM_BAR_RADIUS)),
+                );
+                x += Theme::WAVEFORM_PITCH;
+            }
+        },
+    )
+    .flex_1()
+    .min_w_0()
+    .h(px(Theme::WAVEFORM_HEIGHT))
+}
+
 /// The glyph on a lane's header: what the lane holds.
 fn lane_icon(label: &str) -> &'static str {
     match label {
@@ -733,8 +818,6 @@ impl RootView {
             }
         }
         let labels: Vec<String> = window.get_track_labels().iter().collect();
-        let audio_row = window.get_audio_row() as usize;
-        let waveform = window.get_waveform().0;
         // The lanes drawn: every row with something on it, in order. A row
         // with nothing on it is not drawn at all, header included; adding a
         // region of its kind brings it back. Where each drawn lane starts
@@ -759,6 +842,15 @@ impl RootView {
                 frames
             }
             (None, _) => Vec::new(),
+        };
+        let peaks = match (window.get_waveform().0, &self.wave_peaks) {
+            (Some(image), Some((read, peaks))) if Arc::ptr_eq(&image, read) => peaks.clone(),
+            (Some(image), _) => {
+                let peaks = read_peaks(&image);
+                self.wave_peaks = Some((image, peaks.clone()));
+                peaks
+            }
+            (None, _) => Arc::from([]),
         };
         let duration = window.get_duration();
         let mut tracks = div().relative().h(px(stack));
@@ -913,6 +1005,17 @@ impl RootView {
                                         .text_ellipsis()
                                         .child(region.label.clone()),
                                 )
+                            })
+                            // The recording's sound fills the rest. Not
+                            // wired: an imported sound's waveform, which is
+                            // never read.
+                            .when(labelled && region.kind == Region::TAKE_AUDIO, |el| {
+                                el.child(waveform(
+                                    peaks.clone(),
+                                    self.timeline_bounds.clone(),
+                                    (offset, visible, duration, playhead_time),
+                                    ink,
+                                ))
                             })
                     })
                 });
@@ -1078,25 +1181,6 @@ impl RootView {
                 )));
             }
             tracks = tracks.child(block);
-        }
-        // The waveform over the audio lane, drawn after the regions so the
-        // opaque region under it does not hide it, 6 in from the lane's top
-        // and bottom at `55`. Not wired: the waveform in the region's ink.
-        // It is an image ffmpeg paints in one colour, and gpui cannot tint
-        // an image, so it keeps that colour at the review's strength.
-        if let Some(image) = waveform
-            && let Some(top) = tops.get(audio_row).copied().flatten()
-        {
-            tracks = tracks.child(
-                img(image)
-                    .absolute()
-                    .top(px(top + Theme::WAVEFORM_INSET))
-                    .left(relative(-offset / visible))
-                    .w(relative(window.get_timeline_zoom()))
-                    .h(px(Theme::LANE_HEIGHT - Theme::WAVEFORM_INSET * 2.))
-                    .opacity(Theme::WAVEFORM_ALPHA)
-                    .object_fit(ObjectFit::Fill),
-            );
         }
         let mut timeline = column()
             .id("timeline-content")
