@@ -537,6 +537,23 @@ where
     })
 }
 
+/// [`menu_in`] for a surface that opens above its trigger: it settles up
+/// onto `top` rather than down, so it still moves away from the control.
+pub fn menu_in_above<E>(
+    id: impl Into<ElementId>,
+    top: f32,
+    leave: f32,
+    element: E,
+) -> AnimationElement<E>
+where
+    E: IntoElement + Styled + 'static,
+{
+    element.with_animation(id, menu_curve(), move |el, t| {
+        el.opacity(t * leave)
+            .top(px(top + MENU_IN_RISE * (1.0 - t)))
+    })
+}
+
 /// Menus alone settle on a quint rather than [`EASE_OUT`]: nearly all of
 /// their short travel lands in the first frames, so a menu is there the
 /// moment it is asked for and only its last pixel eases.

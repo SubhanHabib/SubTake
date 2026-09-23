@@ -5,7 +5,8 @@ use std::{cell::Cell, rc::Rc};
 use subtake_theme::Theme;
 
 use crate::{
-    fade_edges, frost, icon_sized, measure, menu_in, menu_list, menu_row, menu_surface, motion,
+    fade_edges, frost, icon_sized, measure, menu_in, menu_in_above, menu_list, menu_row,
+    menu_surface, motion,
 };
 
 /// A retained dropdown: keyboard navigation, selected state, and a native GPUI popover.
@@ -25,6 +26,10 @@ pub struct Dropdown {
     pub caption: Option<SharedString>,
     /// The dense trigger: 34 tall at the dense padding, for a thin pod.
     pub compact: bool,
+    /// Open the menu above the trigger rather than below it, for a control
+    /// that sits at the bottom of what it belongs to. It still flips below
+    /// when above will not fit.
+    pub opens_up: bool,
     open: bool,
     leave: motion::Leave,
     highlighted: usize,
@@ -58,6 +63,7 @@ impl Dropdown {
             glyph: None,
             caption: None,
             compact: false,
+            opens_up: false,
             open: false,
             leave: motion::Leave::default(),
             highlighted: selected,
@@ -251,12 +257,22 @@ impl Render for Dropdown {
                         // absolutely at its container's origin, so without this
                         // the menu would open on top of the control it belongs
                         // to instead of under it.
-                        .position(trigger.bottom_left() + point(px(0.), px(Theme::GAP_SMALL)))
+                        .when(!self.opens_up, |el| {
+                            el.position(trigger.bottom_left() + point(px(0.), px(Theme::GAP_SMALL)))
+                        })
+                        .when(self.opens_up, |el| {
+                            el.anchor(Anchor::BottomLeft)
+                                .position(trigger.origin - point(px(0.), px(Theme::GAP_SMALL)))
+                        })
                         .snap_to_window_with_margin(px(Theme::GAP))
                         .child(frost::frosted(
                             Theme::RADIUS_MENU,
                             frost::MENU_BLUR * leave,
-                            menu_in(
+                            (if self.opens_up {
+                                menu_in_above
+                            } else {
+                                menu_in
+                            })(
                                 ("dropdown-menu", self.leave.opens),
                                 0.0,
                                 leave,
