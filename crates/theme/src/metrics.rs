@@ -48,8 +48,10 @@ impl Theme {
     /// mono size rather than an eighth step on the interface scale: no label,
     /// row or button may take it.
     pub const FONT_TIMECODE: f32 = 14.0;
-    /// An inspector's own heading.
-    pub const FONT_HEADING: f32 = 19.0;
+    /// An inspector's own heading. The handoff sets it at 19; it sits at 17
+    /// so a card's name reads as a label over its controls rather than a
+    /// second title beside the panel's.
+    pub const FONT_HEADING: f32 = 17.0;
     /// A panel or dialog title.
     pub const FONT_PANEL: f32 = 22.0;
     /// Empty-state headlines — the one size that is allowed to be loud.

@@ -33,7 +33,7 @@ pub fn mono_small(text: impl Into<SharedString>, theme: Theme) -> Div {
 }
 
 /// A title. Space Grotesk at medium, at whatever size the surface asks for:
-/// 40 on the empty state, 22 on a panel or dialog, 18–20 on an inspector
+/// 40 on the empty state, 22 on a panel or dialog, 17 on an inspector
 /// heading. It is a display face, so it never appears inside a control.
 pub fn title(text: impl Into<SharedString>, size: f32) -> Div {
     div()

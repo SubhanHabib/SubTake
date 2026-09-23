@@ -175,7 +175,7 @@ goes under that element's fill.
 ## Export
 
 Export is an inspector panel, not a dialog, so the picture stays in view while
-it is set up: a 19 "Export" title and a close control, Video / GIF / Frame,
+it is set up: a 17 "Export" title and a close control, Video / GIF / Frame,
 then OUTPUT (Resolution and Frame rate selects with the value in Geist Mono,
 and a Quality slider that reads Low / Medium / High), DESTINATION (the file in
 Geist Mono and a raised Change…), the estimated size, and a 52 hero button
@@ -218,7 +218,7 @@ state.
 ## Selection
 
 The region the timeline has selected, named by its kind — a tint swatch the
-colour of its lane, "Zoom region" in Space Grotesk 19, and an X that
+colour of its lane, "Zoom region" in Space Grotesk 17, and an X that
 deselects. TIMING is two timecode fields, Start and End, over the duration in
 Geist Mono. A timecode field is typed or scrubbed: click it and the whole value
 is selected, so typing replaces it (Return or clicking away keeps it, Esc puts
@@ -240,7 +240,7 @@ panel, `selection-empty` on the empty state; clicking any region opens it.
 
 ## Cursor
 
-A 19 "Cursor" title and a close control, then Show cursor, the STYLE tiles,
+A 17 "Cursor" title and a close control, then Show cursor, the STYLE tiles,
 Size, CLICK EFFECT as one segmented control, and MOVEMENT — Smooth movement
 and Smoothness. With Show cursor off every row under it dims to 0.4 and takes
 no clicks; Smoothness dims the same way while Smooth movement is off. Smooth
@@ -261,7 +261,7 @@ style with no tile) opens the gallery on it.
 
 ## Camera
 
-The webcam overlay, called the camera in the interface. A 19 "Camera" title
+The webcam overlay, called the camera in the interface. A 17 "Camera" title
 and a close control; POSITION as four 60 `sunk` tiles two across — bottom
 right, bottom left and top right, each with a 16 dot in its corner (`accent`
 when chosen), then Custom — the chosen one ringed by a 1.5 accent edge; SHAPE
