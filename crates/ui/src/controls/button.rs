@@ -82,6 +82,8 @@ pub struct Button {
     glyph: Option<SharedString>,
     glyph_size: Option<f32>,
     height: Option<f32>,
+    /// Side padding in place of the variant's own.
+    padding: Option<f32>,
     /// Hide the caption and render a round icon-only control.
     icon_only: bool,
     /// A quieter second line under the caption: a display's resolution, a
@@ -109,6 +111,7 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         glyph: None,
         glyph_size: None,
         height: None,
+        padding: None,
         icon_only: false,
         detail: None,
         caret: false,
@@ -149,8 +152,6 @@ impl Button {
         self
     }
 
-    /// The dense size — a control in a packed row, a menu item, a pill inside
-    /// a pod.
     /// A second line under the caption, muted and a step down, so the pill
     /// reads as one thing with a name and a detail rather than two labels.
     pub fn detail(mut self, detail: impl Into<SharedString>) -> Self {
@@ -206,8 +207,19 @@ impl Button {
         self
     }
 
+    /// The dense size — a control in a packed row, a menu item, a pill inside
+    /// a pod.
     pub fn small(mut self) -> Self {
         self.height = Some(Theme::CONTROL_HEIGHT_SMALL);
+        self
+    }
+
+    /// The dense size with the dense padding too, whatever the variant: a
+    /// pill on a thin pod, where a Secondary's 18 either side read as a
+    /// second, wider button squeezed to the small height.
+    pub fn compact(mut self) -> Self {
+        self.height = Some(Theme::CONTROL_HEIGHT_SMALL);
+        self.padding = Some(Theme::CONTROL_PADDING_SMALL);
         self
     }
 
@@ -442,7 +454,7 @@ impl RenderOnce for Button {
         if self.icon_only {
             el = el.w(px(height));
         } else {
-            el = el.px(px(self.variant.padding()));
+            el = el.px(px(self.padding.unwrap_or(self.variant.padding())));
             if self.stretch {
                 el = el.flex_1().min_w_0();
             }

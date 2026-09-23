@@ -179,6 +179,9 @@ impl Theme {
     /// A pod's padding. A pod is a holder for 40px controls, not a container
     /// with a layout of its own, so it gives them 8 and nothing more.
     pub const POD_PADDING: f32 = 8.0;
+    /// A thin pod's padding, around 34px controls: the aspect pod, which
+    /// hangs over the picture and so gives it as little as it can.
+    pub const POD_PADDING_SMALL: f32 = 4.0;
     /// A float's inset from the window edge.
     pub const INSET: f32 = 24.0;
     /// A float hanging from the top of the stage sits a step tighter than one

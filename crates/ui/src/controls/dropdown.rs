@@ -23,6 +23,8 @@ pub struct Dropdown {
     /// Geist Mono `muted` — the Export panel's selects. Also the select-row
     /// shape.
     pub caption: Option<SharedString>,
+    /// The dense trigger: 34 tall at the dense padding, for a thin pod.
+    pub compact: bool,
     open: bool,
     leave: motion::Leave,
     highlighted: usize,
@@ -54,6 +56,7 @@ impl Dropdown {
             theme,
             glyph: None,
             caption: None,
+            compact: false,
             open: false,
             leave: motion::Leave::default(),
             highlighted: selected,
@@ -140,11 +143,15 @@ impl Render for Dropdown {
                     .gap(px(if row { Theme::ICON_GAP_ROW } else { Theme::GAP }))
                     .h(px(if row {
                         Theme::CONTROL_HEIGHT_LARGE
+                    } else if self.compact {
+                        Theme::CONTROL_HEIGHT_SMALL
                     } else {
                         Theme::CONTROL_HEIGHT
                     }))
                     .px(px(if row {
                         Theme::CONTROL_PADDING_LARGE
+                    } else if self.compact {
+                        Theme::CONTROL_PADDING_SMALL
                     } else {
                         Theme::CONTROL_PADDING
                     }))

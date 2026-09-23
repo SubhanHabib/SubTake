@@ -116,6 +116,15 @@ pub fn pod(theme: Theme) -> Div {
         .occlude()
 }
 
+/// A thin pod: the same float around 34px controls, at half the padding.
+/// It stands 42 tall, so the row radius, 22, is what keeps its ends round;
+/// the pod's own 30 would be clamped to the same thing.
+pub fn pod_small(theme: Theme) -> Div {
+    pod(theme)
+        .p(px(Theme::POD_PADDING_SMALL))
+        .rounded(px(Theme::RADIUS_ROW))
+}
+
 /// A hairline rule, one row of a stack.
 ///
 /// It takes no part in the distribution of its parent's spare height: a
