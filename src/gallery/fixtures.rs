@@ -300,6 +300,7 @@ pub(super) fn fixture_region(
         row,
         tint: Color::from_rgb_u8((tint >> 16) as u8, (tint >> 8) as u8, tint as u8),
         selected: false,
+        arrow: kind == "annotationRegions" && label == "Arrow",
     }
 }
 

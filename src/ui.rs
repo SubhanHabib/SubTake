@@ -265,6 +265,10 @@ pub struct RootView {
     preview_layer: Rc<Cell<Bounds<Pixels>>>,
     pinch: Option<(bool, f32, f32, Point<Pixels>)>,
     gesture: Option<Gesture>,
+    /// A held state the gallery starts in, since it cannot drag:
+    /// `SUBTAKE_GALLERY_GESTURE=move`, `trim` or `scrub`. Taken on the first
+    /// frame that has the regions to hold.
+    gallery_gesture: Option<String>,
     menu: Option<String>,
     /// The command menu last open, and its way out, so a dismissed menu
     /// fades where it was.
@@ -364,6 +368,7 @@ impl RootView {
             preview_layer: Rc::new(Cell::new(Bounds::default())),
             pinch: None,
             gesture: None,
+            gallery_gesture: std::env::var("SUBTAKE_GALLERY_GESTURE").ok(),
             menu: None,
             menu_last: String::new(),
             menu_leave: subtake_ui::Leave::default(),

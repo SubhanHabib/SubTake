@@ -331,6 +331,7 @@ impl App {
                     row,
                     tint: ui_runtime::Color::from_rgb_u8(red, green, blue),
                     selected: false,
+                    arrow: false,
                 };
                 if key == "clipRegions" && history.project.regions(key).is_empty() {
                     for (i, span) in timeline::spans(&history.project, duration)
@@ -372,6 +373,7 @@ impl App {
                         selected: selected_keys
                             .iter()
                             .any(|(kind, id)| kind == key && r["id"] == *id),
+                        arrow: key == "annotationRegions" && r["type"] == "figure",
                     });
                 }
             }

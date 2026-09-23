@@ -7,6 +7,9 @@ use super::*;
 const TIMELINE_ZOOM_STEP: f32 = 1.5;
 const TIMELINE_ZOOM_MAX: f32 = 100.;
 
+/// How far the gallery's held region has been moved or trimmed, in seconds.
+const GALLERY_HOLD_SECONDS: f32 = 4.;
+
 /// The ruler's tick intervals, in seconds. It takes the smallest that keeps
 /// its labels `RULER_LABEL_SPACING` apart at the current zoom.
 const RULER_INTERVALS: [f32; 9] = [1., 2., 5., 10., 15., 30., 60., 120., 300.];
@@ -23,14 +26,18 @@ fn ruler_clock(seconds: f32, hundredths: bool) -> String {
     }
 }
 
-/// The icon a region of this kind shows beside its label, and alone when the
-/// region is too short for one. Zoom, clip and audio regions have none.
-fn region_icon(kind: &str) -> Option<&'static str> {
-    match kind {
+/// The icon on a region's plate: what kind of region it is. A native
+/// marker has none.
+fn region_icon(region: &Region) -> Option<&'static str> {
+    match region.kind.as_str() {
+        "zoomRegions" => Some("MagnifyingGlassPlus-regular"),
         "speedRegions" => Some("Timer-regular"),
         "trimRegions" => Some("Scissors-regular"),
+        "annotationRegions" if region.arrow => Some("ArrowUpRight-regular"),
         "annotationRegions" => Some("TextT-regular"),
         "autoCaptions" => Some("ClosedCaptioning-regular"),
+        "audioRegions" | Region::TAKE_AUDIO => Some("MusicNotes-regular"),
+        "clipRegions" | Region::TAKE_CLIP => Some("FilmStrip-regular"),
         _ => None,
     }
 }
@@ -473,6 +480,23 @@ impl RootView {
                             })),
                     ),
             );
+        let regions: Vec<Region> = window.get_regions().iter().collect();
+        // The gallery's held states: the selected region moved or its end
+        // trimmed a few seconds on, or the playhead held. A pointer moving
+        // over the window carries the hold on from where it is.
+        if let Some(hold) = self.gallery_gesture.take() {
+            let selected = regions.iter().find(|r| r.selected).cloned();
+            self.gesture = match (hold.as_str(), selected) {
+                ("scrub", _) => Some(Gesture::Seek { grab: 0. }),
+                ("move" | "trim", Some(region)) => Some(Gesture::Region {
+                    region,
+                    origin: point(px(0.), px(0.)),
+                    mode: i32::from(hold == "trim"),
+                    delta: GALLERY_HOLD_SECONDS,
+                }),
+                _ => None,
+            };
+        }
         let track_width = f32::from(self.timeline_bounds.get().size.width);
         let playhead_time = window.get_playhead();
         let playhead = (playhead_time - offset) / visible;
@@ -553,7 +577,6 @@ impl RootView {
             }
         }
         let labels: Vec<String> = window.get_track_labels().iter().collect();
-        let regions: Vec<Region> = window.get_regions().iter().collect();
         let audio_row = window.get_audio_row() as usize;
         let waveform = window.get_waveform().0;
         // The lanes drawn: every row with something on it, in order. A row
@@ -595,24 +618,36 @@ impl RootView {
                     end += delta;
                 }
             }
-            // A solid fill and an ink from the lane's hue, with no edge at
-            // rest. Selected, it gains an accent edge and nothing else — an
-            // inset shadow rather than a border, since a border adds to
-            // what the block measures and would shift its own label.
+            // A pill the lane's height in a solid fill and an ink from the
+            // lane's hue, with no edge at rest. Selected, it gains a 2px
+            // accent ring and its trim handles. Dragged, it lifts on the
+            // panel shadow over a dashed outline where it started.
             let (fill, ink) = theme.region_tones(region.tint.to_gpui());
-            let edges = if region.selected {
-                vec![hairline(theme.accent, Theme::SELECTED_WIDTH)]
-            } else {
-                Vec::new()
-            };
-            let width = (f32::from(self.timeline_bounds.get().size.width) * (end - start)
-                / visible)
-                .max(Theme::GAP);
+            let moving = matches!(
+                &self.gesture,
+                Some(Gesture::Region { region: dragged, mode: 0, .. })
+                    if dragged.id == region.id && dragged.kind == region.kind
+            );
+            let width = (track_width * (end - start) / visible).max(Theme::GAP);
+            if moving {
+                tracks = tracks.child(
+                    div()
+                        .absolute()
+                        .left(relative((region.start - offset) / visible))
+                        .top(px(top))
+                        .w(relative(((region.end - region.start) / visible).max(0.001)))
+                        .min_w(px(Theme::GAP))
+                        .h(px(height))
+                        .rounded_full()
+                        .border(px(Theme::REGION_GHOST_WIDTH))
+                        .border_dashed()
+                        .border_color(theme.line),
+                );
+            }
             let block_id: ElementId =
                 SharedString::from(format!("region-{}-{}", region.kind, region.id)).into();
             let hover_key = subtake_ui::motion::tween_key(&block_id, "hover");
             let mark_key = hover_key.clone();
-            let hover_fill = subtake_ui::motion::blend(fill, ink, Theme::REGION_HOVER_INK);
             let ring = subtake_ui::focus_ring(theme);
             let mut block = div()
                 .id(block_id)
@@ -622,51 +657,66 @@ impl RootView {
                 .w(relative(((end - start) / visible).max(0.001)))
                 .min_w(px(Theme::GAP))
                 .h(px(height))
-                .rounded(px(Theme::RADIUS_REGION))
-                .overflow_hidden()
-                .bg(subtake_ui::motion::hover_blend(
-                    &hover_key, fill, hover_fill,
-                ))
+                .rounded_full()
+                .bg(fill)
                 .on_hover(subtake_ui::motion::hover_listener(hover_key))
-                .shadow(edges.clone())
+                .when(moving, |el| el.shadow(theme.panel_shadow()))
                 // Held, a region dims as every pressed control does, and
                 // stays dimmed while it is dragged. Tab reaches it, and Enter
                 // or Space selects it, which is what a click does.
                 .when(!take, |el| {
                     el.active(|s| s.opacity(Theme::PRESSED_OPACITY))
                         .tab_index(0)
-                        .focus_visible(move |s| {
-                            s.shadow(edges.iter().cloned().chain([ring]).collect())
-                        })
+                        .focus_visible(move |s| s.shadow(vec![ring]))
                         .cursor(CursorStyle::ClosedHand)
                 })
                 .child({
-                    // Below the label width a region shows only its kind's
-                    // icon, centred; at or above it the icon, if the kind
-                    // has one, then the label. A label that would get fewer
-                    // than four letters is left off rather than cut to a
-                    // fragment, and the tooltip names the region either way.
-                    let icon = region_icon(&region.kind);
+                    // The kind's icon on a `plate` circle, then the label in
+                    // the ink. A label that would get fewer than four
+                    // letters is left off rather than cut to a fragment, and
+                    // the region shows its plate alone, 4 in at both ends;
+                    // the tooltip names it either way. Not drawn by the
+                    // design: a region too short for its plate shrinks the
+                    // plate to fit, and drops the icon once the plate is
+                    // smaller than it.
+                    let icon = region_icon(region);
+                    let inset = Theme::REGION_PLATE_INSET;
+                    let plate = (height - 2. * inset).min(width - 2. * inset).max(0.);
                     let room = width
-                        - 2. * Theme::REGION_PADDING
-                        - icon.map_or(0., |_| Theme::REGION_ICON_SIZE + Theme::REGION_ICON_GAP);
-                    let labelled = width >= Theme::REGION_LABEL_MIN_WIDTH
-                        && room >= Theme::REGION_LABEL_MIN_ROOM;
+                        - Theme::REGION_PADDING_START
+                        - icon.map_or(0., |_| plate + Theme::REGION_GAP)
+                        - Theme::REGION_PADDING_END;
+                    let labelled = room >= Theme::REGION_LABEL_MIN_ROOM;
                     div()
                         .size_full()
                         .flex()
                         .items_center()
+                        .gap(px(Theme::REGION_GAP))
+                        .when(labelled, |el| {
+                            el.pl(px(Theme::REGION_PADDING_START))
+                                .pr(px(Theme::REGION_PADDING_END))
+                        })
                         .when(!labelled, |el| el.justify_center())
-                        .gap(px(Theme::REGION_ICON_GAP))
-                        .when(labelled, |el| el.px(px(Theme::REGION_PADDING)))
-                        .text_size(px(Theme::FONT_SMALL))
+                        .text_size(px(Theme::FONT_BODY))
                         .font_weight(FontWeight::MEDIUM)
                         .text_color(ink)
-                        .overflow_hidden()
                         .when_some(icon, |el, name| {
                             el.child(
-                                subtake_ui::icon_sized(name, Theme::REGION_ICON_SIZE, ink)
-                                    .flex_none(),
+                                div()
+                                    .flex_none()
+                                    .size(px(plate))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded_full()
+                                    .bg(theme.plate)
+                                    .when(plate >= Theme::REGION_ICON_SIZE, |el| {
+                                        el.child(subtake_ui::icon_sized(
+                                            name,
+                                            Theme::REGION_ICON_SIZE,
+                                            ink,
+                                        ))
+                                    }),
                             )
                         })
                         // On one line, in a box that may shrink below it: a
@@ -682,6 +732,21 @@ impl RootView {
                             )
                         })
                 });
+            // The selected ring, over the fill and under the handles: a
+            // bordered overlay, not the block's own border, which would shift
+            // its label by the ring's width; and not an inset shadow, which
+            // gpui paints under the element's own fill, so an opaque region
+            // hid it.
+            if region.selected {
+                block = block.child(
+                    div()
+                        .absolute()
+                        .inset_0()
+                        .rounded_full()
+                        .border(px(Theme::REGION_SELECTED_RING))
+                        .border_color(theme.accent),
+                );
+            }
             // The tooltip names the region and gives its range, for one
             // shown as an icon or with its label cut short. Not drawn by the
             // design: it shows on every region, since whether a label is cut
@@ -743,46 +808,66 @@ impl RootView {
             );
             for (mode, right) in [(2, false), (1, true)] {
                 let drag_region = region.clone();
-                // The grab area is wide; the mark inside it is 3px. The mark
-                // is only drawn when the region is selected or under the
-                // pointer — a timeline of twenty regions showing forty
+                // An accent bar with a white ring standing 3 out past the
+                // region's end, in a wider grab area centred on it. It shows
+                // when the region is selected, at half strength under the
+                // pointer, and grows to 6 × 22 at full strength while it is
+                // dragged — a timeline of twenty regions showing forty
                 // handles is a texture, not a set of controls.
-                let selected = region.selected;
+                let held = matches!(
+                    &self.gesture,
+                    Some(Gesture::Region { region: dragged, mode: held, .. })
+                        if *held == mode && dragged.id == region.id && dragged.kind == region.kind
+                );
+                let shown = f32::from(region.selected || held);
+                let hovered = shown.max(Theme::REGION_HANDLE_HOVER);
+                let (mark_width, mark_height) = if held {
+                    (
+                        Theme::REGION_HANDLE_WIDTH_HELD,
+                        Theme::REGION_HANDLE_HEIGHT_HELD,
+                    )
+                } else {
+                    (Theme::REGION_HANDLE_WIDTH, Theme::REGION_HANDLE_HEIGHT)
+                };
+                let white = gpui::white();
+                let centre = Theme::REGION_HANDLE_WIDTH / 2. - Theme::REGION_HANDLE_OUTSET;
                 let mut handle = div()
                     .id(("resize", mode as usize))
                     .absolute()
                     .top_0()
                     .w(px(Theme::REGION_HANDLE_TARGET))
                     .h_full()
-                    .group("region-handle")
                     .cursor(CursorStyle::ResizeLeftRight)
                     .child(
                         div()
-                            .id("mark")
                             .absolute()
-                            .left(px(Theme::REGION_HANDLE_INSET))
-                            .top(px(Theme::REGION_HANDLE_MARGIN))
-                            .w(px(Theme::REGION_HANDLE_WIDTH))
-                            .h(px(height - Theme::REGION_HANDLE_MARGIN * 2.0))
+                            .left(px((Theme::REGION_HANDLE_TARGET - mark_width) / 2.))
+                            .top(px((height - mark_height) / 2.))
+                            .w(px(mark_width))
+                            .h(px(mark_height))
                             .rounded(px(Theme::REGION_HANDLE_RADIUS))
                             .bg(subtake_ui::motion::hover_blend(
                                 &mark_key,
-                                ink.opacity(if selected {
-                                    Theme::REGION_HANDLE_ALPHA
-                                } else {
-                                    0.
-                                }),
-                                ink.opacity(Theme::REGION_HANDLE_ALPHA),
+                                theme.accent.opacity(shown),
+                                theme.accent.opacity(hovered),
                             ))
-                            // Not drawn by the design: a held handle's mark
-                            // goes to the full ink, so the grab reads before
-                            // the edge has moved.
-                            .group_active("region-handle", move |s| s.bg(ink)),
+                            .shadow(vec![BoxShadow {
+                                color: subtake_ui::motion::hover_blend(
+                                    &mark_key,
+                                    white.opacity(shown),
+                                    white.opacity(hovered),
+                                ),
+                                offset: point(px(0.), px(0.)),
+                                blur_radius: px(0.),
+                                spread_radius: px(Theme::REGION_HANDLE_RING),
+                                inset: false,
+                            }]),
                     );
+                let edge = px(centre - Theme::REGION_HANDLE_TARGET / 2.);
                 handle = if right {
-                    handle.right_0()
+                    handle.right(edge)
                 } else {
-                    handle.left_0()
+                    handle.left(edge)
                 };
                 block = block.child(handle.on_mouse_down(
                     MouseButton::Left,

@@ -287,34 +287,41 @@ impl Theme {
     //
     // A region is a solid fill and an ink, both taken from its lane's hue
     // by `Theme::region_tones`, so seven lane tints stay seven pairs.
-    /// Not drawn by the design: a region under the pointer, its fill moved
-    /// this far toward its ink.
-    pub const REGION_HOVER_INK: f32 = 0.1;
-    /// A trim handle's mark, in the region's ink.
-    pub const REGION_HANDLE_ALPHA: f32 = 0xcc as f32 / 255.0;
     /// The audio waveform over its region, in the region's ink at `55`, 6
     /// in from the lane's top and bottom.
     pub const WAVEFORM_ALPHA: f32 = 0x55 as f32 / 255.0;
     pub const WAVEFORM_INSET: f32 = 6.0;
-    pub const REGION_PADDING: f32 = 10.0;
-    /// The narrowest region that still shows its label. Below it a region
-    /// shows only its kind's icon, centred, and the tooltip carries the name.
-    pub const REGION_LABEL_MIN_WIDTH: f32 = 48.0;
+    /// A region is a pill the lane's height: 4 in at its start, where the
+    /// icon plate sits, 14 at its end, and 10 between the plate and the
+    /// label. A region showing only its plate is 4 in at both ends.
+    pub const REGION_PADDING_START: f32 = 4.0;
+    pub const REGION_PADDING_END: f32 = 14.0;
+    pub const REGION_GAP: f32 = 10.0;
+    /// The icon plate: a circle 4 in from the pill's top and bottom (36 in a
+    /// 44 lane, 44 in the 52 clip lane), with the kind's icon at 16.
+    pub const REGION_PLATE_INSET: f32 = 4.0;
+    pub const REGION_ICON_SIZE: f32 = 16.0;
     /// The least room a label is given before it is left off: four letters
-    /// of the small face, so no region ends in a fragment like "An…".
-    pub const REGION_LABEL_MIN_ROOM: f32 = 4.0 * Self::FONT_SMALL * Self::MONO_ADVANCE;
-    /// A region's kind icon, and the gap between it and the label.
-    pub const REGION_ICON_SIZE: f32 = 13.0;
-    pub const REGION_ICON_GAP: f32 = 6.0;
-    /// A trim handle: a bar 3 wide, inset 3 from the region's end, running
-    /// the lane's height less 6 of air at each end.
-    pub const REGION_HANDLE_WIDTH: f32 = 3.0;
-    pub const REGION_HANDLE_RADIUS: f32 = 2.0;
-    pub const REGION_HANDLE_INSET: f32 = 3.0;
-    pub const REGION_HANDLE_MARGIN: f32 = 6.0;
-    /// The grab area around a handle — wider than the mark, because a 3px
-    /// target is not a target.
+    /// of the label face, so no region ends in a fragment like "An…".
+    pub const REGION_LABEL_MIN_ROOM: f32 = 4.0 * Self::FONT_BODY * Self::MONO_ADVANCE;
+    /// A selected region's accent ring, inside its edge.
+    pub const REGION_SELECTED_RING: f32 = 2.0;
+    /// A trim handle: a 5 × 18 accent bar, radius 3, with a 1.5 white ring,
+    /// standing 3 out past the region's end. At half strength under the
+    /// pointer, full when selected, and 6 × 22 while it is dragged.
+    pub const REGION_HANDLE_WIDTH: f32 = 5.0;
+    pub const REGION_HANDLE_HEIGHT: f32 = 18.0;
+    pub const REGION_HANDLE_WIDTH_HELD: f32 = 6.0;
+    pub const REGION_HANDLE_HEIGHT_HELD: f32 = 22.0;
+    pub const REGION_HANDLE_RADIUS: f32 = 3.0;
+    pub const REGION_HANDLE_RING: f32 = 1.5;
+    pub const REGION_HANDLE_OUTSET: f32 = 3.0;
+    pub const REGION_HANDLE_HOVER: f32 = 0.5;
+    /// The grab area around a handle, centred on it — wider than the mark,
+    /// because a 5px target is not a target.
     pub const REGION_HANDLE_TARGET: f32 = 10.0;
+    /// A dragged region's source position: a 1 dashed outline in `line`.
+    pub const REGION_GHOST_WIDTH: f32 = 1.0;
 
     /// The playhead, in four parts on one x. A bubble with the time, 26
     /// tall and 12 in, glowing 18 (24 while scrubbed), with a 10 × 6 tail

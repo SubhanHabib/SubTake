@@ -183,15 +183,27 @@ lane (`Region::TAKE_CLIP`, `TAKE_AUDIO`). Neither is a project region, so a
 press on one seeks rather than selecting it. Not wired: dragging a new region
 from Add over the timeline to show its lane.
 
-A region is a solid fill with an ink, both from its lane's hue: in light
-the fill at 75% saturation and 82% lightness under an ink at 65% and 25%, in
-dark the fill at 35% and 34% under an ink at 60% and 88%. The label is
-Geist 500 at 11 in the ink, 10 in from the edge, and the trim handles' marks
-are the ink too. A selected region takes a 1.5px accent edge; an unselected
-one has none. The waveform sits over the regions, 6 in from the lane's top
-and bottom, at a third strength. Not drawn by the design: the hover, a 10%
-step of the fill toward the ink. Not wired: the waveform in the region's
-ink; it is an ffmpeg image and gpui can't tint one.
+A region is a pill the lane's height, a solid fill with an ink, both from its
+lane's hue: in light the fill at 75% saturation and 82% lightness under an
+ink at 65% and 25%, in dark the fill at 35% and 34% under an ink at 60% and
+88%. It floats on the console's glass with no edge at rest. 4 in from its
+start sits a `plate` circle 4 short of the lane at each end (36, or 44 in
+the clip lane) with the kind's icon at 16 in the ink — `MagnifyingGlassPlus`,
+`Timer`, `Scissors`, `TextT` (`ArrowUpRight` for an arrow), `ClosedCaptioning`,
+`MusicNotes`, `FilmStrip` — then, 10 on, the label in Geist 500 at 13 in the
+ink, 14 short of the end. Selected, it takes a 2px accent ring and a trim
+handle at each end: a 5 by 18 accent bar, radius 3, with a 1.5 white ring,
+standing 3 out past the end. Under the pointer the handles show at half
+strength; the one being dragged grows to 6 by 22 at full. A region being
+moved lifts on the panel shadow over a 1px dashed `line` outline where it
+started. The waveform sits over the audio regions, 6 in from the lane's top
+and bottom, at a third strength. `SUBTAKE_GALLERY_SCREEN=selection` has a
+selected zoom; add `SUBTAKE_GALLERY_GESTURE=move` or `trim` to see it moved
+or its end handle held, or `scrub` for the playhead held. Not drawn by the
+design: the clip and trim regions' plates, until the clip lane draws the
+recording's frames; and a native marker, which has no icon and so no plate.
+Not wired: the waveform in the region's ink; it is an ffmpeg image and gpui
+can't tint one.
 
 The ruler is a 32-tall `sunk` band, fully round, with a hairline. It counts in
 `m:ss`, Geist Mono at 11, at the smallest of 1, 2, 5, 10, 15, 30, 60, 120 or
@@ -219,15 +231,14 @@ still reads milliseconds (`00:37.150`); the gallery's reads hundredths, as
 the bubble does.
 
 A region's label sits on one line and ends in an ellipsis when the region is
-shorter than it. Speed, trim, annotation and caption regions carry their
-kind's icon at 13 before the label (`Timer`, `Scissors`, `TextT`,
-`ClosedCaptioning`), 6 apart; zoom, clip and audio carry none. A region under
-48 wide, or one that would leave its label fewer than four letters, shows
-only the icon, centred. The tooltip names the region and gives its range in
-Geist Mono at 60%, `2× Speed  0:33–0:41`. Not drawn by the design: the tooltip
-shows on every region, not only a cut or icon-only one, since whether a
-label is cut is only known after layout; and it sits by the pointer rather
-than 8 above the region, centred, as gpui places tooltips.
+shorter than it. A region that would leave its label fewer than four letters
+shows only its plate, centred, 4 in at both ends. The tooltip names the
+region and gives its range in Geist Mono at 60%, `2× Speed  0:33–0:41`. Not
+drawn by the design: a region too short for its plate shrinks the plate to
+fit, and drops the icon once the plate is smaller than it; the tooltip shows
+on every region, not only a cut or plate-only one, since whether a label is
+cut is only known after layout; and it sits by the pointer rather than 8
+above the region, centred, as gpui places tooltips.
 `SUBTAKE_GALLERY_SCREEN=panel-Frame` has both kinds of region.
 
 The console has no status row: the document's status is the title pill's
