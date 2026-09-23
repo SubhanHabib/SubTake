@@ -96,13 +96,13 @@ The native capture helper now uses an explicit selected-window inclusion filter 
 
 ## GPUI real-app walkthrough
 
-On 23 September 2026, the GPUI build passed `SUBTAKE_WALKTHROUGH` (see [RUNNING.md](../RUNNING.md)) in both appearances. The run went through launcher cards, countdown, a built-in display capture with pause and resume, stop and finalisation, the editor with playback, every inspector panel, visual crop, a zoom region, Presets and an export. Both exports probed at **5414 × 3044**: dark ran 9.4 s and light 9.3 s. The camera and microphone were off, and settings were isolated.
+On 23 September 2026, the GPUI build passed `SUBTAKE_WALKTHROUGH` (see [RUNNING.md](../RUNNING.md)) in both appearances. The run went through launcher cards, countdown, a capture of the laptop's built-in display with pause and resume, stop and finalisation, the editor with playback, every inspector panel, visual crop, a zoom region, Presets and an export. Both exports probed at **3240 × 1820** and ran 9.4 s. The camera and microphone were off, and settings were isolated.
 
-The screen was locked during the run, so the captured content is the lock screen. The runs were filmed app-only over grey. Input came from the controls' callbacks; pointer hit testing was not exercised.
+The runs were filmed on the built-in display with the desktop behind the app, and other apps' windows were hidden. Input came from the controls' callbacks; pointer hit testing was not exercised.
 
-The run found two issues that are still open:
-- The export is larger than its 3600 × 2338 source and took about 40 s.
-- The clip lane shows flat mint until its thumbnails load.
+A first attempt had matched sources by a "Built-in" name. Sources are named "Display N", so it recorded an external display instead, and that explained a 5414 × 3044 export. The walkthrough now asks CoreGraphics which display is built in.
+
+One issue is still open: the clip lane shows flat mint until its thumbnails load.
 
 ## Repository root migration
 
