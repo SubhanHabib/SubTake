@@ -53,6 +53,8 @@ pub(super) struct WindowState {
     pub(super) id: u64,
     kind: WindowKind,
     visible: Cell<bool>,
+    /// Times the window has gone from hidden to shown.
+    opens: Cell<u32>,
     dirty: Cell<bool>,
     native: Cell<*mut std::ffi::c_void>,
     handle: Cell<Option<gpui::WindowHandle<RootView>>>,
@@ -71,6 +73,7 @@ impl Window {
             id: next_id(),
             kind,
             visible: Cell::new(false),
+            opens: Cell::new(0),
             dirty: Cell::new(true),
             native: Cell::new(std::ptr::null_mut()),
             handle: Cell::new(None),
@@ -114,7 +117,16 @@ impl Window {
         self.0.visible.get()
     }
 
+    /// Bumps each time the window goes from hidden to shown, so a view can
+    /// tell a fresh opening from staying open.
+    pub fn opens(&self) -> u32 {
+        self.0.opens.get()
+    }
+
     pub fn show(&self) {
+        if !self.0.visible.get() {
+            self.0.opens.set(self.0.opens.get() + 1);
+        }
         self.0.visible.set(true);
         self.invalidate();
         if let Some(view) = self.native_view() {

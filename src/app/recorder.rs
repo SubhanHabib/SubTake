@@ -159,8 +159,9 @@ impl App {
         let Some(options) = &self.launcher_options else {
             return Ok(());
         };
+        // A closing card folds back into the bar and hides its own window
+        // once it has gone (`RootView::card_height`).
         if panel.is_empty() {
-            options.hide()?;
             return Ok(());
         }
         options.show()?;

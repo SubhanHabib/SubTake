@@ -17,7 +17,13 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.theme;
-        let name = state.get_panel();
+        // Closing, the card keeps what it last showed while it folds away.
+        let open = !state.get_panel().is_empty();
+        let fresh = open && self.card_last.1 != state.window().opens();
+        if open {
+            self.card_last = (state.get_panel(), state.window().opens());
+        }
+        let name = self.card_last.0.clone();
         let title = match name.as_str() {
             "sources" => "Capture source",
             "audio" => "Audio",
@@ -59,7 +65,13 @@ impl RootView {
         // card around it eases to that height from the bar's side up, so a
         // swap to a taller or shorter card grows or shrinks rather than
         // jumping.
-        let height = self.card_height(state, window);
+        let height = self.card_height(state, open, fresh, window);
+        let from = self.card_ease.map_or(height, |ease| ease.0);
+        let fade = if open || from <= 0. {
+            1.
+        } else {
+            (height / from).clamp(0., 1.)
+        };
         panel_variant(theme, UiSurface::Overlay)
             .absolute()
             .bottom_0()
@@ -76,8 +88,9 @@ impl RootView {
                     .left_0()
                     .right_0()
                     .p(px(Theme::PANEL_PADDING))
+                    .opacity(fade)
                     .child(fade_in(
-                        SharedString::from(format!("options-{name}")),
+                        SharedString::from(format!("options-{name}-{}", self.card_last.1)),
                         content,
                     ))
                     .child(options_fit(state.clone())),
@@ -86,27 +99,52 @@ impl RootView {
     }
 
     /// The card's height this frame, easing toward what its content last
-    /// measured. While it eases the window holds the taller of the two.
-    fn card_height(&mut self, state: &RecordingOptions, window: &mut Window) -> f32 {
+    /// measured — up out of the bar when it opens, back down into it when it
+    /// closes. While it eases the window holds the taller of the two, and
+    /// once a closing card is gone the window hides.
+    fn card_height(
+        &mut self,
+        state: &RecordingOptions,
+        open: bool,
+        fresh: bool,
+        window: &mut Window,
+    ) -> f32 {
         let natural = state.get_options_height();
+        let target = if open { natural } else { 0. };
         let now = Instant::now();
-        let at = |(from, to, started): (f32, f32, Instant)| {
-            let raw = now.saturating_duration_since(started).as_secs_f32() * 1000.
-                / CARD_RESIZE_MS as f32;
+        let at = |(from, to, started, ms): (f32, f32, Instant, u64)| {
+            let raw = now.saturating_duration_since(started).as_secs_f32() * 1000. / ms as f32;
             if raw >= 1. {
                 to
             } else {
                 subtake_ui::motion::lerp(from, to, subtake_ui::motion::EASE_OUT.eval(raw))
             }
         };
+        let still = subtake_ui::motion::reduced_motion();
         let ease = match self.card_ease {
-            Some(ease) if ease.1 == natural => ease,
-            Some(ease) if !subtake_ui::motion::reduced_motion() => (at(ease), natural, now),
-            _ => (natural, natural, now),
+            _ if still => (target, target, now, CARD_RESIZE_MS),
+            _ if fresh => (0., target, now, CARD_OPEN_MS),
+            Some(ease) if ease.1 == target => ease,
+            // Opening, the card's first measure can land mid-way; it goes on
+            // opening toward the new height rather than turning into a resize.
+            Some(ease) if open && ease.3 == CARD_OPEN_MS && at(ease) != ease.1 => {
+                (at(ease), target, now, CARD_OPEN_MS)
+            }
+            Some(ease) if open => (at(ease), target, now, CARD_RESIZE_MS),
+            Some(ease) => (at(ease), target, now, CARD_CLOSE_MS),
+            None => (target, target, now, CARD_RESIZE_MS),
         };
         self.card_ease = Some(ease);
         let height = at(ease);
-        let room = if height == natural {
+        if !open && height == 0. {
+            let state = state.clone();
+            crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
+                if state.get_panel().is_empty() {
+                    let _ = state.hide();
+                }
+            });
+        }
+        let room = if height == target {
             0.
         } else {
             window.request_animation_frame();
@@ -115,7 +153,11 @@ impl RootView {
         // The frosted material under the card follows it, not the window.
         crate::platform::set_recorder_glass_height(
             state.window(),
-            if room == 0. { 0. } else { height },
+            if height == natural {
+                0.
+            } else {
+                height.max(0.01)
+            },
         );
         if state.get_options_room() != room {
             let state = state.clone();

@@ -600,3 +600,7 @@ pub const PANEL_DRILL_SHIFT: f32 = 24.0;
 /// A recorder card swapped for a taller or shorter one eases between their
 /// heights over this long, its edge by the bar staying put.
 pub const CARD_RESIZE_MS: u64 = 220;
+/// A recorder card grows up out of the bar over this long as it opens, and
+/// folds back down into it over the shorter time as it closes.
+pub const CARD_OPEN_MS: u64 = 260;
+pub const CARD_CLOSE_MS: u64 = 140;
