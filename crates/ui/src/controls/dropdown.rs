@@ -24,6 +24,7 @@ pub struct Dropdown {
     /// shape.
     pub caption: Option<SharedString>,
     open: bool,
+    leave: motion::Leave,
     highlighted: usize,
     bounds: Rc<Cell<Bounds<Pixels>>>,
     change: Box<dyn Fn(usize, &mut Window, &mut App)>,
@@ -54,6 +55,7 @@ impl Dropdown {
             glyph: None,
             caption: None,
             open: false,
+            leave: motion::Leave::default(),
             highlighted: selected,
             bounds: Rc::new(Cell::new(Bounds::default())),
             change: Box::new(change),
@@ -202,7 +204,12 @@ impl Render for Dropdown {
                     })),
             );
 
-        if open {
+        // A dismissed menu fades out where it was rather than vanishing.
+        let leave = self.leave.shown(open);
+        if leave.is_some_and(|leave| leave < 1.) {
+            window.request_animation_frame();
+        }
+        if let Some(leave) = leave {
             // The menu is `anchored`, not absolutely placed. An absolute menu
             // is positioned against its trigger and then clipped by whatever
             // window it happens to be in — which is fine in the editor and
@@ -232,10 +239,11 @@ impl Render for Dropdown {
                         .snap_to_window_with_margin(px(Theme::GAP))
                         .child(frost::frosted(
                             Theme::RADIUS_MENU,
-                            frost::MENU_BLUR,
+                            frost::MENU_BLUR * leave,
                             menu_in(
-                                "dropdown-menu",
+                                ("dropdown-menu", self.leave.opens),
                                 0.0,
+                                leave,
                                 menu_surface(theme)
                                     .id("choices")
                                     // The menu tracks its trigger rather than

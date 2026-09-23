@@ -126,9 +126,16 @@ impl RootView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let Some(name) = self.menu.clone() else {
+        if let Some(name) = &self.menu {
+            self.menu_last = name.clone();
+        }
+        let Some(leave) = self.menu_leave.shown(self.menu.is_some()) else {
             return div().into_any_element();
         };
+        if leave < 1. {
+            window.request_animation_frame();
+        }
+        let name = self.menu_last.clone();
         let theme = self.theme;
         let filter = self.menu_filter.to_lowercase();
         let matches: Vec<_> = Self::menu_commands(&name)
@@ -269,10 +276,11 @@ impl RootView {
 
         deferred(frosted(
             Theme::RADIUS_MENU,
-            MENU_BLUR,
+            MENU_BLUR * leave,
             menu_in(
-                "command-menu-in",
+                ("command-menu-in", self.menu_leave.opens),
                 top,
+                leave,
                 menu_surface(theme)
                     .id("command-menu")
                     .absolute()

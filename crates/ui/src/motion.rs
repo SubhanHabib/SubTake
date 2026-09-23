@@ -412,7 +412,44 @@ pub fn hover_listener(
 pub const MENU_IN_MS: u64 = 140;
 
 /// The distance a menu travels as it settles, in pixels.
-const MENU_IN_RISE: f32 = 3.0;
+const MENU_IN_RISE: f32 = 4.0;
+
+/// How long a floating surface takes to fade once dismissed: quicker than
+/// it arrives, since by then the eye has moved on.
+pub const MENU_OUT_MS: u64 = 100;
+
+/// A floating surface's way out. Its owner reports each render whether it
+/// is open; while it is, or for [`MENU_OUT_MS`] after it closes, this gives
+/// the opacity to draw it at, and `None` once it has gone. `opens` counts
+/// openings, for an entrance keyed afresh each time.
+#[derive(Default)]
+pub struct Leave {
+    was_open: bool,
+    closed: Option<Instant>,
+    pub opens: usize,
+}
+
+impl Leave {
+    pub fn shown(&mut self, open: bool) -> Option<f32> {
+        if open {
+            if !self.was_open {
+                self.opens += 1;
+            }
+            self.was_open = true;
+            self.closed = None;
+            return Some(1.);
+        }
+        if std::mem::take(&mut self.was_open) && !reduced_motion() {
+            self.closed = Some(Instant::now());
+        }
+        let t = self.closed?.elapsed().as_secs_f32() * 1000. / MENU_OUT_MS as f32;
+        if t >= 1. {
+            self.closed = None;
+            return None;
+        }
+        Some(1. - EASE_OUT.eval(t))
+    }
+}
 
 /// Fade `element` in over [`MENU_IN_MS`] — tooltips and other surfaces that
 /// appear in place.
@@ -435,12 +472,15 @@ where
 /// scale transform for divs (only svgs), so the reference's
 /// `scale(0.96) → 1` is approximated by this short travel, which reads the
 /// same at menu size.
-pub fn menu_in<E>(id: impl Into<ElementId>, top: f32, element: E) -> AnimationElement<E>
+///
+/// `leave` is the surface's opacity on its way out ([`Leave`]), 1 while open.
+pub fn menu_in<E>(id: impl Into<ElementId>, top: f32, leave: f32, element: E) -> AnimationElement<E>
 where
     E: IntoElement + Styled + 'static,
 {
     element.with_animation(id, menu_curve(), move |el, t| {
-        el.opacity(t).top(px(top - MENU_IN_RISE * (1.0 - t)))
+        el.opacity(t * leave)
+            .top(px(top - MENU_IN_RISE * (1.0 - t)))
     })
 }
 

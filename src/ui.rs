@@ -217,6 +217,10 @@ pub struct RootView {
     pinch: Option<(bool, f32, f32, Point<Pixels>)>,
     gesture: Option<Gesture>,
     menu: Option<String>,
+    /// The command menu last open, and its way out, so a dismissed menu
+    /// fades where it was.
+    menu_last: String,
+    menu_leave: subtake_ui::Leave,
     /// Where the palette's trigger sits, so the card opens against it
     /// instead of at a fixed window coordinate.
     menu_anchor: Rc<Cell<Bounds<Pixels>>>,
@@ -288,6 +292,8 @@ impl RootView {
             pinch: None,
             gesture: None,
             menu: None,
+            menu_last: String::new(),
+            menu_leave: subtake_ui::Leave::default(),
             menu_anchor: Rc::new(Cell::new(Bounds::default())),
             menu_filter: String::new(),
             menu_focus: false,
