@@ -112,7 +112,11 @@ resized, and `SUBTAKE_HOVER_PIN=resize` shows the grips.
 
 A panel with more rows than the float has room for scrolls. Its top fades by as
 much as is hidden past it; its bottom runs to the glass's edge and cuts there,
-unfaded, unless a footer closes the panel, when it fades into the footer. Not drawn by the design: a 4-wide round thumb
+unfaded, unless a footer closes the panel, when it fades into the footer.
+Not wired: cutting on the glass's own curve. gpui clips only to rectangles,
+so a row scrolled into a rounded corner, or a tool-pod button into the pod's
+round end, is cut flat at the edge line; clipping to the radius needs a
+rounded clip in the renderer's shaders. Not drawn by the design: a 4-wide round thumb
 in the panel's right padding while it has more than fits, so the fade reads as
 "more below" and not as the end (`SCROLL_THUMB_*`). Not wired: dragging it —
 it only shows where the view is. `SUBTAKE_GALLERY_SCREEN=export` shows one at
