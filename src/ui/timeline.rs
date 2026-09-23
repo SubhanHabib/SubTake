@@ -92,8 +92,11 @@ fn clip_tiles(
         if x >= width || frames.is_empty() {
             break;
         }
+        // What is left of a clip narrower than it is tall is one frame,
+        // cut to the circle its lane is left as.
         let rest = width - x - Theme::CLIP_TILE_WIDTH;
-        let closing = rest < Theme::CLIP_TILE_DIVIDER + radius;
+        let closing =
+            (cut > 0. && width - cut < height) || rest < Theme::CLIP_TILE_DIVIDER + radius;
         let w = if closing {
             width - x
         } else {
@@ -161,7 +164,9 @@ fn clip_tiles(
 /// `closing` rounds its right end too. Left narrower than the lane is
 /// tall, it is drawn that wide under the tiles after it, its frame slid
 /// along to fill it, since gpui rounds a corner no wider than half the
-/// quad; what is left of it is under a header.
+/// quad; what is left of it is under a header. A closing tile left
+/// narrower than that is a circle as wide, centred, as [`tucked`] leaves
+/// its lane.
 fn cut_tile(frame: Arc<RenderImage>, cut: f32, (radius, closing): (f32, bool)) -> Canvas<()> {
     canvas(
         |_, _, _| {},
@@ -176,9 +181,16 @@ fn cut_tile(frame: Arc<RenderImage>, cut: f32, (radius, closing): (f32, bool)) -
             if right > fitted.right() {
                 fitted.origin.x += right - fitted.right();
             }
-            let shown =
-                Bounds::from_corners(point(left, bounds.top()), point(right, bounds.bottom()))
-                    .intersect(&fitted);
+            let inset = if closing {
+                ((bounds.size.height - (right - left)) / 2.).max(px(0.))
+            } else {
+                px(0.)
+            };
+            let shown = Bounds::from_corners(
+                point(left, bounds.top() + inset),
+                point(right, bounds.bottom() - inset),
+            )
+            .intersect(&fitted);
             let end = if closing { px(radius) } else { px(0.) };
             let radii = Corners {
                 top_left: px(radius),
@@ -364,13 +376,18 @@ fn tuck(height: f32) -> f32 {
 }
 
 /// A lane's span from `start` to `end`, cut at [`tuck`]: its left edge
-/// there when it starts before it. `None` when it ends before it, out of
-/// sight. `cut` is how much of the span is tucked away.
+/// there when it starts before it, placed `top` down and `height` tall.
+/// `None` when it ends before it, out of sight. `cut` is how much of the
+/// span is tucked away. Not drawn by the design: what is left of a span
+/// narrower than it is tall, where its round end on the header's circle
+/// meets its own, is a circle that wide, `inset` in from its top and
+/// bottom, since gpui rounds a corner no wider than half the quad and the
+/// span would show as a sliver the lane's height past the circle.
 fn tucked<E: Styled>(
     el: E,
-    (start, end, height): (f32, f32, f32),
+    (start, end, top, height): (f32, f32, f32, f32),
     (offset, visible, track_width): (f32, f32, f32),
-) -> Option<(E, f32)> {
+) -> Option<(E, f32, f32)> {
     let edge = tuck(height);
     let (left, right) = (
         track_width * (start - offset) / visible,
@@ -385,16 +402,23 @@ fn tucked<E: Styled>(
         0.
     };
     Some(if cut > 0. {
+        let inset = ((height - (right - edge)) / 2.).max(0.);
         (
             el.left(px(edge))
-                .right(relative(1. - (end - offset) / visible)),
+                .right(relative(1. - (end - offset) / visible))
+                .top(px(top + inset))
+                .h(px(height - 2. * inset)),
             cut,
+            inset,
         )
     } else {
         (
             el.left(relative((start - offset) / visible))
                 .w(relative(((end - start) / visible).max(0.001)))
-                .min_w(px(Theme::GAP)),
+                .min_w(px(Theme::GAP))
+                .top(px(top))
+                .h(px(height)),
+            0.,
             0.,
         )
     })
@@ -1095,16 +1119,14 @@ impl RootView {
             let width = (track_width * (end - start) / visible).max(Theme::GAP);
             let clip = matches!(region.kind.as_str(), "clipRegions" | Region::TAKE_CLIP);
             if moving
-                && let Some((ghost, _)) = tucked(
+                && let Some((ghost, _, _)) = tucked(
                     div().absolute(),
-                    (region.start, region.end, height),
+                    (region.start, region.end, top, height),
                     (offset, visible, track_width),
                 )
             {
                 tracks = tracks.child(
                     ghost
-                        .top(px(top))
-                        .h(px(height))
                         .rounded_full()
                         .border(px(Theme::REGION_GHOST_WIDTH))
                         .border_dashed()
@@ -1116,16 +1138,14 @@ impl RootView {
             let hover_key = subtake_ui::motion::tween_key(&block_id, "hover");
             let mark_key = hover_key.clone();
             let ring = subtake_ui::focus_ring(theme);
-            let Some((block, cut)) = tucked(
+            let Some((block, cut, inset)) = tucked(
                 div().id(block_id).absolute(),
-                (start, end, height),
+                (start, end, top, height),
                 (offset, visible, track_width),
             ) else {
                 continue;
             };
             let block = block
-                .top(px(top))
-                .h(px(height))
                 .rounded_full()
                 .bg(fill)
                 .when(lane_off, |el| el.opacity(Theme::LANE_OFF_ALPHA))
@@ -1150,7 +1170,7 @@ impl RootView {
             let sheet = |at: f32| {
                 div()
                     .absolute()
-                    .top_0()
+                    .top(px(-inset))
                     .h(px(height))
                     .when(cut > 0., |el| el.left(px(-(cut + at))).w(px(width)))
                     .when(cut <= 0., |el| el.left_0().w_full())

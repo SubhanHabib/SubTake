@@ -209,6 +209,9 @@ over a lane's fill, its label, plate, sound and chip, is cut straight at the
 header's centre, where the circle covers it; a clip's frames are rounded or
 shortened to stay inside the round end, and a cut frame narrower than the
 lane is tall is drawn that wide under the next, its picture slid along.
+What is left of a lane narrower than it is tall is a circle that wide,
+centred, one frame for a clip, rather than a sliver the lane's height, which
+gpui would round no more than half its width.
 `SUBTAKE_GALLERY_SCREEN=timeline-zoomed` shows the timeline at 300%, 30
 seconds in. Not drawn by the design, whose lanes stop at the track column.
 
