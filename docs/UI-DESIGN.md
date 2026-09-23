@@ -191,15 +191,32 @@ are the ink too. A selected region takes a 1.5px accent edge; an unselected
 one has none. The waveform sits over the regions, 6 in from the lane's top
 and bottom, at a third strength. Not drawn by the design: the hover, a 10%
 step of the fill toward the ink. Not wired: the waveform in the region's
-ink; it is an ffmpeg image and gpui can't tint one. The playhead is a 2px accent rule the full height of the
-stack, with its time as `m:ss.cc` on a 20-tall accent chip over the ruler, in
-Geist Mono 500 at 11. The ruler counts in `m:ss`, at the smallest of 1, 2, 5,
-10, 15, 30, 60, 120 or 300 seconds that keeps its labels 80 apart, recomputed
-as the timeline zooms; a label within 4 of the chip is hidden until the
-playhead moves on. Not drawn by the design: the chip at the stack's top edge
-rather than 2 above it, since the stack clips at its top. Not wired: the
-app's transport still reads milliseconds (`00:37.150`); the gallery's reads
-hundredths, as the chip does.
+ink; it is an ffmpeg image and gpui can't tint one.
+
+The ruler is a 32-tall `sunk` band, fully round, with a hairline. It counts in
+`m:ss`, Geist Mono at 11, at the smallest of 1, 2, 5, 10, 15, 30, 60, 120 or
+300 seconds that keeps its labels 80 apart, recomputed as the timeline zooms;
+between them a 3 dot marks every fifth of that step. Labels behind the
+playhead are `text` and dots `text` at 70%; ahead of it, `muted` and `muted`
+at 40%. A press anywhere on the band jumps the playhead there. Not drawn by
+the design: a dot that would touch a label is left out, which at the closest
+spacing leaves two dots between labels rather than four.
+
+The playhead is four parts on one x. Its time, `m:ss.cc` in Geist Mono 500 at
+12 in `on_accent`, sits on a 26-tall accent bubble at the top of the track
+column, with a 10 by 6 tail pointing down at the ruler; near either end the
+bubble slides to stay inside the column while the tail stays on the time. A
+9 accent dot with a 3 `accent_soft` ring sits on the ruler's top edge, and a
+1.5 accent line runs from there to the bottom of the stack over every
+region. A 12 by 40 accent handle with three `on_accent` grip dots sits
+centred on the clip lane. The bubble, line and handle glow in `accent_glow`
+(18, 10 and 12). Dragging the bubble, dot, handle or line (6 either side,
+with an `ew-resize` cursor) scrubs, and the playhead keeps its offset from
+the pointer rather than jumping to it; while scrubbing the handle widens to
+14, its glow to 16 and the bubble's to 24. Not drawn by the design: with no
+clip lane the handle sits on the first lane. Not wired: the app's transport
+still reads milliseconds (`00:37.150`); the gallery's reads hundredths, as
+the bubble does.
 
 A region's label sits on one line and ends in an ellipsis when the region is
 shorter than it. Speed, trim, annotation and caption regions carry their

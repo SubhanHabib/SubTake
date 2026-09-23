@@ -25,9 +25,9 @@ use subtake_ui::{
     Button, Dropdown, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button, caps_label,
     choice_tile, column, composer_footer, content_panel, context_chip, divider, empty_state,
     fade_edges, frosted, group_card, hairline, icon, icon_button, measure, media_tile, menu_in,
-    menu_list, menu_row, menu_surface, mono, mono_small, panel, panel_variant, pod, pod_small,
-    progress_bar, row, segmented_control, setting_card, status_chip, status_dot, swatch, switch,
-    tile_grid, title, toggle, tool_button, tooltip, zoom_control,
+    menu_list, menu_row, menu_surface, mono, panel, panel_variant, pod, pod_small, progress_bar,
+    row, segmented_control, setting_card, status_chip, status_dot, swatch, switch, tile_grid,
+    title, toggle, tool_button, tooltip, zoom_control,
 };
 
 mod camera;
@@ -86,7 +86,9 @@ impl Surface {
 }
 
 enum Gesture {
-    Seek,
+    /// A scrub. `grab` is how far right of the playhead the press landed,
+    /// so a playhead picked up off-centre does not jump to the pointer.
+    Seek { grab: f32 },
     Region {
         region: Region,
         origin: Point<Pixels>,

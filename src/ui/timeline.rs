@@ -55,9 +55,37 @@ fn lane_height(label: &str) -> f32 {
     }
 }
 
-/// How wide a label is in the small mono face, known before layout.
-fn mono_small_width(text: &str) -> f32 {
-    text.chars().count() as f32 * Theme::FONT_SMALL * Theme::MONO_ADVANCE
+/// How wide a label is in Geist Mono at `size`, known before layout.
+fn mono_width(text: &str, size: f32) -> f32 {
+    text.chars().count() as f32 * size * Theme::MONO_ADVANCE
+}
+
+/// The playhead's soft light: `accent_glow`, spread evenly around a part.
+fn glow(theme: Theme, blur: f32) -> BoxShadow {
+    BoxShadow {
+        color: theme.accent_glow,
+        offset: point(px(0.), px(0.)),
+        blur_radius: px(blur),
+        spread_radius: px(0.),
+        inset: false,
+    }
+}
+
+/// The bubble's tail: a small downward triangle, which no div can be.
+fn playhead_tail(color: Hsla) -> Canvas<()> {
+    canvas(
+        |_, _, _| {},
+        move |bounds, _, window, _| {
+            let mut path = PathBuilder::fill();
+            path.move_to(bounds.origin);
+            path.line_to(bounds.top_right());
+            path.line_to(point(bounds.center().x, bounds.bottom()));
+            path.close();
+            if let Ok(path) = path.build() {
+                window.paint_path(path, color);
+            }
+        },
+    )
 }
 
 /// A lane's header: a 44 circle on `sunk` with a hairline and the lane's
@@ -246,7 +274,10 @@ impl RootView {
                         .clamp(PANEL_WIDTH_MIN, PANEL_WIDTH_MAX);
                 }
             },
-            Some(Gesture::Seek) => self.seek_at(event.position.x),
+            Some(Gesture::Seek { grab }) => {
+                let at = event.position.x - px(*grab);
+                self.seek_at(at)
+            }
             Some(Gesture::Region { origin, delta, .. }) => {
                 *delta = f32::from(event.position.x - origin.x)
                     / f32::from(self.timeline_bounds.get().size.width).max(1.)
@@ -271,7 +302,7 @@ impl RootView {
         if let Some(gesture) = self.gesture.take() {
             if let Surface::Editor(e) = &self.surface {
                 match gesture {
-                    Gesture::Seek => self.seek_at(event.position.x),
+                    Gesture::Seek { grab } => self.seek_at(event.position.x - px(grab)),
                     Gesture::Region {
                         region,
                         origin,
@@ -442,39 +473,82 @@ impl RootView {
                             })),
                     ),
             );
-        // The playhead's chip, placed here because the ruler hides any
-        // label it would crowd. Centred on the line, and held inside the
-        // track at either end rather than cut off by it.
         let track_width = f32::from(self.timeline_bounds.get().size.width);
-        let playhead = (window.get_playhead() - offset) / visible;
+        let playhead_time = window.get_playhead();
+        let playhead = (playhead_time - offset) / visible;
         let playhead_shown = (0. ..=1.).contains(&playhead);
-        let chip_label = ruler_clock(window.get_playhead(), true);
-        let chip_width = mono_small_width(&chip_label) + Theme::PLAYHEAD_CHIP_PADDING * 2.;
-        let chip_left = (playhead * track_width - chip_width / 2.)
-            .clamp(0., (track_width - chip_width).max(0.));
-        // The ruler, in `m:ss` as the transport counts, at the smallest
-        // interval that keeps its labels apart; zooming in picks a finer
-        // one. A label that would come within a hair of the chip is left
-        // out until the playhead moves on — hidden, not faded, so it never
-        // shows half-covered.
+        let scrubbing = matches!(self.gesture, Some(Gesture::Seek { .. }));
+        // The ruler: a recessed band with a label every major interval and a
+        // dot at every fifth of one between them. The major interval is the
+        // smallest that keeps its labels 80 apart, so zooming in picks a
+        // finer one. What the playhead has passed is at full strength and
+        // what is ahead of it muted, every frame. The playhead's bubble sits
+        // above the band, so no label needs hiding for it. A label that
+        // would run off either end of the band is left out.
         let interval = RULER_INTERVALS
             .into_iter()
             .find(|seconds| seconds / visible * track_width >= Theme::RULER_LABEL_SPACING)
             .unwrap_or(RULER_INTERVALS[RULER_INTERVALS.len() - 1]);
-        let mut ruler = div().relative().h(px(Theme::RULER_HEIGHT));
+        let minor = interval / Theme::RULER_MINOR_STEPS;
+        let mut ruler = div()
+            .id("ruler")
+            .relative()
+            .h(px(Theme::RULER_HEIGHT))
+            .rounded_full()
+            .bg(theme.sunk)
+            .shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)]);
         if track_width > 0. {
-            let first = (offset / interval).ceil() as i64;
-            let last = ((offset + visible) / interval).floor() as i64;
+            let first = (offset / minor).ceil() as i64;
+            let last = ((offset + visible) / minor).floor() as i64;
             for tick in first..=last {
-                let seconds = tick as f32 * interval;
-                let label = ruler_clock(seconds, false);
-                let left = (seconds - offset) / visible * track_width;
-                let right = left + mono_small_width(&label);
-                let crowded = playhead_shown
-                    && left - Theme::RULER_CHIP_CLEARANCE < chip_left + chip_width
-                    && right + Theme::RULER_CHIP_CLEARANCE > chip_left;
-                if right <= track_width && !crowded {
-                    ruler = ruler.child(mono_small(label, theme).absolute().left(px(left)));
+                let seconds = tick as f32 * minor;
+                let x = (seconds - offset) / visible * track_width;
+                let past = seconds <= playhead_time;
+                if tick % Theme::RULER_MINOR_STEPS as i64 == 0 {
+                    let label = ruler_clock(seconds, false);
+                    let width =
+                        mono_width(&label, Theme::FONT_SMALL) + 2. * Theme::RULER_LABEL_PADDING;
+                    if x - width / 2. >= 0. && x + width / 2. <= track_width {
+                        ruler = ruler.child(
+                            mono(label)
+                                .absolute()
+                                .top_0()
+                                .bottom_0()
+                                .left(px(x - width / 2.))
+                                .w(px(width))
+                                .flex()
+                                .items_center()
+                                .justify_center()
+                                .text_size(px(Theme::FONT_SMALL))
+                                .text_color(if past { theme.text } else { theme.muted }),
+                        );
+                    }
+                } else {
+                    // Not drawn by the design: a dot that would touch the
+                    // label beside it is left out. At the closest spacing
+                    // the design allows the dot either side of a label ran
+                    // into its text.
+                    let steps = Theme::RULER_MINOR_STEPS as i64;
+                    let near = (tick as f32 / steps as f32).round() * interval;
+                    let half = mono_width(&ruler_clock(near, false), Theme::FONT_SMALL) / 2.
+                        + Theme::RULER_LABEL_PADDING;
+                    if ((seconds - near) / visible * track_width).abs() < half + Theme::RULER_DOT {
+                        continue;
+                    }
+                    let dot = if past {
+                        theme.text.opacity(Theme::RULER_DOT_PAST)
+                    } else {
+                        theme.muted.opacity(Theme::RULER_DOT_AHEAD)
+                    };
+                    ruler = ruler.child(
+                        div()
+                            .absolute()
+                            .left(px(x - Theme::RULER_DOT / 2.))
+                            .top(px((Theme::RULER_HEIGHT - Theme::RULER_DOT) / 2.))
+                            .size(px(Theme::RULER_DOT))
+                            .rounded_full()
+                            .bg(dot),
+                    );
                 }
             }
         }
@@ -760,7 +834,9 @@ impl RootView {
             .min_w_0()
             .pt(px(Theme::BUBBLE_ZONE))
             .gap(px(Theme::RULER_GAP))
-            .overflow_hidden()
+            // Cut at the ends of the take, not above it, so the bubble's
+            // glow is not sheared off at the band's top.
+            .overflow_x_hidden()
             .child(measure(self.timeline_bounds.clone()))
             .child(ruler)
             .child(tracks)
@@ -768,46 +844,165 @@ impl RootView {
                 MouseButton::Left,
                 cx.listener(|s, event: &MouseDownEvent, w, cx| {
                     w.focus(&s.focus, cx);
-                    s.gesture = Some(Gesture::Seek);
+                    s.gesture = Some(Gesture::Seek { grab: 0. });
                     s.seek_at(event.position.x);
                     cx.stop_propagation();
                 }),
             );
         if playhead_shown {
-            // A 2px accent rule the full height of the stack, and its time
-            // on an accent chip over the ruler. The chip replaced a round
-            // head, which sat on the ruler label under it.
-            //
-            // Not drawn by the design: the chip at the stack's top edge
-            // rather than 2 above it. The stack clips at its top, and 20 tall
-            // from there it fills the ruler and the gap under it exactly.
+            let x = playhead * track_width;
+            // Where the grab handle rides: centred on the clip lane, or on
+            // the first lane when there is no clip lane. Not drawn by the
+            // design, which always has one.
+            let handle_lane = shown
+                .iter()
+                .copied()
+                .find(|&row| labels[row] == "Clip")
+                .or(shown.first().copied());
+            let handle_top = handle_lane.map(|row| {
+                Theme::LANE_STACK_TOP
+                    + tops[row].unwrap_or(0.)
+                    + (lane_height(&labels[row]) - Theme::PLAYHEAD_HANDLE_HEIGHT) / 2.
+            });
+            let chip_label = ruler_clock(playhead_time, true);
+            let bubble_width = mono_width(&chip_label, Theme::FONT_SECONDARY)
+                + 2. * Theme::PLAYHEAD_BUBBLE_PADDING;
+            let bubble_left =
+                (x - bubble_width / 2.).clamp(0., (track_width - bubble_width).max(0.));
+            let handle_width = if scrubbing {
+                Theme::PLAYHEAD_HANDLE_WIDTH_HELD
+            } else {
+                Theme::PLAYHEAD_HANDLE_WIDTH
+            };
+            // A press on any part of the playhead picks it up where it is.
+            let grab = || {
+                cx.listener(move |s: &mut Self, event: &MouseDownEvent, w, cx| {
+                    w.focus(&s.focus, cx);
+                    let b = s.timeline_bounds.get();
+                    let at = f32::from(b.left()) + x;
+                    s.gesture = Some(Gesture::Seek {
+                        grab: f32::from(event.position.x) - at,
+                    });
+                    cx.stop_propagation();
+                    cx.notify();
+                })
+            };
+            // Bottom to top: the line over the regions, the dot on the
+            // ruler's top edge, the bubble with its tail, and the handle.
+            // The line keeps a 12-wide hit area that scrubs and shows the
+            // resize cursor, since 1.5 is not a target.
             timeline = timeline
                 .child(
                     div()
                         .absolute()
-                        .left(relative(playhead))
-                        .ml(px(-Theme::PLAYHEAD_WIDTH / 2.0))
-                        .top_0()
+                        .left(px(x - Theme::PLAYHEAD_LINE_WIDTH / 2.))
+                        .top(px(Theme::BUBBLE_ZONE))
                         .bottom_0()
-                        .w(px(Theme::PLAYHEAD_WIDTH))
-                        .rounded_full()
-                        .bg(theme.accent),
+                        .w(px(Theme::PLAYHEAD_LINE_WIDTH))
+                        .rounded(px(Theme::PLAYHEAD_LINE_RADIUS))
+                        .bg(theme.accent)
+                        .shadow(vec![glow(theme, Theme::PLAYHEAD_LINE_GLOW)]),
                 )
                 .child(
-                    mono(chip_label)
+                    div()
+                        .id("playhead-line")
                         .absolute()
-                        .top_0()
-                        .left(px(chip_left))
-                        .flex()
-                        .items_center()
-                        .h(px(Theme::PLAYHEAD_CHIP_HEIGHT))
-                        .px(px(Theme::PLAYHEAD_CHIP_PADDING))
+                        .left(px(x - Theme::PLAYHEAD_HIT))
+                        .top(px(Theme::BUBBLE_ZONE))
+                        .bottom_0()
+                        .w(px(Theme::PLAYHEAD_HIT * 2.))
+                        .cursor(CursorStyle::ResizeLeftRight)
+                        .on_mouse_down(MouseButton::Left, grab()),
+                )
+                .child(
+                    div()
+                        .id("playhead-dot")
+                        .absolute()
+                        .left(px(x - Theme::PLAYHEAD_DOT / 2.))
+                        .top(px(Theme::BUBBLE_ZONE - Theme::PLAYHEAD_DOT / 2.))
+                        .size(px(Theme::PLAYHEAD_DOT))
                         .rounded_full()
                         .bg(theme.accent)
+                        .shadow(vec![BoxShadow {
+                            color: theme.accent_soft,
+                            offset: point(px(0.), px(0.)),
+                            blur_radius: px(0.),
+                            spread_radius: px(Theme::PLAYHEAD_DOT_RING),
+                            inset: false,
+                        }])
+                        .on_mouse_down(MouseButton::Left, grab()),
+                )
+                .child(
+                    playhead_tail(theme.accent)
+                        .absolute()
+                        .left(px(x - Theme::PLAYHEAD_TAIL_WIDTH / 2.))
+                        .top(px(Theme::PLAYHEAD_BUBBLE_HEIGHT))
+                        .w(px(Theme::PLAYHEAD_TAIL_WIDTH))
+                        .h(px(Theme::PLAYHEAD_TAIL_HEIGHT)),
+                )
+                // Held inside the track at either end rather than cut off by
+                // it; the tail stays on the true time.
+                .child(
+                    mono(chip_label)
+                        .id("playhead-bubble")
+                        .absolute()
+                        .top_0()
+                        .left(px(bubble_left))
+                        .w(px(bubble_width))
+                        .h(px(Theme::PLAYHEAD_BUBBLE_HEIGHT))
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .rounded_full()
+                        .bg(theme.accent)
+                        .shadow(vec![glow(
+                            theme,
+                            if scrubbing {
+                                Theme::PLAYHEAD_BUBBLE_GLOW_HELD
+                            } else {
+                                Theme::PLAYHEAD_BUBBLE_GLOW
+                            },
+                        )])
                         .text_color(theme.on_accent)
-                        .text_size(px(Theme::FONT_SMALL))
-                        .font_weight(FontWeight::MEDIUM),
-                );
+                        .text_size(px(Theme::FONT_SECONDARY))
+                        .font_weight(FontWeight::MEDIUM)
+                        .cursor(CursorStyle::ResizeLeftRight)
+                        .on_mouse_down(MouseButton::Left, grab()),
+                )
+                .when_some(handle_top, |el, top| {
+                    el.child(
+                        div()
+                            .id("playhead-handle")
+                            .absolute()
+                            .left(px(x - handle_width / 2.))
+                            .top(px(top))
+                            .w(px(handle_width))
+                            .h(px(Theme::PLAYHEAD_HANDLE_HEIGHT))
+                            .rounded(px(Theme::PLAYHEAD_HANDLE_RADIUS))
+                            .bg(theme.accent)
+                            .shadow(vec![glow(
+                                theme,
+                                if scrubbing {
+                                    Theme::PLAYHEAD_HANDLE_GLOW_HELD
+                                } else {
+                                    Theme::PLAYHEAD_HANDLE_GLOW
+                                },
+                            )])
+                            .flex()
+                            .flex_col()
+                            .items_center()
+                            .justify_center()
+                            .gap(px(Theme::PLAYHEAD_GRIP_GAP))
+                            .cursor(CursorStyle::ResizeLeftRight)
+                            .children((0..3).map(|_| {
+                                div()
+                                    .size(px(Theme::PLAYHEAD_GRIP_DOT))
+                                    .rounded_full()
+                                    .bg(theme.on_accent)
+                            }))
+                            .on_mouse_down(MouseButton::Left, grab()),
+                    )
+                });
         }
         let console = panel(theme)
             .id("timeline")

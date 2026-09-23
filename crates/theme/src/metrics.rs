@@ -316,15 +316,41 @@ impl Theme {
     /// target is not a target.
     pub const REGION_HANDLE_TARGET: f32 = 10.0;
 
-    /// The playhead: a rule the full height of the lane stack, with its
-    /// time on an accent chip over the ruler in place of a head.
-    pub const PLAYHEAD_WIDTH: f32 = 2.0;
-    pub const PLAYHEAD_CHIP_HEIGHT: f32 = 20.0;
-    pub const PLAYHEAD_CHIP_PADDING: f32 = 8.0;
-    /// The least room between two ruler labels, and the clearance a label
-    /// keeps from the playhead's chip before it is hidden.
+    /// The playhead, in four parts on one x. A bubble with the time, 26
+    /// tall and 12 in, glowing 18 (24 while scrubbed), with a 10 × 6 tail
+    /// under it; a 9 dot ringed 3 in `accent_soft` on the ruler's top edge;
+    /// a 1.5 line down the stack glowing 10, with 6 either side of it that
+    /// take a press; and a 12 × 40 grab handle on the clip lane glowing 12,
+    /// 14 wide and glowing 16 while scrubbed, with three 3 dots 4 apart.
+    pub const PLAYHEAD_BUBBLE_HEIGHT: f32 = 26.0;
+    pub const PLAYHEAD_BUBBLE_PADDING: f32 = 12.0;
+    pub const PLAYHEAD_BUBBLE_GLOW: f32 = 18.0;
+    pub const PLAYHEAD_BUBBLE_GLOW_HELD: f32 = 24.0;
+    pub const PLAYHEAD_TAIL_WIDTH: f32 = 10.0;
+    pub const PLAYHEAD_TAIL_HEIGHT: f32 = 6.0;
+    pub const PLAYHEAD_DOT: f32 = 9.0;
+    pub const PLAYHEAD_DOT_RING: f32 = 3.0;
+    pub const PLAYHEAD_LINE_WIDTH: f32 = 1.5;
+    pub const PLAYHEAD_LINE_RADIUS: f32 = 1.0;
+    pub const PLAYHEAD_LINE_GLOW: f32 = 10.0;
+    pub const PLAYHEAD_HIT: f32 = 6.0;
+    pub const PLAYHEAD_HANDLE_WIDTH: f32 = 12.0;
+    pub const PLAYHEAD_HANDLE_WIDTH_HELD: f32 = 14.0;
+    pub const PLAYHEAD_HANDLE_HEIGHT: f32 = 40.0;
+    pub const PLAYHEAD_HANDLE_RADIUS: f32 = 6.0;
+    pub const PLAYHEAD_HANDLE_GLOW: f32 = 12.0;
+    pub const PLAYHEAD_HANDLE_GLOW_HELD: f32 = 16.0;
+    pub const PLAYHEAD_GRIP_DOT: f32 = 3.0;
+    pub const PLAYHEAD_GRIP_GAP: f32 = 4.0;
+    /// The ruler's labels: at least 80 apart, each 4 in either side of its
+    /// text. Between two labels, a 3 dot at every fifth of the interval, in
+    /// `text` at 70% behind the playhead and `muted` at 40% ahead of it.
     pub const RULER_LABEL_SPACING: f32 = 80.0;
-    pub const RULER_CHIP_CLEARANCE: f32 = 4.0;
+    pub const RULER_LABEL_PADDING: f32 = 4.0;
+    pub const RULER_MINOR_STEPS: f32 = 5.0;
+    pub const RULER_DOT: f32 = 3.0;
+    pub const RULER_DOT_PAST: f32 = 0.7;
+    pub const RULER_DOT_AHEAD: f32 = 0.4;
     /// Geist Mono's advance, as a share of its size: every glyph is 600 of
     /// the face's 1000 units, so a mono label's width is known before layout.
     pub const MONO_ADVANCE: f32 = 0.6;
