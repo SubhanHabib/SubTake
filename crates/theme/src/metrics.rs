@@ -626,6 +626,10 @@ pub const INSPECTOR_COLLAPSE_WIDTH: f32 = 1280.0;
 pub const STAGE_RESERVE_RIGHT_COLLAPSED: f32 = Theme::INSET * 2.0 + Theme::CONTROL_HEIGHT_LARGE;
 /// How long the folded inspector takes to slide in or out.
 pub const INSPECTOR_SLIDE_MS: u64 = 240;
+/// A zoom step from the aspect pod eases the picture to its new size over
+/// this long, as the inspector slides: a step is a jump the eye has to
+/// follow, where a pinch moves with the hand.
+pub const PREVIEW_ZOOM_MS: u64 = 220;
 /// How long the document pill takes to grow into the export pill and back.
 pub const PILL_MORPH_MS: u64 = 240;
 /// A newly picked inspector panel fades in over this long, rising the

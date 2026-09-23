@@ -18,7 +18,8 @@ use subtake_theme::{
     DIALOG_OUT_MS, DIALOG_RISE, EXPORT_DONE_GLOW, EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS,
     FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT,
     PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PAUSED_CLOCK_OPACITY, PILL_MORPH_MS,
-    STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, STATUS_SLIDE_MS, Theme,
+    PREVIEW_ZOOM_MS, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED,
+    STATUS_SLIDE_MS, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
@@ -237,6 +238,8 @@ pub struct RootView {
     preview_pan: Point<Pixels>,
     preview_context: Option<PreviewContext>,
     preview_known_zoom: f32,
+    /// A zoom step from the aspect pod, easing in.
+    preview_zoom_move: Option<preview::PreviewZoomMove>,
     /// The Presets dialog's unapplied selection; `None` while it is closed.
     presets: Option<presets::PresetsDraft>,
     /// The Presets dialog's fade in and out, as `inspector_slide`. It starts
@@ -325,6 +328,7 @@ impl RootView {
             preview_pan: point(px(0.), px(0.)),
             preview_context: None,
             preview_known_zoom: 1.,
+            preview_zoom_move: None,
             presets: None,
             presets_slide: Some((false, 0., Instant::now())),
             mic_clipped: None,

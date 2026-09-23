@@ -42,6 +42,15 @@ const PREVIEW_ZOOM_STEP: f32 = 1.25;
 pub(super) const PREVIEW_ZOOM_MAX: f32 = 8.;
 const PREVIEW_ZOOM_READOUT_WIDTH: f32 = 44.0;
 
+/// A zoom step on its way: from and to, the pan it set out with, and when.
+#[derive(Clone, Copy)]
+pub(super) struct PreviewZoomMove {
+    from: f32,
+    to: f32,
+    pan: Point<Pixels>,
+    started: Instant,
+}
+
 /// The stage's right reserve: the inspector's, or only its toggle's while it
 /// is folded away.
 pub(super) fn stage_reserve_right(window: &Window) -> f32 {
@@ -100,6 +109,7 @@ impl RootView {
                 self.gesture = None;
             }
             if changed {
+                self.preview_zoom_move = None;
                 editor.set_preview_zoom(1.);
             }
         }
@@ -142,6 +152,8 @@ impl RootView {
             return;
         }
         let pointer = point(px(x), px(y));
+        // A pinch takes over from a step still easing.
+        self.preview_zoom_move = None;
         if phase == 0 || self.pinch.is_none() {
             let timeline = self.timeline_bounds.get().contains(&pointer);
             if !timeline && !self.preview_viewport.get().contains(&pointer) {
@@ -223,6 +235,7 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> (AnyElement, Option<AnyElement>) {
         let theme = self.theme;
+        self.advance_preview_zoom(e, window);
         self.sync_preview_context(e);
         if !e.get_has_video() {
             return (self.empty_stage(e), None);
@@ -420,27 +433,79 @@ impl RootView {
         (stage, Some(layer))
     }
 
+    /// Where the preview's zoom is headed: the end of a step still easing,
+    /// or where it is. A second click steps on from the first's end rather
+    /// than from wherever the ease had got to.
+    fn preview_zoom_target(&self, e: &EditorWindow) -> f32 {
+        self.preview_zoom_move
+            .map_or(e.get_preview_zoom(), |m| m.to)
+    }
+
     /// Step the preview's zoom, keeping whatever is at the stage's centre
     /// there. The picture's centre sits at the stage's plus the pan, so a
     /// point at the stage's centre is `-pan` from the picture's, and scaling
-    /// the pan with the zoom keeps it where it was.
+    /// the pan with the zoom keeps it where it was. The step eases over
+    /// [`PREVIEW_ZOOM_MS`] rather than landing; a pinch is already as smooth
+    /// as the hand.
     fn zoom_preview(&mut self, zoom: f32, cx: &mut Context<Self>) {
         let Surface::Editor(e) = &self.surface else {
             return;
         };
-        let old = e.get_preview_zoom().max(0.001);
-        let zoom = zoom.clamp(1., PREVIEW_ZOOM_MAX);
-        self.preview_pan = if zoom <= 1. {
-            point(px(0.), px(0.))
-        } else {
-            self.preview_pan * (zoom / old)
-        };
-        e.set_preview_zoom(zoom);
-        self.preview_known_zoom = zoom;
+        let from = e.get_preview_zoom().max(0.001);
+        let to = zoom.clamp(1., PREVIEW_ZOOM_MAX);
         if matches!(self.pinch, Some((false, ..))) {
             self.pinch = None;
         }
+        self.preview_zoom_move = Some(PreviewZoomMove {
+            from,
+            to,
+            pan: self.preview_pan,
+            started: Instant::now(),
+        });
+        if subtake_ui::motion::reduced_motion() {
+            self.preview_zoom_move = None;
+            self.preview_pan = if to <= 1. {
+                point(px(0.), px(0.))
+            } else {
+                self.preview_pan * (to / from)
+            };
+            e.set_preview_zoom(to);
+            self.preview_known_zoom = to;
+        }
         cx.notify();
+    }
+
+    /// Carry a zoom step on by a frame. On the way to Fit the pan runs out
+    /// with it, so the picture comes home to the centre as it shrinks; any
+    /// other step keeps the stage's centre point where it is.
+    fn advance_preview_zoom(&mut self, e: &EditorWindow, window: &mut Window) {
+        let Some(m) = self.preview_zoom_move else {
+            return;
+        };
+        let zoom = subtake_ui::motion::ease_toward(
+            m.from,
+            m.to,
+            m.started,
+            PREVIEW_ZOOM_MS,
+            Instant::now(),
+        );
+        self.preview_pan = if m.to <= 1. {
+            let t = if m.to == m.from {
+                1.
+            } else {
+                (zoom - m.from) / (m.to - m.from)
+            };
+            m.pan * (1. - t)
+        } else {
+            m.pan * (zoom / m.from)
+        };
+        e.set_preview_zoom(zoom);
+        self.preview_known_zoom = zoom;
+        if zoom == m.to {
+            self.preview_zoom_move = None;
+        } else {
+            window.request_animation_frame();
+        }
     }
 
     /// The aspect pod: the frame's ratio, the crop tool and the zoom.
@@ -481,6 +546,9 @@ impl RootView {
         );
         aspect_control.update(cx, |d, _| d.compact = true);
         let zoom = e.get_preview_zoom();
+        // The steps dim by where the zoom is going, so Fit greys out on the
+        // click that sends it home rather than when it arrives.
+        let target = self.preview_zoom_target(e);
         Some(
             div()
                 .absolute()
@@ -516,11 +584,12 @@ impl RootView {
                                     .ghost()
                                     .small()
                                     .strong()
-                                    .enabled(zoom > 1.)
+                                    .enabled(target > 1.)
                                     .on_click(cx.listener(
                                         |s, _, _, cx| {
                                             if let Surface::Editor(e) = &s.surface {
-                                                let zoom = e.get_preview_zoom() / PREVIEW_ZOOM_STEP;
+                                                let zoom =
+                                                    s.preview_zoom_target(e) / PREVIEW_ZOOM_STEP;
                                                 s.zoom_preview(zoom, cx);
                                             }
                                         },
@@ -548,11 +617,12 @@ impl RootView {
                                     .ghost()
                                     .small()
                                     .strong()
-                                    .enabled(zoom < PREVIEW_ZOOM_MAX)
+                                    .enabled(target < PREVIEW_ZOOM_MAX)
                                     .on_click(cx.listener(
                                         |s, _, _, cx| {
                                             if let Surface::Editor(e) = &s.surface {
-                                                let zoom = e.get_preview_zoom() * PREVIEW_ZOOM_STEP;
+                                                let zoom =
+                                                    s.preview_zoom_target(e) * PREVIEW_ZOOM_STEP;
                                                 s.zoom_preview(zoom, cx);
                                             }
                                         },
@@ -562,7 +632,7 @@ impl RootView {
                         .child(
                             button("fit-preview", "Fit", theme)
                                 .compact()
-                                .enabled(zoom > 1.)
+                                .enabled(target > 1.)
                                 .on_click(cx.listener(|s, _, _, cx| s.zoom_preview(1., cx))),
                         ),
                 ))

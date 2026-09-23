@@ -372,11 +372,14 @@ exported framing.
 
 The aspect pod is the thin pod: 34 controls — the aspect dropdown, Crop — on
 4 of padding, so it stands 42 tall over the picture rather than 60. After Crop
-comes the zoom group: zoom out, the percentage, zoom in, and Fit. The two steps
-go a quarter at a time between Fit and 8x, keeping whatever is at the stage's
-centre where it is; Fit puts the picture back and the pan with it. Zoom out and
-Fit dim at Fit, zoom in at 8x. The percentage is set in Geist Mono in a
-fixed-width slot, so the pod holds its shape while a pinch runs. Not drawn by
+comes the zoom group: zoom out, the percentage and zoom in on one `sunk` plate,
+then Fit as a pill like Crop. The two steps go a quarter at a time between Fit
+and 8x, keeping whatever is at the stage's centre where it is; Fit puts the
+picture back and the pan with it. The glyphs are at full strength, as the
+captions beside them are, so zoom out and Fit dimming at Fit, and zoom in at
+8x, reads as disabled. Everything in the pod is 13: the captions, and the
+percentage in the interface face in tabular figures, in a fixed-width slot so
+the pod holds its shape while a pinch runs. Not drawn by
 the design: the group — the handoff has a single "Fit · 100%" pill. `SUBTAKE_GALLERY_SCREEN=zoom-111` (any
 percentage) opens the gallery magnified.
 
@@ -419,6 +422,10 @@ setting and land in place when it is on.
   for.
 - A finished export's tick draws itself on, its label fades in, and the pill
   gives one soft accent pulse (`EXPORT_DONE_*`).
+- A zoom step from the aspect pod eases the picture to its new size
+  (`PREVIEW_ZOOM_MS`, 220 ms), keeping the stage's centre point still; Fit
+  brings the pan home as it shrinks. A second click steps on from the first
+  one's end, and a pinch takes over from a step mid-ease.
 
 Not wired: the card's sideways move when it swaps to a control further
 along the bar — the window is placed natively and jumps.
