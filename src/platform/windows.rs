@@ -389,7 +389,7 @@ pub fn update_recorder_glass(window: &crate::ui_runtime::Window, radius: f32) {
 }
 
 /// Shrink a recorder window's material to the bottom `height` points, for a
-/// plate that fills less than its window while it eases; 0 fills it again.
+/// plate that can fill less than its window; 0 fills it again.
 pub fn set_recorder_glass_height(window: &crate::ui_runtime::Window, height: f32) {
     #[cfg(target_os = "macos")]
     {

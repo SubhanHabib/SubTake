@@ -112,7 +112,7 @@ impl RootView {
         let natural = state.get_options_height();
         let target = if open { natural } else { 0. };
         let now = Instant::now();
-        let at = |(from, to, started, ms): (f32, f32, Instant, u64)| {
+        let at_time = |now: Instant, (from, to, started, ms): (f32, f32, Instant, u64)| {
             let raw = now.saturating_duration_since(started).as_secs_f32() * 1000. / ms as f32;
             if raw >= 1. {
                 to
@@ -120,6 +120,7 @@ impl RootView {
                 subtake_ui::motion::lerp(from, to, subtake_ui::motion::EASE_OUT.eval(raw))
             }
         };
+        let at = |ease| at_time(now, ease);
         let still = subtake_ui::motion::reduced_motion();
         let ease = match self.card_ease {
             _ if still => (target, target, now, CARD_RESIZE_MS),
@@ -150,15 +151,25 @@ impl RootView {
             window.request_animation_frame();
             ease.0.max(ease.1)
         };
-        // The frosted material under the card follows it, not the window.
-        crate::platform::set_recorder_glass_height(
-            state.window(),
-            if height == natural {
-                0.
-            } else {
-                height.max(0.01)
-            },
-        );
+        // The frosted material under the card follows it, not the window. It
+        // is always given the card's height, never "all of the window": the
+        // window grows before the card does, and glass that fills it shows
+        // as a grey slab above the card. The glass and the card reach the
+        // screen by different routes and can land a hundred milliseconds
+        // apart, so glass a little short of the card — hidden under it — is
+        // the only safe way to be wrong. Growing or resizing, the glass takes
+        // the card's lowest height over a window either side of now; closing,
+        // the card needs no frost for the moment it takes, and drops it at
+        // once.
+        let skew = std::time::Duration::from_millis(CARD_GLASS_SKEW_MS);
+        let behind = at_time(now.checked_sub(skew).unwrap_or(now), ease);
+        let ahead = at_time(now + skew, ease);
+        let glass = if open {
+            height.min(behind).min(ahead)
+        } else {
+            0.
+        };
+        crate::platform::set_recorder_glass_height(state.window(), glass.max(0.01));
         if state.get_options_room() != room {
             let state = state.clone();
             crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {

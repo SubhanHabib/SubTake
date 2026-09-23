@@ -8,29 +8,65 @@
 // window at the plate's radius — so the glass and the tint read as one
 // surface. Any other shape shows the material's grey wherever the two
 // disagree.
+//
+// The mask is one small rounded square, drawn once per radius and stretched
+// through its middle to whatever size the view is. The options card changes
+// height every frame while it eases, and redrawing a window-sized mask each
+// time was slow enough to drop frames and to leave the glass trailing the
+// card; moving the view's bottom-anchored frame is cheap.
 @interface SubTakeRecorderGlass : NSVisualEffectView
-@property CGFloat radius;
-// How much of the window, from its bottom edge, the plate fills; 0 for all
-// of it. The options card eases between heights inside a window sized for
-// the taller, and the material has to follow the card, not the window.
+@property (nonatomic) CGFloat radius;
+// How much of `anchor`, from its bottom edge, the plate fills; 0 for all of
+// it. The options card eases between heights inside a window sized for the
+// taller, and the material has to follow the card, not the window.
 @property CGFloat plateHeight;
-- (void)updateMask;
+// The frame of the GPUI view the material sits under.
+@property NSRect anchor;
+- (void)place;
 @end
 @implementation SubTakeRecorderGlass
 - (NSView *)hitTest:(NSPoint)point { return nil; }
-- (void)setFrameSize:(NSSize)size { [super setFrameSize:size]; [self updateMask]; }
-- (void)updateMask {
-    NSSize size = self.bounds.size;
-    if (size.width <= 0 || size.height <= 0) return;
-    NSRect plate = self.bounds;
-    if (self.plateHeight > 0) plate.size.height = MIN(self.plateHeight, size.height);
-    CGFloat radius = MIN(self.radius, MIN(plate.size.width, plate.size.height) / 2);
-    NSImage *mask = [[NSImage alloc] initWithSize:size];
-    [mask lockFocus];
-    [[NSColor whiteColor] setFill];
-    [[NSBezierPath bezierPathWithRoundedRect:plate xRadius:radius yRadius:radius] fill];
-    [mask unlockFocus];
+- (void)setRadius:(CGFloat)radius {
+    if (_radius == radius && (radius <= 0 || self.maskImage)) return;
+    _radius = radius;
+    if (radius <= 0) {
+        self.maskImage = nil;
+        return;
+    }
+    CGFloat side = radius * 2 + 1;
+    NSImage *mask = [NSImage imageWithSize:NSMakeSize(side, side)
+                                   flipped:NO
+                            drawingHandler:^BOOL(NSRect rect) {
+        [[NSColor whiteColor] setFill];
+        [[NSBezierPath bezierPathWithRoundedRect:rect xRadius:radius yRadius:radius] fill];
+        return YES;
+    }];
+    mask.capInsets = NSEdgeInsetsMake(radius, radius, radius, radius);
+    mask.resizingMode = NSImageResizingModeStretch;
     self.maskImage = mask;
+}
+- (void)place {
+    NSRect frame = self.anchor;
+    BOOL partial = self.plateHeight > 0 && self.plateHeight < frame.size.height;
+    BOOL flipped = self.superview.isFlipped;
+    if (partial) {
+        if (flipped) frame.origin.y += frame.size.height - self.plateHeight;
+        frame.size.height = self.plateHeight;
+    }
+    // A partial plate keeps its height and its bottom edge while the window
+    // resizes around it; a full one fills the window.
+    self.autoresizingMask = partial
+        ? NSViewWidthSizable | (flipped ? NSViewMinYMargin : NSViewMaxYMargin)
+        : NSViewWidthSizable | NSViewHeightSizable;
+    // Core Animation would otherwise ease each move over a quarter second,
+    // and hold it until the run loop comes round, while GPUI's frames go
+    // straight to the screen — either way the glass trails the card it sits
+    // under as a grey ghost. The move is made at once and sent at once.
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    self.frame = frame;
+    [CATransaction commit];
+    [CATransaction flush];
 }
 @end
 
@@ -91,9 +127,9 @@ void subtake_update_recorder_glass(void *pointer, double radius) {
     // a dark rim; on a plate that fills its window, that rim is the plate's
     // outline. The plate's own hairline is its only edge.
     window.hasShadow = NO;
-    glass.frame = gpuiView.frame;
+    glass.anchor = gpuiView.frame;
     glass.radius = radius;
-    [glass updateMask];
+    [glass place];
 }
 void subtake_set_recorder_glass_height(void *pointer, double height) {
     NSCAssert([NSThread isMainThread], @"Recorder material must run on the UI thread");
@@ -101,5 +137,6 @@ void subtake_set_recorder_glass_height(void *pointer, double height) {
     SubTakeRecorderGlass *glass = objc_getAssociatedObject(gpuiView, &glassKey);
     if (!glass || glass.plateHeight == height) return;
     glass.plateHeight = height;
-    [glass updateMask];
+    glass.anchor = gpuiView.frame;
+    [glass place];
 }

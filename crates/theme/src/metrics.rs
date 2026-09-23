@@ -604,6 +604,10 @@ pub const CARD_RESIZE_MS: u64 = 220;
 /// folds back down into it over the shorter time as it closes.
 pub const CARD_OPEN_MS: u64 = 260;
 pub const CARD_CLOSE_MS: u64 = 140;
+/// How far either side of now the recorder card's glass looks for the card's
+/// lowest height: longer than the two ever land apart on screen, so the glass
+/// never shows past the card's edge.
+pub const CARD_GLASS_SKEW_MS: u64 = 120;
 /// The recorder bar's controls fade in over this long when it changes what
 /// it is — ready, counting, recording, writing the file. The bar itself
 /// keeps its size and place.
