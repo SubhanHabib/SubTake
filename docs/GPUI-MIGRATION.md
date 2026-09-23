@@ -158,6 +158,19 @@ design needs:
   (adapted from the Zeron reference, MIT © 2026 Wing) for menus and tooltips.
 * `EdgeFade` → `Window::with_edge_fade` (available, not yet applied).
 
+One zui crate carries SubTake's own changes: `gpui_macos`, the Metal
+renderer, is vendored in `vendor/gpui_macos` from the same rev with
+`patches/gpui_macos/*.patch` applied, and Cargo.toml's `[patch]` builds on it.
+Every other zui crate still comes from zui.
+
+Changing the zui rev: edit it in Cargo.toml, run
+`python3 scripts/vendor-gpui.py`, and build. The script copies the crate from
+the new rev, rewrites its manifest standalone (it inherits from zui's
+workspace), and applies the patches, stopping on one that no longer applies.
+`scripts/check-ui-primitives.py` fails while the vendored rev differs from the
+pinned one. A patch zui takes upstream is deleted; with none left, so are
+`vendor/`, `patches/` and the `[patch]`.
+
 The fork splits the platform layer out, so the manifest also carries
 `gpui_platform` (which owns `font-kit` and `runtime_shaders`). API drift
 handled during the switch, all mechanical:

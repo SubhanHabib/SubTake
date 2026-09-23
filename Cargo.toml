@@ -11,7 +11,14 @@ native-ffmpeg = []
 
 [workspace]
 members = ["crates/theme", "crates/ui"]
+exclude = ["vendor/gpui_macos"]
 resolver = "2"
+
+# zui's Metal renderer with SubTake's patches on top (`patches/gpui_macos`).
+# `scripts/vendor-gpui.py` makes it from the zui rev below; run it again
+# after changing that rev.
+[patch."https://github.com/zeronsh/zui"]
+gpui_macos = { path = "vendor/gpui_macos" }
 
 [dependencies]
 anyhow = "1"

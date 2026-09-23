@@ -70,6 +70,16 @@ def check(root):
         path = root / name
         if path.exists() and re.search(r"(?i)\b(?:i[-_]slint[-_]core|slint(?:[-_]build)?)\b", path.read_text()):
             errors.append(f"{name}: retired Slint dependency/build reference")
+    # The vendored renderer is zui's at the rev the rest of zui comes from:
+    # after a rev change, `scripts/vendor-gpui.py` makes it again.
+    pinned = re.search(r'^gpui\s*=\s*\{[^}]*rev\s*=\s*"([0-9a-f]{40})"',
+                       (root / "Cargo.toml").read_text(), re.M)
+    vendored = root / "vendor/gpui_macos/ZUI_REV"
+    if not vendored.is_file():
+        errors.append("vendor/gpui_macos: missing; run scripts/vendor-gpui.py")
+    elif not pinned or vendored.read_text().strip() != pinned.group(1):
+        errors.append("vendor/gpui_macos: vendored from another zui rev than Cargo.toml pins; "
+                      "run scripts/vendor-gpui.py")
     views = root / "src/ui.rs"
     if views.exists():
         text = views.read_text()
