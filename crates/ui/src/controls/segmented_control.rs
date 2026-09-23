@@ -50,6 +50,7 @@ pub fn segmented_control(
                     let hover_key = motion::tween_key(&element_id, "hover");
                     let idle = motion::hover_blend(&hover_key, theme.muted, theme.text);
                     let ring = focus_ring(theme);
+                    let press = theme.press;
                     let click_id = element_id.clone();
                     div()
                         .id(element_id)
@@ -69,6 +70,13 @@ pub fn segmented_control(
                             FontWeight::NORMAL
                         })
                         .cursor_pointer()
+                        // Pressed as a button presses: the `press` wash and a
+                        // dim. The current segment keeps its `ink` pill and
+                        // only dims, since a wash would show as a grey pill
+                        // swapped in for a black one.
+                        .active(move |s| {
+                            if active { s } else { s.bg(press) }.opacity(Theme::PRESSED_OPACITY)
+                        })
                         .tab_index(0)
                         .focus_visible(move |s| s.shadow(vec![ring]))
                         .on_hover(motion::hover_listener(hover_key))
