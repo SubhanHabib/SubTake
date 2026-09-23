@@ -27,8 +27,82 @@ actions!(
         Cut,
         Copy,
         Cancel,
+        WordLeft,
+        WordRight,
+        SelectWordLeft,
+        SelectWordRight,
+        SelectToStart,
+        SelectToEnd,
+        DeleteWordLeft,
+        DeleteWordRight,
+        DeleteToStart,
+        DeleteToEnd,
+        Undo,
+        Redo,
+        Up,
+        Down,
     ]
 );
+
+/// The field as it stood before an edit, for undo.
+struct Snapshot {
+    content: SharedString,
+    selected_range: Range<usize>,
+    selection_reversed: bool,
+}
+
+/// Whether `c` belongs to a word, for the word-wise moves and deletes and
+/// for a double click.
+fn is_word(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
+}
+
+/// The start of the word before `offset`, skipping the spaces and
+/// punctuation between: where ⌥← lands.
+fn previous_word(text: &str, offset: usize) -> usize {
+    let mut chars = text[..offset].char_indices().rev().peekable();
+    while chars.next_if(|(_, c)| !is_word(*c)).is_some() {}
+    let mut start = chars.peek().map_or(0, |(i, _)| *i);
+    while let Some((i, _)) = chars.next_if(|(_, c)| is_word(*c)) {
+        start = i;
+    }
+    start
+}
+
+/// The end of the word after `offset`: where ⌥→ lands.
+fn next_word(text: &str, offset: usize) -> usize {
+    let rest = &text[offset..];
+    let mut chars = rest.char_indices().peekable();
+    while chars.next_if(|(_, c)| !is_word(*c)).is_some() {}
+    while chars.next_if(|(_, c)| is_word(*c)).is_some() {}
+    offset + chars.peek().map_or(rest.len(), |(i, _)| *i)
+}
+
+/// The word `offset` sits in, for a double click — or the run of
+/// spaces and punctuation, if that is what was clicked.
+fn run_at(text: &str, offset: usize) -> Range<usize> {
+    let Some(c) = text[offset..]
+        .chars()
+        .next()
+        .or_else(|| text[..offset].chars().next_back())
+    else {
+        return offset..offset;
+    };
+    let word = is_word(c);
+    let start = text[..offset]
+        .char_indices()
+        .rev()
+        .take_while(|(_, c)| is_word(*c) == word)
+        .last()
+        .map_or(offset, |(i, _)| i);
+    let rest = &text[offset..];
+    let end = offset
+        + rest
+            .char_indices()
+            .find(|(_, c)| is_word(*c) != word)
+            .map_or(rest.len(), |(i, _)| i);
+    start..end
+}
 
 pub struct TextInput {
     pub theme: Theme,
@@ -40,6 +114,15 @@ pub struct TextInput {
     /// transient surface has to hand the key on: `cancel` stops propagation,
     /// so the surface never sees the escape that was meant to close it.
     cancelled: Option<Box<dyn Fn(&mut Window, &mut App)>>,
+    /// Takes the up and down arrows, for a field that steers a list below
+    /// it (the palette's filter). Without one they go to the start and end,
+    /// as they do in any single-line field.
+    stepped: Option<Box<dyn Fn(isize, &mut Window, &mut App)>>,
+    undo: Vec<Snapshot>,
+    redo: Vec<Snapshot>,
+    /// The last edit was a typed character, so the next one joins its undo
+    /// step: undo takes back a word's typing, not one letter.
+    typing: bool,
     focus_handle: FocusHandle,
     content: SharedString,
     placeholder: SharedString,
@@ -66,6 +149,10 @@ impl TextInput {
     pub fn set_on_cancel(&mut self, cancelled: impl Fn(&mut Window, &mut App) + 'static) {
         self.cancelled = Some(Box::new(cancelled));
     }
+
+    pub fn set_on_step(&mut self, stepped: impl Fn(isize, &mut Window, &mut App) + 'static) {
+        self.stepped = Some(Box::new(stepped));
+    }
     /// Replace the contents outright, ignoring focus — `sync` deliberately
     /// leaves a focused field alone, which is wrong when the caller is
     /// reopening the surface the field lives in.
@@ -73,6 +160,15 @@ impl TextInput {
         self.content = value.to_owned().into();
         self.selected_range = self.content.len()..self.content.len();
         self.committed = value.to_owned();
+        self.forget();
+    }
+
+    /// Drop the undo history: the value came from outside, so undoing into
+    /// what was there before would bring back somebody else's text.
+    fn forget(&mut self) {
+        self.undo.clear();
+        self.redo.clear();
+        self.typing = false;
     }
 
     pub fn set_placeholder(&mut self, placeholder: impl Into<SharedString>) {
@@ -98,6 +194,10 @@ impl TextInput {
             accepted: Box::new(accepted),
             changed: None,
             cancelled: None,
+            stepped: None,
+            undo: Vec::new(),
+            redo: Vec::new(),
+            typing: false,
             focus_handle: cx.focus_handle(),
             committed: content.clone(),
             content: content.into(),
@@ -118,6 +218,7 @@ impl TextInput {
             self.content = value.to_owned().into();
             self.selected_range = self.content.len()..self.content.len();
             self.committed = value.to_owned();
+            self.forget();
         }
     }
 
@@ -198,6 +299,118 @@ impl TextInput {
         self.replace_text_in_range(None, "", window, cx)
     }
 
+    fn word_left(&mut self, _: &WordLeft, _: &mut Window, cx: &mut Context<Self>) {
+        if self.selected_range.is_empty() {
+            self.move_to(previous_word(&self.content, self.cursor_offset()), cx);
+        } else {
+            self.move_to(self.selected_range.start, cx)
+        }
+    }
+
+    fn word_right(&mut self, _: &WordRight, _: &mut Window, cx: &mut Context<Self>) {
+        if self.selected_range.is_empty() {
+            self.move_to(next_word(&self.content, self.cursor_offset()), cx);
+        } else {
+            self.move_to(self.selected_range.end, cx)
+        }
+    }
+
+    fn select_word_left(&mut self, _: &SelectWordLeft, _: &mut Window, cx: &mut Context<Self>) {
+        self.select_to(previous_word(&self.content, self.cursor_offset()), cx);
+    }
+
+    fn select_word_right(&mut self, _: &SelectWordRight, _: &mut Window, cx: &mut Context<Self>) {
+        self.select_to(next_word(&self.content, self.cursor_offset()), cx);
+    }
+
+    fn select_to_start(&mut self, _: &SelectToStart, _: &mut Window, cx: &mut Context<Self>) {
+        self.select_to(0, cx);
+    }
+
+    fn select_to_end(&mut self, _: &SelectToEnd, _: &mut Window, cx: &mut Context<Self>) {
+        self.select_to(self.content.len(), cx);
+    }
+
+    /// Delete from the caret to `offset`, or the selection if there is one.
+    fn delete_to(&mut self, offset: usize, window: &mut Window, cx: &mut Context<Self>) {
+        if self.selected_range.is_empty() {
+            self.select_to(offset, cx)
+        }
+        self.replace_text_in_range(None, "", window, cx)
+    }
+
+    fn delete_word_left(&mut self, _: &DeleteWordLeft, w: &mut Window, cx: &mut Context<Self>) {
+        self.delete_to(previous_word(&self.content, self.cursor_offset()), w, cx)
+    }
+
+    fn delete_word_right(&mut self, _: &DeleteWordRight, w: &mut Window, cx: &mut Context<Self>) {
+        self.delete_to(next_word(&self.content, self.cursor_offset()), w, cx)
+    }
+
+    fn delete_to_start(&mut self, _: &DeleteToStart, w: &mut Window, cx: &mut Context<Self>) {
+        self.delete_to(0, w, cx)
+    }
+
+    fn delete_to_end(&mut self, _: &DeleteToEnd, w: &mut Window, cx: &mut Context<Self>) {
+        self.delete_to(self.content.len(), w, cx)
+    }
+
+    fn up(&mut self, _: &Up, window: &mut Window, cx: &mut Context<Self>) {
+        match self.stepped.take() {
+            Some(stepped) => {
+                stepped(-1, window, cx);
+                self.stepped = Some(stepped);
+            }
+            None => self.move_to(0, cx),
+        }
+    }
+
+    fn down(&mut self, _: &Down, window: &mut Window, cx: &mut Context<Self>) {
+        match self.stepped.take() {
+            Some(stepped) => {
+                stepped(1, window, cx);
+                self.stepped = Some(stepped);
+            }
+            None => self.move_to(self.content.len(), cx),
+        }
+    }
+
+    fn snapshot(&self) -> Snapshot {
+        Snapshot {
+            content: self.content.clone(),
+            selected_range: self.selected_range.clone(),
+            selection_reversed: self.selection_reversed,
+        }
+    }
+
+    /// Put `snapshot` back, and tell a live listener the text changed.
+    fn restore(&mut self, snapshot: Snapshot, window: &mut Window, cx: &mut Context<Self>) {
+        self.content = snapshot.content;
+        self.selected_range = snapshot.selected_range;
+        self.selection_reversed = snapshot.selection_reversed;
+        self.marked_range = None;
+        self.typing = false;
+        if let Some(changed) = self.changed.take() {
+            changed(self.content.to_string(), window, cx);
+            self.changed = Some(changed);
+        }
+        cx.notify();
+    }
+
+    fn undo(&mut self, _: &Undo, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(snapshot) = self.undo.pop() {
+            self.redo.push(self.snapshot());
+            self.restore(snapshot, window, cx);
+        }
+    }
+
+    fn redo(&mut self, _: &Redo, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(snapshot) = self.redo.pop() {
+            self.undo.push(self.snapshot());
+            self.restore(snapshot, window, cx);
+        }
+    }
+
     fn on_mouse_down(
         &mut self,
         event: &MouseDownEvent,
@@ -208,10 +421,23 @@ impl TextInput {
         cx.stop_propagation();
         self.is_selecting = true;
 
-        if event.modifiers.shift {
-            self.select_to(self.index_for_mouse_position(event.position), cx);
-        } else {
-            self.move_to(self.index_for_mouse_position(event.position), cx)
+        let index = self.index_for_mouse_position(event.position);
+        match event.click_count {
+            // A double click takes the word under the pointer, a triple
+            // click the whole line — which, in a one-line field, is all of it.
+            2 => {
+                let run = run_at(&self.content, index);
+                self.move_to(run.start, cx);
+                self.select_to(run.end, cx);
+                self.is_selecting = false;
+            }
+            n if n >= 3 => {
+                self.move_to(0, cx);
+                self.select_to(self.content.len(), cx);
+                self.is_selecting = false;
+            }
+            _ if event.modifiers.shift => self.select_to(index, cx),
+            _ => self.move_to(index, cx),
         }
     }
 
@@ -259,6 +485,8 @@ impl TextInput {
 
     fn move_to(&mut self, offset: usize, cx: &mut Context<Self>) {
         self.selected_range = offset..offset;
+        self.selection_reversed = false;
+        self.typing = false;
         cx.notify()
     }
 
@@ -289,6 +517,7 @@ impl TextInput {
     }
 
     fn select_to(&mut self, offset: usize, cx: &mut Context<Self>) {
+        self.typing = false;
         if self.selection_reversed {
             self.selected_range.start = offset
         } else {
@@ -407,10 +636,19 @@ impl EntityInputHandler for TextInput {
             .or(self.marked_range.clone())
             .unwrap_or(self.selected_range.clone());
 
+        // A run of typing is one undo step; a paste, a delete or typing
+        // over a selection starts a new one.
+        let typing = range.is_empty() && new_text.chars().count() == 1;
+        if !(typing && self.typing) && (!range.is_empty() || !new_text.is_empty()) {
+            self.undo.push(self.snapshot());
+            self.redo.clear();
+        }
         self.content =
             (self.content[0..range.start].to_owned() + new_text + &self.content[range.end..])
                 .into();
         self.selected_range = range.start + new_text.len()..range.start + new_text.len();
+        self.selection_reversed = false;
+        self.typing = typing;
         self.marked_range.take();
         // Every edit path — typing, paste, backspace, delete — funnels
         // through here, so this is the one place a live listener has to sit.
@@ -728,6 +966,20 @@ impl Render for TextInput {
             .on_action(cx.listener(Self::paste))
             .on_action(cx.listener(Self::cut))
             .on_action(cx.listener(Self::copy))
+            .on_action(cx.listener(Self::word_left))
+            .on_action(cx.listener(Self::word_right))
+            .on_action(cx.listener(Self::select_word_left))
+            .on_action(cx.listener(Self::select_word_right))
+            .on_action(cx.listener(Self::select_to_start))
+            .on_action(cx.listener(Self::select_to_end))
+            .on_action(cx.listener(Self::delete_word_left))
+            .on_action(cx.listener(Self::delete_word_right))
+            .on_action(cx.listener(Self::delete_to_start))
+            .on_action(cx.listener(Self::delete_to_end))
+            .on_action(cx.listener(Self::undo))
+            .on_action(cx.listener(Self::redo))
+            .on_action(cx.listener(Self::up))
+            .on_action(cx.listener(Self::down))
             .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up))
@@ -765,23 +1017,112 @@ pub fn init(cx: &mut App) {
     cx.set_global(InputBindings);
     // Bundled Geist / Geist Mono, registered before the first frame paints.
     crate::fonts::register(cx);
-    cx.bind_keys([
-        KeyBinding::new("enter", Accept, Some("SubTakeInput")),
-        KeyBinding::new("escape", Cancel, Some("SubTakeInput")),
-        KeyBinding::new("backspace", Backspace, Some("SubTakeInput")),
-        KeyBinding::new("delete", Delete, Some("SubTakeInput")),
-        KeyBinding::new("left", Left, Some("SubTakeInput")),
-        KeyBinding::new("right", Right, Some("SubTakeInput")),
-        KeyBinding::new("shift-left", SelectLeft, Some("SubTakeInput")),
-        KeyBinding::new("shift-right", SelectRight, Some("SubTakeInput")),
-        KeyBinding::new("cmd-a", SelectAll, Some("SubTakeInput")),
-        KeyBinding::new("cmd-v", Paste, Some("SubTakeInput")),
-        KeyBinding::new("cmd-c", Copy, Some("SubTakeInput")),
-        KeyBinding::new("cmd-x", Cut, Some("SubTakeInput")),
-        KeyBinding::new("home", Home, Some("SubTakeInput")),
-        KeyBinding::new("end", End, Some("SubTakeInput")),
-        KeyBinding::new("cmd-left", Home, Some("SubTakeInput")),
-        KeyBinding::new("cmd-right", End, Some("SubTakeInput")),
-        KeyBinding::new("ctrl-cmd-space", ShowCharacterPalette, Some("SubTakeInput")),
+    // The editing keys every text field on the platform answers to. They
+    // are scoped to the field, so ⌘Z here undoes typing rather than the
+    // editor's last edit, and ⌘A selects the text rather than the timeline.
+    let field = Some("SubTakeInput");
+    let mut bindings = vec![
+        KeyBinding::new("enter", Accept, field),
+        KeyBinding::new("escape", Cancel, field),
+        KeyBinding::new("backspace", Backspace, field),
+        KeyBinding::new("shift-backspace", Backspace, field),
+        KeyBinding::new("delete", Delete, field),
+        KeyBinding::new("left", Left, field),
+        KeyBinding::new("right", Right, field),
+        KeyBinding::new("shift-left", SelectLeft, field),
+        KeyBinding::new("shift-right", SelectRight, field),
+        KeyBinding::new("up", Up, field),
+        KeyBinding::new("down", Down, field),
+        KeyBinding::new("shift-up", SelectToStart, field),
+        KeyBinding::new("shift-down", SelectToEnd, field),
+        KeyBinding::new("home", Home, field),
+        KeyBinding::new("end", End, field),
+        KeyBinding::new("shift-home", SelectToStart, field),
+        KeyBinding::new("shift-end", SelectToEnd, field),
+    ];
+    #[cfg(target_os = "macos")]
+    bindings.extend([
+        KeyBinding::new("cmd-a", SelectAll, field),
+        KeyBinding::new("cmd-c", Copy, field),
+        KeyBinding::new("cmd-x", Cut, field),
+        KeyBinding::new("cmd-v", Paste, field),
+        KeyBinding::new("cmd-z", Undo, field),
+        KeyBinding::new("cmd-shift-z", Redo, field),
+        KeyBinding::new("cmd-left", Home, field),
+        KeyBinding::new("cmd-right", End, field),
+        KeyBinding::new("cmd-up", Home, field),
+        KeyBinding::new("cmd-down", End, field),
+        KeyBinding::new("cmd-shift-left", SelectToStart, field),
+        KeyBinding::new("cmd-shift-right", SelectToEnd, field),
+        KeyBinding::new("alt-left", WordLeft, field),
+        KeyBinding::new("alt-right", WordRight, field),
+        KeyBinding::new("alt-shift-left", SelectWordLeft, field),
+        KeyBinding::new("alt-shift-right", SelectWordRight, field),
+        KeyBinding::new("alt-backspace", DeleteWordLeft, field),
+        KeyBinding::new("alt-delete", DeleteWordRight, field),
+        KeyBinding::new("cmd-backspace", DeleteToStart, field),
+        KeyBinding::new("cmd-delete", DeleteToEnd, field),
+        // The Emacs keys every Cocoa field takes: ⌃A is the start of the
+        // line on a Mac, not select all.
+        KeyBinding::new("ctrl-a", Home, field),
+        KeyBinding::new("ctrl-e", End, field),
+        KeyBinding::new("ctrl-b", Left, field),
+        KeyBinding::new("ctrl-f", Right, field),
+        KeyBinding::new("ctrl-h", Backspace, field),
+        KeyBinding::new("ctrl-d", Delete, field),
+        KeyBinding::new("ctrl-k", DeleteToEnd, field),
+        KeyBinding::new("ctrl-cmd-space", ShowCharacterPalette, field),
     ]);
+    #[cfg(not(target_os = "macos"))]
+    bindings.extend([
+        KeyBinding::new("ctrl-a", SelectAll, field),
+        KeyBinding::new("ctrl-c", Copy, field),
+        KeyBinding::new("ctrl-x", Cut, field),
+        KeyBinding::new("ctrl-v", Paste, field),
+        KeyBinding::new("shift-insert", Paste, field),
+        KeyBinding::new("ctrl-insert", Copy, field),
+        KeyBinding::new("shift-delete", Cut, field),
+        KeyBinding::new("ctrl-z", Undo, field),
+        KeyBinding::new("ctrl-y", Redo, field),
+        KeyBinding::new("ctrl-shift-z", Redo, field),
+        KeyBinding::new("ctrl-left", WordLeft, field),
+        KeyBinding::new("ctrl-right", WordRight, field),
+        KeyBinding::new("ctrl-shift-left", SelectWordLeft, field),
+        KeyBinding::new("ctrl-shift-right", SelectWordRight, field),
+        KeyBinding::new("ctrl-backspace", DeleteWordLeft, field),
+        KeyBinding::new("ctrl-delete", DeleteWordRight, field),
+        KeyBinding::new("ctrl-home", Home, field),
+        KeyBinding::new("ctrl-end", End, field),
+    ]);
+    cx.bind_keys(bindings);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{next_word, previous_word, run_at};
+
+    #[test]
+    fn word_moves_skip_the_gap_then_the_word() {
+        let text = "Product demo, take 2";
+        assert_eq!(previous_word(text, text.len()), 19);
+        assert_eq!(previous_word(text, 19), 14);
+        assert_eq!(previous_word(text, 13), 8);
+        assert_eq!(previous_word(text, 3), 0);
+        assert_eq!(previous_word(text, 0), 0);
+        assert_eq!(next_word(text, 0), 7);
+        assert_eq!(next_word(text, 7), 12);
+        assert_eq!(next_word(text, 12), 18);
+        assert_eq!(next_word(text, text.len()), text.len());
+    }
+
+    #[test]
+    fn a_double_click_takes_the_word_or_the_gap_under_it() {
+        let text = "Product demo,  take";
+        assert_eq!(run_at(text, 2), 0..7);
+        assert_eq!(run_at(text, 8), 8..12);
+        assert_eq!(run_at(text, 13), 12..15);
+        assert_eq!(run_at(text, text.len()), 15..19);
+        assert_eq!(run_at("", 0), 0..0);
+        assert_eq!(run_at("héllo wörld", 8), 7..13);
+    }
 }
