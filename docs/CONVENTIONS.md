@@ -62,6 +62,13 @@ src/
 ├── platform.rs            # helper lookup, sources, devices, reveal
 ├── platform/              # recording.rs, companion.rs, windows.rs (unsafe FFI)
 └── <domain>.rs            # project, editing, export, timeline, …
+native/                    # in-process macOS code, Swift only, one concern per file
+├── RecorderGlass.swift    # frosted material and plate masks
+├── RecorderWindows.swift  # recorder bar, options card, countdown
+├── RuntimeWindow.swift    # show, hide, focus, position, drag
+├── …                      # Magnify, StatusItem, DocumentEvents, AgentWorkspace, BrandMark
+└── tests/                 # run by scripts/test-native.sh
+scripts/*.swift            # helper executables the app spawns (capture, devices)
 crates/
 ├── theme/src/
 │   ├── lib.rs             # Theme struct, constructors, derived colours
@@ -215,6 +222,37 @@ closure with more than one conceptual step gets a block.
 - `unsafe` stays under `src/platform/` and `src/ui_runtime/` behind small
   safe functions, each with a `// SAFETY:` comment.
 
+## Native macOS code
+
+**No more Objective-C. Native macOS code is Swift, and only Swift.** That
+covers anything that touches AppKit, WebKit, Core Animation or any other Apple
+framework, whether it runs inside the app or as a helper. Do not add `.m`,
+`.mm` or Objective-C headers, and do not reach for `objc2` from Rust to avoid
+writing Swift. Portable C that is not macOS-specific, such as the FFmpeg
+decoder in `scripts/decoder.c`, is not native macOS code and stays C.
+
+- **In-process code** lives in `native/`, one concern per file, and
+  `build.rs` compiles every `native/*.swift` into one static library. Each
+  entry point is a `public` function marked `@_cdecl("subtake_…")` and is
+  declared in an `extern "C"` block in `src/platform/`. Keep the two
+  signatures identical: `UnsafeMutableRawPointer?` for `*mut c_void`,
+  `Bool` for `bool`, `Double` for `f64`, `UInt` for `usize`, and a
+  `@convention(c)` typealias for every callback.
+- **Helper executables** stay as single Swift files in `scripts/`, built by
+  `dev.py` and `build-mac.py`.
+- GPUI owns every view it hands over. Borrow it with `borrowedView(_:)`, never
+  retain it, and keep per-view state in an associated object keyed with
+  `associationKey()` so it dies with the view.
+- AppKit calls run on the main thread. Every entry point that mutates a window
+  starts with `assert(Thread.isMainThread, …)`.
+- Objective-C ignored messages to nil, and Swift traps on them. Reach the
+  application as `NSApp?.`, never `NSApp!` or `NSApplication.shared`, which
+  creates the application early and pre-empts GPUI. Library code has no force
+  unwraps. Return early with `guard let` instead.
+- The library builds in Swift 5 language mode. Moving to Swift 6 strict
+  concurrency is a separate change, not something to half-do in a feature.
+- Tests go in `native/tests/` and run with `scripts/test-native.sh`.
+
 ## GPUI specifics
 
 - Rendering is immediate-mode. State that drives a frame lives on the view; a
@@ -238,6 +276,7 @@ cargo check --all-targets
 cargo test --all-targets
 cargo clippy --all-targets
 python3 scripts/check-ui-primitives.py
+scripts/test-native.sh
 ```
 
 Clippy runs with its default lint set. Allow a lint narrowly, on the item, with

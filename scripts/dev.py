@@ -39,7 +39,7 @@ def run(*args, **kwargs):
 
 def snapshot():
     files = [ROOT / p for p in ("Cargo.toml", "Cargo.lock", "build.rs")]
-    for directory in ("src", "crates/theme", "crates/ui", "scripts", "assets"):
+    for directory in ("src", "crates/theme", "crates/ui", "native", "scripts", "assets"):
         files.extend(p for p in (ROOT / directory).rglob("*")
                      if p.is_file() and "__pycache__" not in p.parts
                      and p.suffix in {".rs", ".m", ".h", ".c", ".swift", ".metal",
