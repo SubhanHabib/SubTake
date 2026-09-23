@@ -327,7 +327,7 @@ fn hover_t(key: &str) -> f32 {
 /// windows never are, so without this no screenshot could show a hover
 /// state. Each comma-separated entry is matched as a substring of the tween
 /// key — `SUBTAKE_HOVER_PIN=switch,look` pins every switch and look row.
-fn hover_pinned(key: &str) -> bool {
+pub fn hover_pinned(key: &str) -> bool {
     static PINS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
     PINS.get_or_init(|| {
         std::env::var("SUBTAKE_HOVER_PIN")

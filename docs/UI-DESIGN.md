@@ -182,6 +182,19 @@ rather than 2 above it, since the stack clips at its top. Not wired: the
 app's transport still reads milliseconds (`00:37.150`); the gallery's reads
 hundredths, as the chip does.
 
+A lane with nothing on it folds to a 16-tall strip, radius 8, with no fill
+and a 1px `line` edge, its name a step down at 11. The pointer over the strip
+or its name opens it to the full 30 with a `hover` fill and "Click or drag to
+add a zoom region" at 11 `muted`, 12 in; a click on the opened lane adds a
+region of that kind at the playhead, and the lane folds back 300ms after the
+pointer leaves. The clip lane adds a trim, since a clip comes only from
+splitting the take. The source lane never folds, and the gap stays 4.
+`SUBTAKE_GALLERY_SCREEN=lanes-sparse` has only zooms and a voice-over, and
+`SUBTAKE_HOVER_PIN=lane-Annotation` holds that lane open. Not drawn by the
+design: the open runs over the 150ms of every other state fade rather than
+140; and the audio lane counts as full while it shows the recording's
+waveform. Not wired: opening on a drag over the lane.
+
 A region's label sits on one line and ends in an ellipsis when the region is
 shorter than it. Speed, trim, annotation and caption regions carry their
 kind's icon at 13 before the label (`Timer`, `Scissors`, `TextT`,

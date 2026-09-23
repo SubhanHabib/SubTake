@@ -35,6 +35,22 @@ fn region_icon(kind: &str) -> Option<&'static str> {
     }
 }
 
+/// Which part of an empty lane the pointer is over: its name or its track.
+const LANE_HOVER_LABEL: u8 = 1;
+const LANE_HOVER_TRACK: u8 = 2;
+
+/// What a click on an opened empty lane adds, and the region it names. The
+/// clip lane adds a trim, since a clip comes only from splitting the take.
+fn lane_add(label: &str) -> (&'static str, &'static str) {
+    match label {
+        "Zoom" => ("add-zoom", "a zoom"),
+        "Clip" => ("add-trim", "a trim"),
+        "Annotation" => ("add-text", "an annotation"),
+        "Audio" => ("add-audio", "an audio"),
+        _ => ("add-caption", "a caption"),
+    }
+}
+
 /// How wide a label is in the small mono face, known before layout.
 fn mono_small_width(text: &str) -> f32 {
     text.chars().count() as f32 * Theme::FONT_SMALL * Theme::MONO_ADVANCE
@@ -271,6 +287,73 @@ impl RootView {
         }
     }
 
+    /// The pointer entering or leaving an empty lane's name or its track.
+    /// The lane stays open while either holds it, and folds back a moment
+    /// after both have let go.
+    fn hover_lane(&mut self, lane: usize, part: u8, hovered: bool, cx: &mut Context<Self>) {
+        let held = match self.lane_open {
+            Some((open, held, _)) if open == lane => held,
+            _ => 0,
+        };
+        let held = if hovered { held | part } else { held & !part };
+        if hovered {
+            self.lane_open = Some((lane, held, None));
+        } else if matches!(self.lane_open, Some((open, _, _)) if open == lane) {
+            self.lane_open = Some((lane, held, (held == 0).then(Instant::now)));
+        }
+        cx.notify();
+    }
+
+    /// A lane with nothing on it: a 16-tall outlined strip that opens to the
+    /// full lane under the pointer, with a line saying what a click adds. A
+    /// click on the opened lane adds a region of its kind at the playhead.
+    fn empty_lane(
+        &self,
+        lane: Div,
+        index: usize,
+        label: &str,
+        open: f32,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let theme = self.theme;
+        let (action, noun) = lane_add(label);
+        let surface = self.surface.clone();
+        let lerp = subtake_ui::motion::lerp;
+        lane.id(("lane-empty", index))
+            .flex()
+            .items_center()
+            .px(px(Theme::LANE_PLACEHOLDER_PADDING))
+            .overflow_hidden()
+            .rounded(px(lerp(Theme::RADIUS_LANE_EMPTY, Theme::RADIUS_LANE, open)))
+            .bg(subtake_ui::motion::blend(
+                theme.hover.opacity(0.),
+                theme.hover,
+                open,
+            ))
+            .shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH * 2.)])
+            .cursor(CursorStyle::PointingHand)
+            .on_hover(cx.listener(move |s, hovered, _, cx| {
+                s.hover_lane(index, LANE_HOVER_TRACK, *hovered, cx)
+            }))
+            .when(open > 0., |el| {
+                el.child(
+                    div()
+                        .whitespace_nowrap()
+                        .opacity(open)
+                        .text_size(px(Theme::FONT_SMALL))
+                        .text_color(theme.muted)
+                        .child(format!("Click or drag to add {noun} region")),
+                )
+            })
+            .on_mouse_down(MouseButton::Left, move |_, _, cx| {
+                if open >= 1. {
+                    surface.action(action);
+                    cx.stop_propagation();
+                }
+            })
+            .into_any_element()
+    }
+
     pub(super) fn timeline(
         &mut self,
         window: &EditorWindow,
@@ -469,22 +552,66 @@ impl RootView {
             );
         }
         let labels: Vec<String> = window.get_track_labels().iter().collect();
-        // One pitch per lane: the lane itself plus the air under it. Every
-        // `top` below is a multiple of it, so a lane, its waveform and the
+        let regions: Vec<Region> = window.get_regions().iter().collect();
+        let audio_row = window.get_audio_row() as usize;
+        let waveform = window.get_waveform().0;
+        // An empty lane folds away after the pointer has been gone from it a
+        // moment; until then frames keep coming so the fold is on time.
+        if let Some((_, _, Some(left))) = self.lane_open {
+            if left.elapsed() >= std::time::Duration::from_millis(Theme::LANE_COLLAPSE_DELAY_MS) {
+                self.lane_open = None;
+            } else {
+                win.request_animation_frame();
+            }
+        }
+        // Each lane's height and how far open it is: a lane with anything on
+        // it is always the full 30, and an empty one folds to a 16 strip,
+        // opening to 30 under the pointer. The audio lane counts as holding
+        // the recording's waveform when there is one. Not drawn by the
+        // design: the waveform in an otherwise empty audio lane.
+        let lanes: Vec<(bool, f32)> = (0..labels.len())
+            .map(|i| {
+                let occupied = regions.iter().any(|r| r.row as usize == i)
+                    || (i == audio_row && waveform.is_some());
+                if occupied {
+                    return (true, 1.);
+                }
+                let key = subtake_ui::motion::tween_key(
+                    &SharedString::from(format!("lane-{}-{i}", labels[i])).into(),
+                    "open",
+                );
+                let open = matches!(self.lane_open, Some((j, _, _)) if j == i)
+                    || subtake_ui::motion::hover_pinned(&key);
+                (false, subtake_ui::motion::state_fade(&key, open))
+            })
+            .collect();
+        let height =
+            |t: f32| subtake_ui::motion::lerp(Theme::LANE_EMPTY_HEIGHT, Theme::LANE_HEIGHT, t);
+        // Where each lane starts: the lanes above it and the air under each.
+        // Every `top` below comes from here, so a lane, its waveform and the
         // blocks on it cannot drift apart.
-        let mut tracks = div()
-            .relative()
-            .h(px(labels.len() as f32 * Theme::LANE_PITCH));
-        for i in 0..labels.len() {
-            tracks = tracks.child(
-                div()
-                    .absolute()
-                    .top(px(i as f32 * Theme::LANE_PITCH))
-                    .w_full()
-                    .h(px(Theme::LANE_HEIGHT))
-                    .rounded(px(Theme::RADIUS_LANE))
-                    .bg(theme.lane_track),
-            );
+        let tops: Vec<f32> = lanes
+            .iter()
+            .scan(0., |top, &(_, t)| {
+                let this = *top;
+                *top += height(t) + Theme::LANE_GAP;
+                Some(this)
+            })
+            .collect();
+        let stack: f32 = lanes
+            .iter()
+            .map(|&(_, t)| height(t) + Theme::LANE_GAP)
+            .sum();
+        let mut tracks = div().relative().h(px(stack));
+        for (i, &(occupied, t)) in lanes.iter().enumerate() {
+            let lane = div().absolute().top(px(tops[i])).w_full().h(px(height(t)));
+            tracks = tracks.child(if occupied {
+                lane.rounded(px(Theme::RADIUS_LANE))
+                    .bg(theme.lane_track)
+                    .into_any_element()
+            } else {
+                self.empty_lane(lane, i, &labels[i], t, cx)
+            });
         }
         for region in window.get_regions().iter() {
             let (mut start, mut end) = (region.start, region.end);
@@ -527,7 +654,7 @@ impl RootView {
                 .id(block_id)
                 .absolute()
                 .left(relative((start - offset) / visible))
-                .top(px(region.row as f32 * Theme::LANE_PITCH))
+                .top(px(tops.get(region.row as usize).copied().unwrap_or(0.)))
                 .w(relative(((end - start) / visible).max(0.001)))
                 .min_w(px(Theme::GAP))
                 .h(px(Theme::LANE_HEIGHT))
@@ -712,12 +839,12 @@ impl RootView {
         // and bottom at `55`. Not wired: the waveform in the region's ink.
         // It is an image ffmpeg paints in one colour, and gpui cannot tint
         // an image, so it keeps that colour at the review's strength.
-        if let Some(image) = window.get_waveform().0 {
+        if let Some(image) = waveform {
             tracks = tracks.child(
                 img(image)
                     .absolute()
                     .top(px(
-                        window.get_audio_row() as f32 * Theme::LANE_PITCH + Theme::WAVEFORM_INSET
+                        tops.get(audio_row).copied().unwrap_or(0.) + Theme::WAVEFORM_INSET
                     ))
                     .left(relative(-offset / visible))
                     .w(relative(window.get_timeline_zoom()))
@@ -782,108 +909,120 @@ impl RootView {
                         .font_weight(FontWeight::MEDIUM),
                 );
         }
-        let console =
-            panel(theme)
-                .id("timeline")
-                .relative()
-                // A zoomed picture runs on under the console; the console's
-                // presses are its own.
-                .occlude()
-                .mx(px(Theme::INSET))
-                .mb(px(Theme::INSET))
-                .flex_shrink_0()
-                .child(toolbar)
-                // The lanes and the export/transcription line share one box, so
-                // the line folds away without leaving the console's gap behind.
-                // It sits inside the console rather than under it so the console
-                // keeps the shell's own inset on all three of its edges.
-                .child(
-                    column().gap_0().flex_none().child(
-                        fade_edges(
-                            row()
-                                .id("track-scroll")
-                                .gap(px(Theme::LANE_GUTTER_GAP))
-                                .items_start()
-                                .h(px({
-                                    let (min, max) = lane_stack_range(win);
-                                    self.lane_height.clamp(min, max)
-                                }))
-                                .flex_none()
-                                .overflow_y_scroll()
-                                .track_scroll(&self.lane_scroll)
-                                .child(
-                                    column()
-                                        .w(px(Theme::LANE_GUTTER))
-                                        .flex_shrink_0()
-                                        .gap_0()
-                                        // The gutter runs on the track column's own grid,
-                                        // row for row: a spacer the height of the ruler
-                                        // and the gap under it, then one box per lane at
-                                        // that lane's height with the same gap below. A
-                                        // label is centred on its lane rather than set at
-                                        // its top, so the name and the blocks it names
-                                        // read as one line.
-                                        .child(div().h(px(Theme::RULER_HEIGHT + Theme::LANE_GAP)))
-                                        .child(lane_label("Source", Theme::LANE_HEIGHT, theme))
-                                        .children(labels.into_iter().map(|label| {
-                                            lane_label(label, Theme::LANE_HEIGHT, theme)
-                                        })),
-                                )
-                                .child(timeline),
-                        )
-                        // The top fades by what is scrolled past it, so a
-                        // stack that fits ends at its last lane rather than
-                        // on a band of air kept for the fade to rest on. The
-                        // bottom cuts hard: the console's own edge already
-                        // closes it.
-                        .tracking(&self.lane_scroll)
-                        .bottom(false),
-                    ),
-                )
-                // Its top edge takes a drag, trading lane height for stage.
-                .child(self.resize_edge(ResizeEdge::Console, cx))
-                .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
-                    if let Surface::Editor(window) = &s.surface {
-                        let delta = event.delta.pixel_delta(px(20.));
-                        if event.modifiers.control || event.modifiers.platform {
-                            let b = s.timeline_bounds.get();
-                            let fraction = (f32::from(event.position.x - b.left())
-                                / f32::from(b.size.width).max(1.))
-                            .clamp(0., 1.);
-                            let anchor = window.get_timeline_offset()
-                                + fraction * window.get_timeline_visible();
-                            window.set_timeline_zoom(
-                                (window.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
-                                    .clamp(1., TIMELINE_ZOOM_MAX),
-                            );
-                            window.set_timeline_offset(
-                                (anchor - fraction * window.get_timeline_visible()).clamp(
-                                    0.,
-                                    (window.get_duration() - window.get_timeline_visible()).max(0.),
-                                ),
-                            );
-                            cx.stop_propagation();
-                        } else if delta.x != px(0.) || event.modifiers.shift {
-                            let dx = if event.modifiers.shift {
-                                delta.y
-                            } else {
-                                delta.x
-                            };
-                            window.set_timeline_offset(
-                                (window.get_timeline_offset()
-                                    - f32::from(dx)
-                                        / f32::from(s.timeline_bounds.get().size.width).max(1.)
-                                        * window.get_timeline_visible())
-                                .clamp(
-                                    0.,
-                                    (window.get_duration() - window.get_timeline_visible()).max(0.),
-                                ),
-                            );
-                            cx.stop_propagation();
-                        }
+        let console = panel(theme)
+            .id("timeline")
+            .relative()
+            // A zoomed picture runs on under the console; the console's
+            // presses are its own.
+            .occlude()
+            .mx(px(Theme::INSET))
+            .mb(px(Theme::INSET))
+            .flex_shrink_0()
+            .child(toolbar)
+            // The lanes and the export/transcription line share one box, so
+            // the line folds away without leaving the console's gap behind.
+            // It sits inside the console rather than under it so the console
+            // keeps the shell's own inset on all three of its edges.
+            .child(
+                column().gap_0().flex_none().child(
+                    fade_edges(
+                        row()
+                            .id("track-scroll")
+                            .gap(px(Theme::LANE_GUTTER_GAP))
+                            .items_start()
+                            .h(px({
+                                let (min, max) = lane_stack_range(win);
+                                self.lane_height.clamp(min, max)
+                            }))
+                            .flex_none()
+                            .overflow_y_scroll()
+                            .track_scroll(&self.lane_scroll)
+                            .child(
+                                column()
+                                    .w(px(Theme::LANE_GUTTER))
+                                    .flex_shrink_0()
+                                    .gap_0()
+                                    // The gutter runs on the track column's own grid,
+                                    // row for row: a spacer the height of the ruler
+                                    // and the gap under it, then one box per lane at
+                                    // that lane's height with the same gap below. A
+                                    // label is centred on its lane rather than set at
+                                    // its top, so the name and the blocks it names
+                                    // read as one line.
+                                    .child(div().h(px(Theme::RULER_HEIGHT + Theme::LANE_GAP)))
+                                    .child(lane_label("Source", Theme::LANE_HEIGHT, theme))
+                                    .children(labels.iter().enumerate().map(|(i, label)| {
+                                        let (occupied, t) = lanes[i];
+                                        let label = lane_label(label.clone(), height(t), theme);
+                                        if occupied {
+                                            return label.into_any_element();
+                                        }
+                                        // An empty lane's name is a step smaller, and
+                                        // opens the lane as its track does.
+                                        label
+                                            .id(("lane-label", i))
+                                            .when(t < 0.5, |el| el.text_size(px(Theme::FONT_SMALL)))
+                                            .on_hover(cx.listener(move |s, hovered, _, cx| {
+                                                s.hover_lane(i, LANE_HOVER_LABEL, *hovered, cx)
+                                            }))
+                                            .into_any_element()
+                                    })),
+                            )
+                            .child(timeline),
+                    )
+                    // The top fades by what is scrolled past it, so a
+                    // stack that fits ends at its last lane rather than
+                    // on a band of air kept for the fade to rest on. The
+                    // bottom cuts hard: the console's own edge already
+                    // closes it.
+                    .tracking(&self.lane_scroll)
+                    .bottom(false),
+                ),
+            )
+            // Its top edge takes a drag, trading lane height for stage.
+            .child(self.resize_edge(ResizeEdge::Console, cx))
+            .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
+                if let Surface::Editor(window) = &s.surface {
+                    let delta = event.delta.pixel_delta(px(20.));
+                    if event.modifiers.control || event.modifiers.platform {
+                        let b = s.timeline_bounds.get();
+                        let fraction = (f32::from(event.position.x - b.left())
+                            / f32::from(b.size.width).max(1.))
+                        .clamp(0., 1.);
+                        let anchor =
+                            window.get_timeline_offset() + fraction * window.get_timeline_visible();
+                        window.set_timeline_zoom(
+                            (window.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
+                                .clamp(1., TIMELINE_ZOOM_MAX),
+                        );
+                        window.set_timeline_offset(
+                            (anchor - fraction * window.get_timeline_visible()).clamp(
+                                0.,
+                                (window.get_duration() - window.get_timeline_visible()).max(0.),
+                            ),
+                        );
+                        cx.stop_propagation();
+                    } else if delta.x != px(0.) || event.modifiers.shift {
+                        let dx = if event.modifiers.shift {
+                            delta.y
+                        } else {
+                            delta.x
+                        };
+                        window.set_timeline_offset(
+                            (window.get_timeline_offset()
+                                - f32::from(dx)
+                                    / f32::from(s.timeline_bounds.get().size.width).max(1.)
+                                    * window.get_timeline_visible())
+                            .clamp(
+                                0.,
+                                (window.get_duration() - window.get_timeline_visible()).max(0.),
+                            ),
+                        );
+                        cx.stop_propagation();
                     }
-                }))
-                .into_any_element();
+                }
+            }))
+            .into_any_element();
         frosted(UiSurface::Panel.radius(), UiSurface::Panel.blur(), console).into_any_element()
     }
 }

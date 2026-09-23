@@ -271,6 +271,15 @@ impl Theme {
     /// One lane's share of the stack: the lane plus the air under it, which
     /// is the step from one lane's top to the next one's.
     pub const LANE_PITCH: f32 = Self::LANE_HEIGHT + Self::LANE_GAP;
+    /// A lane with nothing on it folds to a 16-tall outlined strip, radius
+    /// 8, and opens to the full lane under the pointer.
+    pub const LANE_EMPTY_HEIGHT: f32 = 16.0;
+    pub const RADIUS_LANE_EMPTY: f32 = 8.0;
+    /// How long an opened empty lane waits after the pointer leaves before
+    /// it folds back, so a pass across the lanes does not flutter them.
+    pub const LANE_COLLAPSE_DELAY_MS: u64 = 300;
+    /// The placeholder in an opened empty lane sits this far in.
+    pub const LANE_PLACEHOLDER_PADDING: f32 = 12.0;
 
     // ---- timeline regions ------------------------------------------------
     //
