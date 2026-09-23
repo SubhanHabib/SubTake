@@ -19,6 +19,12 @@ recess inside either (`sunk`). A float's backdrop blur is chosen by what it is
 rather than by how big it is — 28 for a pod, 34 for the console and the
 inspector, 38 for the recorder bar.
 
+Not drawn by the design: the light `sunk`. The handoff paints it light grey
+(`#ececeeb8`). Over the light window material a panel already comes out that
+grey, so plates, tracks and lanes disappeared. It is a faint ink instead
+(`#14141a12`), which darkens whatever it sits on, as the dark `sunk` does.
+`scripts/dev.py --gallery=light` shows it on any `panel-` screen.
+
 **There are no real borders anywhere.** Every edge is a `BoxShadow`: inset for
 a hairline, spread for a focus ring. A border adds to what an element measures,
 so an edge appearing or changing width would move the element and everything

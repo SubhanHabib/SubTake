@@ -27,7 +27,12 @@ impl Theme {
             bg: css("#fafaf99e"),
             glass: css("#ffffff8c"),
             card: css("#ffffffb3"),
-            sunk: css("#ececeeb8"),
+            // Not drawn by the design: the handoff's recess is a light grey
+            // paint, `#ececeeb8`, which over the light window material lands
+            // on the same grey as the panel around it, so plates, tracks
+            // and lanes vanished. A faint ink darkens whatever it sits on,
+            // as the dark recess does.
+            sunk: css("#14141a12"),
             sunk2: css("#ffffffe6"),
             raise: css("#ffffffc7"),
             raise_line: css("#14141a14"),
