@@ -301,7 +301,17 @@ void subtake_window_show(void *rawView) {
 }
 
 void subtake_window_hide(void *rawView) {
-    [subtake_runtime_window(rawView) orderOut:nil];
+    NSWindow *window = subtake_runtime_window(rawView);
+    // A child that had focus — the recorder card — hands it back to the
+    // window it hangs from, the bar, rather than to whatever AppKit picks.
+    NSWindow *parent = window.isKeyWindow ? window.parentWindow : nil;
+    [window orderOut:nil];
+    [parent makeKeyWindow];
+}
+
+// Focus without activating the app or reordering its windows.
+void subtake_window_make_key(void *rawView) {
+    [subtake_runtime_window(rawView) makeKeyWindow];
 }
 
 void subtake_window_focus(void *rawView) {

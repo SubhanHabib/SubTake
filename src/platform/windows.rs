@@ -196,6 +196,7 @@ macro_rules! ui_window_operation {
 ui_window_operation!(ui_window_show, subtake_window_show);
 ui_window_operation!(ui_window_hide, subtake_window_hide);
 ui_window_operation!(ui_window_focus, subtake_window_focus);
+ui_window_operation!(ui_window_make_key, subtake_window_make_key);
 ui_window_operation!(ui_window_minimize, subtake_window_minimize, minimized: bool);
 ui_window_operation!(ui_window_set_transparent, subtake_window_set_transparent, transparent: bool);
 ui_window_operation!(ui_window_set_blur, subtake_window_set_blur, enabled: bool);
@@ -341,6 +342,7 @@ unsafe extern "C" {
     pub(super) fn subtake_window_show(view: *mut std::ffi::c_void);
     pub(super) fn subtake_window_hide(view: *mut std::ffi::c_void);
     pub(super) fn subtake_window_focus(view: *mut std::ffi::c_void);
+    pub(super) fn subtake_window_make_key(view: *mut std::ffi::c_void);
     pub(super) fn subtake_window_minimize(view: *mut std::ffi::c_void, minimized: bool);
     pub(super) fn subtake_window_set_transparent(view: *mut std::ffi::c_void, transparent: bool);
     pub(super) fn subtake_window_set_blur(view: *mut std::ffi::c_void, enabled: bool);

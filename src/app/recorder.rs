@@ -172,6 +172,11 @@ impl App {
         if options.window().native_view().is_some() {
             platform::position_launcher_options(options.window(), launcher.window())?;
         }
+        // GPUI draws a window without focus at half speed or less, so the
+        // card takes focus from the bar while it is open and eases at the
+        // display's rate; hiding hands it back. A new window takes focus as
+        // it opens.
+        options.window().make_key();
         Ok(())
     }
 

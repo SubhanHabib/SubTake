@@ -189,6 +189,16 @@ impl Window {
         }
     }
 
+    /// Takes keyboard focus without bringing the app or its other windows
+    /// forward.
+    pub fn make_key(&self) {
+        if let Some(v) = self.native_view() {
+            unsafe {
+                crate::platform::ui_window_make_key(v);
+            }
+        }
+    }
+
     pub fn set_minimized(&self, value: bool) {
         if let Some(v) = self.native_view() {
             unsafe {
