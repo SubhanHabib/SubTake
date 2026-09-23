@@ -144,8 +144,9 @@ design: each thumbnail's caption, and the faint ring the pointer brings up.
 
 Below the stage the console, inset 24 on all three of its edges. Its first row
 is the transport: SkipBack, Play on `ink`, SkipForward, the timecode in Geist
-Mono, then Suggest zooms / Split / Add as raised buttons, then snap as a round icon
-button and the zoom control — the aspect pod's own (`zoom_control`), reading
+Mono, then Suggest zooms / Split / Add as raised buttons, then snap as a round 40 icon
+button — a `sunk` plate and a `text` glyph while on, no plate and a `muted`
+glyph while off, never the accent — and the zoom control — the aspect pod's own (`zoom_control`), reading
 the timeline's zoom as a percentage of the whole take, stepping by half again
 up to 100x. Not drawn by the design: the handoff draws fit and the two steps
 as three round icons. The transport belongs here and not on

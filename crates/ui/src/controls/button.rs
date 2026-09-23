@@ -99,6 +99,9 @@ pub struct Button {
     tabular: bool,
     /// Full-width, left-aligned: the shape a control takes as a menu row.
     selected: bool,
+    /// An on/off icon control's state — snap — shown by a `sunk` plate and
+    /// the glyph's strength, never the accent.
+    toggled: Option<bool>,
     enabled: bool,
     stretch: bool,
     handler: Option<Box<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
@@ -121,6 +124,7 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         mono: false,
         tabular: false,
         selected: false,
+        toggled: None,
         enabled: true,
         stretch: false,
         handler: None,
@@ -276,6 +280,15 @@ impl Button {
         self
     }
 
+    /// An on/off state held by an icon control. On is a `sunk` plate with a
+    /// `text` glyph, off no plate and a `muted` glyph. Not `selected`: that
+    /// fills an icon control with accent, which marks the active tool and
+    /// is not how a setting says it is switched on.
+    pub fn toggled(mut self, on: bool) -> Self {
+        self.toggled = Some(on);
+        self
+    }
+
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
@@ -378,11 +391,11 @@ impl RenderOnce for Button {
         //
         // The one exception is the icon button's "active tool" state, which
         // the Icon card does give as `fill --accent · text --on-accent`.
-        // That is the accent doing one of its four jobs: the tool pod, the
-        // snap toggle. A glyph has no room for an edge to read against, and
+        // That is the accent doing one of its four jobs: the tool pod. An
+        // on/off setting such as snap is `toggled` instead. A glyph has no room for an edge to read against, and
         // an active tool is a mode the whole app is in rather than one item
         // picked from a list.
-        let tool_active = self.selected && self.icon_only;
+        let tool_active = self.selected && self.icon_only && self.toggled.is_none();
         let filled = matches!(
             self.variant,
             ButtonVariant::Primary | ButtonVariant::Record | ButtonVariant::Transport
@@ -401,6 +414,18 @@ impl RenderOnce for Button {
             ButtonVariant::Ghost => (theme.hover.opacity(0.0), theme.hover),
             ButtonVariant::Raised => (theme.raise, theme.raise_hover()),
             _ => (theme.sunk, theme.sunk2),
+        };
+        // A toggled control fades between two plates: none, washing to
+        // `hover`, while off; `sunk`, stepping to `sunk2`, while on.
+        let on = self
+            .toggled
+            .map(|on| motion::state_fade(&motion::tween_key(&self.id, "toggled"), on));
+        let (fill_rest, fill_hover) = match on {
+            Some(on) => (
+                motion::blend(theme.hover.opacity(0.), theme.sunk, on),
+                motion::blend(theme.hover, theme.sunk2, on),
+            ),
+            None => (fill_rest, fill_hover),
         };
 
         // Selection is a state the control HOLDS, so it tweens from render;
@@ -426,6 +451,10 @@ impl RenderOnce for Button {
             ButtonVariant::Ghost => theme.muted,
             _ if self.icon_only => theme.muted,
             _ => theme.text,
+        };
+        let resting = match on {
+            Some(on) => motion::blend(theme.muted, theme.text, on),
+            None => resting,
         };
         let content = motion::blend(resting, on_plate, fill);
 

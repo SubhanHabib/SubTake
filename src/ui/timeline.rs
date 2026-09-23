@@ -342,8 +342,9 @@ impl RootView {
                     .child(self.menu_button("Add", cx)),
             )
             .child(div().flex_1())
-            // Snap keeps the accent plate while engaged; the zoom is the
-            // stage's own control, so the two zooms read alike.
+            // Snap is an on/off setting, so it takes a `sunk` plate while
+            // engaged, not the accent; the zoom is the stage's own control,
+            // so the two zooms read alike.
             .child(
                 row()
                     .gap(px(Theme::GAP_SMALL))
@@ -351,7 +352,7 @@ impl RootView {
                     .child(
                         icon_button("snap", "Magnet-regular", "Snap", theme)
                             .ghost()
-                            .selected(window.get_snap())
+                            .toggled(window.get_snap())
                             .on_click(move |_, _, _| editor.set_snap(!editor.get_snap())),
                     )
                     .child(
