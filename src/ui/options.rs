@@ -227,12 +227,12 @@ impl RootView {
             };
             if source.kind == "display" {
                 displays = displays.child(
-                    display_tile(index, source, chosen, theme)
+                    display_tile(index, source, chosen, enabled, theme)
                         .when(enabled, |tile| tile.on_click(choose)),
                 );
             } else {
                 windows = windows.child(
-                    window_row(index, source, chosen, theme)
+                    window_row(index, source, chosen, enabled, theme)
                         .when(enabled, |tile| tile.on_click(choose)),
                 );
             }
@@ -452,8 +452,10 @@ impl RootView {
         ] {
             let chosen = state.get_countdown() == value;
             let options = state.clone();
+            let id = ElementId::from(SharedString::from(format!("countdown-{value}")));
+            let hover_key = subtake_ui::motion::tween_key(&id, "hover");
             let mut choice = div()
-                .id(SharedString::from(format!("countdown-{value}")))
+                .id(id)
                 .relative()
                 .flex()
                 .items_center()
@@ -461,7 +463,14 @@ impl RootView {
                 .h(px(Theme::CONTROL_HEIGHT_LARGE))
                 .px(px(Theme::CONTROL_PADDING))
                 .rounded_full()
-                .cursor_pointer()
+                .map(|s| {
+                    subtake_ui::pressable(
+                        s,
+                        theme,
+                        (!chosen).then_some(theme.press),
+                        hover_key.clone(),
+                    )
+                })
                 .on_click(move |_, _, _| {
                     options.defer_option("countdown".into(), value.to_string())
                 })
@@ -477,7 +486,11 @@ impl RootView {
                     ))
                     .child(selection_ring(None, theme));
             } else {
-                choice = choice.hover(|s| s.bg(theme.hover));
+                choice = choice.bg(subtake_ui::motion::hover_blend(
+                    &hover_key,
+                    theme.hover.opacity(0.),
+                    theme.hover,
+                ));
             }
             choices = choices.child(choice);
         }
@@ -570,6 +583,7 @@ impl RootView {
         enabled: bool,
     ) -> Stateful<Div> {
         let theme = self.theme;
+        let hover_key = subtake_ui::motion::tween_key(&id.into(), "hover");
         div()
             .id(id)
             .flex()
@@ -586,16 +600,31 @@ impl RootView {
                     .text_size(px(Theme::FONT_SMALL))
                     .text_color(theme.muted)
             }))
+            .bg(subtake_ui::motion::hover_blend(
+                &hover_key,
+                theme.hover.opacity(0.),
+                theme.hover,
+            ))
             .when(enabled, |s| {
-                s.cursor_pointer()
-                    .hover(|s| s.bg(theme.hover))
+                subtake_ui::pressable(s, theme, Some(theme.press), hover_key)
                     .on_click(self.command(command))
             })
     }
 }
 
 /// A display: its picture, and its name and resolution under it.
-fn display_tile(index: usize, source: &CaptureSource, chosen: bool, theme: Theme) -> Stateful<Div> {
+///
+/// While the card is busy the sources cannot be changed, so they dim and
+/// take no pointer, as a disabled control does.
+fn display_tile(
+    index: usize,
+    source: &CaptureSource,
+    chosen: bool,
+    enabled: bool,
+    theme: Theme,
+) -> Stateful<Div> {
+    let id = ElementId::from(SharedString::from(format!("source-{index}")));
+    let hover_key = subtake_ui::motion::tween_key(&id, "hover");
     // The chosen picture carries the accent twice, inside and out, so it
     // reads as picked even where the picture itself is mostly blue. Both
     // halves are one inset edge on a plate grown by the outer half: gpui
@@ -612,10 +641,11 @@ fn display_tile(index: usize, source: &CaptureSource, chosen: bool, theme: Theme
         .when(chosen, |s| {
             s.shadow(vec![hairline(theme.accent, Theme::SELECTED_WIDTH * 2.)])
         })
-        .when(!chosen, |s| {
-            s.group_hover("display", |s| {
-                s.shadow(vec![hairline(theme.line, Theme::SELECTED_WIDTH)])
-            })
+        .when(!chosen && enabled, |s| {
+            s.shadow(vec![hairline(
+                subtake_ui::motion::hover_blend(&hover_key, theme.line.opacity(0.), theme.line),
+                Theme::SELECTED_WIDTH,
+            )])
         });
     let picture = thumbnail(
         &source.thumbnail,
@@ -626,14 +656,22 @@ fn display_tile(index: usize, source: &CaptureSource, chosen: bool, theme: Theme
     )
     .w_full();
     div()
-        .id(SharedString::from(format!("source-{index}")))
+        .id(id)
         .flex()
         .flex_col()
         .flex_1()
         .min_w_0()
         .gap(px(Theme::SOURCE_TILE_GAP))
-        .cursor_pointer()
-        .group("display")
+        // The radius is for the focus ring alone, which goes round the
+        // picture and its caption together, as a wallpaper tile's does.
+        .rounded(px(Theme::RADIUS_INNER))
+        .map(|s| {
+            if enabled {
+                subtake_ui::pressable(s, theme, None, hover_key)
+            } else {
+                s.opacity(Theme::DISABLED_OPACITY)
+            }
+        })
         .child(div().relative().child(picture).child(layered(ring)))
         .child(
             div()
@@ -650,9 +688,17 @@ fn display_tile(index: usize, source: &CaptureSource, chosen: bool, theme: Theme
 }
 
 /// A window: a small picture of it and its title.
-fn window_row(index: usize, source: &CaptureSource, chosen: bool, theme: Theme) -> Stateful<Div> {
+fn window_row(
+    index: usize,
+    source: &CaptureSource,
+    chosen: bool,
+    enabled: bool,
+    theme: Theme,
+) -> Stateful<Div> {
+    let id = ElementId::from(SharedString::from(format!("source-{index}")));
+    let hover_key = subtake_ui::motion::tween_key(&id, "hover");
     div()
-        .id(SharedString::from(format!("source-{index}")))
+        .id(id)
         .relative()
         .flex()
         .items_center()
@@ -660,8 +706,18 @@ fn window_row(index: usize, source: &CaptureSource, chosen: bool, theme: Theme) 
         .h(px(Theme::CONTROL_HEIGHT_SMALL))
         .px(px(Theme::CONTROL_PADDING_SMALL))
         .rounded(px(Theme::RADIUS_LANE))
-        .cursor_pointer()
-        .hover(|s| s.bg(theme.hover))
+        .map(|s| {
+            if enabled {
+                s.bg(subtake_ui::motion::hover_blend(
+                    &hover_key,
+                    theme.hover.opacity(0.),
+                    theme.hover,
+                ))
+                .map(|s| subtake_ui::pressable(s, theme, Some(theme.press), hover_key))
+            } else {
+                s.opacity(Theme::DISABLED_OPACITY)
+            }
+        })
         .child(
             thumbnail(
                 &source.thumbnail,
