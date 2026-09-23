@@ -352,7 +352,12 @@ setting and land in place when it is on.
   folds back as it closes (`CARD_CLOSE_MS`); a swap to a taller or shorter
   card eases between the heights (`CARD_RESIZE_MS`). The options window
   holds the taller height while it eases, and its frosted material follows
-  the card rather than the window.
+  the card rather than the window. The frost never shows past the card's
+  edge: it takes the card's lowest height over `CARD_GLASS_SKEW_MS` either
+  side of now, since the two reach the screen by different routes, and a
+  closing card drops it at once. The open card holds keyboard focus so it
+  eases at the display's rate, and hands it back to the bar as it hides.
+  The frost takes the app's light or dark theme, not the Mac's.
 - The recorder bar keeps its size and place; when it turns from ready to
   counting to recording to writing, its controls fade in (`BAR_SWAP_MS`).
 - Pausing eases the clock from red to `sunk` and dims its count to 60%
@@ -361,7 +366,9 @@ setting and land in place when it is on.
   (`DIALOG_*`); its frost eases with it, since opacity does not reach a
   backdrop blur.
 - Dropdowns and the command menu drop 4 as they open and fade out over
-  `MENU_OUT_MS` when dismissed.
+  `MENU_OUT_MS` when dismissed. Their entrance settles on a quint, not the
+  ease-out every other move uses, so a menu is there the moment it is asked
+  for.
 - A finished export's tick draws itself on, its label fades in, and the pill
   gives one soft accent pulse (`EXPORT_DONE_*`).
 
