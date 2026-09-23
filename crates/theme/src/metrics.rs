@@ -150,6 +150,9 @@ impl Theme {
     /// control, because it is a label on a plate rather than something to
     /// press.
     pub const TITLE_PILL_HEIGHT: f32 = 36.0;
+    /// The widest the document pill grows, as a share of the window, so a
+    /// long title stops short of the buttons either side of it.
+    pub const TITLE_PILL_SHARE: f32 = 0.4;
 
     /// A chip: a context label, a piece of metadata on a plate.
     pub const CHIP_HEIGHT: f32 = 26.0;

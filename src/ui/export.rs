@@ -360,14 +360,22 @@ impl RootView {
                         .gap_0()
                         .line_height(relative(Theme::MESSAGE_LEADING))
                         .child(caption("Export failed".into()).text_color(theme.danger))
-                        .child(
+                        .child({
+                            // The reason is often longer than the pill; the
+                            // tooltip carries the whole of it.
+                            let detail = e.get_export_detail();
                             div()
+                                .id("export-error")
                                 .text_size(px(Theme::FONT_SMALL))
                                 .text_color(theme.muted)
                                 .whitespace_nowrap()
                                 .text_ellipsis()
-                                .child(e.get_export_detail()),
-                        ),
+                                .tooltip({
+                                    let detail = detail.clone();
+                                    move |_, cx| tooltip(detail.clone(), theme, cx)
+                                })
+                                .child(detail)
+                        }),
                 )
                 .child(
                     button("export-retry", "Try again", theme)

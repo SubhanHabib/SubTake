@@ -123,7 +123,7 @@ impl RootView {
             let title_pill = row()
                 .id("title-drag")
                 .relative()
-                .max_w(relative(0.4))
+                .max_w(relative(Theme::TITLE_PILL_SHARE))
                 .h(px(Theme::TITLE_PILL_HEIGHT))
                 .px(px(Theme::CONTROL_PADDING_SMALL))
                 .gap(px(Theme::GAP_SMALL))
@@ -133,14 +133,24 @@ impl RootView {
                 // only thing the titlebar has left to say it
                 // with, so it appears rather than always burning.
                 .when(e.get_dirty(), |el| el.child(status_dot(theme)))
-                .child(
+                .child({
+                    // At its cap the title is cut short, and the tooltip is
+                    // the only place left to read the rest of it.
+                    let title = e.get_document_title();
+                    let cap = f32::from(window.viewport_size().width) * Theme::TITLE_PILL_SHARE;
+                    let cut = f32::from(self.title_pill.get().size.width) + 0.5 >= cap;
                     div()
+                        .id("document-title")
                         .min_w_0()
                         .text_ellipsis()
                         .font_weight(FontWeight::MEDIUM)
                         .text_color(theme.text)
-                        .child(e.get_document_title()),
-                )
+                        .when(cut, |el| {
+                            let title = title.clone();
+                            el.tooltip(move |_, cx| tooltip(title.clone(), theme, cx))
+                        })
+                        .child(title)
+                })
                 .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move())
                 .child(measure(self.title_pill.clone()));
             // While an export runs or has just ended its pill takes the
