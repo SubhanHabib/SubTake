@@ -10,8 +10,8 @@
     their own top lines.
   - Not the zoom drawn in section A or card 9: the stage and the console
     share one zoom control, with Fit as an icon.
-  - Fix 3's fill clipped by the track's round end waits on a rounded clip
-    in the renderer; until then the fill is its own shape.
+  - Fix 3's fill clipped by the track's round end is drawn as a
+    track-sized pill cut to the level's width, which needs no rounded clip.
 -->
 
 # Handoff: SubTake implementation fixes (review of 23 Sep)
