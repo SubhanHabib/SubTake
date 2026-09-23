@@ -541,9 +541,7 @@ impl Render for RootView {
             // `bg` carries its own alpha: it is a tint over the window's
             // vibrancy material, not a paint.
             .when(editor_surface, |s| s.bg(self.theme.bg))
-            .on_mouse_move(cx.listener(Self::move_gesture))
-            .on_mouse_up(MouseButton::Left, cx.listener(Self::end_gesture))
-            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::end_gesture))
+            .child(self.gesture_follower(cx))
             .on_key_down(cx.listener(|s, event: &KeyDownEvent, window, cx| {
                 if event.keystroke.key == "tab" {
                     if event.keystroke.modifiers.shift {

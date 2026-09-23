@@ -17,14 +17,12 @@ fn lane_label(text: impl Into<SharedString>, height: f32, theme: Theme) -> Div {
 }
 
 /// How short and how tall the console's top edge can drag the lane region:
-/// down to the source lane and one more, up to every lane the project has,
-/// and never past half the window.
-pub(super) fn lane_stack_range(e: &EditorWindow, window: &Window) -> (f32, f32) {
-    let lanes = e.get_track_labels().row_count() as f32 + 1.;
-    let content = Theme::RULER_HEIGHT + Theme::LANE_GAP + lanes * Theme::LANE_PITCH;
+/// down to the source lane and one more, and up to half the window. The top
+/// is not held to the lanes the project has, so a console at rest on a short
+/// project still drags taller, and room above the lanes waits for new ones.
+pub(super) fn lane_stack_range(window: &Window) -> (f32, f32) {
     let share = f32::from(window.viewport_size().height) * Theme::LANE_STACK_MAX_SHARE;
-    let max = content.min(share).max(Theme::LANE_STACK_MIN);
-    (Theme::LANE_STACK_MIN, max)
+    (Theme::LANE_STACK_MIN, share.max(Theme::LANE_STACK_MIN))
 }
 
 impl RootView {
@@ -117,6 +115,32 @@ impl RootView {
             )
     }
 
+    /// Follows a drag wherever the pointer goes. The floats occlude what is
+    /// behind them, so a listener on the root lost the pointer the moment it
+    /// crossed onto one: a drag held only while it stayed over the stage.
+    /// The window's own mouse events reach this whatever is under them.
+    pub(super) fn gesture_follower(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let moved = cx.listener(Self::move_gesture);
+        let released = cx.listener(Self::end_gesture);
+        canvas(
+            |_, _, _| {},
+            move |_, _, window, _| {
+                window.on_mouse_event(move |event: &MouseMoveEvent, phase, window, cx| {
+                    if phase == DispatchPhase::Capture {
+                        moved(event, window, cx);
+                    }
+                });
+                window.on_mouse_event(move |event: &MouseUpEvent, phase, window, cx| {
+                    if phase == DispatchPhase::Capture && event.button == MouseButton::Left {
+                        released(event, window, cx);
+                    }
+                });
+            },
+        )
+        .absolute()
+        .inset_0()
+    }
+
     pub(super) fn seek_at(&self, x: Pixels) {
         if let Surface::Editor(e) = &self.surface {
             let b = self.timeline_bounds.get();
@@ -144,7 +168,7 @@ impl RootView {
                 start,
             }) => match edge {
                 ResizeEdge::Console => {
-                    let (min, max) = lane_stack_range(e, window);
+                    let (min, max) = lane_stack_range(window);
                     self.lane_height =
                         (*start + *origin - f32::from(event.position.y)).clamp(min, max);
                 }
@@ -701,7 +725,7 @@ impl RootView {
                                 .gap(px(Theme::LANE_GUTTER_GAP))
                                 .items_start()
                                 .h(px({
-                                    let (min, max) = lane_stack_range(window, win);
+                                    let (min, max) = lane_stack_range(win);
                                     self.lane_height.clamp(min, max)
                                 }))
                                 .flex_none()
