@@ -28,6 +28,9 @@
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen);
 //! `=status-cycle` brings the console's status line in and out on a timer;
 //! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
+//! `SUBTAKE_HOVER_PIN=switch,look` holds every control whose tween key
+//! contains one of those words hovered, since the gallery's unfocused windows
+//! never receive the pointer's hover.
 use crate::{
     CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
     RecordingOptions, Region, Wallpaper,

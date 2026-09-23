@@ -317,7 +317,31 @@ fn scope() -> u64 {
 
 /// Hover progress (0..1) for `key` this frame.
 fn hover_t(key: &str) -> f32 {
-    HOVER_FADES.with(|fades| fades.borrow_mut().value_at(key, Instant::now()))
+    let t = HOVER_FADES.with(|fades| fades.borrow_mut().value_at(key, Instant::now()));
+    if hover_pinned(key) { 1. } else { t }
+}
+
+/// Whether `SUBTAKE_HOVER_PIN` holds `key` hovered.
+///
+/// gpui sends no hover to a window that is not focused, and the gallery's
+/// windows never are, so without this no screenshot could show a hover
+/// state. Each comma-separated entry is matched as a substring of the tween
+/// key — `SUBTAKE_HOVER_PIN=switch,look` pins every switch and look row.
+fn hover_pinned(key: &str) -> bool {
+    static PINS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    PINS.get_or_init(|| {
+        std::env::var("SUBTAKE_HOVER_PIN")
+            .map(|pins| {
+                pins.split(',')
+                    .map(str::trim)
+                    .filter(|pin| !pin.is_empty())
+                    .map(str::to_owned)
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+    .iter()
+    .any(|pin| key.contains(pin.as_str()))
 }
 
 /// Record a hover flip for `key` (reduced motion snaps).
