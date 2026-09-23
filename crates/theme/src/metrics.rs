@@ -159,6 +159,10 @@ impl Theme {
     pub const TOOLTIP_HEIGHT: f32 = 28.0;
     /// The widest a tooltip grows before its text wraps.
     pub const TOOLTIP_MAX_WIDTH: f32 = 320.0;
+    /// A tooltip's padding above and below its text, so one line comes out
+    /// exactly `TOOLTIP_HEIGHT` and a wrapped one grows by whole lines.
+    pub const TOOLTIP_PADDING_Y: f32 =
+        (Self::TOOLTIP_HEIGHT - Self::FONT_SECONDARY * Self::MESSAGE_LEADING) / 2.0;
     pub const FOOTER_HEIGHT: f32 = 28.0;
 
     // ---- horizontal rhythm -----------------------------------------------
