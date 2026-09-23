@@ -10,6 +10,10 @@
 // disagree.
 @interface SubTakeRecorderGlass : NSVisualEffectView
 @property CGFloat radius;
+// How much of the window, from its bottom edge, the plate fills; 0 for all
+// of it. The options card eases between heights inside a window sized for
+// the taller, and the material has to follow the card, not the window.
+@property CGFloat plateHeight;
 - (void)updateMask;
 @end
 @implementation SubTakeRecorderGlass
@@ -18,11 +22,13 @@
 - (void)updateMask {
     NSSize size = self.bounds.size;
     if (size.width <= 0 || size.height <= 0) return;
-    CGFloat radius = MIN(self.radius, MIN(size.width, size.height) / 2);
+    NSRect plate = self.bounds;
+    if (self.plateHeight > 0) plate.size.height = MIN(self.plateHeight, size.height);
+    CGFloat radius = MIN(self.radius, MIN(plate.size.width, plate.size.height) / 2);
     NSImage *mask = [[NSImage alloc] initWithSize:size];
     [mask lockFocus];
     [[NSColor whiteColor] setFill];
-    [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:radius yRadius:radius] fill];
+    [[NSBezierPath bezierPathWithRoundedRect:plate xRadius:radius yRadius:radius] fill];
     [mask unlockFocus];
     self.maskImage = mask;
 }
@@ -87,5 +93,13 @@ void subtake_update_recorder_glass(void *pointer, double radius) {
     window.hasShadow = NO;
     glass.frame = gpuiView.frame;
     glass.radius = radius;
+    [glass updateMask];
+}
+void subtake_set_recorder_glass_height(void *pointer, double height) {
+    NSCAssert([NSThread isMainThread], @"Recorder material must run on the UI thread");
+    NSView *gpuiView = (__bridge NSView *)pointer;
+    SubTakeRecorderGlass *glass = objc_getAssociatedObject(gpuiView, &glassKey);
+    if (!glass || glass.plateHeight == height) return;
+    glass.plateHeight = height;
     [glass updateMask];
 }

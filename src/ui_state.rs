@@ -115,6 +115,7 @@ struct Properties {
     mic_level: f32,
     camera_preview: Image,
     options_height: f32,
+    options_room: f32,
     camera_names: ModelRc<String>,
     microphone_names: ModelRc<String>,
     source_index: i32,
@@ -207,6 +208,7 @@ impl Default for Properties {
             mic_level: f32::NEG_INFINITY,
             camera_preview: Image::default(),
             options_height: 264.,
+            options_room: 0.,
             camera_names: ModelRc::default(),
             microphone_names: ModelRc::default(),
             source_index: 0,
@@ -293,6 +295,20 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.options_height != value {
             props.options_height = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// Height the options window keeps while a card eases between sizes, so
+    /// the taller of the two fits throughout; 0 once it has settled.
+    pub fn get_options_room(&self) -> f32 {
+        self.0.props.borrow().options_room
+    }
+
+    pub fn set_options_room(&self, value: f32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.options_room != value {
+            props.options_room = value;
             self.window().invalidate();
         }
     }

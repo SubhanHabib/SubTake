@@ -13,6 +13,7 @@ impl RootView {
     pub(super) fn options(
         &mut self,
         state: &RecordingOptions,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.theme;
@@ -53,18 +54,76 @@ impl RootView {
         // text. The window's material is masked to it at the panel radius.
         // The window cannot draw a drop shadow outside itself, so the panel
         // shadow the handoff gives is the window server's to draw.
+        //
+        // The content lays out at its own height and is measured there; the
+        // card around it eases to that height from the bar's side up, so a
+        // swap to a taller or shorter card grows or shrinks rather than
+        // jumping.
+        let height = self.card_height(state, window);
         panel_variant(theme, UiSurface::Overlay)
-            .relative()
+            .absolute()
+            .bottom_0()
+            .left_0()
+            .right_0()
+            .h(px(height))
+            .overflow_hidden()
             .rounded(px(Theme::RADIUS_PANEL))
             .bg(theme.card)
-            .w_full()
-            .p(px(Theme::PANEL_PADDING))
-            .child(fade_in(
-                SharedString::from(format!("options-{name}")),
-                content,
-            ))
-            .child(options_fit(state.clone()))
+            .child(
+                div()
+                    .absolute()
+                    .top_0()
+                    .left_0()
+                    .right_0()
+                    .p(px(Theme::PANEL_PADDING))
+                    .child(fade_in(
+                        SharedString::from(format!("options-{name}")),
+                        content,
+                    ))
+                    .child(options_fit(state.clone())),
+            )
             .into_any_element()
+    }
+
+    /// The card's height this frame, easing toward what its content last
+    /// measured. While it eases the window holds the taller of the two.
+    fn card_height(&mut self, state: &RecordingOptions, window: &mut Window) -> f32 {
+        let natural = state.get_options_height();
+        let now = Instant::now();
+        let at = |(from, to, started): (f32, f32, Instant)| {
+            let raw = now.saturating_duration_since(started).as_secs_f32() * 1000.
+                / CARD_RESIZE_MS as f32;
+            if raw >= 1. {
+                to
+            } else {
+                subtake_ui::motion::lerp(from, to, subtake_ui::motion::EASE_OUT.eval(raw))
+            }
+        };
+        let ease = match self.card_ease {
+            Some(ease) if ease.1 == natural => ease,
+            Some(ease) if !subtake_ui::motion::reduced_motion() => (at(ease), natural, now),
+            _ => (natural, natural, now),
+        };
+        self.card_ease = Some(ease);
+        let height = at(ease);
+        let room = if height == natural {
+            0.
+        } else {
+            window.request_animation_frame();
+            ease.0.max(ease.1)
+        };
+        // The frosted material under the card follows it, not the window.
+        crate::platform::set_recorder_glass_height(
+            state.window(),
+            if room == 0. { 0. } else { height },
+        );
+        if state.get_options_room() != room {
+            let state = state.clone();
+            crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
+                state.set_options_room(room)
+            });
+        }
+        height
     }
 
     /// Displays as pictures, then windows as rows: you are choosing a

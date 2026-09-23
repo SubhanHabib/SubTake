@@ -388,7 +388,24 @@ pub fn update_recorder_glass(window: &crate::ui_runtime::Window, radius: f32) {
     let _ = (window, radius);
 }
 
+/// Shrink a recorder window's material to the bottom `height` points, for a
+/// plate that fills less than its window while it eases; 0 fills it again.
+pub fn set_recorder_glass_height(window: &crate::ui_runtime::Window, height: f32) {
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(view) = native_view(window) {
+            unsafe {
+                subtake_set_recorder_glass_height(view, height as f64);
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, height);
+}
+
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
     pub(super) fn subtake_update_recorder_glass(view: *mut std::ffi::c_void, radius: f64);
+    pub(super) fn subtake_set_recorder_glass_height(view: *mut std::ffi::c_void, height: f64);
 }

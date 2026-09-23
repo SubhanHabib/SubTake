@@ -597,3 +597,6 @@ pub const PANEL_ENTER_RISE: f32 = 6.0;
 /// left, over a little longer than a plain switch.
 pub const PANEL_DRILL_MS: u64 = 220;
 pub const PANEL_DRILL_SHIFT: f32 = 24.0;
+/// A recorder card swapped for a taller or shorter one eases between their
+/// heights over this long, its edge by the bar staying put.
+pub const CARD_RESIZE_MS: u64 = 220;

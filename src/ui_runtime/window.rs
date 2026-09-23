@@ -287,7 +287,10 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
             Surface::Countdown(_) => "SubTake countdown".into(),
         };
         if let Surface::Options(ui) = &surface {
-            let wanted = LogicalSize::new(ui.get_options_width(), ui.get_options_height());
+            let wanted = LogicalSize::new(
+                ui.get_options_width(),
+                ui.get_options_height().max(ui.get_options_room()),
+            );
             if runtime.0.size.get() != wanted {
                 runtime.set_size(wanted);
             }

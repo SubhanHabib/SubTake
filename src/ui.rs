@@ -14,9 +14,9 @@ use std::{
     time::Instant,
 };
 use subtake_theme::{
-    FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT,
-    PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PILL_MORPH_MS, STAGE_RESERVE_LEFT,
-    STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
+    CARD_RESIZE_MS, FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS,
+    PANEL_DRILL_SHIFT, PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PILL_MORPH_MS,
+    STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
@@ -243,6 +243,8 @@ pub struct RootView {
     /// it set off from (0 out, 1 in) and when. `None` until first drawn, so
     /// a window that opens narrow starts folded rather than sliding shut.
     inspector_slide: Option<(bool, f32, Instant)>,
+    /// The recorder card's height as it eases: from, to, and since when.
+    card_ease: Option<(f32, f32, Instant)>,
     /// The document pill's turn into the export pill, as `inspector_slide`.
     pill_morph: Option<(bool, f32, Instant)>,
     /// The document pill's own size, for the export pill to grow out of.
@@ -290,6 +292,7 @@ impl RootView {
             inspector_scroll: HashMap::new(),
             panel_drill: (String::new(), 0.),
             inspector_slide: None,
+            card_ease: None,
             pill_morph: None,
             title_pill: Rc::new(Cell::new(Bounds::default())),
             titlebar_cluster: Rc::new(Cell::new(Bounds::default())),
@@ -413,7 +416,7 @@ impl Render for RootView {
         let content = match &surface {
             Surface::Editor(e) => self.editor(e, window, cx),
             Surface::Launcher(s) => self.launcher(s),
-            Surface::Options(s) => self.options(s, cx),
+            Surface::Options(s) => self.options(s, window, cx),
             Surface::Countdown(s) => self.countdown_overlay(s),
         };
         // Keep frames coming while any wash or switch is mid-fade. This has
