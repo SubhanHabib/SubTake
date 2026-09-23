@@ -409,3 +409,34 @@ setting and land in place when it is on.
 
 Not wired: the card's sideways move when it swaps to a control further
 along the bar — the window is placed natively and jumps.
+
+## Control states
+
+Every control that does something has four states, the ones a button has.
+Under the pointer it takes a hover wash that fades in and out
+(`motion::hover_blend`). While held it dims to `PRESSED_OPACITY`, on the
+`press` fill unless its own fill already says it is picked. When the keyboard
+brings focus to it, the `accent_soft` ring appears (`focus_visible`), with no
+ring after a click. Disabled, it dims to `DISABLED_OPACITY` and Tab passes it
+by. Hand-built rows, tiles and pills get all four from `subtake_ui::pressable`.
+`SUBTAKE_HOVER_PIN=<words>` holds a hover on in the gallery.
+
+Not drawn by the design:
+
+- the hover washes on the switch, text fields, colour swatches, the
+  titlebar's document pill, the Recent cards and Resume (a white lift over
+  `rec`);
+- a selected timeline region's hover (`REGION_FILL_SELECTED_HOVER`) and a
+  held trim handle's full-tint mark;
+- every pressed and focused look.
+
+The focus ring snaps on everywhere, the buttons included; only hover fades.
+The document pill takes a hover and nothing else, since it only moves the
+window. The microphone and camera marks on the recording bar are
+indicators, not controls, so they take no state at all.
+
+Text fields keep the Mac's editing keys. ⌘A selects all. ⌃A and ⌃E go to the
+line's ends, as in every Cocoa field. ⌥ moves and deletes by word, ⌘ by line,
+⌘Z and ⇧⌘Z undo and redo, and a double or triple click selects a word or
+everything. Other platforms get the Ctrl equivalents. Up and down walk the
+command palette's highlight; Enter runs it.
