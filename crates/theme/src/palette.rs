@@ -24,15 +24,12 @@ impl Theme {
         Self {
             appearance: Appearance::Light,
 
-            bg: css("#fafaf9cf"),
-            glass: css("#ffffff8c"),
-            card: css("#ffffffb3"),
-            // Not drawn by the design: the handoff's recess is a light grey
-            // paint, `#ececeeb8`, which over the light window material lands
-            // on the same grey as the panel around it, so plates, tracks
-            // and lanes vanished. A faint ink darkens whatever it sits on,
-            // as the dark recess does.
-            sunk: css("#14141a12"),
+            // Not drawn by the design: the shell at 40%, and the floats at
+            // about half the handoff's alpha, so the desktop shows through.
+            bg: css("#fafaf966"),
+            glass: css("#ffffff46"),
+            card: css("#ffffff5a"),
+            sunk: css("#ececeeb8"),
             sunk2: css("#ffffffe6"),
             raise: css("#ffffffc7"),
             raise_line: css("#14141a14"),
@@ -73,9 +70,10 @@ impl Theme {
         Self {
             appearance: Appearance::Dark,
 
-            bg: css("#0d0d10d4"),
-            glass: css("#1e1e249e"),
-            card: css("#222229c7"),
+            // Not drawn by the design: as the light shell and floats.
+            bg: css("#0d0d1066"),
+            glass: css("#1e1e244f"),
+            card: css("#22222964"),
             // Recesses lighten on dark: a darkening under `card` was darker
             // than the card and the plates on it vanished.
             sunk: css("#ffffff0d"),
