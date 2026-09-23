@@ -608,3 +608,6 @@ pub const CARD_CLOSE_MS: u64 = 140;
 /// it is — ready, counting, recording, writing the file. The bar itself
 /// keeps its size and place.
 pub const BAR_SWAP_MS: u64 = 180;
+/// A paused capture's clock digits sit at this opacity: the count is held,
+/// not running.
+pub const PAUSED_CLOCK_OPACITY: f32 = 0.6;

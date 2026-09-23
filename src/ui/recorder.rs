@@ -1,7 +1,7 @@
 //! The recorder bar. Its option cards are `options.rs`.
 
 use super::*;
-use subtake_ui::icon_sized;
+use subtake_ui::{fade_in, icon_sized};
 
 thread_local! {
     /// The anchor last handed to the options window, so the bar only moves
@@ -300,6 +300,9 @@ impl RootView {
                 )
                 .into_any_element()
         };
+        // Pausing eases the clock from the capture's red to `sunk` and dims
+        // its count, rather than cutting between the two.
+        let held = subtake_ui::motion::state_fade("clock-paused", paused);
         let mut clock = row()
             .flex_none()
             .gap(px(Theme::ICON_GAP_RECORD))
@@ -311,20 +314,25 @@ impl RootView {
             .child(
                 mono(state.get_elapsed())
                     .text_size(px(Theme::FONT_CLOCK))
-                    .font_weight(FontWeight::MEDIUM),
+                    .font_weight(FontWeight::MEDIUM)
+                    .opacity(subtake_ui::motion::lerp(1., PAUSED_CLOCK_OPACITY, held)),
             );
         clock = if paused {
             // Palette churn: the handoff tracks PAUSED out by .09em; gpui
             // sets no letter spacing, so it is the caps alone.
-            clock.bg(theme.sunk).text_color(theme.text).child(
+            clock.child(fade_in(
+                "clock-paused-label",
                 div()
                     .text_size(px(Theme::FONT_SMALL))
                     .text_color(theme.muted)
                     .child("PAUSED"),
-            )
+            ))
         } else {
-            clock.bg(theme.rec).text_color(white())
+            clock
         };
+        let clock = clock
+            .bg(subtake_ui::motion::blend(theme.rec, theme.sunk, held))
+            .text_color(subtake_ui::motion::blend(white(), theme.text, held));
         let pause = if paused {
             // Resume takes Pause's place in `rec`: the one way back into
             // the capture, in the capture's own colour.
@@ -350,6 +358,11 @@ impl RootView {
                 .on_click(self.command("pause-recording"))
                 .into_any_element()
         };
+        // Pause and Resume fade in as they trade places.
+        let pause = fade_in(
+            if paused { "resume-in" } else { "pause-in" },
+            div().flex().flex_none().child(pause),
+        );
         // Whether the microphone and the camera are in this capture is fixed
         // when it starts, so these say it rather than change it: on or off
         // is the glyph, never the colour.
