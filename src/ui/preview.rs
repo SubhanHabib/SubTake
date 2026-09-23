@@ -33,7 +33,14 @@ pub(super) fn macos_cursor_image() -> Arc<gpui::Image> {
 /// The aspect dropdown's trigger. A dropdown sizes to its widest option, and
 /// the aspect list's options are two to six characters, so without a width the
 /// pod changed shape every time the ratio changed.
-const ASPECT_TRIGGER_WIDTH: f32 = 108.0;
+const ASPECT_TRIGGER_WIDTH: f32 = 96.0;
+
+/// How far the pod's zoom out and in step, the most the preview magnifies,
+/// and the readout's width, which holds "800%" so the pod keeps its shape as
+/// the figure changes.
+const PREVIEW_ZOOM_STEP: f32 = 1.25;
+pub(super) const PREVIEW_ZOOM_MAX: f32 = 8.;
+const PREVIEW_ZOOM_READOUT_WIDTH: f32 = 40.0;
 
 /// The stage's right reserve: the inspector's, or only its toggle's while it
 /// is folded away.
@@ -182,7 +189,7 @@ impl RootView {
                 );
             } else {
                 let old_zoom = e.get_preview_zoom();
-                let new_zoom = (old_zoom * (1. + delta).max(0.01)).clamp(1., 8.);
+                let new_zoom = (old_zoom * (1. + delta).max(0.01)).clamp(1., PREVIEW_ZOOM_MAX);
                 let center = self.preview_viewport.get().center();
                 let ratio = new_zoom / old_zoom.max(0.001);
                 self.preview_pan.x =
@@ -413,11 +420,39 @@ impl RootView {
         (stage, Some(layer))
     }
 
-    /// The aspect pod: the frame's ratio, the crop tool and the zoom reset.
+    /// Step the preview's zoom, keeping whatever is at the stage's centre
+    /// there. The picture's centre sits at the stage's plus the pan, so a
+    /// point at the stage's centre is `-pan` from the picture's, and scaling
+    /// the pan with the zoom keeps it where it was.
+    fn zoom_preview(&mut self, zoom: f32, cx: &mut Context<Self>) {
+        let Surface::Editor(e) = &self.surface else {
+            return;
+        };
+        let old = e.get_preview_zoom().max(0.001);
+        let zoom = zoom.clamp(1., PREVIEW_ZOOM_MAX);
+        self.preview_pan = if zoom <= 1. {
+            point(px(0.), px(0.))
+        } else {
+            self.preview_pan * (zoom / old)
+        };
+        e.set_preview_zoom(zoom);
+        self.preview_known_zoom = zoom;
+        if matches!(self.pinch, Some((false, ..))) {
+            self.pinch = None;
+        }
+        cx.notify();
+    }
+
+    /// The aspect pod: the frame's ratio, the crop tool and the zoom.
     ///
     /// The handoff floats it at the stage's top left rather than over the
     /// picture's centre, so it hangs from the stage itself and not from the
-    /// viewport inside it.
+    /// viewport inside it. It is the thin pod, at the 34 the handoff gives
+    /// an aspect pill, since it hangs over the picture.
+    ///
+    /// Not drawn by the design: the zoom steps and the readout between them.
+    /// The handoff has a single Fit pill; zoom out and in step by a quarter
+    /// about the stage's centre, and Fit puts the picture back.
     pub(super) fn aspect_pod(
         &mut self,
         e: &EditorWindow,
@@ -444,41 +479,73 @@ impl RootView {
                 );
             },
         );
+        aspect_control.update(cx, |d, _| d.compact = true);
+        let zoom = e.get_preview_zoom();
         Some(
             div()
                 .absolute()
                 .left(px(STAGE_RESERVE_LEFT))
                 .top(px(Theme::INSET))
                 .child(frosted(
-                    UiSurface::Pod.radius(),
+                    Theme::RADIUS_ROW,
                     UiSurface::Pod.blur(),
-                    pod(theme)
+                    pod_small(theme)
                         .child(
                             div()
                                 .w(px(ASPECT_TRIGGER_WIDTH))
                                 .flex_shrink_0()
                                 .child(aspect_control),
                         )
-                        .child(self.action("crop", "Crop", "visual-crop", true))
+                        .child(self.action("crop", "Crop", "visual-crop", true).compact())
                         .child(
-                            button(
-                                "fit-preview",
-                                format!("Fit · {}%", (e.get_preview_zoom() * 100.).round()),
+                            icon_button(
+                                "preview-zoom-out",
+                                "MagnifyingGlassMinus-regular",
+                                "Zoom out",
                                 theme,
                             )
                             .ghost()
-                            .tabular()
+                            .small()
+                            .enabled(zoom > 1.)
                             .on_click(cx.listener(|s, _, _, cx| {
                                 if let Surface::Editor(e) = &s.surface {
-                                    e.set_preview_zoom(1.);
+                                    let zoom = e.get_preview_zoom() / PREVIEW_ZOOM_STEP;
+                                    s.zoom_preview(zoom, cx);
                                 }
-                                s.preview_pan = point(px(0.), px(0.));
-                                s.preview_known_zoom = 1.;
-                                if matches!(s.pinch, Some((false, ..))) {
-                                    s.pinch = None;
-                                }
-                                cx.notify();
                             })),
+                        )
+                        .child(
+                            div()
+                                .w(px(PREVIEW_ZOOM_READOUT_WIDTH))
+                                .flex_none()
+                                .text_center()
+                                .text_size(px(Theme::FONT_SECONDARY))
+                                .text_color(theme.muted)
+                                .child(mono(format!("{}%", (zoom * 100.).round()))),
+                        )
+                        .child(
+                            icon_button(
+                                "preview-zoom-in",
+                                "MagnifyingGlassPlus-regular",
+                                "Zoom in",
+                                theme,
+                            )
+                            .ghost()
+                            .small()
+                            .enabled(zoom < PREVIEW_ZOOM_MAX)
+                            .on_click(cx.listener(|s, _, _, cx| {
+                                if let Surface::Editor(e) = &s.surface {
+                                    let zoom = e.get_preview_zoom() * PREVIEW_ZOOM_STEP;
+                                    s.zoom_preview(zoom, cx);
+                                }
+                            })),
+                        )
+                        .child(
+                            button("fit-preview", "Fit", theme)
+                                .ghost()
+                                .compact()
+                                .enabled(zoom > 1.)
+                                .on_click(cx.listener(|s, _, _, cx| s.zoom_preview(1., cx))),
                         ),
                 ))
                 .into_any_element(),

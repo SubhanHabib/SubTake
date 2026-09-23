@@ -368,8 +368,16 @@ while the pan still stops where the picture's edge meets the stage's, so every
 part of it can be brought into the clear. Not drawn by the design: the handoff
 draws the stage at Fit only. All of it
 is viewport state — none of it touches project content, the playhead, or the
-exported framing. The Fit pill's percentage is set in tabular figures so the
-pill holds its width while a pinch runs. `SUBTAKE_GALLERY_SCREEN=zoom-111` (any
+exported framing.
+
+The aspect pod is the thin pod: 34 controls — the aspect dropdown, Crop — on
+4 of padding, so it stands 42 tall over the picture rather than 60. After Crop
+comes the zoom group: zoom out, the percentage, zoom in, and Fit. The two steps
+go a quarter at a time between Fit and 8x, keeping whatever is at the stage's
+centre where it is; Fit puts the picture back and the pan with it. Zoom out and
+Fit dim at Fit, zoom in at 8x. The percentage is set in Geist Mono in a
+fixed-width slot, so the pod holds its shape while a pinch runs. Not drawn by
+the design: the group — the handoff has a single "Fit · 100%" pill. `SUBTAKE_GALLERY_SCREEN=zoom-111` (any
 percentage) opens the gallery magnified.
 
 ## Motion

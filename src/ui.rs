@@ -25,8 +25,8 @@ use subtake_ui::{
     caps_label, choice_tile, column, composer_footer, content_panel, context_chip, divider,
     empty_state, fade_edges, frosted, group_card, hairline, icon, icon_button, measure, media_tile,
     menu_in, menu_list, menu_row, menu_surface, mono, mono_small, panel, panel_variant, pod,
-    progress_bar, row, segmented_control, setting_card, status_dot, swatch, switch, tile_grid,
-    title, toggle, tool_button, tooltip,
+    pod_small, progress_bar, row, segmented_control, setting_card, status_dot, swatch, switch,
+    tile_grid, title, toggle, tool_button, tooltip,
 };
 
 mod camera;
