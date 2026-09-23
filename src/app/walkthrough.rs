@@ -1,8 +1,8 @@
 //! `SUBTAKE_WALKTHROUGH=light|dark`: the real app takes itself through a whole
-//! take on timers — records the built-in display, opens the recording in the
-//! editor, visits every panel and exports — then quits. It is the gallery tour
-//! (`src/gallery/tour.rs`) on real capture, real media and a real export, so
-//! the flow can be filmed without anyone clicking.
+//! take on timers — records the built-in display (the laptop's own panel),
+//! opens the recording in the editor, visits every panel and exports — then
+//! quits. It is the gallery tour (`src/gallery/tour.rs`) on real capture, real
+//! media and a real export, so the flow can be filmed without anyone clicking.
 //!
 //! It drives the same callbacks the controls fire; pointer hit testing is not
 //! exercised. The microphone and camera stay off, settings and recovery are
@@ -39,9 +39,7 @@ const STEPS: &[Step] = &[
         let index = app
             .sources
             .iter()
-            .position(|s| {
-                s["kind"] == "display" && s["name"].as_str().is_some_and(|n| n.contains("Built-in"))
-            })
+            .position(|s| s["kind"] == "display" && s["nativeId"].as_u64().is_some_and(built_in))
             .or_else(|| app.sources.iter().position(|s| s["kind"] == "display"))
             .context("No display to record")?;
         app.apply_launcher_option(ui, "source", &index.to_string());
@@ -130,6 +128,22 @@ const STEPS: &[Step] = &[
         Ok(())
     }),
 ];
+
+/// Whether the display is the laptop's own panel. Sources are named "Display
+/// N", so the name cannot tell.
+#[cfg(target_os = "macos")]
+fn built_in(id: u64) -> bool {
+    #[link(name = "CoreGraphics", kind = "framework")]
+    unsafe extern "C" {
+        fn CGDisplayIsBuiltin(display: u32) -> u32;
+    }
+    u32::try_from(id).is_ok_and(|id| unsafe { CGDisplayIsBuiltin(id) } != 0)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn built_in(_: u64) -> bool {
+    false
+}
 
 fn directory() -> Result<PathBuf> {
     let directory = PathBuf::from(std::env::var("SUBTAKE_WALKTHROUGH_DIR")?);
