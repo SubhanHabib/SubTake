@@ -51,13 +51,13 @@ pub(super) struct PreviewZoomMove {
     started: Instant,
 }
 
-/// The stage's right reserve: the inspector's, or only its toggle's while it
-/// is folded away.
-pub(super) fn stage_reserve_right(window: &Window) -> f32 {
+/// The stage's right reserve: the inspector's inset, its width as last
+/// dragged and the inset again, or only its toggle's while it is folded away.
+pub(super) fn stage_reserve_right(window: &Window, inspector_width: f32) -> f32 {
     if inspector_collapsed(window) {
         STAGE_RESERVE_RIGHT_COLLAPSED
     } else {
-        STAGE_RESERVE_RIGHT
+        Theme::INSET * 2.0 + inspector_width
     }
 }
 
@@ -246,7 +246,7 @@ impl RootView {
         } else {
             (f32::from(window.viewport_size().width)
                 - STAGE_RESERVE_LEFT
-                - stage_reserve_right(window))
+                - stage_reserve_right(window, self.inspector_width))
             .max(100.)
         };
         let available_h = if viewport.size.height > px(0.) {
@@ -420,7 +420,7 @@ impl RootView {
                         cx.notify();
                     })),
             ),
-            stage_reserve_right(window),
+            stage_reserve_right(window, self.inspector_width),
         )
         .into_any_element();
         let layer = div()

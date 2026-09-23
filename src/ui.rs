@@ -17,9 +17,9 @@ use subtake_theme::{
     BAR_SWAP_MS, CARD_CLOSE_MS, CARD_GLASS_SKEW_MS, CARD_OPEN_MS, CARD_RESIZE_MS, DIALOG_IN_MS,
     DIALOG_OUT_MS, DIALOG_RISE, EXPORT_DONE_GLOW, EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS,
     FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT,
-    PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PAUSED_CLOCK_OPACITY, PILL_MORPH_MS,
-    PREVIEW_ZOOM_MS, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT, STAGE_RESERVE_RIGHT_COLLAPSED,
-    STATUS_SLIDE_MS, Theme,
+    PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PANEL_WIDTH_MAX, PANEL_WIDTH_MIN,
+    PAUSED_CLOCK_OPACITY, PILL_MORPH_MS, PREVIEW_ZOOM_MS, STAGE_RESERVE_LEFT,
+    STAGE_RESERVE_RIGHT_COLLAPSED, STATUS_SLIDE_MS, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button, caps_label,
@@ -99,6 +99,25 @@ enum Gesture {
         dx: f32,
         dy: f32,
     },
+    /// A float's edge being dragged: where the press was along the drag's
+    /// axis, and the size the float had then.
+    Resize {
+        edge: ResizeEdge,
+        origin: f32,
+        start: f32,
+    },
+}
+
+fn env_size(name: &str) -> Option<f32> {
+    std::env::var(name).ok()?.parse().ok()
+}
+
+/// The two floats whose edge takes a drag: the console's top and the
+/// inspector's left.
+#[derive(Clone, Copy, PartialEq)]
+enum ResizeEdge {
+    Console,
+    Inspector,
 }
 
 // Kept independent of GPUI so geometry regressions can be tested without a window.
@@ -215,6 +234,10 @@ pub struct RootView {
     timecodes: HashMap<String, Entity<subtake_ui::TimecodeField>>,
     timeline_bounds: Rc<Cell<Bounds<Pixels>>>,
     lane_scroll: ScrollHandle,
+    /// The lane region's height and the inspector's width, as their edges
+    /// were last dragged. Not wired: remembering them between launches.
+    lane_height: f32,
+    inspector_width: f32,
     preview_bounds: Rc<Cell<Bounds<Pixels>>>,
     preview_viewport: Rc<Cell<Bounds<Pixels>>>,
     /// The window-wide layer the picture is drawn in, under everything else.
@@ -314,6 +337,11 @@ impl RootView {
             timecodes: HashMap::new(),
             timeline_bounds: Rc::new(Cell::new(Bounds::default())),
             lane_scroll: ScrollHandle::new(),
+            // The gallery cannot drag, so it can start either edge where a
+            // drag would have left it.
+            lane_height: env_size("SUBTAKE_GALLERY_LANES").unwrap_or(Theme::LANE_STACK_HEIGHT),
+            inspector_width: env_size("SUBTAKE_GALLERY_INSPECTOR")
+                .map_or(PANEL_WIDTH, |w| w.clamp(PANEL_WIDTH_MIN, PANEL_WIDTH_MAX)),
             preview_bounds: Rc::new(Cell::new(Bounds::default())),
             preview_viewport: Rc::new(Cell::new(Bounds::default())),
             preview_layer: Rc::new(Cell::new(Bounds::default())),

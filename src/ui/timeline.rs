@@ -16,7 +16,107 @@ fn lane_label(text: impl Into<SharedString>, height: f32, theme: Theme) -> Div {
         .child(text.into())
 }
 
+/// How short and how tall the console's top edge can drag the lane region:
+/// down to the source lane and one more, up to every lane the project has,
+/// and never past half the window.
+pub(super) fn lane_stack_range(e: &EditorWindow, window: &Window) -> (f32, f32) {
+    let lanes = e.get_track_labels().row_count() as f32 + 1.;
+    let content = Theme::RULER_HEIGHT + Theme::LANE_GAP + lanes * Theme::LANE_PITCH;
+    let share = f32::from(window.viewport_size().height) * Theme::LANE_STACK_MAX_SHARE;
+    let max = content.min(share).max(Theme::LANE_STACK_MIN);
+    (Theme::LANE_STACK_MIN, max)
+}
+
 impl RootView {
+    /// A strip along a float's edge that takes a drag to resize it, with a
+    /// grip that shows under the pointer and while the drag runs. A double
+    /// click puts the float back at its resting size.
+    ///
+    /// Not drawn by the design: the handoff's floats are fixed, and it draws
+    /// no grip.
+    pub(super) fn resize_edge(&self, edge: ResizeEdge, cx: &mut Context<Self>) -> Stateful<Div> {
+        let theme = self.theme;
+        let id: SharedString = match edge {
+            ResizeEdge::Console => "resize-console".into(),
+            ResizeEdge::Inspector => "resize-inspector".into(),
+        };
+        let hover = subtake_ui::motion::tween_key(&id.clone().into(), "hover");
+        let dragging = matches!(
+            self.gesture,
+            Some(Gesture::Resize { edge: active, .. }) if active == edge
+        );
+        let grip = theme.muted.opacity(0.5);
+        let grip = if dragging {
+            grip
+        } else {
+            subtake_ui::motion::hover_blend(&hover, grip.opacity(0.), grip)
+        };
+        let across = edge == ResizeEdge::Console;
+        div()
+            .id(id)
+            .absolute()
+            .flex()
+            .items_center()
+            .justify_center()
+            .when(across, |el| {
+                el.top_0()
+                    .left_0()
+                    .right_0()
+                    .h(px(Theme::RESIZE_HANDLE))
+                    .cursor(CursorStyle::ResizeUpDown)
+            })
+            .when(!across, |el| {
+                el.left_0()
+                    .top_0()
+                    .bottom_0()
+                    .w(px(Theme::RESIZE_HANDLE))
+                    .cursor(CursorStyle::ResizeLeftRight)
+            })
+            .on_hover(subtake_ui::motion::hover_listener(hover))
+            .child(
+                div()
+                    .rounded_full()
+                    .bg(grip)
+                    .when(across, |el| {
+                        el.w(px(Theme::RESIZE_GRIP_LENGTH))
+                            .h(px(Theme::RESIZE_GRIP_WIDTH))
+                    })
+                    .when(!across, |el| {
+                        el.w(px(Theme::RESIZE_GRIP_WIDTH))
+                            .h(px(Theme::RESIZE_GRIP_LENGTH))
+                    }),
+            )
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(move |s, event: &MouseDownEvent, _, cx| {
+                    let rest = event.click_count >= 2;
+                    let (origin, start) = match edge {
+                        ResizeEdge::Console => {
+                            if rest {
+                                s.lane_height = Theme::LANE_STACK_HEIGHT;
+                            }
+                            (f32::from(event.position.y), s.lane_height)
+                        }
+                        ResizeEdge::Inspector => {
+                            if rest {
+                                s.inspector_width = PANEL_WIDTH;
+                            }
+                            (f32::from(event.position.x), s.inspector_width)
+                        }
+                    };
+                    if !rest {
+                        s.gesture = Some(Gesture::Resize {
+                            edge,
+                            origin,
+                            start,
+                        });
+                    }
+                    cx.stop_propagation();
+                    cx.notify();
+                }),
+            )
+    }
+
     pub(super) fn seek_at(&self, x: Pixels) {
         if let Surface::Editor(e) = &self.surface {
             let b = self.timeline_bounds.get();
@@ -31,13 +131,28 @@ impl RootView {
     pub(super) fn move_gesture(
         &mut self,
         event: &MouseMoveEvent,
-        _: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         let Surface::Editor(e) = &self.surface else {
             return;
         };
         match &mut self.gesture {
+            Some(Gesture::Resize {
+                edge,
+                origin,
+                start,
+            }) => match edge {
+                ResizeEdge::Console => {
+                    let (min, max) = lane_stack_range(e, window);
+                    self.lane_height =
+                        (*start + *origin - f32::from(event.position.y)).clamp(min, max);
+                }
+                ResizeEdge::Inspector => {
+                    self.inspector_width = (*start + *origin - f32::from(event.position.x))
+                        .clamp(PANEL_WIDTH_MIN, PANEL_WIDTH_MAX);
+                }
+            },
             Some(Gesture::Seek) => self.seek_at(event.position.x),
             Some(Gesture::Region { origin, delta, .. }) => {
                 *delta = f32::from(event.position.x - origin.x)
@@ -77,6 +192,7 @@ impl RootView {
                             e.invoke_move_region(region.kind, region.id, delta, mode);
                         }
                     }
+                    Gesture::Resize { .. } => {}
                     Gesture::Canvas { origin, resize, .. } => {
                         let b = self.preview_bounds.get();
                         e.invoke_canvas_edit(
@@ -97,6 +213,7 @@ impl RootView {
         &mut self,
         window: &EditorWindow,
         status: Option<AnyElement>,
+        win: &Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.theme;
@@ -561,6 +678,7 @@ impl RootView {
         }
         let console = panel(theme)
             .id("timeline")
+            .relative()
             // A zoomed picture runs on under the console; the console's
             // presses are its own.
             .occlude()
@@ -582,7 +700,10 @@ impl RootView {
                                 .id("track-scroll")
                                 .gap(px(Theme::LANE_GUTTER_GAP))
                                 .items_start()
-                                .h(px(Theme::LANE_STACK_HEIGHT))
+                                .h(px({
+                                    let (min, max) = lane_stack_range(window, win);
+                                    self.lane_height.clamp(min, max)
+                                }))
                                 .flex_none()
                                 .overflow_y_scroll()
                                 .track_scroll(&self.lane_scroll)
@@ -613,6 +734,8 @@ impl RootView {
                     )
                     .children(status),
             )
+            // Its top edge takes a drag, trading lane height for stage.
+            .child(self.resize_edge(ResizeEdge::Console, cx))
             .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
                 if let Surface::Editor(window) = &s.surface {
                     let delta = event.delta.pixel_delta(px(20.));

@@ -554,6 +554,18 @@ impl Theme {
     /// is carrying at the time — so a line it only sometimes shows adds to
     /// its height instead of being taken out of the lanes.
     pub const LANE_STACK_HEIGHT: f32 = Self::RULER_HEIGHT + Self::LANE_GAP + 6.0 * Self::LANE_PITCH;
+    /// The shortest the console's top edge can drag the lane region to: the
+    /// ruler, the source lane and one more.
+    pub const LANE_STACK_MIN: f32 = Self::RULER_HEIGHT + Self::LANE_GAP + 2.0 * Self::LANE_PITCH;
+    /// The most of the window's height the lane region can take, so a drag
+    /// never leaves the stage with no picture.
+    pub const LANE_STACK_MAX_SHARE: f32 = 0.5;
+
+    /// A resize edge: the strip along a float's edge that takes the drag,
+    /// and the grip that shows on it under the pointer.
+    pub const RESIZE_HANDLE: f32 = 10.0;
+    pub const RESIZE_GRIP_LENGTH: f32 = 36.0;
+    pub const RESIZE_GRIP_WIDTH: f32 = 4.0;
 }
 
 // ---------------------------------------------------------------------------
@@ -599,17 +611,21 @@ pub const SPACE_GROTESK_FACES: [&str; 1] = ["SpaceGrotesk-Medium.ttf"];
 // layout metrics
 // ---------------------------------------------------------------------------
 
-/// The inspector float.
+/// The inspector float, at rest.
 pub const PANEL_WIDTH: f32 = 340.0;
+/// How far its left edge can be dragged either way: narrow enough to give
+/// the stage most of its width back, wide enough for a long source name.
+pub const PANEL_WIDTH_MIN: f32 = 300.0;
+pub const PANEL_WIDTH_MAX: f32 = 520.0;
 
 /// What the stage keeps clear at each side for the floats over it: the float's
 /// own inset from the window edge, its width, and the same inset again as air
 /// between it and the picture. The preview centres in what is left, so it
 /// reads slightly left of the window's true centre — the handoff's choice,
 /// over centring in the window and letting the inspector cover the picture's
-/// right edge.
+/// right edge. The right reserve follows the inspector's width, which the
+/// user can drag.
 pub const STAGE_RESERVE_LEFT: f32 = Theme::INSET * 2.0 + Theme::POD_WIDTH;
-pub const STAGE_RESERVE_RIGHT: f32 = Theme::INSET * 2.0 + PANEL_WIDTH;
 
 /// Below this window width the side reserve squeezes the picture, so the
 /// inspector folds away to a round toggle and slides in over the stage when

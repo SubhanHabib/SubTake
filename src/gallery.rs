@@ -30,6 +30,9 @@
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen);
 //! `=status-cycle` brings the console's status line in and out on a timer;
 //! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
+//! `SUBTAKE_GALLERY_LANES=100` and `SUBTAKE_GALLERY_INSPECTOR=460` start the
+//! lane region and the inspector at a height and width their edges could be
+//! dragged to (`SUBTAKE_HOVER_PIN=resize` shows both grips).
 //! `SUBTAKE_HOVER_PIN=switch,look` holds every control whose tween key
 //! contains one of those words hovered, since the gallery's unfocused windows
 //! never receive the pointer's hover.

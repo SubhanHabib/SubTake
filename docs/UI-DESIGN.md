@@ -97,6 +97,16 @@ does not time. Scene and Background take a close while folded, since there
 closing has somewhere to go. `SUBTAKE_GALLERY_WIDTH=1100` shows the folded
 editor in the gallery, and `=inspector-open` the inspector slid in.
 
+The inspector's left edge and the console's top edge each take a drag: the
+inspector from 300 to 520 wide, and the lane region from the source lane and
+one more up to every lane the project has, never past half the window. The
+stage gives or takes the difference, and a double click puts either back at
+rest (340, and six lanes). A 36×4 grip fades in on the edge under the pointer
+and stays while it is dragged. Not drawn by the design: the handoff's floats
+are fixed. Not wired: remembering the sizes between launches.
+`SUBTAKE_GALLERY_LANES=100 SUBTAKE_GALLERY_INSPECTOR=460` starts the gallery
+resized, and `SUBTAKE_HOVER_PIN=resize` shows the grips.
+
 A panel with more rows than the float has room for scrolls, its cut edge fading
 by as much as is hidden past it. Not drawn by the design: a 4-wide round thumb
 in the panel's right padding while it has more than fits, so the fade reads as

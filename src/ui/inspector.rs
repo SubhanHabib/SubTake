@@ -1052,13 +1052,15 @@ impl RootView {
         // the layout it was given, so a card that only asked for its content
         // would leave the float's spare height empty and scroll rows away
         // that had room to be drawn.
+        let width = self.inspector_width;
+        let handle = self.resize_edge(ResizeEdge::Inspector, cx);
         let float = |right: f32| {
             div()
                 .absolute()
                 .right(px(right))
                 .top(px(Theme::INSET_TOP))
                 .bottom(px(Theme::INSET))
-                .w(px(PANEL_WIDTH))
+                .w(px(width))
                 .flex()
                 .occlude()
                 .child(frosted(
@@ -1066,6 +1068,8 @@ impl RootView {
                     UiSurface::Content.blur(),
                     el,
                 ))
+                // Its left edge takes a drag, trading stage for panel.
+                .child(handle)
         };
         if !collapsed {
             self.inspector_slide = None;
@@ -1092,7 +1096,7 @@ impl RootView {
                     .icon_only()
                     .on_click(move |_, _, _| editor.set_inspector_open(true)),
             );
-        let away = (PANEL_WIDTH + Theme::INSET * 2.) * (1. - shown);
+        let away = (width + Theme::INSET * 2.) * (1. - shown);
         div()
             .absolute()
             .inset_0()

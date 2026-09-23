@@ -338,7 +338,7 @@ impl RootView {
         let divided = e.get_has_video();
         let status = self.status_strip(e, divided, window);
         if divided {
-            root = root.child(self.timeline(e, status, cx));
+            root = root.child(self.timeline(e, status, window, cx));
         } else if let Some(status) = status {
             root = root.child(div().px(px(Theme::GAP_LARGE)).child(status));
         }
