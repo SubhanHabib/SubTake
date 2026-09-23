@@ -4,7 +4,7 @@ use gpui::{prelude::*, *};
 use std::{cell::Cell, rc::Rc};
 use subtake_theme::Theme;
 
-use crate::{focus_ring, icon, measure};
+use crate::{focus_ring, icon, measure, motion};
 
 /// A filled slider that *is* the row: glyph and label on the left, the level
 /// painted as a fill across the whole 40px plate, a hairline at the fill edge,
@@ -128,21 +128,23 @@ impl Render for Slider {
         };
 
         let enabled = self.enabled;
+        // A slider has no caller-supplied id, so its hover hangs off the
+        // entity, as a dropdown's does.
+        let hover_key = format!("slider-{:?}-hover", cx.entity_id());
         div()
             .id("scrub")
             .relative()
-            .group("scrub")
             .h(px(Theme::CONTROL_HEIGHT_LARGE))
             .w_full()
             .rounded_full()
             // Track `sunk`, one step up to `sunk2` under the pointer. The row
             // is its own hit target across its whole width, so the track is
             // the only thing that can say it is live.
-            .bg(theme.sunk)
+            .bg(motion::hover_blend(&hover_key, theme.sunk, theme.sunk2))
             .overflow_hidden()
             .when(enabled, |el| {
                 el.tab_index(0)
-                    .hover(|s| s.bg(theme.sunk2))
+                    .on_hover(motion::hover_listener(hover_key.clone()))
                     .cursor(CursorStyle::ResizeLeftRight)
                     .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
             })
@@ -194,8 +196,11 @@ impl Render for Slider {
                         if self.dragging {
                             el.bg(theme.accent_soft)
                         } else {
-                            el.bg(theme.slider_fill())
-                                .when(enabled, |el| el.group_hover("scrub", |s| s.bg(theme.press)))
+                            el.bg(motion::hover_blend(
+                                &hover_key,
+                                theme.slider_fill(),
+                                theme.press,
+                            ))
                         }
                     }),
             )
