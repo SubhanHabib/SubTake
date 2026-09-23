@@ -24,7 +24,7 @@ impl Theme {
         Self {
             appearance: Appearance::Light,
 
-            bg: css("#fafaf99e"),
+            bg: css("#fafaf9cf"),
             glass: css("#ffffff8c"),
             card: css("#ffffffb3"),
             // Not drawn by the design: the handoff's recess is a light grey
@@ -67,7 +67,7 @@ impl Theme {
         Self {
             appearance: Appearance::Dark,
 
-            bg: css("#0d0d10a8"),
+            bg: css("#0d0d10d4"),
             glass: css("#1e1e249e"),
             card: css("#222229c7"),
             sunk: css("#16161b9e"),

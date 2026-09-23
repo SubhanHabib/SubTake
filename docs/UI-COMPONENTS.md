@@ -55,8 +55,9 @@ variant; it does not introduce another input, dropdown or generic button.
 ## Frosted glass
 
 gpui at the pinned revision (the `zeronsh/zui` fork) carries destination alpha
-on transparent windows and a macOS blurred view on `UnderWindowBackground`, so
-the window itself is a real material. Blur *inside* the window comes from
+on transparent windows, and the editor lays one `WindowGlass` under gpui's view
+(`native/WindowGlass.swift`), so the window itself is a real material at the
+spec's `--bg` blur and saturation (`Theme::WINDOW_BLUR`, `WINDOW_SATURATION`). Blur *inside* the window comes from
 `frost::frosted`, which paints a backdrop blur and then the whole subtree inside
 one scene layer.
 
@@ -77,7 +78,7 @@ ramp instead, which composites correctly over anything. Pair it with `FADE_BAND`
 of padding inside the content so a region that fits is never dimmed.
 
 The handoff pairs each blur with a `saturate()`. gpui has no filter for it, so
-only the blur is carried.
+floats carry only the blur; the window's own material carries both.
 
 ## Running the gallery
 

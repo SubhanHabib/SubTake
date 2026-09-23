@@ -168,12 +168,10 @@ fn the_accent_steps_away_from_the_surface_it_sits_on() {
 #[test]
 fn glass_is_on_so_the_translucent_tokens_composite() {
     assert!(Theme::WINDOW_GLASS_SUPPORTED);
-    if !cfg!(target_os = "linux") {
-        assert_eq!(
-            Theme::light().window_background_appearance(),
-            gpui::WindowBackgroundAppearance::Blurred
-        );
-    }
+    assert_eq!(
+        Theme::light().window_background_appearance(),
+        gpui::WindowBackgroundAppearance::Transparent
+    );
 }
 
 #[test]

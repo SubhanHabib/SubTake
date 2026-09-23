@@ -200,6 +200,7 @@ ui_window_operation!(ui_window_make_key, subtake_window_make_key);
 ui_window_operation!(ui_window_minimize, subtake_window_minimize, minimized: bool);
 ui_window_operation!(ui_window_set_transparent, subtake_window_set_transparent, transparent: bool);
 ui_window_operation!(ui_window_set_blur, subtake_window_set_blur, enabled: bool);
+ui_window_operation!(ui_window_set_corner_radius, subtake_window_set_corner_radius, radius: f64);
 ui_window_operation!(ui_resize_launcher_options, subtake_resize_launcher_options, width: f64, height: f64);
 
 /// Main-thread callback: borrowed NSView identity, logical content top-left x/y,
@@ -347,6 +348,8 @@ unsafe extern "C" {
     pub(super) fn subtake_window_minimize(view: *mut std::ffi::c_void, minimized: bool);
     pub(super) fn subtake_window_set_transparent(view: *mut std::ffi::c_void, transparent: bool);
     pub(super) fn subtake_window_set_blur(view: *mut std::ffi::c_void, enabled: bool);
+    pub(super) fn subtake_window_set_corner_radius(view: *mut std::ffi::c_void, radius: f64);
+    pub(super) fn subtake_window_set_glass(view: *mut std::ffi::c_void, blur: f64, saturation: f64);
     pub(super) fn subtake_resize_launcher_options(
         view: *mut std::ffi::c_void,
         width: f64,
@@ -414,6 +417,22 @@ pub fn set_recorder_glass_height(window: &crate::ui_runtime::Window, height: f32
 
 /// Tint a recorder window's material for a dark or a light theme, whatever
 /// the system's own appearance.
+/// Frosts the editor window behind its paint. Installs the material on the
+/// first call and only retunes it after, so it is safe to call every frame.
+pub fn set_window_glass(window: &crate::ui_runtime::Window, blur: f32, saturation: f32) {
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(view) = native_view(window) {
+            unsafe {
+                subtake_window_set_glass(view, f64::from(blur), f64::from(saturation));
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, blur, saturation);
+}
+
 pub fn set_recorder_glass_dark(window: &crate::ui_runtime::Window, dark: bool) {
     #[cfg(target_os = "macos")]
     {

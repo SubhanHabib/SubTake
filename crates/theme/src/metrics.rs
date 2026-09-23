@@ -7,15 +7,22 @@ impl Theme {
 
     /// Whether translucent window chrome can be composited.
     ///
-    /// SubTake renders on `zeronsh/zui`, which carries the two fixes this
-    /// needs and stock gpui 0.2.2 lacks: `f596cde` (destination alpha on
-    /// transparent windows — Porter-Duff OVER, not additive) and `8a8954c`
-    /// (macOS blurred view on `UnderWindowBackground`, because macOS 26
-    /// stopped vending `CABackdropLayer` for the `Selection` material).
+    /// SubTake renders on `zeronsh/zui`, which carries the fix this needs and
+    /// stock gpui 0.2.2 lacks: `f596cde`, destination alpha on transparent
+    /// windows, Porter-Duff OVER rather than additive. The material under
+    /// the window is SubTake's own, `native/WindowGlass.swift`.
     ///
     /// Every surface token above assumes this is on: they are tints, not
     /// paints. With it off the whole interface would wash out.
     pub const WINDOW_GLASS_SUPPORTED: bool = true;
+
+    /// The window's own frost, the design spec's `--bg` material:
+    /// `blur(56px) saturate(1.7)`. Saturation drops in dark so the wallpaper
+    /// does not tint the chrome. The backdrop samples the desktop at an eighth
+    /// of full size, so a wide blur costs no more than a narrow one.
+    pub const WINDOW_BLUR: f32 = 56.0;
+    pub const WINDOW_SATURATION: f32 = 1.7;
+    pub const WINDOW_SATURATION_DARK: f32 = 1.4;
 
     // ---- metrics ---------------------------------------------------------
 

@@ -153,6 +153,7 @@ design needs:
   of tinted, which would collapse the whole palette.
 * `8a8954c` — macOS blurred view on `UnderWindowBackground`; macOS 26 stopped
   vending `CABackdropLayer` for the `Selection` material stock gpui requests.
+  SubTake no longer asks for it: the editor installs its own material (below).
 * `BackdropBlur` → `Window::paint_backdrop_blur`, used by `crates/ui/src/frost.rs`
   (adapted from the Zeron reference, MIT © 2026 Wing) for menus and tooltips.
 * `EdgeFade` → `Window::with_edge_fade` (available, not yet applied).
@@ -170,10 +171,15 @@ handled during the switch, all mechanical:
 | `Line::paint(origin, height, window, cx)` | adds `TextAlign` + `Option<Pixels>` |
 | `Menu { name, items }` | adds `disabled` |
 
-The editor window is `WindowBackgroundAppearance::Blurred`; gpui installs the
-blurred view itself, so SubTake's own `subtake_window_set_blur` helper is no
-longer applied to the editor. The recorder keeps its native *masked* glass,
-which gpui cannot express.
+The editor window is `WindowBackgroundAppearance::Transparent`. Its base is
+three things, bottom to top: the window server's rounded shape, one unmasked
+`WindowGlass` (`native/WindowGlass.swift`, an `UnderWindowBackground` visual
+effect view tuned to the design spec's `--bg`, `blur(56px) saturate(1.7)`, 1.4
+in dark), and gpui's Metal layer. The corners are the window's own private
+radius (`native/WindowCorners.swift`, `Theme::RADIUS_WINDOW`), so the content,
+shadow and outline share one curve and nothing inside the window rounds. The
+recorder keeps its native *masked* glass, since its windows are borderless and
+have no window-server radius to take.
 
 ### Deviations
 

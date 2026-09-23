@@ -275,10 +275,9 @@ impl App {
             self.editor_shown = true;
         }
         ui.show()?;
-        // Editor glass is the window's own `WindowBackgroundAppearance::Blurred`
-        // now that SubTake renders on the zui fork: gpui installs the
-        // `UnderWindowBackground` view itself. Adding SubTake's helper on top
-        // would stack a second material and double-darken the chrome.
+        // Editor glass is installed by the editor's own render
+        // (`platform::set_window_glass`). A second material here would stack
+        // under it and double-darken the chrome.
         ui.window().set_minimized(false);
         ui.window().focus_window();
         Ok(())

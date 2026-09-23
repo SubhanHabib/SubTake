@@ -101,8 +101,9 @@ private func glass(for view: NSView, key: UnsafeRawPointer) -> RecorderGlass? {
     objc_getAssociatedObject(view, key) as? RecorderGlass
 }
 
-/// A full-window material with no mask, used by the editor. Transparency and
-/// GPUI's own background are set independently by the caller.
+/// A full-window material with no mask. Only the recorder windows call it
+/// now, to turn it off; the editor's material is `WindowGlass`. Transparency
+/// and GPUI's own background are set independently by the caller.
 @_cdecl("subtake_window_set_blur")
 public func windowSetBlur(_ pointer: UnsafeMutableRawPointer?, _ enabled: Bool) {
     assert(Thread.isMainThread, "Window material must run on the UI thread")

@@ -496,6 +496,15 @@ impl Render for RootView {
         if let Some(recorder) = recorder {
             crate::platform::set_recorder_glass_dark(recorder, self.theme.appearance.is_dark());
         }
+
+        if let Surface::Editor(e) = &surface {
+            let saturation = if self.theme.appearance.is_dark() {
+                Theme::WINDOW_SATURATION_DARK
+            } else {
+                Theme::WINDOW_SATURATION
+            };
+            crate::platform::set_window_glass(e.window(), Theme::WINDOW_BLUR, saturation);
+        }
         let content = match &surface {
             Surface::Editor(e) => self.editor(e, window, cx),
             Surface::Launcher(s) => self.launcher(s),

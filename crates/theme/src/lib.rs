@@ -210,12 +210,12 @@ impl Theme {
         gpui::hsla(0., 0., 1., 1.)
     }
 
-    /// How the platform should composite the window behind our paint.
+    /// How the platform should composite the window behind our paint. On
+    /// macOS the frost is SubTake's own material under a transparent window,
+    /// not gpui's `Blurred`, so its blur and saturation follow the theme.
     pub fn window_background_appearance(&self) -> gpui::WindowBackgroundAppearance {
-        if cfg!(target_os = "linux") {
+        if Self::WINDOW_GLASS_SUPPORTED {
             gpui::WindowBackgroundAppearance::Transparent
-        } else if Self::WINDOW_GLASS_SUPPORTED {
-            gpui::WindowBackgroundAppearance::Blurred
         } else {
             gpui::WindowBackgroundAppearance::Opaque
         }

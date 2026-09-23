@@ -12,6 +12,8 @@ struct RecorderGlassTests {
         maskIsOneStretchedRoundedSquare()
         partialPlateFollowsTheCard()
         agentWorkspaceIsItsOwnNavigationDelegate()
+        WindowCornersTests.run()
+        WindowGlassTests.run()
         print("NATIVE_TESTS_PASSED")
     }
 

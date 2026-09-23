@@ -347,24 +347,16 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 } else {
                     gpui::WindowKind::Floating
                 },
-                // `Blurred` gives the editor the reference's glass: the
-                // fork's macOS backend installs its blurred view on
-                // `UnderWindowBackground` (`8a8954c`) — the material macOS 26
-                // still vends — and composites translucent paint Porter-Duff
-                // OVER (`f596cde`), so the chrome tint lands instead of
-                // rendering see-through. See `Theme::WINDOW_GLASS_SUPPORTED`.
+                // Every window is transparent, and its material is SubTake's
+                // own. The fork composites translucent paint Porter-Duff OVER
+                // (`f596cde`), so the chrome's tints land on the frost instead
+                // of rendering see-through. See `Theme::WINDOW_GLASS_SUPPORTED`.
                 //
-                // The recorder windows cannot take it. That view fills the
-                // content view rectangularly and a borderless window gets no
-                // system corner mask, so the material paints a grey square
-                // around the rounded recorder plate. They stay transparent and
-                // get their material from `update_recorder_glass`, which masks
-                // it to the plate.
-                window_background: if is_editor {
-                    gpui::WindowBackgroundAppearance::Blurred
-                } else {
-                    gpui::WindowBackgroundAppearance::Transparent
-                },
+                // The editor's frost is one unmasked material the window's
+                // own corners clip (`set_window_glass`, from its render). The
+                // borderless recorder windows get no system corners, so their
+                // material is masked to the plate (`update_recorder_glass`).
+                window_background: gpui::WindowBackgroundAppearance::Transparent,
                 window_min_size: is_editor.then_some(size(px(980.), px(680.))),
                 is_resizable: is_editor,
                 focus: runtime.0.kind != WindowKind::Countdown,
@@ -405,6 +397,10 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
             if is_editor && let Some(view) = runtime.native_view() {
                 unsafe {
                     crate::platform::ui_window_install_magnify(view, native_magnify)?;
+                    crate::platform::ui_window_set_corner_radius(
+                        view,
+                        f64::from(subtake_theme::Theme::RADIUS_WINDOW),
+                    );
                 }
             }
             if !is_editor {
