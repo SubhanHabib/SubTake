@@ -226,6 +226,10 @@ pub struct RootView {
     /// instead of at a fixed window coordinate.
     menu_anchor: Rc<Cell<Bounds<Pixels>>>,
     menu_filter: String,
+    /// The palette row the arrow keys have reached, which Enter runs. It
+    /// goes back to the top whenever the list under it changes.
+    menu_highlight: usize,
+    menu_scroll: ScrollHandle,
     /// Set when the palette opens so the next render hands it the keyboard.
     menu_focus: bool,
     preview_pan: Point<Pixels>,
@@ -312,6 +316,8 @@ impl RootView {
             menu_leave: subtake_ui::Leave::default(),
             menu_anchor: Rc::new(Cell::new(Bounds::default())),
             menu_filter: String::new(),
+            menu_highlight: 0,
+            menu_scroll: ScrollHandle::new(),
             menu_focus: false,
             preview_pan: point(px(0.), px(0.)),
             preview_context: None,

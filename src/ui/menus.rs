@@ -79,6 +79,7 @@ impl RootView {
                     None
                 } else {
                     s.menu_filter.clear();
+                    s.menu_highlight = 0;
                     s.menu_focus = true;
                     Some(name.into())
                 };
@@ -111,6 +112,7 @@ impl RootView {
         }
         self.menu = None;
         self.menu_filter.clear();
+        self.menu_highlight = 0;
         cx.notify();
     }
 
@@ -143,7 +145,11 @@ impl RootView {
             .flat_map(|group| group.iter())
             .filter(|(label, _)| filter.is_empty() || label.to_lowercase().contains(&filter))
             .collect();
-        let first = matches.first().map(|(_, command)| command.to_string());
+        let highlight = self.menu_highlight.min(matches.len().saturating_sub(1));
+        let chosen = matches
+            .get(highlight)
+            .map(|(_, command)| command.to_string());
+        let count = matches.len();
 
         let anchor = self.menu_anchor.get();
         let viewport = window.viewport_size();
@@ -161,12 +167,7 @@ impl RootView {
             (f32::from(anchor.origin.y) - Theme::GAP - height).max(Theme::GAP)
         };
 
-        let search = self.input("command-palette", "", window, cx, {
-            let first = first.clone();
-            move |_, _, _| {
-                let _ = &first;
-            }
-        });
+        let search = self.input("command-palette", "", window, cx, |_, _, _| {});
         // `cx.listener` hands the callback its event by reference; the input's
         // callbacks take the text by value, so they go through a weak handle.
         let view = cx.entity().downgrade();
@@ -177,14 +178,29 @@ impl RootView {
                 filtering
                     .update(cx, |s: &mut Self, cx| {
                         s.menu_filter = value.clone();
+                        s.menu_highlight = 0;
                         cx.notify();
                     })
                     .ok();
             });
-            // Enter runs whatever is at the top of the filtered list, which
-            // is the only reason the field commits at all.
+            // Up and down walk the highlight through the filtered list, and
+            // the list scrolls to keep it in sight.
+            let stepping = view.clone();
+            input.set_on_step(move |delta, _, cx| {
+                stepping
+                    .update(cx, |s: &mut Self, cx| {
+                        let last = count.saturating_sub(1) as isize;
+                        let next = (highlight as isize + delta).clamp(0, last) as usize;
+                        s.menu_highlight = next;
+                        s.menu_scroll.scroll_to_item(next);
+                        cx.notify();
+                    })
+                    .ok();
+            });
+            // Enter runs the highlighted command, which is the top of the
+            // filtered list until the arrow keys move it.
             let running = view.clone();
-            let run = first.clone();
+            let run = chosen.clone();
             input.set_handler(move |_, _, cx| {
                 let Some(command) = run.clone() else { return };
                 running
@@ -198,6 +214,7 @@ impl RootView {
                     .update(cx, |s: &mut Self, cx| {
                         s.menu = None;
                         s.menu_filter.clear();
+                        s.menu_highlight = 0;
                         cx.notify();
                     })
                     .ok();
@@ -214,7 +231,8 @@ impl RootView {
             "palette-list",
             PALETTE_VISIBLE_ROWS as f32 * Theme::CONTROL_HEIGHT,
         )
-        .py(px(FADE_BAND));
+        .py(px(FADE_BAND))
+        .track_scroll(&self.menu_scroll);
         if matches.is_empty() {
             list = list.child(
                 div()
@@ -228,13 +246,13 @@ impl RootView {
         }
         // Rows carry no glyph: a third of these commands have no icon in the
         // set, and inventing one per row reads worse than a clean list.
-        for (label, command) in matches {
+        for (i, (label, command)) in matches.into_iter().enumerate() {
             let command = command.to_string();
             list = list.child(menu_row(
                 SharedString::from(format!("palette-{command}")),
                 *label,
                 false,
-                false,
+                i == highlight,
                 theme,
                 cx.listener(move |s, _, _, cx| s.run_command(&command, cx)),
             ));
@@ -261,6 +279,7 @@ impl RootView {
                 .on_click(cx.listener(move |s, _, _, cx| {
                     s.menu = Some(menu.into());
                     s.menu_filter.clear();
+                    s.menu_highlight = 0;
                     s.menu_focus = true;
                     cx.notify();
                 })),
