@@ -588,3 +588,7 @@ pub const STAGE_RESERVE_RIGHT_COLLAPSED: f32 = Theme::INSET * 2.0 + Theme::CONTR
 pub const INSPECTOR_SLIDE_MS: u64 = 240;
 /// How long the document pill takes to grow into the export pill and back.
 pub const PILL_MORPH_MS: u64 = 240;
+/// A newly picked inspector panel fades in over this long, rising the
+/// distance below into place.
+pub const PANEL_ENTER_MS: u64 = 180;
+pub const PANEL_ENTER_RISE: f32 = 6.0;

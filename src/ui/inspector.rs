@@ -953,10 +953,11 @@ impl RootView {
             .entry(name.to_string())
             .or_default()
             .clone();
-        let mut el = content_panel(theme)
-            .py_0()
-            .gap_0()
-            .size_full()
+        let mut body = div()
+            .relative()
+            .flex()
+            .flex_col()
+            .flex_1()
             .min_h_0()
             // Padding on the fixed-height title row would come out of its
             // height and push the close control up past the panel's edge; on
@@ -987,11 +988,27 @@ impl RootView {
             );
         // Without a footer the band is the bottom edge, and the rest of the
         // panel's padding makes it up to the sides'.
-        el = if has_footer {
-            el.child(footer.pb(px(Theme::PANEL_PADDING)))
+        let bottom = if has_footer {
+            body = body.child(footer.pb(px(Theme::PANEL_PADDING)));
+            0.
         } else {
-            el.pb(px(Theme::PANEL_PADDING - Theme::GAP_LARGE))
+            Theme::PANEL_PADDING - Theme::GAP_LARGE
         };
+        // A newly picked panel fades in and rises into place; the card
+        // around it stays put. Keyed by the panel, so each pick starts over.
+        let enter = Animation::new(std::time::Duration::from_millis(PANEL_ENTER_MS))
+            .with_easing(|t| subtake_ui::motion::EASE_OUT.eval(t));
+        let el = content_panel(theme)
+            .py_0()
+            .gap_0()
+            .size_full()
+            .min_h_0()
+            .pb(px(bottom))
+            .child(body.with_animation(
+                SharedString::from(format!("panel-enter-{name}")),
+                enter,
+                |body, t| body.opacity(t).top(px(PANEL_ENTER_RISE * (1. - t))),
+            ));
         // The panel takes its backdrop blur here rather than inside
         // `panel_variant`: the blur is painted by an element that wraps the
         // whole subtree in one scene layer, and `panel_variant` returns a
