@@ -73,6 +73,7 @@ pub fn menu_row(
     } else {
         theme.sunk.opacity(0.)
     };
+    let sunk = theme.sunk;
     row()
         .id(id)
         .flex_none()
@@ -89,6 +90,10 @@ pub fn menu_row(
             FontWeight::NORMAL
         })
         .cursor_pointer()
+        // Pressed is the hover fill, dimmed: the row is already on `sunk`
+        // under the pointer, and a second, deeper wash would read as a
+        // different kind of row rather than this one being pushed.
+        .active(move |s| s.bg(sunk).opacity(Theme::PRESSED_OPACITY))
         .on_hover(motion::hover_listener(hover_key))
         // The gutter is held whether or not this row is the current one, so
         // the labels in a menu line up with each other instead of stepping in
