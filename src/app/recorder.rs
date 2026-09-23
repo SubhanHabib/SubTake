@@ -159,8 +159,8 @@ impl App {
         let Some(options) = &self.launcher_options else {
             return Ok(());
         };
-        // A closing card folds back into the bar and hides its own window
-        // once it has gone (`RootView::card_height`).
+        // A closing card fades out and hides its own window once it has
+        // gone (`RootView::card_fade`).
         if panel.is_empty() {
             return Ok(());
         }
@@ -173,7 +173,7 @@ impl App {
             platform::position_launcher_options(options.window(), launcher.window())?;
         }
         // GPUI draws a window without focus at half speed or less, so the
-        // card takes focus from the bar while it is open and eases at the
+        // card takes focus from the bar while it is open and redraws at the
         // display's rate; hiding hands it back. A new window takes focus as
         // it opens.
         options.window().make_key();

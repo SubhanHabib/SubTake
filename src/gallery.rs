@@ -759,7 +759,7 @@ impl Gallery {
     }
 
     fn position_options(&self) {
-        // A closing card folds back into the bar and hides its own window.
+        // A closing card fades out and hides its own window.
         if self.launcher.get_panel().is_empty() {
             return;
         }
@@ -767,7 +767,7 @@ impl Gallery {
         self.options.window().set_blur(false);
         self.options.window().set_transparent(true);
         let _ = platform::position_launcher_options(self.options.window(), self.launcher.window());
-        // As in the app: the open card holds focus so it eases at full rate.
+        // As in the app: the open card holds focus so it redraws at full rate.
         self.options.window().make_key();
     }
 }

@@ -14,9 +14,9 @@ use std::{
     time::Instant,
 };
 use subtake_theme::{
-    BAR_SWAP_MS, CARD_CLOSE_MS, CARD_GLASS_SKEW_MS, CARD_OPEN_MS, CARD_RESIZE_MS, DIALOG_IN_MS,
-    DIALOG_OUT_MS, DIALOG_RISE, EXPORT_DONE_GLOW, EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS,
-    FONT_SANS, INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT,
+    BAR_SWAP_MS, CARD_IN_MS, CARD_OUT_MS, CARD_SWAP_MS, DIALOG_IN_MS, DIALOG_OUT_MS, DIALOG_RISE,
+    EXPORT_DONE_GLOW, EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS, FONT_SANS,
+    INSPECTOR_COLLAPSE_WIDTH, INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT,
     PANEL_ENTER_MS, PANEL_ENTER_RISE, PANEL_WIDTH, PANEL_WIDTH_MAX, PANEL_WIDTH_MIN,
     PAUSED_CLOCK_OPACITY, PILL_MORPH_MS, PREVIEW_ZOOM_MS, STAGE_RESERVE_BOTTOM, STAGE_RESERVE_LEFT,
     STAGE_RESERVE_RIGHT_COLLAPSED, STATUS_SLIDE_MS, Theme,
@@ -118,6 +118,25 @@ fn env_size(name: &str) -> Option<f32> {
 enum ResizeEdge {
     Console,
     Inspector,
+}
+
+/// The recorder card's window fades rather than being drawn in and out, so
+/// its paint and its frosted material move as one. It shows clear, waits
+/// until the card is drawn and the window fits it, then fades in; a card
+/// replaced by another fades out first, and a closed one fades out and hides.
+#[derive(Clone, Copy, PartialEq)]
+enum CardFade {
+    /// Hidden, or not yet opened.
+    Gone,
+    /// Clear, until the card has been drawn once (the flag) and the window
+    /// is its height; then it fades in over the duration.
+    Waiting(bool, u64),
+    /// In, or fading in.
+    Shown,
+    /// Fading out until then, for another card to take its place.
+    Leaving(Instant),
+    /// Fading out to hide.
+    Closing,
 }
 
 // Kept independent of GPUI so geometry regressions can be tested without a window.
@@ -291,17 +310,13 @@ pub struct RootView {
     /// it set off from (0 out, 1 in) and when. `None` until first drawn, so
     /// a window that opens narrow starts folded rather than sliding shut.
     inspector_slide: Option<(bool, f32, Instant)>,
-    /// The recorder card's height as it eases: from, to, since when and
-    /// over how long.
-    card_ease: Option<(f32, f32, Instant, u64)>,
-    /// Under Reduce motion, a card just opened whose window has yet to grow
-    /// to fit it.
-    card_unfit: bool,
-    /// Under Reduce motion, the height of a card just replaced by another,
-    /// held empty until the new one is measured (the flag) and fits.
-    card_swap: Option<(f32, bool)>,
-    /// The card last open, which a closing card keeps drawing as it folds
-    /// away, and the window's `opens` it was opened under.
+    /// Where the recorder card's window is in its fade.
+    card_fade: CardFade,
+    /// The card's height as its content last laid out, read back the same
+    /// frame, before the options window's own copy catches up.
+    card_measured: Rc<Cell<f32>>,
+    /// The card drawn, which a closing or replaced card keeps showing as it
+    /// fades out, and the window's `opens` it was opened under.
     card_last: (String, u32),
     /// The console's status line growing in and folding away, as
     /// `inspector_slide`; what it last said, busy or not and how far along,
@@ -372,9 +387,8 @@ impl RootView {
             inspector_scroll: HashMap::new(),
             panel_drill: (String::new(), 0.),
             inspector_slide: None,
-            card_ease: None,
-            card_unfit: false,
-            card_swap: None,
+            card_fade: CardFade::Gone,
+            card_measured: Rc::new(Cell::new(0.)),
             card_last: (String::new(), 0),
             status_slide: None,
             status_kept: (SharedString::default(), false, 0.),

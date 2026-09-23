@@ -18,8 +18,8 @@ final class RecorderGlass: NSVisualEffectView {
     private var maskRadius: CGFloat = 0
 
     /// How much of `anchor`, from its bottom edge, the plate fills; 0 for all
-    /// of it. The options card eases between heights inside a window sized
-    /// for the taller, and the material has to follow the card, not the window.
+    /// of it. The options window is resized a moment before its card is
+    /// redrawn, and the material has to follow the card, not the window.
     var plateHeight: CGFloat = 0
 
     /// The frame of the GPUI view the material sits under.

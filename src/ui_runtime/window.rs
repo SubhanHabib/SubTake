@@ -127,10 +127,15 @@ impl Window {
         if !self.0.visible.get() {
             self.0.opens.set(self.0.opens.get() + 1);
         }
-        self.0.visible.set(true);
+        let hidden = !self.0.visible.replace(true);
         self.invalidate();
         if let Some(view) = self.native_view() {
             unsafe {
+                // A card's window shows clear and fades in once its card is
+                // drawn to fit (`RootView::card_fade`).
+                if hidden && self.0.kind == WindowKind::Options {
+                    crate::platform::ui_fade_launcher_options(view, 0., 0.);
+                }
                 crate::platform::ui_window_show(view);
             }
         }
@@ -309,10 +314,7 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
             Surface::Countdown(_) => "SubTake countdown".into(),
         };
         if let Surface::Options(ui) = &surface {
-            let wanted = LogicalSize::new(
-                ui.get_options_width(),
-                ui.get_options_height().max(ui.get_options_room()),
-            );
+            let wanted = LogicalSize::new(ui.get_options_width(), ui.get_options_height());
             if runtime.0.size.get() != wanted {
                 runtime.set_size(wanted);
             }
@@ -445,6 +447,7 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                         }
                         if let Some(view) = runtime.native_view() {
                             unsafe {
+                                crate::platform::ui_fade_launcher_options(view, 0., 0.);
                                 crate::platform::ui_window_show(view);
                                 crate::platform::ui_window_make_key(view);
                             }

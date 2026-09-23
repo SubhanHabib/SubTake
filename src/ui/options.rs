@@ -7,7 +7,7 @@
 
 use super::*;
 use crate::ui_state::CaptureSource;
-use subtake_ui::{fade_in, icon_sized, layered};
+use subtake_ui::{icon_sized, layered};
 
 impl RootView {
     pub(super) fn options(
@@ -17,13 +17,9 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.theme;
-        // Closing, the card keeps what it last showed while it folds away.
-        let open = !state.get_panel().is_empty();
-        let fresh = open && self.card_last.1 != state.window().opens();
-        let swapped = open && !fresh && self.card_last.0 != state.get_panel();
-        if open {
-            self.card_last = (state.get_panel(), state.window().opens());
-        }
+        // Closing or replaced, the card keeps what it last showed while it
+        // fades out.
+        let height = self.card_fade(state, window);
         let name = self.card_last.0.clone();
         let title = match name.as_str() {
             "sources" => "Capture source",
@@ -62,17 +58,9 @@ impl RootView {
         // The window cannot draw a drop shadow outside itself, so the panel
         // shadow the handoff gives is the window server's to draw.
         //
-        // The content lays out at its own height and is measured there; the
-        // card around it eases to that height from the bar's side up, so a
-        // swap to a taller or shorter card grows or shrinks rather than
-        // jumping.
-        let height = self.card_height(state, open, fresh, swapped, window);
-        let from = self.card_ease.map_or(height, |ease| ease.0);
-        let fade = if open || from <= 0. {
-            1.
-        } else {
-            (height / from).clamp(0., 1.)
-        };
+        // The content lays out at its own height and is measured there, and
+        // the card and its window take that height in one step; the window
+        // is clear whenever it moves or resizes (`card_fade`).
         panel_variant(theme, UiSurface::Overlay)
             .absolute()
             .bottom_0()
@@ -89,124 +77,100 @@ impl RootView {
                     .left_0()
                     .right_0()
                     .p(px(Theme::PANEL_PADDING))
-                    .opacity(if self.card_swap.is_some() { 0. } else { fade })
-                    .child(fade_in(
-                        SharedString::from(format!("options-{name}-{}", self.card_last.1)),
-                        content,
-                    ))
-                    .child(options_fit(state.clone())),
+                    .child(content)
+                    .child(options_fit(state.clone(), self.card_measured.clone())),
             )
             .into_any_element()
     }
 
-    /// The card's height this frame, easing toward what its content last
-    /// measured — up out of the bar when it opens, back down into it when it
-    /// closes. While it eases the window holds the taller of the two, and
-    /// once a closing card is gone the window hides.
-    fn card_height(
-        &mut self,
-        state: &RecordingOptions,
-        open: bool,
-        fresh: bool,
-        swapped: bool,
-        window: &mut Window,
-    ) -> f32 {
+    /// Steps the card's window through its fade (`CardFade`) and gives the
+    /// height to draw the card at: what its content last measured.
+    ///
+    /// The window's alpha carries the fade, not the card's paint: the paint
+    /// and the frosted material under it reach the screen by different
+    /// routes, and a card that grew or faded on its own showed its glass a
+    /// frame early or late, and its rows sliding through a plate still
+    /// growing to meet them. The window moves and resizes only while clear.
+    fn card_fade(&mut self, state: &RecordingOptions, window: &mut Window) -> f32 {
         let natural = state.get_options_height();
-        let target = if open { natural } else { 0. };
         let now = Instant::now();
-        let at_time = |now: Instant, (from, to, started, ms): (f32, f32, Instant, u64)| {
-            subtake_ui::motion::ease_toward(from, to, started, ms, now)
-        };
-        let at = |ease| at_time(now, ease);
         let still = subtake_ui::motion::reduced_motion();
-        let before = self.card_ease.map(at);
-        let ease = match self.card_ease {
-            _ if still => (target, target, now, CARD_RESIZE_MS),
-            _ if fresh => (0., target, now, CARD_OPEN_MS),
-            Some(ease) if ease.1 == target => ease,
-            // Opening, the card's first measure can land mid-way; it goes on
-            // opening toward the new height rather than turning into a resize.
-            Some(ease) if open && ease.3 == CARD_OPEN_MS && at(ease) != ease.1 => {
-                (at(ease), target, now, CARD_OPEN_MS)
+        let length = |ms: u64| if still { 0 } else { ms };
+        let fade = |alpha: f64, ms: u64| {
+            if let Some(view) = state.window().native_view() {
+                unsafe { crate::platform::ui_fade_launcher_options(view, alpha, ms as f64 / 1000.) }
             }
-            Some(ease) if open => (at(ease), target, now, CARD_RESIZE_MS),
-            Some(ease) => (at(ease), target, now, CARD_CLOSE_MS),
-            None => (target, target, now, CARD_RESIZE_MS),
         };
-        self.card_ease = Some(ease);
-        let mut height = at(ease);
-        // Under Reduce motion no opening covers the moment the window takes
-        // to grow to the card: drawn at once, the card shows with its top
-        // cut off. It waits, undrawn, until it fits — and not on its first
-        // frame, whose height is from before its rows were measured.
-        self.card_unfit = still && open && (fresh || self.card_unfit);
-        if self.card_unfit {
-            if fresh || f32::from(window.viewport_size().height) + 0.5 < height {
-                height = 0.;
-                window.request_animation_frame();
-            } else {
-                self.card_unfit = false;
+        let panel = state.get_panel();
+        let open = !panel.is_empty();
+        let wanted = (panel, state.window().opens());
+        if !open {
+            if !matches!(self.card_fade, CardFade::Gone | CardFade::Closing) {
+                let out = length(CARD_OUT_MS);
+                fade(0., out);
+                self.card_fade = CardFade::Closing;
+                let state = state.clone();
+                crate::ui_runtime::Timer::single_shot(
+                    std::time::Duration::from_millis(out),
+                    move || {
+                        if state.get_panel().is_empty() {
+                            let _ = state.hide();
+                        }
+                    },
+                );
             }
-        }
-        // The same under Reduce motion when one card replaces another: the
-        // new card's rows are measured a frame after they are drawn, so for
-        // that frame they would sit in the old card's plate. The plate holds
-        // its old height with nothing in it until the new card is measured
-        // and the window fits it.
-        if !(still && open) {
-            self.card_swap = None;
-        } else if swapped && let Some(old) = before {
-            self.card_swap = Some((old, false));
-        }
-        if let Some((old, measured)) = self.card_swap {
-            if !measured || f32::from(window.viewport_size().height) + 0.5 < height {
-                self.card_swap = Some((old, true));
-                height = old;
-                window.request_animation_frame();
-            } else {
-                self.card_swap = None;
-            }
-        }
-        if !open && height == 0. {
-            let state = state.clone();
-            crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
-                if state.get_panel().is_empty() {
-                    let _ = state.hide();
+        } else if self.card_last != wanted {
+            self.card_fade = match self.card_fade {
+                // Replaced while in view: this card fades out first, still
+                // drawn, and the window moves once it is clear.
+                CardFade::Shown if self.card_last.1 == wanted.1 => {
+                    let out = length(CARD_SWAP_MS / 2);
+                    fade(0., out);
+                    CardFade::Leaving(now + std::time::Duration::from_millis(out))
                 }
-            });
+                CardFade::Leaving(until) if now < until => CardFade::Leaving(until),
+                before => {
+                    self.card_last = wanted;
+                    CardFade::Waiting(
+                        false,
+                        match before {
+                            CardFade::Leaving(_) => CARD_SWAP_MS / 2,
+                            CardFade::Waiting(_, ms) => ms,
+                            _ => CARD_IN_MS,
+                        },
+                    )
+                }
+            };
         }
-        let room = if height == target {
-            0.
-        } else {
-            window.request_animation_frame();
-            ease.0.max(ease.1)
-        };
-        // The frosted material under the card follows it, not the window. It
-        // is always given the card's height, never "all of the window": the
-        // window grows before the card does, and glass that fills it shows
-        // as a grey slab above the card. The glass and the card reach the
-        // screen by different routes and can land a hundred milliseconds
-        // apart, so glass a little short of the card — hidden under it — is
-        // the only safe way to be wrong. Growing or resizing, the glass takes
-        // the card's lowest height over a window either side of now; closing,
-        // the card needs no frost for the moment it takes, and drops it at
-        // once.
-        let skew = std::time::Duration::from_millis(CARD_GLASS_SKEW_MS);
-        let behind = at_time(now.checked_sub(skew).unwrap_or(now), ease);
-        let ahead = at_time(now + skew, ease);
-        let glass = if open {
-            height.min(behind).min(ahead)
-        } else {
-            0.
-        };
-        crate::platform::set_recorder_glass_height(state.window(), glass.max(0.01));
-        if state.get_options_room() != room {
-            let state = state.clone();
-            crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
-                state.set_options_room(room)
-            });
+        match self.card_fade {
+            CardFade::Leaving(_) if open => window.request_animation_frame(),
+            // Not on the card's first frame, whose rows have yet to be
+            // measured, and not before the window has taken their height.
+            CardFade::Waiting(drawn, ms) if open => {
+                let fits = |height: f32| (height - natural).abs() < 0.5;
+                if drawn
+                    && fits(self.card_measured.get())
+                    && fits(f32::from(window.viewport_size().height))
+                {
+                    fade(1., length(ms));
+                    self.card_fade = CardFade::Shown;
+                } else {
+                    self.card_fade = CardFade::Waiting(true, ms);
+                    window.request_animation_frame();
+                }
+            }
+            // Reopened as it faded out: it comes back from where it was.
+            CardFade::Closing if open => {
+                fade(1., length(CARD_IN_MS));
+                self.card_fade = CardFade::Shown;
+            }
+            _ => {}
         }
-        height
+        // The frosted material under the card is the card's height, not the
+        // window's: the window is resized a moment before its paint catches
+        // up, and glass that filled it would show past the card's edge.
+        crate::platform::set_recorder_glass_height(state.window(), natural.max(0.01));
+        natural
     }
 
     /// Displays as pictures, then windows as rows: you are choosing a
@@ -897,10 +861,11 @@ fn selection_ring(radius: Option<f32>, theme: Theme) -> impl IntoElement {
 /// Sizes the options window to the card: the card lays out at its natural
 /// height, this reads it back, and the window follows — so a card never
 /// clips and never floats in an empty frame, whatever it holds.
-fn options_fit(state: RecordingOptions) -> impl IntoElement {
+fn options_fit(state: RecordingOptions, measured: Rc<Cell<f32>>) -> impl IntoElement {
     canvas(
         move |bounds, _, _| {
             let height = f32::from(bounds.size.height).ceil();
+            measured.set(height);
             if (state.get_options_height() - height).abs() > 0.5 {
                 let state = state.clone();
                 crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {

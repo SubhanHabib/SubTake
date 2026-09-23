@@ -202,6 +202,7 @@ ui_window_operation!(ui_window_set_transparent, subtake_window_set_transparent, 
 ui_window_operation!(ui_window_set_blur, subtake_window_set_blur, enabled: bool);
 ui_window_operation!(ui_window_set_corner_radius, subtake_window_set_corner_radius, radius: f64);
 ui_window_operation!(ui_resize_launcher_options, subtake_resize_launcher_options, width: f64, height: f64);
+ui_window_operation!(ui_fade_launcher_options, subtake_fade_launcher_options, alpha: f64, seconds: f64);
 
 /// Main-thread callback: borrowed NSView identity, logical content top-left x/y,
 /// incremental native magnification (positive = expand), raw NSEventPhase bits.
@@ -354,6 +355,11 @@ unsafe extern "C" {
         view: *mut std::ffi::c_void,
         width: f64,
         height: f64,
+    );
+    pub(super) fn subtake_fade_launcher_options(
+        view: *mut std::ffi::c_void,
+        alpha: f64,
+        seconds: f64,
     );
     pub(super) fn subtake_window_get_position(
         view: *mut std::ffi::c_void,

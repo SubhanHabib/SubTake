@@ -707,17 +707,13 @@ pub const STATUS_SLIDE_MS: u64 = 180;
 /// left, over a little longer than a plain switch.
 pub const PANEL_DRILL_MS: u64 = 220;
 pub const PANEL_DRILL_SHIFT: f32 = 24.0;
-/// A recorder card swapped for a taller or shorter one eases between their
-/// heights over this long, its edge by the bar staying put.
-pub const CARD_RESIZE_MS: u64 = 220;
-/// A recorder card grows up out of the bar over this long as it opens, and
-/// folds back down into it over the shorter time as it closes.
-pub const CARD_OPEN_MS: u64 = 260;
-pub const CARD_CLOSE_MS: u64 = 140;
-/// How far either side of now the recorder card's glass looks for the card's
-/// lowest height: longer than the two ever land apart on screen, so the glass
-/// never shows past the card's edge.
-pub const CARD_GLASS_SKEW_MS: u64 = 120;
+/// A recorder card fades in place, its whole window at once: in over
+/// `CARD_IN_MS` as it opens, out over `CARD_OUT_MS` as it closes. Replaced
+/// by another, it fades out and the new one in over `CARD_SWAP_MS` between
+/// them, moving and resizing while there is nothing to see.
+pub const CARD_IN_MS: u64 = 140;
+pub const CARD_OUT_MS: u64 = 100;
+pub const CARD_SWAP_MS: u64 = 120;
 /// The recorder bar's controls fade in over this long when it changes what
 /// it is — ready, counting, recording, writing the file. The bar itself
 /// keeps its size and place.

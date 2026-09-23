@@ -158,6 +158,24 @@ public func resizeLauncherOptions(_ view: UnsafeMutableRawPointer?, _ width: Dou
     }
 }
 
+/// Fades the options card's whole window — its paint and the frosted material
+/// under it together, so the two can never land apart — to `alpha` over
+/// `seconds`; 0 sets it at once. Nothing here calls back into GPUI, so it runs
+/// in the caller's update: a window about to be shown is already clear.
+@_cdecl("subtake_fade_launcher_options")
+public func fadeLauncherOptions(_ view: UnsafeMutableRawPointer?, _ alpha: Double, _ seconds: Double) {
+    guard let options = borrowedView(view)?.window else { return }
+    NSAnimationContext.runAnimationGroup { context in
+        context.duration = seconds
+        context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        options.animator().alphaValue = CGFloat(alpha)
+    }
+    // A fade of no length lands now, over whatever fade was running.
+    if seconds <= 0 {
+        options.alphaValue = CGFloat(alpha)
+    }
+}
+
 @_cdecl("subtake_position_launcher_options")
 public func positionLauncherOptions(
     _ optionsView: UnsafeMutableRawPointer?,

@@ -484,22 +484,21 @@ setting and land in place when it is on.
 - A picked inspector panel fades in and rises 6 (`PANEL_ENTER_*`, 180 ms).
   Into a sub-panel (Crop, Background, Shortcuts) it slides in from 24 to the
   right instead, and back out to its parent from the left (`PANEL_DRILL_*`).
-- A recorder card grows up out of the bar as it opens (`CARD_OPEN_MS`) and
-  folds back as it closes (`CARD_CLOSE_MS`); a swap to a taller or shorter
-  card eases between the heights (`CARD_RESIZE_MS`). The options window
-  holds the taller height while it eases, and its frosted material follows
-  the card rather than the window. The frost never shows past the card's
-  edge: it takes the card's lowest height over `CARD_GLASS_SKEW_MS` either
-  side of now, since the two reach the screen by different routes, and a
-  closing card drops it at once. The open card holds keyboard focus so it
-  eases at the display's rate, and hands it back to the bar as it hides.
-  The frost takes the app's light or dark theme, not the Mac's.
-  The card's window opens hidden and shows once it sits above the bar, and
-  each resize puts it back above the bar in the same move. Under Reduce
-  motion a just-opened card stays undrawn until its window has grown to
-  fit, so it appears whole. A swap under Reduce motion holds the old
-  card's plate empty until the new card's rows are measured and the window
-  fits them, rather than drawing the new rows at the old height.
+- A recorder card fades in place, its whole window at once, so the card's
+  paint and the frosted material under it can never land apart: in over
+  `CARD_IN_MS` (140) as it opens, out over `CARD_OUT_MS` (100) as it
+  closes, and the window hides once it is clear. Opening another card
+  fades the open one out and the new one in over `CARD_SWAP_MS` (120)
+  between them; the window moves and resizes while it is clear, so a card
+  never slides, grows or shows at the old card's size. A card shows only
+  once its rows are measured and its window is their height, and it is
+  always drawn at that height, the frost matching it. The open card holds
+  keyboard focus and hands it back to the bar as it hides. The frost takes
+  the app's light or dark theme, not the Mac's. Under Reduce motion every
+  fade is a cut. Not drawn by the design: the handoff cross-fades one card
+  into the next; with one window for every card, the old fades out before
+  the new fades in. `SUBTAKE_GALLERY_SCREEN=card-cycle` opens, swaps and
+  closes the cards on a timer.
 - The recorder bar keeps its size and place; when it turns from ready to
   counting to recording to writing, its controls fade in (`BAR_SWAP_MS`).
 - Pausing eases the clock from red to `sunk` and dims its count to 60%
