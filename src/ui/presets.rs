@@ -259,8 +259,10 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         look.radius,
         look.shadow * 100.
     );
+    let id = ElementId::from(SharedString::from(format!("look-{}", look.name)));
+    let hover_key = subtake_ui::motion::tween_key(&id, "hover");
     let mut row = div()
-        .id(SharedString::from(format!("look-{}", look.name)))
+        .id(id)
         .relative()
         .flex()
         .items_center()
@@ -293,7 +295,14 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
             .child(icon("Check-regular", theme.accent))
             .child(selection_ring(Theme::RADIUS_ROW, theme));
     } else {
-        row = row.hover(|s| s.bg(theme.hover));
+        // The hover wash fades, as every other row's does.
+        row = row
+            .bg(subtake_ui::motion::hover_blend(
+                &hover_key,
+                theme.hover.opacity(0.),
+                theme.hover,
+            ))
+            .on_hover(subtake_ui::motion::hover_listener(hover_key));
     }
     row
 }

@@ -523,6 +523,13 @@ impl RootView {
         enabled: bool,
     ) -> Stateful<Div> {
         let theme = self.theme;
+        // The hover wash fades in and out, as every other control's does.
+        let hover_key = subtake_ui::motion::tween_key(&id.into(), "hover");
+        let (rest, hover) = if plate {
+            (theme.sunk, theme.sunk2)
+        } else {
+            (theme.hover.opacity(0.), theme.hover)
+        };
         div()
             .id(id)
             .flex()
@@ -531,9 +538,9 @@ impl RootView {
             .justify_center()
             .size(px(Theme::RECORD_HEIGHT))
             .rounded_full()
-            .when(plate, |s| s.bg(theme.sunk))
+            .bg(subtake_ui::motion::hover_blend(&hover_key, rest, hover))
             .when(enabled, |s| {
-                s.hover(move |s| s.bg(if plate { theme.sunk2 } else { theme.hover }))
+                s.on_hover(subtake_ui::motion::hover_listener(hover_key))
                     .cursor_pointer()
             })
             .when(!enabled, |s| s.opacity(Theme::DISABLED_OPACITY))
