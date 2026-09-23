@@ -278,6 +278,11 @@ impl Theme {
     /// A zoomed lane runs on under the headers, blurred by 16 behind them.
     /// Not drawn by the design, whose lanes stop at the track column.
     pub const LANE_HEADER_BLUR: f32 = 16.0;
+    /// A lane turned off: a slash 22 long and 1.5 wide through its glyph,
+    /// and its regions at 40%.
+    pub const LANE_SLASH_LENGTH: f32 = 22.0;
+    pub const LANE_SLASH_WIDTH: f32 = 1.5;
+    pub const LANE_OFF_ALPHA: f32 = 0.4;
     /// The band above the ruler the playhead's bubble lives in, and the air
     /// between the ruler and the first lane.
     pub const BUBBLE_ZONE: f32 = 34.0;

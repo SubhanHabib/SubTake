@@ -341,32 +341,114 @@ fn playhead_tail(color: Hsla) -> Canvas<()> {
 }
 
 /// A lane's header: a 44 circle on `sunk` with a hairline and the lane's
-/// glyph, centred in a row the lane's own height so the two line up.
-fn lane_header(label: &str, theme: Theme) -> Div {
+/// glyph, centred in a row the lane's own height so the two line up. It
+/// turns the lane off and on. Off, it loses its plate, its glyph goes
+/// `muted` with a slash through it, and its tooltip says so. Not drawn by
+/// the design: the press's 0.94 scale, which gpui cannot give a div; and an
+/// off header does not blur a zoomed lane running under it, since the blur
+/// on its own reads as the plate it has lost.
+fn lane_header(
+    label: &str,
+    off: bool,
+    theme: Theme,
+    on_toggle: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+) -> Div {
+    let id: ElementId = SharedString::from(format!("lane-{label}")).into();
+    let hover_key = subtake_ui::motion::tween_key(&id, "hover");
+    let (rest, hovered) = if off {
+        (gpui::transparent_black(), theme.hover)
+    } else {
+        (theme.sunk, theme.sunk2)
+    };
+    let ink = if off { theme.muted } else { theme.text };
+    let tip = format!("{} · {}", lane_name(label), lane_state(label, off));
+    let button = subtake_ui::pressable(
+        div()
+            .id(id)
+            .relative()
+            .size(px(Theme::LANE_HEADER))
+            .flex()
+            .items_center()
+            .justify_center()
+            .rounded_full()
+            .bg(subtake_ui::motion::hover_blend(&hover_key, rest, hovered))
+            .when(!off, |el| {
+                el.shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)])
+            }),
+        theme,
+        Some(theme.press),
+        hover_key.clone(),
+    )
+    .child(subtake_ui::icon_sized(
+        lane_icon(label),
+        Theme::LANE_HEADER_ICON,
+        ink,
+    ))
+    .when(off, |el| el.child(lane_slash(ink)))
+    .tooltip(move |_, cx| tooltip(tip.clone(), theme, cx))
+    .on_click(on_toggle);
     div()
         .h(px(lane_height(label)))
         .flex()
         .flex_none()
         .items_center()
-        // Frosted, so a zoomed lane running on under it blurs away behind
-        // its glyph rather than cutting through it.
-        .child(frosted(
-            Theme::LANE_HEADER / 2.,
-            Theme::LANE_HEADER_BLUR,
-            div()
-                .size(px(Theme::LANE_HEADER))
-                .flex()
-                .items_center()
-                .justify_center()
-                .rounded_full()
-                .bg(theme.sunk)
-                .shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)])
-                .child(subtake_ui::icon_sized(
-                    lane_icon(label),
-                    Theme::LANE_HEADER_ICON,
-                    theme.text,
-                )),
-        ))
+        // On, frosted, so a zoomed lane running on under it blurs away
+        // behind its glyph rather than cutting through it.
+        .child(if off {
+            layered(button).into_any_element()
+        } else {
+            frosted(Theme::LANE_HEADER / 2., Theme::LANE_HEADER_BLUR, button).into_any_element()
+        })
+}
+
+/// A lane's name in its header's tooltip.
+fn lane_name(label: &str) -> &'static str {
+    match label {
+        "Zoom" => "Zooms",
+        "Clip" => "Clips",
+        "Annotation" => "Annotations",
+        "Caption" => "Captions",
+        _ => "Audio",
+    }
+}
+
+/// What turning a lane off means: the audio lane is muted, and every other
+/// lane hidden from the preview and the export.
+fn lane_state(label: &str, off: bool) -> &'static str {
+    match (label == "Audio", off) {
+        (true, true) => "muted",
+        (true, false) => "on",
+        (false, true) => "hidden",
+        (false, false) => "shown",
+    }
+}
+
+/// The slash through an off lane's glyph: 22 long and 1.5 wide at -45°,
+/// in the glyph's colour, over the header's middle.
+fn lane_slash(color: Hsla) -> Canvas<()> {
+    canvas(
+        |_, _, _| {},
+        move |bounds, _, window, _| {
+            let centre = bounds.center();
+            let half = Theme::LANE_SLASH_LENGTH / 2.;
+            let side = Theme::LANE_SLASH_WIDTH / 2.;
+            let diagonal = std::f32::consts::FRAC_1_SQRT_2;
+            // Along the slash, bottom left to top right, and across it.
+            let along = |t: f32| point(px(t * diagonal), px(-t * diagonal));
+            let across = |t: f32| point(px(t * diagonal), px(t * diagonal));
+            let mut path = PathBuilder::fill();
+            path.move_to(centre - along(half) - across(side));
+            path.line_to(centre + along(half) - across(side));
+            path.line_to(centre + along(half) + across(side));
+            path.line_to(centre - along(half) + across(side));
+            path.close();
+            if let Ok(path) = path.build() {
+                window.paint_path(path, color);
+            }
+        },
+    )
+    .absolute()
+    .inset_0()
 }
 
 /// How short and how tall the console's top edge can drag the lane region:
@@ -868,6 +950,8 @@ impl RootView {
             };
             let height = lane_height(&labels[region.row as usize]);
             let take = region.is_take();
+            // An off lane's regions show at 40%, and still select and edit.
+            let lane_off = self.lanes_off.contains(&labels[region.row as usize]);
             let (mut start, mut end) = (region.start, region.end);
             if let Some(Gesture::Region {
                 region: dragged,
@@ -927,6 +1011,7 @@ impl RootView {
                 .h(px(height))
                 .rounded_full()
                 .bg(fill)
+                .when(lane_off, |el| el.opacity(Theme::LANE_OFF_ALPHA))
                 .on_hover(subtake_ui::motion::hover_listener(hover_key))
                 .when(moving, |el| el.shadow(theme.panel_shadow()))
                 // Held, a region dims as every pressed control does, and
@@ -1365,6 +1450,29 @@ impl RootView {
                     ))
                 });
         }
+        let headers: Vec<Div> = shown
+            .iter()
+            .map(|&row| {
+                let label = labels[row].clone();
+                let first = row == 0 || labels[row - 1] != label;
+                if !first {
+                    return div().h(px(lane_height(&label)));
+                }
+                let off = self.lanes_off.contains(&label);
+                let toggled = label.clone();
+                lane_header(
+                    &label,
+                    off,
+                    theme,
+                    cx.listener(move |s, _: &ClickEvent, _, cx| {
+                        if !s.lanes_off.remove(&toggled) {
+                            s.lanes_off.insert(toggled.clone());
+                        }
+                        cx.notify();
+                    }),
+                )
+            })
+            .collect();
         let console = panel(theme)
             .id("timeline")
             .relative()
@@ -1421,15 +1529,7 @@ impl RootView {
                                     .flex_shrink_0()
                                     .gap(px(Theme::LANE_GAP))
                                     .pt(px(Theme::LANE_STACK_TOP))
-                                    .children(shown.iter().map(|&row| {
-                                        let label = &labels[row];
-                                        let first = row == 0 || labels[row - 1] != *label;
-                                        if first {
-                                            lane_header(label, theme)
-                                        } else {
-                                            div().h(px(lane_height(label)))
-                                        }
-                                    })),
+                                    .children(headers),
                             )),
                     )
                     // The top fades by what is scrolled past it, so a

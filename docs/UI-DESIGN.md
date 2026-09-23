@@ -167,11 +167,22 @@ The track column starts with a 34 band for the playhead's bubble, then the
 ruler, 10 of air and the lanes, 8 apart. Lanes are 44 and the clip lane 52,
 top to bottom Zoom, Clip, Annotation, Caption, Audio; speed and trim regions
 sit in the clip lane. There is no track under a lane, no text gutter and no
-source lane: regions float on the console's glass, the headers name the
-lanes, and the recording's frames are drawn inside its clips. A header is a
-44 circle on `sunk` with a hairline and the lane's glyph at 17 in `text`
+source lane: regions float on the console's glass, the headers name the lanes,
+and the recording's frames are drawn inside its clips. A header is a 44 circle
+on `sunk` with a hairline and the lane's glyph at 17 in `text`
 (`MagnifyingGlassPlus`, `FilmStrip`, `TextT`, `ClosedCaptioning`,
-`MusicNotes`), centred on its lane.
+`MusicNotes`), centred on its lane. A press on a header turns its lane off, or
+on again: the audio lane is muted and every other lane hidden. Off, the header
+loses its plate and its glyph goes `muted` with a 1.5 slash 22 long at −45°
+through it, and the lane's regions show at 40%, still selectable and editable.
+Under the pointer a header goes to `sunk2`, or `hover` when off; pressed, to
+`press`; focused from the keyboard, it takes the 3 `accent_soft` ring. Its
+tooltip names the lane and its state, `Captions · hidden`.
+`SUBTAKE_GALLERY_SCREEN=lanes-off` has the captions hidden and the sound
+muted. Not drawn by the design: the press's 0.94 scale; and an off header does
+not blur a lane running under it. Not wired: the preview and the export still
+show a hidden lane and play a muted one, and the state is not saved; the
+right-click menu (Lock, Solo, Remove lane).
 
 A lane with nothing on it is not drawn, header included; adding a region of
 its kind brings it back. `SUBTAKE_GALLERY_SCREEN=lanes-sparse` has only zooms
