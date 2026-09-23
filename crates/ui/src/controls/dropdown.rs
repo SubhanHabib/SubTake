@@ -82,6 +82,10 @@ impl Render for Dropdown {
         let theme = self.theme;
         let open = self.open;
         let row = self.glyph.is_some() || self.caption.is_some();
+        // Focus lives on the wrapper, which also holds the menu, so the ring
+        // is drawn on the trigger by hand: gpui's `focus_visible` only styles
+        // the element that owns the focus handle.
+        let ring = self.focus.is_focused(window) && window.last_input_was_keyboard();
         let label = self
             .items
             .get(self.selected)
@@ -157,6 +161,7 @@ impl Render for Dropdown {
                         FontWeight::MEDIUM
                     })
                     .text_color(theme.text)
+                    .when(ring, |s| s.shadow(vec![crate::focus_ring(theme)]))
                     .opacity(if self.enabled {
                         1.
                     } else {
