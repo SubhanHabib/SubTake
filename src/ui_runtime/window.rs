@@ -368,7 +368,11 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                 window_min_size: is_editor.then_some(size(px(980.), px(680.))),
                 is_resizable: is_editor,
                 focus: runtime.0.kind != WindowKind::Countdown,
-                show: true,
+                // The card's window opens hidden and is shown once it sits
+                // above the bar; shown at once, its first frames land wherever
+                // AppKit put it — a card still folded to a dark line, or under
+                // Reduce motion the whole card jumping into place.
+                show: runtime.0.kind != WindowKind::Options,
                 display_id: display,
                 ..Default::default()
             };
@@ -442,6 +446,12 @@ pub(super) fn sync_windows(cx: &mut gpui::App) -> Result<()> {
                         });
                         if let Some(launcher) = launcher {
                             let _ = crate::platform::position_launcher_options(&runtime, &launcher);
+                        }
+                        if let Some(view) = runtime.native_view() {
+                            unsafe {
+                                crate::platform::ui_window_show(view);
+                                crate::platform::ui_window_make_key(view);
+                            }
                         }
                     }
                 });
