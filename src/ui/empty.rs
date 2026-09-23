@@ -85,8 +85,23 @@ impl RootView {
         };
         let mut shadows = theme.panel_shadow();
         shadows.push(hairline(theme.line, Theme::BORDER_WIDTH));
+        let id = ElementId::from(SharedString::from(format!("recent-{}", recent.key)));
+        let hover_key = subtake_ui::motion::tween_key(&id, "hover");
+        // Not drawn by the design: the card's hover, a `hover` wash laid
+        // over the glass rather than mixed into it, so the glass keeps its
+        // own translucency.
+        let wash = div()
+            .absolute()
+            .inset_0()
+            .rounded(px(Theme::RADIUS_ROW))
+            .bg(subtake_ui::motion::hover_blend(
+                &hover_key,
+                theme.hover.opacity(0.),
+                theme.hover,
+            ));
         let mut card = div()
-            .id(SharedString::from(format!("recent-{}", recent.key)))
+            .id(id)
+            .relative()
             .flex()
             .flex_col()
             .flex_1()
@@ -95,7 +110,8 @@ impl RootView {
             .p(px(Theme::RECENT_CARD_PADDING))
             .rounded(px(Theme::RADIUS_ROW))
             .bg(theme.glass)
-            .shadow(shadows)
+            .shadow(shadows.clone())
+            .child(wash)
             .child(thumbnail)
             .child(
                 div()
@@ -120,7 +136,18 @@ impl RootView {
                     ),
             );
         if enabled {
-            card = card.cursor_pointer().on_click(self.command(&recent.key));
+            // `pressable`'s ring would replace the card's lift rather than
+            // join it, since a shadow list is set whole, so the card states
+            // its own.
+            let mut focused = shadows;
+            focused.push(subtake_ui::focus_ring(theme));
+            card = card
+                .cursor_pointer()
+                .tab_index(0)
+                .focus_visible(move |s| s.shadow(focused))
+                .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                .on_hover(subtake_ui::motion::hover_listener(hover_key))
+                .on_click(self.command(&recent.key));
         }
         card.into_any_element()
     }
