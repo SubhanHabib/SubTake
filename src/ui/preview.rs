@@ -35,12 +35,10 @@ pub(super) fn macos_cursor_image() -> Arc<gpui::Image> {
 /// pod changed shape every time the ratio changed.
 const ASPECT_TRIGGER_WIDTH: f32 = 96.0;
 
-/// How far the pod's zoom out and in step, the most the preview magnifies,
-/// and the readout's width, which holds "800%" so the pod keeps its shape as
-/// the figure changes.
+/// How far the pod's zoom out and in step, and the most the preview
+/// magnifies.
 const PREVIEW_ZOOM_STEP: f32 = 1.25;
 pub(super) const PREVIEW_ZOOM_MAX: f32 = 8.;
-const PREVIEW_ZOOM_READOUT_WIDTH: f32 = 44.0;
 
 /// A zoom step on its way: from and to, the pan it set out with, and when.
 #[derive(Clone, Copy)]
@@ -585,74 +583,23 @@ impl RootView {
                         )
                         .child(self.action("crop", "Crop", "visual-crop", true).compact())
                         .child(
-                            // One plate for the pair and the figure between
-                            // them, so they read as one control that is set
-                            // rather than three that are pressed.
-                            row()
-                                .gap_0()
-                                .flex_none()
-                                .rounded_full()
-                                .bg(theme.sunk)
-                                .child(
-                                    icon_button(
-                                        "preview-zoom-out",
-                                        "MagnifyingGlassMinus-regular",
-                                        "Zoom out",
-                                        theme,
-                                    )
-                                    .ghost()
-                                    .small()
-                                    .strong()
-                                    .enabled(target > 1.)
-                                    .on_click(cx.listener(
-                                        |s, _, _, cx| {
-                                            if let Surface::Editor(e) = &s.surface {
-                                                let zoom =
-                                                    s.preview_zoom_target(e) / PREVIEW_ZOOM_STEP;
-                                                s.zoom_preview(zoom, cx);
-                                            }
-                                        },
-                                    )),
-                                )
-                                .child(
-                                    div()
-                                        .w(px(PREVIEW_ZOOM_READOUT_WIDTH))
-                                        .flex_none()
-                                        .text_center()
-                                        .text_color(theme.text)
-                                        .font_features(FontFeatures(Arc::new(vec![(
-                                            "tnum".into(),
-                                            1,
-                                        )])))
-                                        .child(format!("{}%", (zoom * 100.).round())),
-                                )
-                                .child(
-                                    icon_button(
-                                        "preview-zoom-in",
-                                        "MagnifyingGlassPlus-regular",
-                                        "Zoom in",
-                                        theme,
-                                    )
-                                    .ghost()
-                                    .small()
-                                    .strong()
-                                    .enabled(target < PREVIEW_ZOOM_MAX)
-                                    .on_click(cx.listener(
-                                        |s, _, _, cx| {
-                                            if let Surface::Editor(e) = &s.surface {
-                                                let zoom =
-                                                    s.preview_zoom_target(e) * PREVIEW_ZOOM_STEP;
-                                                s.zoom_preview(zoom, cx);
-                                            }
-                                        },
-                                    )),
-                                ),
-                        )
-                        .child(
-                            button("fit-preview", "Fit", theme)
-                                .compact()
-                                .enabled(target > 1.)
-                                .on_click(cx.listener(|s, _, _, cx| s.zoom_preview(1., cx))),
+                            zoom_control("preview-zoom", zoom, theme)
+                                .can_zoom_out(target > 1.)
+                                .can_zoom_in(target < PREVIEW_ZOOM_MAX)
+                                .can_fit(target > 1.)
+                                .on_zoom_out(cx.listener(|s, _, _, cx| {
+                                    if let Surface::Editor(e) = &s.surface {
+                                        let zoom = s.preview_zoom_target(e) / PREVIEW_ZOOM_STEP;
+                                        s.zoom_preview(zoom, cx);
+                                    }
+                                }))
+                                .on_zoom_in(cx.listener(|s, _, _, cx| {
+                                    if let Surface::Editor(e) = &s.surface {
+                                        let zoom = s.preview_zoom_target(e) * PREVIEW_ZOOM_STEP;
+                                        s.zoom_preview(zoom, cx);
+                                    }
+                                }))
+                                .on_fit(cx.listener(|s, _, _, cx| s.zoom_preview(1., cx))),
                         ),
                 ))
                 .into_any_element(),

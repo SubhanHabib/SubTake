@@ -526,6 +526,9 @@ impl Theme {
     /// `FONT_SMALL` and nothing else, so it is that line plus its leading and
     /// not a row's worth of height.
     pub const RULER_HEIGHT: f32 = 16.0;
+    /// The zoom control's percentage slot: wide enough for the timeline's
+    /// "10000%", so the control holds its shape as the figure grows.
+    pub const ZOOM_READOUT_WIDTH: f32 = 52.0;
 
     /// The depth of the ramp a scroll region fades its clipped edge across,
     /// and the padding that region carries inside itself so the ramp lands on

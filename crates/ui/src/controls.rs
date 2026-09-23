@@ -14,6 +14,7 @@ mod switch;
 mod tile;
 mod timecode;
 mod tooltip;
+mod zoom;
 
 pub use button::{Button, button, focus_ring, hairline, icon_button, pressable, tool_button};
 pub use dropdown::Dropdown;
@@ -30,3 +31,4 @@ pub use switch::{switch, toggle};
 pub use tile::{choice_tile, empty_state, media_tile, swatch};
 pub use timecode::{TimecodeField, format_timecode};
 pub use tooltip::tooltip;
+pub use zoom::{ZoomControl, zoom_control};

@@ -2,6 +2,11 @@
 
 use super::*;
 
+/// How far the console's zoom out and in step, and the most the timeline
+/// magnifies: a hundredth of the take across the lanes.
+const TIMELINE_ZOOM_STEP: f32 = 1.5;
+const TIMELINE_ZOOM_MAX: f32 = 100.;
+
 /// One name in the lane gutter, on the lane's own grid: the lane's height,
 /// the label centred in it, and the gap that follows every lane below it.
 fn lane_label(text: impl Into<SharedString>, height: f32, theme: Theme) -> Div {
@@ -337,8 +342,8 @@ impl RootView {
                     .child(self.menu_button("Add", cx)),
             )
             .child(div().flex_1())
-            // Snap keeps the accent plate while engaged; the zoom cluster is
-            // icon-only so the strip stays quiet.
+            // Snap keeps the accent plate while engaged; the zoom is the
+            // stage's own control, so the two zooms read alike.
             .child(
                 row()
                     .gap(px(Theme::GAP_SMALL))
@@ -350,41 +355,27 @@ impl RootView {
                             .on_click(move |_, _, _| editor.set_snap(!editor.get_snap())),
                     )
                     .child(
-                        icon_button(
-                            "fit-timeline",
-                            "ArrowsOutSimple-regular",
-                            "Fit timeline",
-                            theme,
-                        )
-                        .ghost()
-                        .on_click(cx.listener(|s, _, _, _| {
-                            if let Surface::Editor(window) = &s.surface {
-                                window.set_timeline_zoom(1.);
-                                window.set_timeline_offset(0.);
-                            }
-                        })),
-                    )
-                    .child(
-                        icon_button(
-                            "zoom-out",
-                            "MagnifyingGlassMinus-regular",
-                            "Zoom out",
-                            theme,
-                        )
-                        .ghost()
-                        .on_click(move |_, _, _| {
-                            editor_out
-                                .set_timeline_zoom((editor_out.get_timeline_zoom() / 1.5).max(1.))
-                        }),
-                    )
-                    .child(
-                        icon_button("zoom-in", "MagnifyingGlassPlus-regular", "Zoom in", theme)
-                            .ghost()
-                            .on_click(move |_, _, _| {
-                                editor_in.set_timeline_zoom(
-                                    (editor_in.get_timeline_zoom() * 1.5).min(100.),
+                        zoom_control("timeline-zoom", window.get_timeline_zoom(), theme)
+                            .can_zoom_out(window.get_timeline_zoom() > 1.)
+                            .can_zoom_in(window.get_timeline_zoom() < TIMELINE_ZOOM_MAX)
+                            .can_fit(window.get_timeline_zoom() > 1.)
+                            .on_zoom_out(move |_, _, _| {
+                                editor_out.set_timeline_zoom(
+                                    (editor_out.get_timeline_zoom() / TIMELINE_ZOOM_STEP).max(1.),
                                 )
-                            }),
+                            })
+                            .on_zoom_in(move |_, _, _| {
+                                editor_in.set_timeline_zoom(
+                                    (editor_in.get_timeline_zoom() * TIMELINE_ZOOM_STEP)
+                                        .min(TIMELINE_ZOOM_MAX),
+                                )
+                            })
+                            .on_fit(cx.listener(|s, _, _, _| {
+                                if let Surface::Editor(window) = &s.surface {
+                                    window.set_timeline_zoom(1.);
+                                    window.set_timeline_offset(0.);
+                                }
+                            })),
                     ),
             );
         // The ruler: eight ticks, which is the redesign's every-12.5%, set in
@@ -782,7 +773,7 @@ impl RootView {
                             window.get_timeline_offset() + fraction * window.get_timeline_visible();
                         window.set_timeline_zoom(
                             (window.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
-                                .clamp(1., 100.),
+                                .clamp(1., TIMELINE_ZOOM_MAX),
                         );
                         window.set_timeline_offset(
                             (anchor - fraction * window.get_timeline_visible()).clamp(
