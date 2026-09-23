@@ -92,6 +92,7 @@ pub struct Button {
     /// Set the caption in the mono face — a duration, a count, anything whose
     /// digits must not shove the glyph beside them as they change.
     mono: bool,
+    tabular: bool,
     /// Full-width, left-aligned: the shape a control takes as a menu row.
     selected: bool,
     enabled: bool,
@@ -112,6 +113,7 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         detail: None,
         caret: false,
         mono: false,
+        tabular: false,
         selected: false,
         enabled: true,
         stretch: false,
@@ -165,6 +167,14 @@ impl Button {
     /// The caption in the mono face: a countdown, an elapsed clock, a count.
     pub fn mono(mut self) -> Self {
         self.mono = true;
+        self
+    }
+
+    /// The caption's figures all one width, in the interface face: a number
+    /// inside a sentence that changes while the pill is on screen, so the
+    /// pill holds its width instead of twitching with each digit.
+    pub fn tabular(mut self) -> Self {
+        self.tabular = true;
         self
     }
 
@@ -475,6 +485,9 @@ impl RenderOnce for Button {
         if !self.icon_only {
             let caption = div()
                 .when(self.mono, |s| s.font_family(FONT_MONO))
+                .when(self.tabular, |s| {
+                    s.font_features(FontFeatures(std::sync::Arc::new(vec![("tnum".into(), 1)])))
+                })
                 .text_ellipsis()
                 .child(self.label.clone());
             el = el.child(match self.detail {

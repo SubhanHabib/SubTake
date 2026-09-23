@@ -442,6 +442,7 @@ impl RootView {
                                 theme,
                             )
                             .ghost()
+                            .tabular()
                             .on_click(cx.listener(|s, _, _, cx| {
                                 if let Surface::Editor(e) = &s.surface {
                                     e.set_preview_zoom(1.);

@@ -343,7 +343,9 @@ Pinch over the timeline zooms between 1x and 100x, anchoring the time under the
 pointer. Pinch over the stage magnifies from Fit to 8x, anchoring the image
 point under the gesture; two-finger scroll pans, and Fit resets both. All of it
 is viewport state — none of it touches project content, the playhead, or the
-exported framing.
+exported framing. The Fit pill's percentage is set in tabular figures so the
+pill holds its width while a pinch runs. `SUBTAKE_GALLERY_SCREEN=zoom-111` (any
+percentage) opens the gallery magnified.
 
 ## Motion
 

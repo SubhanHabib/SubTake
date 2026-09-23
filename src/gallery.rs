@@ -123,6 +123,12 @@ pub fn run() -> Result<()> {
             gallery.borrow_mut().set_value("webcam.enabled", "false");
             editor.set_panel("Webcam".into());
         }
+        // The stage magnified, `zoom-111` for 111%: the Fit pill's figures.
+        Ok(screen) if screen.starts_with("zoom-") => {
+            if let Ok(percent) = screen[5..].parse::<f32>() {
+                editor.set_preview_zoom(percent / 100.);
+            }
+        }
         // Any other panel by its name, `panel-Frame` through `panel-Recent`.
         Ok(screen) if screen.starts_with("panel-") => editor.set_panel(screen[6..].into()),
         Ok("cursor-hidden") => {
