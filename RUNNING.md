@@ -81,7 +81,7 @@ python3 scripts/build_env.py build --locked
 ## Checks before a commit
 
 ```sh
-cargo fmt --all -- --check && cargo check --all-targets && cargo test --all-targets && cargo clippy --all-targets && python3 scripts/check-ui-primitives.py
+cargo fmt --all -- --check && cargo check --all-targets && cargo test --all-targets && cargo clippy --all-targets && python3 scripts/check-ui-primitives.py && scripts/test-native.sh
 ```
 
 Conventions for the code itself are in [docs/CONVENTIONS.md](docs/CONVENTIONS.md).

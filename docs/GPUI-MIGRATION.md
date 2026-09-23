@@ -21,7 +21,7 @@ Known accessibility limitation: desktop inspection exposed the native window and
 
 ## Ownership and runtime
 
-The core editor and recorder use GPUI surfaces with shared tokens in `crates/theme` and controls in `crates/ui`. `src/ui_state.rs` preserves the EditorWindow get/set/on/invoke model contract; `src/ui_runtime.rs` provides application lifecycle, timers and image adaptation. Preserving a callback API does not prove that a rendered control invokes it. The optional HyperFrames workspace intentionally retains WKWebView in `scripts/agent-workspace.m`.
+The core editor and recorder use GPUI surfaces with shared tokens in `crates/theme` and controls in `crates/ui`. `src/ui_state.rs` preserves the EditorWindow get/set/on/invoke model contract; `src/ui_runtime.rs` provides application lifecycle, timers and image adaptation. Preserving a callback API does not prove that a rendered control invokes it. The optional HyperFrames workspace intentionally retains WKWebView in `native/AgentWorkspace.swift`.
 
 The development supervisor watches `src/`, `crates/theme/`, `crates/ui/`, `scripts/`, `assets/`, and root Cargo/build files. Rust, crate manifests, Metal sources, fonts and image assets trigger rebuilds. It compiles the application binary before requesting a normal quit, retains the current app on build failure, and respects recording/busy state and unsaved-document cancellation. `--once` still supervises the launched child but skips source-triggered rebuilds.
 

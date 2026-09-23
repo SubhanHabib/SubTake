@@ -1,6 +1,6 @@
 # SubTake
 
-A native Rust/GPUI desktop editor with a shared Skia compositor and an in-process FFmpeg decoder. The core editor and recorder use native GPUI surfaces; macOS recording uses ScreenCaptureKit and AVFoundation helpers. The optional HyperFrames workspace intentionally retains its WKWebView integration in `scripts/agent-workspace.m` within this migration's scope.
+A native Rust/GPUI desktop editor with a shared Skia compositor and an in-process FFmpeg decoder. The core editor and recorder use native GPUI surfaces; macOS recording uses ScreenCaptureKit and AVFoundation helpers. The optional HyperFrames workspace intentionally retains its WKWebView integration in `native/AgentWorkspace.swift` within this migration's scope.
 
 **Status: GPUI migration implemented, with fresh local validation.** The all-target test run passed 68 tests with 1 ignored; all 11 packaged UI smoke cases passed, including visible-label OCR. Real mouse/keyboard checks verified opening the Cursor panel, numeric Enter commit, seeking and undo. See the [GPUI validation record and remaining gates](docs/GPUI-MIGRATION.md) and [packaged UI evidence](docs/gpui-ui-validation.json). Physical gestures, accessibility, real microphone/camera/system-audio capture combinations, long-session validation and public distribution remain unchecked. Earlier Slint results in [PARITY.md](docs/PARITY.md) are historical, not GPUI certification. [WINDOWS-HANDOFF.md](docs/WINDOWS-HANDOFF.md) separates unfinished shared work from Windows-only work.
 
@@ -80,7 +80,7 @@ Runtime overrides: `SUBTAKE_RESOURCES`, `SUBTAKE_FFMPEG`, `SUBTAKE_FFPROBE`, `SU
 | `media.rs`, `native_decoder.rs`, `scripts/decoder.c`, `render.rs`, `export.rs` | Runtime discovery, probing/decoding, native composition, audio mixing/playback, MP4/GIF export, cancellation |
 | `captions.rs`, `caption_editing.rs`, `segmentation.rs`, `transcription.rs`, `models.rs`, `subtitles.rs` | Caption layout/animation, local Whisper, model download, subtitle import/export timing |
 | `preferences.rs`, `library.rs`, `presets.rs`, `localization.rs`, `shortcuts.rs`, `app.rs`, `ui_state.rs`, `ui_runtime.rs`, `gpui_views.rs`, `crates/ui/`, `crates/theme/`, `inspector.rs` | Preferences, bindings, native editor, timeline, inspector, tray and recording controls |
-| `platform.rs`, `scripts/*.swift`, `scripts/file-events.m` | Platform boundary: capture, telemetry/devices, fullscreen HUD and Finder document events |
+| `platform.rs`, `scripts/*.swift`, `native/*.swift` | Platform boundary: capture, telemetry/devices, fullscreen HUD and Finder document events |
 
 The shared Rust and GPUI code is used directly by the Mac build and is the implementation Windows should retain. Windows capture methods currently return explicit unsupported errors. No Windows or Linux build has been executed here.
 

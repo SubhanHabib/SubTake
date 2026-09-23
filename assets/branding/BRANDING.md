@@ -8,7 +8,7 @@ rounded-square handle. Preserve this geometry when changing icon renditions.
   image-generation tool from the selected A1.3 concept.
 - `SubTake.icns`: macOS app rendition; regenerate with `python3 scripts/build-icons.py`.
 - `menu-bar.svg`: optically drawn 18pt outline companion.
-- `../../scripts/brand-mark.h`: matching AppKit vector drawing, rendered as a
+- `../../native/BrandMark.swift`: matching AppKit vector drawing, rendered as a
   native template image so macOS supplies the light/dark foreground colour.
 
 Both packaged and development builds use this identity. Runtime app artwork is
