@@ -358,6 +358,12 @@ setting and land in place when it is on.
   closing card drops it at once. The open card holds keyboard focus so it
   eases at the display's rate, and hands it back to the bar as it hides.
   The frost takes the app's light or dark theme, not the Mac's.
+  The card's window opens hidden and shows once it sits above the bar, and
+  each resize puts it back above the bar in the same move. Under Reduce
+  motion a just-opened card stays undrawn until its window has grown to
+  fit, so it appears whole. Not wired: a swap under Reduce motion still
+  draws the new card at the old height for one frame, before its rows
+  are measured.
 - The recorder bar keeps its size and place; when it turns from ready to
   counting to recording to writing, its controls fade in (`BAR_SWAP_MS`).
 - Pausing eases the clock from red to `sunk` and dims its count to 60%
