@@ -33,6 +33,8 @@
 //! `SUBTAKE_GALLERY_LANES=100` and `SUBTAKE_GALLERY_INSPECTOR=460` start the
 //! lane region and the inspector at a height and width their edges could be
 //! dragged to (`SUBTAKE_HOVER_PIN=resize` shows both grips).
+//! `SUBTAKE_GALLERY_INPUTS=off` turns the recorder's microphone, system
+//! audio and camera off, so its bar shows them struck through.
 //! `SUBTAKE_GALLERY_OPEN=aspect` opens the inspector dropdown with that id
 //! (the aspect pod's menu), as a click on its trigger would.
 //! `SUBTAKE_HOVER_PIN=switch,look` holds every control whose tween key
@@ -128,6 +130,14 @@ pub fn run() -> Result<()> {
     seed_recorder(&launcher, &options);
     // The title pill's status chip says where the window's data comes from.
     editor.set_status("Gallery mode".into());
+    // `SUBTAKE_GALLERY_INPUTS=off` starts the recorder with the microphone,
+    // system audio and camera off, on whichever bar the screen shows.
+    if std::env::var("SUBTAKE_GALLERY_INPUTS").as_deref() == Ok("off") {
+        let g = gallery.borrow();
+        for key in ["camera", "microphone", "system_audio"] {
+            g.option(key, "false");
+        }
+    }
     match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
         Ok("empty") => editor.set_has_video(false),
         Ok("presets") => editor.set_dialog("presets".into()),

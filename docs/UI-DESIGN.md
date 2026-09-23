@@ -395,6 +395,13 @@ not tracked out, because gpui sets no letter spacing.
 `rec-stopping`) opens the gallery with the bar in that state — `rec-counting`
 with the on-screen count too; Record in the gallery runs the whole sequence.
 
+The microphone and the camera say whether they are live by the same rule on
+every bar, idle, recording and paused: on is a 60 round `sunk` plate under a
+`text` glyph, off no plate under the struck-through glyph
+(`MicrophoneSlash`, `VideoCameraSlash`) in `muted`. The grip, More and Close
+are `text` at full strength. `SUBTAKE_GALLERY_INPUTS=off` starts the gallery
+with both off, on any of those screens.
+
 The recorder's windows are borderless, and macOS gives a borderless window no
 corner mask, so the editor's window material would fill the frame square behind
 a rounded plate. Instead each recorder window gets a native material masked to

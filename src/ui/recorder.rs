@@ -137,7 +137,7 @@ impl RootView {
                     .w(px(Theme::RECORDER_HANDLE))
                     .h(px(Theme::RECORD_HEIGHT))
                     .cursor(CursorStyle::ClosedHand)
-                    .child(icon("DotsSixVertical-regular", theme.muted))
+                    .child(icon("DotsSixVertical-regular", theme.text))
                     .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
             );
         }
@@ -184,9 +184,10 @@ impl RootView {
             }
             bar = bar.child(sources);
             // Audio and camera say their state with the glyph and the plate,
-            // not with an accent edge: a struck-through microphone on no
-            // plate is off, a microphone on `sunk` is on. The accent has four
-            // jobs in this design and "the mic is live" is not one of them.
+            // not with an accent edge: a struck-through microphone in `muted`
+            // on no plate is off, a microphone in `text` on `sunk` is on. The
+            // accent has four jobs in this design and "the mic is live" is
+            // not one of them.
             for (id, glyph, label, on) in [
                 (
                     "audio",
@@ -210,11 +211,14 @@ impl RootView {
                 ),
             ] {
                 let launcher = state.clone();
-                let mut control = button(id, label, theme).bar().glyph(glyph).icon_only();
-                if !on {
-                    control = control.ghost();
-                }
-                bar = bar.child(control.on_click(move |_, _, _| Self::toggle_panel(&launcher, id)));
+                bar = bar.child(
+                    button(id, label, theme)
+                        .bar()
+                        .glyph(glyph)
+                        .icon_only()
+                        .toggled(on)
+                        .on_click(move |_, _, _| Self::toggle_panel(&launcher, id)),
+                );
             }
             let launcher = state.clone();
             bar = bar.child(
@@ -231,6 +235,7 @@ impl RootView {
                     .glyph("DotsThree-regular")
                     .icon_only()
                     .ghost()
+                    .strong()
                     .on_click(move |_, _, _| Self::toggle_panel(&launcher, "more")),
             );
             let launcher = state.clone();
@@ -271,6 +276,7 @@ impl RootView {
             icon_button("close", "X-regular", "Hide recorder", theme)
                 .large()
                 .ghost()
+                .strong()
                 .on_click(self.command("hide-launcher")),
         );
         swap(bar)
@@ -379,8 +385,9 @@ impl RootView {
             div().flex().flex_none().child(pause),
         );
         // Whether the microphone and the camera are in this capture is fixed
-        // when it starts, so these say it rather than change it: on or off
-        // is the glyph, never the colour.
+        // when it starts, so these say it rather than change it, by the rule
+        // the idle bar uses: on is a `sunk` plate and a `text` glyph, off no
+        // plate, the struck-through glyph and `muted`.
         let mic = state.get_microphone() || state.get_system_audio();
         let camera = state.get_camera();
         bar.child(clock)
@@ -402,8 +409,8 @@ impl RootView {
                 } else {
                     "No audio"
                 },
-                theme.muted,
-                false,
+                if mic { theme.text } else { theme.muted },
+                mic,
                 None,
             ))
             .child(self.bar_round(
@@ -418,8 +425,8 @@ impl RootView {
                 } else {
                     "No camera"
                 },
-                theme.muted,
-                false,
+                if camera { theme.text } else { theme.muted },
+                camera,
                 None,
             ))
             .child(
