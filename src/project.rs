@@ -347,6 +347,11 @@ impl History {
 
 pub fn parse_color(text: &str) -> [u8; 4] {
     let text = text.trim().trim_start_matches('#');
+    if text.len() == 8
+        && let Ok(n) = u32::from_str_radix(text, 16)
+    {
+        return [(n >> 24) as u8, (n >> 16) as u8, (n >> 8) as u8, n as u8];
+    }
     if text.len() == 6
         && let Ok(n) = u32::from_str_radix(text, 16)
     {

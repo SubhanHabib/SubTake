@@ -500,19 +500,37 @@ impl Scene {
         let ty = cam.y;
         canvas.translate((tx as f32, ty as f32));
         canvas.scale((cam.scale as f32, cam.scale as f32));
+        // Three layers, as a window is lifted off a desktop: a tight contact
+        // shadow at the edge, a key shadow under it and a wide ambient one,
+        // each drawn in from the frame so only the contact reaches the sides.
+        // One intensity scales all three; `shadowColor` tints them, so a
+        // shadow on a coloured wallpaper darkens it rather than greying it.
         let shadow = document.number("shadowIntensity", 0.3).clamp(0., 1.) as f32;
         if shadow > 0. {
-            let mut s = paint(Color::from_argb((shadow * 180.) as u8, 0, 0, 0));
-            s.set_image_filter(sk::image_filters::blur(
-                (18. * unit, 18. * unit),
-                None,
-                None,
-                None,
-            ));
-            canvas.draw_rrect(
-                RRect::new_rect_xy(frame.with_offset((0., 12. * unit)), radius, radius),
-                &s,
-            );
+            let [r, g, b, _] = crate::project::parse_color(document.text("shadowColor", "#000000"));
+            // (down, blur sigma, drawn in, alpha at full intensity), in
+            // 1920-wide pixels.
+            for (down, sigma, inset, alpha) in [
+                (2., 2., 0., 0.28),
+                (18., 22., 8., 0.44),
+                (50., 60., 20., 0.40),
+            ] {
+                let mut s = paint(Color::from_argb(
+                    (shadow * alpha * 255.).round() as u8,
+                    r,
+                    g,
+                    b,
+                ));
+                s.set_mask_filter(sk::MaskFilter::blur(
+                    sk::BlurStyle::Normal,
+                    sigma * unit,
+                    None,
+                ));
+                let layer = frame
+                    .with_inset((inset * unit, inset * unit))
+                    .with_offset((0., down * unit));
+                canvas.draw_rrect(RRect::new_rect_xy(layer, radius, radius), &s);
+            }
         }
         canvas.save();
         canvas.clip_path(&squircle(frame, radius), None, true);
@@ -533,6 +551,16 @@ impl Scene {
             frame,
             &Paint::default(),
         );
+        // A hairline just inside the frame's edge, so a recording the colour
+        // of its wallpaper still ends somewhere. The stroke is centred on the
+        // clip, which keeps the inner half of it.
+        let edge = color(document.text("frameEdgeColor", "transparent"));
+        if edge.a() > 0 {
+            let mut pen = paint(edge);
+            pen.set_style(sk::PaintStyle::Stroke)
+                .set_stroke_width(3. * unit);
+            canvas.draw_path(&squircle(frame, radius), &pen);
+        }
         if document.flag("showCursor", true) {
             self.draw_cursor(canvas, document, source_time * 1000., frame, &crop)?;
         }
