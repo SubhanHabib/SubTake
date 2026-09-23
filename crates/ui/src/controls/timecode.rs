@@ -9,7 +9,7 @@ use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
 use super::input::{Copy, Cut, Paste, SelectAll, Undo};
-use crate::focus_ring;
+use crate::{focus_ring, motion};
 
 /// How far one pixel of drag moves the time, and how far with Shift held.
 const SCRUB_MS_PER_PIXEL: f64 = 10.0;
@@ -115,6 +115,7 @@ impl Render for TimecodeField {
             self.blur_observer = Some(cx.on_blur(&self.focus, window, |s, w, cx| s.finish(w, cx)));
         }
         let theme = self.theme;
+        let hover_key = format!("timecode-{:?}-hover", cx.entity_id());
         let scrubbing = self.scrubbing();
         let value = match &self.typed {
             // The whole value, selected: the next key replaces it.
@@ -152,9 +153,9 @@ impl Render for TimecodeField {
             .h(px(Theme::CONTROL_HEIGHT_LARGE))
             .px(px(Theme::CONTROL_PADDING_LARGE))
             .rounded_full()
-            .bg(theme.sunk)
+            .bg(motion::hover_blend(&hover_key, theme.sunk, theme.sunk2))
             .when(self.enabled, |el| {
-                el.hover(|s| s.bg(theme.sunk2))
+                el.on_hover(motion::hover_listener(hover_key.clone()))
                     .cursor(CursorStyle::ResizeLeftRight)
             })
             .when(!self.enabled, |el| el.opacity(Theme::DISABLED_OPACITY))
