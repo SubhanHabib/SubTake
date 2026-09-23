@@ -195,6 +195,7 @@ impl RootView {
             content = content.child(self.field(e, field, window, cx));
         }
 
+        let delete_hover = subtake_ui::motion::tween_key(&"delete-region".into(), "hover");
         content = content.child(divider(theme)).child(
             div()
                 .id("delete-region")
@@ -207,8 +208,13 @@ impl RootView {
                 .rounded_full()
                 .cursor_pointer()
                 .text_color(theme.danger)
-                .hover(|s| s.bg(theme.hover))
-                .active(|s| s.bg(theme.press))
+                .bg(subtake_ui::motion::hover_blend(
+                    &delete_hover,
+                    theme.hover.opacity(0.),
+                    theme.hover,
+                ))
+                .on_hover(subtake_ui::motion::hover_listener(delete_hover))
+                .active(|s| s.bg(theme.press).opacity(Theme::PRESSED_OPACITY))
                 .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
                 .child(icon_sized("X-regular", Theme::ICON_SIZE, theme.danger))
                 .child("Delete region")
