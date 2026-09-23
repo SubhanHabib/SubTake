@@ -131,7 +131,20 @@ impl RootView {
             None => (target, target, now, CARD_RESIZE_MS),
         };
         self.card_ease = Some(ease);
-        let height = at(ease);
+        let mut height = at(ease);
+        // Under Reduce motion no opening covers the moment the window takes
+        // to grow to the card: drawn at once, the card shows with its top
+        // cut off. It waits, undrawn, until it fits — and not on its first
+        // frame, whose height is from before its rows were measured.
+        self.card_unfit = still && open && (fresh || self.card_unfit);
+        if self.card_unfit {
+            if fresh || f32::from(window.viewport_size().height) + 0.5 < height {
+                height = 0.;
+                window.request_animation_frame();
+            } else {
+                self.card_unfit = false;
+            }
+        }
         if !open && height == 0. {
             let state = state.clone();
             crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {

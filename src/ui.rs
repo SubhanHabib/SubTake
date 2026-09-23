@@ -257,6 +257,9 @@ pub struct RootView {
     /// The recorder card's height as it eases: from, to, since when and
     /// over how long.
     card_ease: Option<(f32, f32, Instant, u64)>,
+    /// Under Reduce motion, a card just opened whose window has yet to grow
+    /// to fit it.
+    card_unfit: bool,
     /// The card last open, which a closing card keeps drawing as it folds
     /// away, and the window's `opens` it was opened under.
     card_last: (String, u32),
@@ -312,6 +315,7 @@ impl RootView {
             panel_drill: (String::new(), 0.),
             inspector_slide: None,
             card_ease: None,
+            card_unfit: false,
             card_last: (String::new(), 0),
             pill_morph: None,
             title_pill: Rc::new(Cell::new(Bounds::default())),
