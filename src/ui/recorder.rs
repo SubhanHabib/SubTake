@@ -333,6 +333,8 @@ impl RootView {
         let clock = clock
             .bg(subtake_ui::motion::blend(theme.rec, theme.sunk, held))
             .text_color(subtake_ui::motion::blend(white(), theme.text, held));
+        // Not drawn by the design: Resume's hover, a white lift over `rec`.
+        let resume_hover = subtake_ui::motion::tween_key(&"pause".into(), "hover");
         let pause = if paused {
             // Resume takes Pause's place in `rec`: the one way back into
             // the capture, in the capture's own colour.
@@ -343,20 +345,31 @@ impl RootView {
                 .h(px(Theme::RECORD_HEIGHT))
                 .px(px(Theme::RECORDER_PILL_PADDING))
                 .rounded_full()
-                .bg(theme.rec)
+                .bg(subtake_ui::motion::hover_blend(
+                    &resume_hover,
+                    theme.rec,
+                    theme.rec.blend(white().opacity(0.12)),
+                ))
                 .text_color(white())
                 .font_weight(FontWeight::MEDIUM)
                 .whitespace_nowrap()
-                .when(enabled, |s| s.cursor_pointer())
+                .when(enabled, |s| pressable(s, theme, resume_hover))
                 .when(!enabled, |s| s.opacity(Theme::DISABLED_OPACITY))
                 .child(icon_sized("Play-fill", Theme::ICON_SIZE_POD, white()))
                 .child("Resume")
                 .when(enabled, |s| s.on_click(self.command("pause-recording")))
                 .into_any_element()
         } else {
-            self.bar_round("pause", "Pause-fill", "Pause", theme.text, true, enabled)
-                .when(enabled, |s| s.on_click(self.command("pause-recording")))
-                .into_any_element()
+            self.bar_round(
+                "pause",
+                "Pause-fill",
+                "Pause",
+                theme.text,
+                true,
+                Some(enabled),
+            )
+            .when(enabled, |s| s.on_click(self.command("pause-recording")))
+            .into_any_element()
         };
         // Pause and Resume fade in as they trade places.
         let pause = fade_in(
@@ -371,7 +384,7 @@ impl RootView {
         bar.child(clock)
             .child(pause)
             .child(
-                self.bar_round("stop", "Stop-fill", "Stop", theme.text, true, enabled)
+                self.bar_round("stop", "Stop-fill", "Stop", theme.text, true, Some(enabled))
                     .when(enabled, |s| s.on_click(self.command("stop-recording"))),
             )
             .child(div().flex_1())
@@ -389,7 +402,7 @@ impl RootView {
                 },
                 theme.muted,
                 false,
-                true,
+                None,
             ))
             .child(self.bar_round(
                 "capture-camera",
@@ -405,7 +418,7 @@ impl RootView {
                 },
                 theme.muted,
                 false,
-                true,
+                None,
             ))
             .child(
                 self.bar_round(
@@ -414,7 +427,7 @@ impl RootView {
                     "Discard recording",
                     theme.danger,
                     false,
-                    enabled,
+                    Some(enabled),
                 )
                 .when(enabled, |s| s.on_click(self.command("discard-recording"))),
             )
@@ -435,6 +448,7 @@ impl RootView {
         } else {
             "mic off"
         };
+        let cancel_hover = subtake_ui::motion::tween_key(&"cancel".into(), "hover");
         bar.child(
             round_plate(theme).child(
                 mono(count.to_string())
@@ -456,9 +470,12 @@ impl RootView {
                 .h(px(Theme::RECORD_HEIGHT))
                 .px(px(Theme::RECORDER_PLATE_PADDING))
                 .rounded_full()
-                .bg(theme.sunk)
-                .hover(move |s| s.bg(theme.sunk2))
-                .cursor_pointer()
+                .bg(subtake_ui::motion::hover_blend(
+                    &cancel_hover,
+                    theme.sunk,
+                    theme.sunk2,
+                ))
+                .map(|s| pressable(s, theme, cancel_hover))
                 .whitespace_nowrap()
                 .child("Cancel")
                 .child(
@@ -513,6 +530,9 @@ impl RootView {
 
     /// A 60 round control on the bar. `plate` is the `sunk` fill Pause and
     /// Stop stand on; without it the control is bare glass until hovered.
+    /// `enabled` is `None` for an indicator: the microphone and camera say
+    /// what the capture holds and cannot change it, so they take the shape
+    /// and the tooltip and none of a control's states.
     fn bar_round(
         &self,
         id: &'static str,
@@ -520,7 +540,7 @@ impl RootView {
         label: &'static str,
         color: Hsla,
         plate: bool,
-        enabled: bool,
+        enabled: Option<bool>,
     ) -> Stateful<Div> {
         let theme = self.theme;
         // The hover wash fades in and out, as every other control's does.
@@ -539,11 +559,10 @@ impl RootView {
             .size(px(Theme::RECORD_HEIGHT))
             .rounded_full()
             .bg(subtake_ui::motion::hover_blend(&hover_key, rest, hover))
-            .when(enabled, |s| {
-                s.on_hover(subtake_ui::motion::hover_listener(hover_key))
-                    .cursor_pointer()
+            .when(enabled == Some(true), |s| pressable(s, theme, hover_key))
+            .when(enabled == Some(false), |s| {
+                s.opacity(Theme::DISABLED_OPACITY)
             })
-            .when(!enabled, |s| s.opacity(Theme::DISABLED_OPACITY))
             .tooltip(move |_, cx| tooltip(label, theme, cx))
             .child(icon_sized(glyph, Theme::ICON_SIZE_LARGE, color))
     }
@@ -554,6 +573,19 @@ impl RootView {
         state.set_panel(value.into());
         state.defer_panel(value.into());
     }
+}
+
+/// A bar control's pointer, hover, press and keyboard focus, as a `Button`
+/// carries them: the press is the `press` fill plus a dim, and the ring shows
+/// only when the keyboard put focus there.
+fn pressable(el: Stateful<Div>, theme: Theme, hover_key: String) -> Stateful<Div> {
+    let ring = subtake_ui::focus_ring(theme);
+    let press = theme.press;
+    el.cursor_pointer()
+        .tab_index(0)
+        .focus_visible(move |s| s.shadow(vec![ring]))
+        .active(move |s| s.bg(press).opacity(Theme::PRESSED_OPACITY))
+        .on_hover(subtake_ui::motion::hover_listener(hover_key))
 }
 
 /// The bar's 60 round `sunk` plate: it holds the count, or the spinner.
