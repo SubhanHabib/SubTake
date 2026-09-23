@@ -353,6 +353,7 @@ impl RootView {
             let block_id: ElementId =
                 SharedString::from(format!("region-{}-{}", region.kind, region.id)).into();
             let hover_key = subtake_ui::motion::tween_key(&block_id, "hover");
+            let mark_key = hover_key.clone();
             let hover_fill = tint.opacity(if region.selected {
                 Theme::REGION_FILL_SELECTED_HOVER
             } else {
@@ -361,7 +362,6 @@ impl RootView {
             let ring = subtake_ui::focus_ring(theme);
             let mut block = div()
                 .id(block_id)
-                .group("region")
                 .absolute()
                 .left(relative((start - offset) / visible))
                 .top(px(region.row as f32 * Theme::LANE_PITCH))
@@ -470,14 +470,15 @@ impl RootView {
                             .w(px(Theme::REGION_HANDLE_WIDTH))
                             .h(px(Theme::LANE_HEIGHT - Theme::REGION_HANDLE_MARGIN * 2.0))
                             .rounded(px(Theme::REGION_HANDLE_RADIUS))
-                            .bg(tint.opacity(if selected {
-                                Theme::REGION_HANDLE_ALPHA
-                            } else {
-                                0.
-                            }))
-                            .group_hover("region", move |s| {
-                                s.bg(tint.opacity(Theme::REGION_HANDLE_ALPHA))
-                            })
+                            .bg(subtake_ui::motion::hover_blend(
+                                &mark_key,
+                                tint.opacity(if selected {
+                                    Theme::REGION_HANDLE_ALPHA
+                                } else {
+                                    0.
+                                }),
+                                tint.opacity(Theme::REGION_HANDLE_ALPHA),
+                            ))
                             // Not drawn by the design: a held handle's mark
                             // goes to the full tint, so the grab reads before
                             // the edge has moved.
