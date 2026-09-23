@@ -799,13 +799,15 @@ fn follow_playhead(editor: &EditorWindow, time: f32) {
     }
 }
 
+/// The transport's clock in hundredths, as the playhead chip writes it, so
+/// the two read the same time.
 fn time_label(time: f32) -> String {
-    let frames = ((time - time.floor()) * 30.) as u32;
+    let centis = (time * 100.).round() as u32;
     format!(
         "{:02}:{:02}.{:02} / {:02}:{:02}",
-        (time as u32) / 60,
-        (time as u32) % 60,
-        frames,
+        centis / 6000,
+        (centis / 100) % 60,
+        centis % 100,
         (DURATION as u32) / 60,
         (DURATION as u32) % 60
     )

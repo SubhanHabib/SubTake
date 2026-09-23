@@ -298,12 +298,18 @@ impl Theme {
     /// target is not a target.
     pub const REGION_HANDLE_TARGET: f32 = 10.0;
 
-    /// The playhead: a rule the full height of the lane stack with a dot at
-    /// its head, and a soft ring around the dot so it reads on a lane painted
-    /// in its own tint.
+    /// The playhead: a rule the full height of the lane stack, with its
+    /// time on an accent chip over the ruler in place of a head.
     pub const PLAYHEAD_WIDTH: f32 = 2.0;
-    pub const PLAYHEAD_DOT: f32 = 16.0;
-    pub const PLAYHEAD_RING: f32 = 4.0;
+    pub const PLAYHEAD_CHIP_HEIGHT: f32 = 20.0;
+    pub const PLAYHEAD_CHIP_PADDING: f32 = 8.0;
+    /// The least room between two ruler labels, and the clearance a label
+    /// keeps from the playhead's chip before it is hidden.
+    pub const RULER_LABEL_SPACING: f32 = 80.0;
+    pub const RULER_CHIP_CLEARANCE: f32 = 4.0;
+    /// Geist Mono's advance, as a share of its size: every glyph is 600 of
+    /// the face's 1000 units, so a mono label's width is known before layout.
+    pub const MONO_ADVANCE: f32 = 0.6;
 
     /// A slider row's thumb: a 4 × 20 bar on the fill edge under the pointer,
     /// taller — inset 10 rather than 12 — while it is held.

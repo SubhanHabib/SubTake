@@ -7,6 +7,27 @@ use super::*;
 const TIMELINE_ZOOM_STEP: f32 = 1.5;
 const TIMELINE_ZOOM_MAX: f32 = 100.;
 
+/// The ruler's tick intervals, in seconds. It takes the smallest that keeps
+/// its labels `RULER_LABEL_SPACING` apart at the current zoom.
+const RULER_INTERVALS: [f32; 9] = [1., 2., 5., 10., 15., 30., 60., 120., 300.];
+
+/// A time as the ruler and the playhead chip write it: `m:ss`, or `m:ss.cc`
+/// with hundredths — the transport's own format, so the two agree.
+fn ruler_clock(seconds: f32, hundredths: bool) -> String {
+    let centis = (seconds.max(0.) * 100.).round() as u64;
+    let (minutes, rest) = (centis / 6000, centis % 6000);
+    if hundredths {
+        format!("{minutes}:{:02}.{:02}", rest / 100, rest % 100)
+    } else {
+        format!("{minutes}:{:02}", rest / 100)
+    }
+}
+
+/// How wide a label is in the small mono face, known before layout.
+fn mono_small_width(text: &str) -> f32 {
+    text.chars().count() as f32 * Theme::FONT_SMALL * Theme::MONO_ADVANCE
+}
+
 /// One name in the lane gutter, on the lane's own grid: the lane's height,
 /// the label centred in it, and the gap that follows every lane below it.
 fn lane_label(text: impl Into<SharedString>, height: f32, theme: Theme) -> Div {
@@ -378,15 +399,41 @@ impl RootView {
                             })),
                     ),
             );
-        // The ruler: eight ticks, which is the redesign's every-12.5%, set in
-        // Geist Mono so a tick's width does not change with its digits.
+        // The playhead's chip, placed here because the ruler hides any
+        // label it would crowd. Centred on the line, and held inside the
+        // track at either end rather than cut off by it.
+        let track_width = f32::from(self.timeline_bounds.get().size.width);
+        let playhead = (window.get_playhead() - offset) / visible;
+        let playhead_shown = (0. ..=1.).contains(&playhead);
+        let chip_label = ruler_clock(window.get_playhead(), true);
+        let chip_width = mono_small_width(&chip_label) + Theme::PLAYHEAD_CHIP_PADDING * 2.;
+        let chip_left = (playhead * track_width - chip_width / 2.)
+            .clamp(0., (track_width - chip_width).max(0.));
+        // The ruler, in `m:ss` as the transport counts, at the smallest
+        // interval that keeps its labels apart; zooming in picks a finer
+        // one. A label that would come within a hair of the chip is left
+        // out until the playhead moves on — hidden, not faded, so it never
+        // shows half-covered.
+        let interval = RULER_INTERVALS
+            .into_iter()
+            .find(|seconds| seconds / visible * track_width >= Theme::RULER_LABEL_SPACING)
+            .unwrap_or(RULER_INTERVALS[RULER_INTERVALS.len() - 1]);
         let mut ruler = div().relative().h(px(Theme::RULER_HEIGHT));
-        for i in 0..8 {
-            ruler = ruler.child(
-                mono_small(format!("{:.1}s", offset + visible * i as f32 / 8.), theme)
-                    .absolute()
-                    .left(relative(i as f32 / 8.)),
-            );
+        if track_width > 0. {
+            let first = (offset / interval).ceil() as i64;
+            let last = ((offset + visible) / interval).floor() as i64;
+            for tick in first..=last {
+                let seconds = tick as f32 * interval;
+                let label = ruler_clock(seconds, false);
+                let left = (seconds - offset) / visible * track_width;
+                let right = left + mono_small_width(&label);
+                let crowded = playhead_shown
+                    && left - Theme::RULER_CHIP_CLEARANCE < chip_left + chip_width
+                    && right + Theme::RULER_CHIP_CLEARANCE > chip_left;
+                if right <= track_width && !crowded {
+                    ruler = ruler.child(mono_small(label, theme).absolute().left(px(left)));
+                }
+            }
         }
         // The source lane: the recording's frames, on the same 36 as every
         // other lane. It carried the document's title over a shorter strip,
@@ -638,7 +685,6 @@ impl RootView {
             }
             tracks = tracks.child(block);
         }
-        let playhead = (window.get_playhead() - offset) / visible;
         let mut timeline = column()
             .id("timeline-content")
             .relative()
@@ -659,37 +705,41 @@ impl RootView {
                     cx.stop_propagation();
                 }),
             );
-        if (0. ..=1.).contains(&playhead) {
-            // A 2px accent rule the full height of the stack, with a dot at
-            // its head. The dot carries a soft accent ring so it stays
-            // legible where it crosses a region painted in its lane's tint.
-            let dot = Theme::PLAYHEAD_DOT;
-            timeline = timeline.child(
-                div()
-                    .absolute()
-                    .left(relative(playhead))
-                    .ml(px(-Theme::PLAYHEAD_WIDTH / 2.0))
-                    .top_0()
-                    .bottom_0()
-                    .w(px(Theme::PLAYHEAD_WIDTH))
-                    .bg(theme.accent)
-                    .child(
-                        div()
-                            .absolute()
-                            .top(px(-dot / 2.0))
-                            .left(px((Theme::PLAYHEAD_WIDTH - dot) / 2.0))
-                            .size(px(dot))
-                            .rounded_full()
-                            .bg(theme.accent)
-                            .shadow(vec![BoxShadow {
-                                color: theme.accent_soft,
-                                offset: point(px(0.), px(0.)),
-                                blur_radius: px(0.),
-                                spread_radius: px(Theme::PLAYHEAD_RING),
-                                inset: false,
-                            }]),
-                    ),
-            );
+        if playhead_shown {
+            // A 2px accent rule the full height of the stack, and its time
+            // on an accent chip over the ruler. The chip replaced a round
+            // head, which sat on the ruler label under it.
+            //
+            // Not drawn by the design: the chip at the stack's top edge
+            // rather than 2 above it. The stack clips at its top, and 20 tall
+            // from there it fills the ruler and the gap under it exactly.
+            timeline = timeline
+                .child(
+                    div()
+                        .absolute()
+                        .left(relative(playhead))
+                        .ml(px(-Theme::PLAYHEAD_WIDTH / 2.0))
+                        .top_0()
+                        .bottom_0()
+                        .w(px(Theme::PLAYHEAD_WIDTH))
+                        .rounded_full()
+                        .bg(theme.accent),
+                )
+                .child(
+                    mono(chip_label)
+                        .absolute()
+                        .top_0()
+                        .left(px(chip_left))
+                        .flex()
+                        .items_center()
+                        .h(px(Theme::PLAYHEAD_CHIP_HEIGHT))
+                        .px(px(Theme::PLAYHEAD_CHIP_PADDING))
+                        .rounded_full()
+                        .bg(theme.accent)
+                        .text_color(theme.on_accent)
+                        .text_size(px(Theme::FONT_SMALL))
+                        .font_weight(FontWeight::MEDIUM),
+                );
         }
         let console =
             panel(theme)

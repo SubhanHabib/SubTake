@@ -165,7 +165,14 @@ document's title over a shorter strip of frames; the titlebar already names
 the document, so the source lane is only its frames. The stack has a 78px
 label gutter 14 from the tracks. A region is its lane's tint at four strengths: `22` at rest, `2e` under the pointer, `3d` when selected,
 `66` for the edge. The playhead is a 2px accent rule the full height of the
-stack with a 16px dot and a soft accent ring.
+stack, with its time as `m:ss.cc` on a 20-tall accent chip over the ruler, in
+Geist Mono 500 at 11. The ruler counts in `m:ss`, at the smallest of 1, 2, 5,
+10, 15, 30, 60, 120 or 300 seconds that keeps its labels 80 apart, recomputed
+as the timeline zooms; a label within 4 of the chip is hidden until the
+playhead moves on. Not drawn by the design: the chip at the stack's top edge
+rather than 2 above it, since the stack clips at its top. Not wired: the
+app's transport still reads milliseconds (`00:37.150`); the gallery's reads
+hundredths, as the chip does.
 
 A region's label sits on one line and ends in an ellipsis when the region is
 shorter than it. A region under 48 wide shows no label at all, since there is
