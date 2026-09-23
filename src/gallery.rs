@@ -29,6 +29,7 @@
 //! (for a panel too long for 880); `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen);
 //! `=status-cycle` swaps the title pill's status chip to a running job and back on a timer;
+//! `=card-cycle` opens, swaps and closes the recorder cards on a timer, for their fades;
 //! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
 //! `SUBTAKE_GALLERY_LANES=100` and `SUBTAKE_GALLERY_INSPECTOR=460` start the
 //! lane region and the inspector at a height and width their edges could be
@@ -98,6 +99,26 @@ fn cycle_status(editor: EditorWindow, on: bool) {
     });
     Timer::single_shot(Duration::from_millis(1500), move || {
         cycle_status(editor, !on)
+    });
+}
+
+/// The recorder cards in turn, one step each `CARD_CYCLE_MS`: opened, swapped
+/// twice, closed, opened again and closed — every way a card fades.
+fn cycle_cards(gallery: Weak<RefCell<Gallery>>, step: usize) {
+    const STEPS: [&str; 6] = ["sources", "more", "audio", "", "countdown", ""];
+    const CARD_CYCLE_MS: u64 = 900;
+    let Some(g) = gallery.upgrade() else {
+        return;
+    };
+    {
+        let g = g.borrow();
+        let panel = STEPS[step % STEPS.len()];
+        g.launcher.set_panel(panel.into());
+        g.options.set_panel(panel.into());
+        g.position_options();
+    }
+    Timer::single_shot(Duration::from_millis(CARD_CYCLE_MS), move || {
+        cycle_cards(gallery, step + 1)
     });
 }
 
@@ -212,6 +233,13 @@ pub fn run() -> Result<()> {
                 g.set_value("export.format", format);
             }
             editor.set_panel("Export".into());
+        }
+        Ok("card-cycle") => {
+            let g = gallery.clone();
+            Timer::single_shot(Duration::from_millis(400), move || {
+                show_recorder(&g.borrow().launcher, &g.borrow().options);
+                cycle_cards(Rc::downgrade(&g), 0);
+            });
         }
         // A recorder card open over the bar: `card-sources`, `card-audio`,
         // `card-camera`, `card-countdown` or `card-more`. A `-busy` suffix
