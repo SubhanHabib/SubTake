@@ -4,7 +4,7 @@
 use gpui::{prelude::*, *};
 use subtake_theme::Theme;
 
-use crate::{column, motion};
+use crate::{column, focus_ring, motion};
 
 /// A flat colour sample — the one place a literal colour is the content
 /// rather than the styling, so it carries a full-strength outline when picked.
@@ -16,15 +16,27 @@ pub fn swatch(
 ) -> Stateful<Div> {
     let id = id.into();
     let pick = motion::state_fade(&motion::tween_key(&id, "fill"), selected);
+    // The pointer firms the outline up to `muted`, as it does a wallpaper
+    // tile's ring: the swatch's own fill is the content, so it is the one
+    // thing hover must not tint.
+    let hover_key = motion::tween_key(&id, "hover");
+    let ring = focus_ring(theme);
     div()
         .id(id)
         .size(px(Theme::SWATCH_SIZE))
         .rounded(px(Theme::RADIUS_LANE))
         .bg(colour)
         .border_2()
-        .border_color(motion::blend(theme.line, theme.accent, pick))
+        .border_color(motion::blend(
+            motion::hover_blend(&hover_key, theme.line, theme.muted),
+            theme.accent,
+            pick,
+        ))
         .cursor_pointer()
+        .tab_index(0)
+        .focus_visible(move |s| s.shadow(vec![ring]))
         .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+        .on_hover(motion::hover_listener(hover_key))
 }
 
 /// A captioned thumbnail in a picker grid: 48 tall at radius 14, as the
@@ -67,12 +79,18 @@ pub fn media_tile(
                     .object_fit(ObjectFit::Cover),
             )
         });
+    let focus = focus_ring(theme);
     div()
         .flex()
         .flex_col()
         .gap(px(Theme::GAP_SMALL))
         .id(id)
         .w(px(Theme::TILE_WIDTH))
+        // The radius is for the focus ring alone, which goes round the
+        // picture and its caption together: the tile is both.
+        .rounded(px(Theme::RADIUS_INNER))
+        .tab_index(0)
+        .focus_visible(move |s| s.shadow(vec![focus]))
         .cursor_pointer()
         .active(|s| s.opacity(Theme::PRESSED_OPACITY))
         .on_hover(motion::hover_listener(hover_key))
