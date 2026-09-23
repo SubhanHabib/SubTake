@@ -20,8 +20,8 @@ rather than by how big it is — 28 for a pod, 34 for the console and the
 inspector, 38 for the recorder bar.
 
 Not drawn by the design: the shell is 40% (`#fafaf966`, `#0d0d1066`) and
-`glass` and `card` are at about half the handoff's alpha, so the desktop shows
-through every surface. `scripts/dev.py --gallery=light` shows them on any
+`glass` and `card` are at about half the handoff's alpha (dark `glass` a
+little more, at 41%), so the desktop shows through every surface. `scripts/dev.py --gallery=light` shows them on any
 `panel-` screen.
 
 **There are no real borders anywhere.** Every edge is a `BoxShadow`: inset for

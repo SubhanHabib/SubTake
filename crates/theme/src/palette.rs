@@ -70,9 +70,10 @@ impl Theme {
         Self {
             appearance: Appearance::Dark,
 
-            // Not drawn by the design: as the light shell and floats.
+            // Not drawn by the design: as the light shell and floats, but
+            // `glass` at 41% — at half the handoff's it read too thin on dark.
             bg: css("#0d0d1066"),
-            glass: css("#1e1e244f"),
+            glass: css("#1e1e2469"),
             card: css("#22222964"),
             // Recesses lighten on dark: a darkening under `card` was darker
             // than the card and the plates on it vanished.
