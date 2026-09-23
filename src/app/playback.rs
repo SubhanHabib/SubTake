@@ -305,13 +305,48 @@ impl App {
                 // achromatic, which is what lets them read at all.
                 ("zoomRegions", 0, "#397afa", "Zoom"),
                 ("trimRegions", 1, "#ee5261", "Trim"),
-                ("speedRegions", 1, "#dc922d", "Speed"),
                 ("clipRegions", 1, "#357c65", "Clip"),
+                ("speedRegions", 1, "#dc922d", "Speed"),
                 ("annotationRegions", 2, "#cbb44f", "Annotation"),
-                ("audioRegions", 3, "#a468e9", "Audio"),
-                ("autoCaptions", 4, "#6396dc", "Caption"),
+                ("autoCaptions", 3, "#6396dc", "Caption"),
+                ("audioRegions", 4, "#a468e9", "Audio"),
                 ("nativeMarkers", 0, "#f5bb6b", "◆"),
             ] {
+                // The take itself (`Region::TAKE_CLIP`, `TAKE_AUDIO`). Not
+                // drawn by the design, which shows a take already split into
+                // clips and its sound as a voice-over.
+                let duration = self.info.as_ref().map_or(0., |i| i.duration);
+                let [red, green, blue, _] = subtake_native::project::parse_color(tint);
+                let take = |id: String, start: f64, end: f64| Region {
+                    id,
+                    kind: if key == "audioRegions" {
+                        Region::TAKE_AUDIO
+                    } else {
+                        Region::TAKE_CLIP
+                    }
+                    .into(),
+                    label: "Recording".into(),
+                    start: start as f32,
+                    end: end as f32,
+                    row,
+                    tint: ui_runtime::Color::from_rgb_u8(red, green, blue),
+                    selected: false,
+                };
+                if key == "clipRegions" && history.project.regions(key).is_empty() {
+                    for (i, span) in timeline::spans(&history.project, duration)
+                        .iter()
+                        .enumerate()
+                    {
+                        regions.push(take(
+                            format!("take-{i}"),
+                            span.source_start,
+                            span.source_end,
+                        ));
+                    }
+                }
+                if key == "audioRegions" && self.info.as_ref().is_some_and(|i| i.audio_tracks > 0) {
+                    regions.push(take("take".into(), 0., duration));
+                }
                 for r in history.project.regions(key) {
                     let [red, green, blue, _] = subtake_native::project::parse_color(tint);
                     regions.push(Region {
@@ -343,7 +378,7 @@ impl App {
             // Put overlapping overlays on separate visible lanes while preserving source timing.
             let mut labels = Vec::new();
             let base_rows = regions.iter().map(|r| r.row).collect::<Vec<_>>();
-            for (base, label) in ["Zoom", "Clip", "Annotation", "Audio", "Caption"]
+            for (base, label) in ["Zoom", "Clip", "Annotation", "Caption", "Audio"]
                 .into_iter()
                 .enumerate()
             {
@@ -356,7 +391,7 @@ impl App {
                 indices.sort_by(|a, b| regions[*a].start.total_cmp(&regions[*b].start));
                 let mut ends = vec![f32::NEG_INFINITY];
                 for index in indices {
-                    let lane = if base == 2 || base == 3 {
+                    let lane = if base == 2 || base == 4 {
                         ends.iter()
                             .position(|end| *end <= regions[index].start)
                             .unwrap_or(ends.len())
@@ -371,7 +406,7 @@ impl App {
                 }
                 labels.extend((0..ends.len()).map(|_| SharedString::from(label)));
             }
-            ui.set_audio_row(labels.iter().position(|l| l == "Audio").unwrap_or(3) as i32);
+            ui.set_audio_row(labels.iter().position(|l| l == "Audio").unwrap_or(4) as i32);
             ui.set_track_labels(ModelRc::new(VecModel::from(labels)));
             ui.set_regions(ModelRc::new(VecModel::from(regions)));
             ui.set_selected_id(

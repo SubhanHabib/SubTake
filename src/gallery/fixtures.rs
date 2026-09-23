@@ -57,10 +57,10 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
         "Zoom".to_string(),
         "Clip".into(),
         "Annotation".into(),
-        "Audio".into(),
         "Caption".into(),
+        "Audio".into(),
     ])));
-    ui.set_audio_row(3);
+    ui.set_audio_row(4);
     ui.set_wallpapers(ModelRc::new(VecModel::from(
         [
             ("Apricot", [0xf7, 0xdc, 0xc2], [0xd2, 0x7b, 0x86]),
@@ -282,27 +282,29 @@ pub(super) fn microphone_names() -> Vec<String> {
     .collect()
 }
 
-pub(super) fn fixture_regions() -> Vec<Region> {
-    pub(super) fn region(
-        kind: &str,
-        id: &str,
-        label: &str,
-        start: f32,
-        end: f32,
-        row: i32,
-        tint: u32,
-    ) -> Region {
-        Region {
-            id: id.into(),
-            kind: kind.into(),
-            label: label.into(),
-            start,
-            end,
-            row,
-            tint: Color::from_rgb_u8((tint >> 16) as u8, (tint >> 8) as u8, tint as u8),
-            selected: false,
-        }
+pub(super) fn fixture_region(
+    kind: &str,
+    id: &str,
+    label: &str,
+    start: f32,
+    end: f32,
+    row: i32,
+    tint: u32,
+) -> Region {
+    Region {
+        id: id.into(),
+        kind: kind.into(),
+        label: label.into(),
+        start,
+        end,
+        row,
+        tint: Color::from_rgb_u8((tint >> 16) as u8, (tint >> 8) as u8, tint as u8),
+        selected: false,
     }
+}
+
+pub(super) fn fixture_regions() -> Vec<Region> {
+    let region = fixture_region;
     vec![
         region("zoomRegions", "z1", "Zoom", 4., 12.5, 0, 0x397afa),
         region("zoomRegions", "z2", "Zoom", 41., 52., 0, 0x397afa),
@@ -331,12 +333,12 @@ pub(super) fn fixture_regions() -> Vec<Region> {
         ),
         region("annotationRegions", "a2", "Arrow", 86., 94., 2, 0xcbb44f),
         region(
-            "audioRegions",
-            "au1",
-            "Voice-over",
+            Region::TAKE_AUDIO,
+            "take",
+            "Recording",
             0.,
             DURATION,
-            3,
+            4,
             0xa468e9,
         ),
         region(
@@ -345,7 +347,7 @@ pub(super) fn fixture_regions() -> Vec<Region> {
             "Welcome to SubTake",
             1.,
             5.5,
-            4,
+            3,
             0x6396dc,
         ),
         region(
@@ -354,7 +356,7 @@ pub(super) fn fixture_regions() -> Vec<Region> {
             "Let's set up your workspace",
             6.,
             11.,
-            4,
+            3,
             0x6396dc,
         ),
         region(
@@ -363,7 +365,7 @@ pub(super) fn fixture_regions() -> Vec<Region> {
             "Choose a wallpaper",
             12.,
             17.,
-            4,
+            3,
             0x6396dc,
         ),
         region(
@@ -372,7 +374,7 @@ pub(super) fn fixture_regions() -> Vec<Region> {
             "And export in one click",
             120.,
             126.,
-            4,
+            3,
             0x6396dc,
         ),
     ]

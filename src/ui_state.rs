@@ -14,6 +14,18 @@ pub struct Region {
     pub selected: bool,
 }
 
+impl Region {
+    /// The take's own kept spans, drawn in the clip lane while the project
+    /// has no clips, and the take's sound, drawn first in the audio lane.
+    /// Neither is a project region, so neither is selected or dragged.
+    pub const TAKE_CLIP: &str = "takeClip";
+    pub const TAKE_AUDIO: &str = "takeAudio";
+
+    pub fn is_take(&self) -> bool {
+        self.kind == Self::TAKE_CLIP || self.kind == Self::TAKE_AUDIO
+    }
+}
+
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Field {
     pub key: String,

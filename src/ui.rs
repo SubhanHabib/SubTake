@@ -256,10 +256,6 @@ pub struct RootView {
     /// The lane region's height and the inspector's width, as their edges
     /// were last dragged. Not wired: remembering them between launches.
     lane_height: f32,
-    /// The empty lane opened under the pointer, and when the pointer left it:
-    /// it folds back `LANE_COLLAPSE_DELAY_MS` after that.
-    /// Which of its name and track hold it (`LANE_HOVER_*` bits).
-    lane_open: Option<(usize, u8, Option<Instant>)>,
     inspector_width: f32,
     preview_bounds: Rc<Cell<Bounds<Pixels>>>,
     preview_viewport: Rc<Cell<Bounds<Pixels>>>,
@@ -359,7 +355,6 @@ impl RootView {
             // The gallery cannot drag, so it can start either edge where a
             // drag would have left it.
             lane_height: env_size("SUBTAKE_GALLERY_LANES").unwrap_or(Theme::LANE_STACK_HEIGHT),
-            lane_open: None,
             inspector_width: env_size("SUBTAKE_GALLERY_INSPECTOR")
                 .map_or(PANEL_WIDTH, |w| w.clamp(PANEL_WIDTH_MIN, PANEL_WIDTH_MAX)),
             preview_bounds: Rc::new(Cell::new(Bounds::default())),

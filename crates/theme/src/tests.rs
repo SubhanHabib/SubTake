@@ -126,7 +126,6 @@ fn the_accent_is_the_only_hue_in_the_interface() {
             ("sunk2", t.sunk2),
             ("seg_active", t.seg_active),
             ("slider_fill", t.slider_fill),
-            ("lane_track", t.lane_track),
             ("plate", t.plate),
             ("switch_on", t.switch_on),
             ("raise", t.raise),

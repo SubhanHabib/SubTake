@@ -38,7 +38,6 @@ impl Theme {
             raise_line: css("#14141a14"),
             seg_active: css("#ffffff"),
             slider_fill: css("#14141a0f"),
-            lane_track: css("#14141a12"),
             plate: css("#ffffff8c"),
             switch_on: css("#5b5d65"),
 
@@ -85,7 +84,6 @@ impl Theme {
             raise_line: css("#ffffff24"),
             seg_active: css("#ffffff24"),
             slider_fill: css("#ffffff12"),
-            lane_track: css("#ffffff0d"),
             plate: css("#ffffff1f"),
             switch_on: css("#6e707a"),
 

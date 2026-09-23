@@ -264,26 +264,24 @@ impl Theme {
     pub const TOGGLE_TRAVEL: f32 =
         Self::TOGGLE_WIDTH - Self::TOGGLE_INSET * 2.0 - Self::TOGGLE_THUMB;
 
-    /// The lane stack: every lane at one height, the source lane with them.
-    /// The first handoff drew 42 for the source; the review keeps the rest
-    /// at 30.
-    pub const LANE_HEIGHT: f32 = 30.0;
-    pub const LANE_GAP: f32 = 4.0;
-    /// The column of lane names, and its gap to the tracks.
-    pub const LANE_GUTTER: f32 = 78.0;
-    pub const LANE_GUTTER_GAP: f32 = 14.0;
-    /// One lane's share of the stack: the lane plus the air under it, which
-    /// is the step from one lane's top to the next one's.
-    pub const LANE_PITCH: f32 = Self::LANE_HEIGHT + Self::LANE_GAP;
-    /// A lane with nothing on it folds to a 16-tall outlined strip, radius
-    /// 8, and opens to the full lane under the pointer.
-    pub const LANE_EMPTY_HEIGHT: f32 = 16.0;
-    pub const RADIUS_LANE_EMPTY: f32 = 8.0;
-    /// How long an opened empty lane waits after the pointer leaves before
-    /// it folds back, so a pass across the lanes does not flutter them.
-    pub const LANE_COLLAPSE_DELAY_MS: u64 = 300;
-    /// The placeholder in an opened empty lane sits this far in.
-    pub const LANE_PLACEHOLDER_PADDING: f32 = 12.0;
+    /// The lane stack: 44 lanes, the clip lane 52 for the frames it
+    /// carries, 8 between them. Regions float on the console's glass with no
+    /// track under them, and a lane with nothing on it is not drawn.
+    pub const LANE_HEIGHT: f32 = 44.0;
+    pub const CLIP_LANE_HEIGHT: f32 = 52.0;
+    pub const LANE_GAP: f32 = 8.0;
+    /// The column of round lane headers, one per lane, and its gap to the
+    /// tracks. A header is a 44 circle with a 17 glyph.
+    pub const LANE_HEADER: f32 = 44.0;
+    pub const LANE_HEADER_GAP: f32 = 10.0;
+    pub const LANE_HEADER_ICON: f32 = 17.0;
+    /// The band above the ruler the playhead's bubble lives in, and the air
+    /// between the ruler and the first lane.
+    pub const BUBBLE_ZONE: f32 = 34.0;
+    pub const RULER_GAP: f32 = 10.0;
+    /// Everything above the first lane: the bubble's band, the ruler and the
+    /// air under it. The header column starts this far down.
+    pub const LANE_STACK_TOP: f32 = Self::BUBBLE_ZONE + Self::RULER_HEIGHT + Self::RULER_GAP;
 
     // ---- timeline regions ------------------------------------------------
     //
@@ -564,10 +562,8 @@ impl Theme {
     pub const CAMERA_PREVIEW_HEIGHT: f32 = 132.0;
     pub const CAMERA_SWATCH: f32 = 44.0;
 
-    /// The strip of tick labels above the lanes. It holds one line of
-    /// `FONT_SMALL` and nothing else, so it is that line plus its leading and
-    /// not a row's worth of height.
-    pub const RULER_HEIGHT: f32 = 16.0;
+    /// The ruler: a recessed band the width of the track, radius 16.
+    pub const RULER_HEIGHT: f32 = 32.0;
     /// The zoom control's percentage slot: wide enough for the timeline's
     /// "10000%", so the control holds its shape as the figure grows.
     pub const ZOOM_READOUT_WIDTH: f32 = 52.0;
@@ -592,18 +588,21 @@ impl Theme {
     /// How far the thumb's track stops short of the region's top and bottom.
     pub const SCROLL_THUMB_INSET: f32 = 6.0;
 
-    /// The lane region's height: the stack the handoff draws — a ruler, the
-    /// source lane and five lanes. A project with more lanes than that scrolls inside the region rather
-    /// than growing the console into the stage.
+    /// The lane region's height: the stack the handoff draws — the bubble's
+    /// band, the ruler and five lanes, the clip lane among them. A project
+    /// with more lanes than that scrolls inside the region rather than
+    /// growing the console into the stage.
     ///
     /// The figure is the region's, not the console's. The console is that
     /// region plus its own padding, its transport row, and whatever else it
     /// is carrying at the time — so a line it only sometimes shows adds to
     /// its height instead of being taken out of the lanes.
-    pub const LANE_STACK_HEIGHT: f32 = Self::RULER_HEIGHT + Self::LANE_GAP + 6.0 * Self::LANE_PITCH;
+    pub const LANE_STACK_HEIGHT: f32 =
+        Self::LANE_STACK_TOP + Self::CLIP_LANE_HEIGHT + 4.0 * (Self::LANE_HEIGHT + Self::LANE_GAP);
     /// The shortest the console's top edge can drag the lane region to: the
-    /// ruler, the source lane and one more.
-    pub const LANE_STACK_MIN: f32 = Self::RULER_HEIGHT + Self::LANE_GAP + 2.0 * Self::LANE_PITCH;
+    /// ruler and two lanes.
+    pub const LANE_STACK_MIN: f32 =
+        Self::LANE_STACK_TOP + Self::CLIP_LANE_HEIGHT + Self::LANE_HEIGHT + Self::LANE_GAP;
     /// The most of the window's height the lane region can take, so a drag
     /// never leaves the stage with no picture.
     pub const LANE_STACK_MAX_SHARE: f32 = 0.5;

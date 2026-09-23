@@ -59,8 +59,6 @@ pub struct Theme {
     /// The filled part of a slider row — flat and faint, so the level reads
     /// without the row becoming a control of its own.
     pub slider_fill: Hsla,
-    /// A timeline lane's track, under its regions.
-    pub lane_track: Hsla,
     /// The round plate an icon sits on inside a timeline region or a clip's
     /// label chip: a white wash, so it lifts off any lane tint alike.
     pub plate: Hsla,
@@ -210,8 +208,7 @@ impl Theme {
 
     /// A timeline region's fill and ink, from its lane's hue. Light regions
     /// are a clear pastel with a deep ink, dark ones a muted mid-tone with
-    /// a pale ink; both put the label past 4.5:1 on its fill and the fill
-    /// clear of `lane_track`.
+    /// a pale ink; both put the label past 4.5:1 on its fill.
     pub fn region_tones(&self, tint: Hsla) -> (Hsla, Hsla) {
         let ((fill_s, fill_l), (ink_s, ink_l)) = match self.appearance {
             Appearance::Light => ((0.75, 0.82), (0.65, 0.25)),

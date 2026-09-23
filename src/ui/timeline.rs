@@ -35,19 +35,23 @@ fn region_icon(kind: &str) -> Option<&'static str> {
     }
 }
 
-/// Which part of an empty lane the pointer is over: its name or its track.
-const LANE_HOVER_LABEL: u8 = 1;
-const LANE_HOVER_TRACK: u8 = 2;
-
-/// What a click on an opened empty lane adds, and the region it names. The
-/// clip lane adds a trim, since a clip comes only from splitting the take.
-fn lane_add(label: &str) -> (&'static str, &'static str) {
+/// The glyph on a lane's header: what the lane holds.
+fn lane_icon(label: &str) -> &'static str {
     match label {
-        "Zoom" => ("add-zoom", "a zoom"),
-        "Clip" => ("add-trim", "a trim"),
-        "Annotation" => ("add-text", "an annotation"),
-        "Audio" => ("add-audio", "an audio"),
-        _ => ("add-caption", "a caption"),
+        "Zoom" => "MagnifyingGlassPlus-regular",
+        "Clip" => "FilmStrip-regular",
+        "Annotation" => "TextT-regular",
+        "Caption" => "ClosedCaptioning-regular",
+        _ => "MusicNotes-regular",
+    }
+}
+
+/// A lane's height: the clip lane is taller, for the frames it carries.
+fn lane_height(label: &str) -> f32 {
+    if label == "Clip" {
+        Theme::CLIP_LANE_HEIGHT
+    } else {
+        Theme::LANE_HEIGHT
     }
 }
 
@@ -56,22 +60,33 @@ fn mono_small_width(text: &str) -> f32 {
     text.chars().count() as f32 * Theme::FONT_SMALL * Theme::MONO_ADVANCE
 }
 
-/// One name in the lane gutter, on the lane's own grid: the lane's height,
-/// the label centred in it, and the gap that follows every lane below it.
-fn lane_label(text: impl Into<SharedString>, height: f32, theme: Theme) -> Div {
+/// A lane's header: a 44 circle on `sunk` with a hairline and the lane's
+/// glyph, centred in a row the lane's own height so the two line up.
+fn lane_header(label: &str, theme: Theme) -> Div {
     div()
-        .h(px(height))
-        .mb(px(Theme::LANE_GAP))
+        .h(px(lane_height(label)))
         .flex()
+        .flex_none()
         .items_center()
-        .flex_shrink_0()
-        .text_size(px(Theme::FONT_SECONDARY))
-        .text_color(theme.muted)
-        .child(text.into())
+        .child(
+            div()
+                .size(px(Theme::LANE_HEADER))
+                .flex()
+                .items_center()
+                .justify_center()
+                .rounded_full()
+                .bg(theme.sunk)
+                .shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)])
+                .child(subtake_ui::icon_sized(
+                    lane_icon(label),
+                    Theme::LANE_HEADER_ICON,
+                    theme.text,
+                )),
+        )
 }
 
 /// How short and how tall the console's top edge can drag the lane region:
-/// down to the source lane and one more, and up to half the window. The top
+/// down to the ruler and two lanes, and up to half the window. The top
 /// is not held to the lanes the project has, so a console at rest on a short
 /// project still drags taller, and room above the lanes waits for new ones.
 pub(super) fn lane_stack_range(window: &Window) -> (f32, f32) {
@@ -287,73 +302,6 @@ impl RootView {
         }
     }
 
-    /// The pointer entering or leaving an empty lane's name or its track.
-    /// The lane stays open while either holds it, and folds back a moment
-    /// after both have let go.
-    fn hover_lane(&mut self, lane: usize, part: u8, hovered: bool, cx: &mut Context<Self>) {
-        let held = match self.lane_open {
-            Some((open, held, _)) if open == lane => held,
-            _ => 0,
-        };
-        let held = if hovered { held | part } else { held & !part };
-        if hovered {
-            self.lane_open = Some((lane, held, None));
-        } else if matches!(self.lane_open, Some((open, _, _)) if open == lane) {
-            self.lane_open = Some((lane, held, (held == 0).then(Instant::now)));
-        }
-        cx.notify();
-    }
-
-    /// A lane with nothing on it: a 16-tall outlined strip that opens to the
-    /// full lane under the pointer, with a line saying what a click adds. A
-    /// click on the opened lane adds a region of its kind at the playhead.
-    fn empty_lane(
-        &self,
-        lane: Div,
-        index: usize,
-        label: &str,
-        open: f32,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let theme = self.theme;
-        let (action, noun) = lane_add(label);
-        let surface = self.surface.clone();
-        let lerp = subtake_ui::motion::lerp;
-        lane.id(("lane-empty", index))
-            .flex()
-            .items_center()
-            .px(px(Theme::LANE_PLACEHOLDER_PADDING))
-            .overflow_hidden()
-            .rounded(px(lerp(Theme::RADIUS_LANE_EMPTY, Theme::RADIUS_LANE, open)))
-            .bg(subtake_ui::motion::blend(
-                theme.hover.opacity(0.),
-                theme.hover,
-                open,
-            ))
-            .shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH * 2.)])
-            .cursor(CursorStyle::PointingHand)
-            .on_hover(cx.listener(move |s, hovered, _, cx| {
-                s.hover_lane(index, LANE_HOVER_TRACK, *hovered, cx)
-            }))
-            .when(open > 0., |el| {
-                el.child(
-                    div()
-                        .whitespace_nowrap()
-                        .opacity(open)
-                        .text_size(px(Theme::FONT_SMALL))
-                        .text_color(theme.muted)
-                        .child(format!("Click or drag to add {noun} region")),
-                )
-            })
-            .on_mouse_down(MouseButton::Left, move |_, _, cx| {
-                if open >= 1. {
-                    surface.action(action);
-                    cx.stop_propagation();
-                }
-            })
-            .into_any_element()
-    }
-
     pub(super) fn timeline(
         &mut self,
         window: &EditorWindow,
@@ -530,90 +478,32 @@ impl RootView {
                 }
             }
         }
-        // The source lane: the recording's frames, on the same 30 as every
-        // other lane. It carried the document's title over a shorter strip,
-        // which the titlebar already names, and it stood taller than the
-        // lanes for it.
-        let mut source = div()
-            .relative()
-            .h(px(Theme::LANE_HEIGHT))
-            .overflow_hidden()
-            .rounded(px(Theme::RADIUS_REGION))
-            .bg(theme.sunk);
-        if let Some(image) = window.get_thumbnails().0 {
-            source = source.child(
-                img(image)
-                    .absolute()
-                    .top_0()
-                    .left(relative(-offset / visible))
-                    .w(relative(window.get_timeline_zoom()))
-                    .h(px(Theme::LANE_HEIGHT))
-                    .object_fit(ObjectFit::Fill),
-            );
-        }
         let labels: Vec<String> = window.get_track_labels().iter().collect();
         let regions: Vec<Region> = window.get_regions().iter().collect();
         let audio_row = window.get_audio_row() as usize;
         let waveform = window.get_waveform().0;
-        // An empty lane folds away after the pointer has been gone from it a
-        // moment; until then frames keep coming so the fold is on time.
-        if let Some((_, _, Some(left))) = self.lane_open {
-            if left.elapsed() >= std::time::Duration::from_millis(Theme::LANE_COLLAPSE_DELAY_MS) {
-                self.lane_open = None;
-            } else {
-                win.request_animation_frame();
-            }
+        // The lanes drawn: every row with something on it, in order. A row
+        // with nothing on it is not drawn at all, header included; adding a
+        // region of its kind brings it back. Where each drawn lane starts
+        // comes from here, so a lane, its header and the blocks on it cannot
+        // drift apart.
+        let shown: Vec<usize> = (0..labels.len())
+            .filter(|&row| regions.iter().any(|r| r.row as usize == row))
+            .collect();
+        let mut tops = vec![None; labels.len()];
+        let mut stack = 0.;
+        for &row in &shown {
+            tops[row] = Some(stack);
+            stack += lane_height(&labels[row]) + Theme::LANE_GAP;
         }
-        // Each lane's height and how far open it is: a lane with anything on
-        // it is always the full 30, and an empty one folds to a 16 strip,
-        // opening to 30 under the pointer. The audio lane counts as holding
-        // the recording's waveform when there is one. Not drawn by the
-        // design: the waveform in an otherwise empty audio lane.
-        let lanes: Vec<(bool, f32)> = (0..labels.len())
-            .map(|i| {
-                let occupied = regions.iter().any(|r| r.row as usize == i)
-                    || (i == audio_row && waveform.is_some());
-                if occupied {
-                    return (true, 1.);
-                }
-                let key = subtake_ui::motion::tween_key(
-                    &SharedString::from(format!("lane-{}-{i}", labels[i])).into(),
-                    "open",
-                );
-                let open = matches!(self.lane_open, Some((j, _, _)) if j == i)
-                    || subtake_ui::motion::hover_pinned(&key);
-                (false, subtake_ui::motion::state_fade(&key, open))
-            })
-            .collect();
-        let height =
-            |t: f32| subtake_ui::motion::lerp(Theme::LANE_EMPTY_HEIGHT, Theme::LANE_HEIGHT, t);
-        // Where each lane starts: the lanes above it and the air under each.
-        // Every `top` below comes from here, so a lane, its waveform and the
-        // blocks on it cannot drift apart.
-        let tops: Vec<f32> = lanes
-            .iter()
-            .scan(0., |top, &(_, t)| {
-                let this = *top;
-                *top += height(t) + Theme::LANE_GAP;
-                Some(this)
-            })
-            .collect();
-        let stack: f32 = lanes
-            .iter()
-            .map(|&(_, t)| height(t) + Theme::LANE_GAP)
-            .sum();
+        let stack = (stack - Theme::LANE_GAP).max(0.);
         let mut tracks = div().relative().h(px(stack));
-        for (i, &(occupied, t)) in lanes.iter().enumerate() {
-            let lane = div().absolute().top(px(tops[i])).w_full().h(px(height(t)));
-            tracks = tracks.child(if occupied {
-                lane.rounded(px(Theme::RADIUS_LANE))
-                    .bg(theme.lane_track)
-                    .into_any_element()
-            } else {
-                self.empty_lane(lane, i, &labels[i], t, cx)
-            });
-        }
-        for region in window.get_regions().iter() {
+        for region in regions.iter() {
+            let Some(top) = tops.get(region.row as usize).copied().flatten() else {
+                continue;
+            };
+            let height = lane_height(&labels[region.row as usize]);
+            let take = region.is_take();
             let (mut start, mut end) = (region.start, region.end);
             if let Some(Gesture::Region {
                 region: dragged,
@@ -654,10 +544,10 @@ impl RootView {
                 .id(block_id)
                 .absolute()
                 .left(relative((start - offset) / visible))
-                .top(px(tops.get(region.row as usize).copied().unwrap_or(0.)))
+                .top(px(top))
                 .w(relative(((end - start) / visible).max(0.001)))
                 .min_w(px(Theme::GAP))
-                .h(px(Theme::LANE_HEIGHT))
+                .h(px(height))
                 .rounded(px(Theme::RADIUS_REGION))
                 .overflow_hidden()
                 .bg(subtake_ui::motion::hover_blend(
@@ -668,10 +558,14 @@ impl RootView {
                 // Held, a region dims as every pressed control does, and
                 // stays dimmed while it is dragged. Tab reaches it, and Enter
                 // or Space selects it, which is what a click does.
-                .active(|s| s.opacity(Theme::PRESSED_OPACITY))
-                .tab_index(0)
-                .focus_visible(move |s| s.shadow(edges.iter().cloned().chain([ring]).collect()))
-                .cursor(CursorStyle::ClosedHand)
+                .when(!take, |el| {
+                    el.active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                        .tab_index(0)
+                        .focus_visible(move |s| {
+                            s.shadow(edges.iter().cloned().chain([ring]).collect())
+                        })
+                        .cursor(CursorStyle::ClosedHand)
+                })
                 .child({
                     // Below the label width a region shows only its kind's
                     // icon, centred; at or above it the icon, if the kind
@@ -731,6 +625,12 @@ impl RootView {
                     subtake_ui::tooltip_detail(label.clone(), range.clone(), theme, cx)
                 });
             }
+            // The take's own clip and sound take no selection and no drag:
+            // a press on one seeks, as a press on the bare lane does.
+            if take {
+                tracks = tracks.child(block);
+                continue;
+            }
             let key_region = region.clone();
             block = block.on_click(cx.listener(move |s, event: &ClickEvent, _, cx| {
                 if !event.is_keyboard() {
@@ -789,7 +689,7 @@ impl RootView {
                             .left(px(Theme::REGION_HANDLE_INSET))
                             .top(px(Theme::REGION_HANDLE_MARGIN))
                             .w(px(Theme::REGION_HANDLE_WIDTH))
-                            .h(px(Theme::LANE_HEIGHT - Theme::REGION_HANDLE_MARGIN * 2.0))
+                            .h(px(height - Theme::REGION_HANDLE_MARGIN * 2.0))
                             .rounded(px(Theme::REGION_HANDLE_RADIUS))
                             .bg(subtake_ui::motion::hover_blend(
                                 &mark_key,
@@ -839,13 +739,13 @@ impl RootView {
         // and bottom at `55`. Not wired: the waveform in the region's ink.
         // It is an image ffmpeg paints in one colour, and gpui cannot tint
         // an image, so it keeps that colour at the review's strength.
-        if let Some(image) = waveform {
+        if let Some(image) = waveform
+            && let Some(top) = tops.get(audio_row).copied().flatten()
+        {
             tracks = tracks.child(
                 img(image)
                     .absolute()
-                    .top(px(
-                        tops.get(audio_row).copied().unwrap_or(0.) + Theme::WAVEFORM_INSET
-                    ))
+                    .top(px(top + Theme::WAVEFORM_INSET))
                     .left(relative(-offset / visible))
                     .w(relative(window.get_timeline_zoom()))
                     .h(px(Theme::LANE_HEIGHT - Theme::WAVEFORM_INSET * 2.))
@@ -858,11 +758,11 @@ impl RootView {
             .relative()
             .flex_1()
             .min_w_0()
-            .gap_1()
+            .pt(px(Theme::BUBBLE_ZONE))
+            .gap(px(Theme::RULER_GAP))
             .overflow_hidden()
             .child(measure(self.timeline_bounds.clone()))
             .child(ruler)
-            .child(source)
             .child(tracks)
             .on_mouse_down(
                 MouseButton::Left,
@@ -928,7 +828,7 @@ impl RootView {
                     fade_edges(
                         row()
                             .id("track-scroll")
-                            .gap(px(Theme::LANE_GUTTER_GAP))
+                            .gap(px(Theme::LANE_HEADER_GAP))
                             .items_start()
                             .h(px({
                                 let (min, max) = lane_stack_range(win);
@@ -937,35 +837,27 @@ impl RootView {
                             .flex_none()
                             .overflow_y_scroll()
                             .track_scroll(&self.lane_scroll)
+                            // The headers run on the track column's own grid,
+                            // row for row: down past the bubble's band, the
+                            // ruler and the air under it, then one row per
+                            // lane at that lane's height with the same gap.
+                            // A lane that overflows onto a second row shares
+                            // the first row's header. Not drawn by the
+                            // design, which gives every lane one row.
                             .child(
                                 column()
-                                    .w(px(Theme::LANE_GUTTER))
+                                    .w(px(Theme::LANE_HEADER))
                                     .flex_shrink_0()
-                                    .gap_0()
-                                    // The gutter runs on the track column's own grid,
-                                    // row for row: a spacer the height of the ruler
-                                    // and the gap under it, then one box per lane at
-                                    // that lane's height with the same gap below. A
-                                    // label is centred on its lane rather than set at
-                                    // its top, so the name and the blocks it names
-                                    // read as one line.
-                                    .child(div().h(px(Theme::RULER_HEIGHT + Theme::LANE_GAP)))
-                                    .child(lane_label("Source", Theme::LANE_HEIGHT, theme))
-                                    .children(labels.iter().enumerate().map(|(i, label)| {
-                                        let (occupied, t) = lanes[i];
-                                        let label = lane_label(label.clone(), height(t), theme);
-                                        if occupied {
-                                            return label.into_any_element();
+                                    .gap(px(Theme::LANE_GAP))
+                                    .pt(px(Theme::LANE_STACK_TOP))
+                                    .children(shown.iter().map(|&row| {
+                                        let label = &labels[row];
+                                        let first = row == 0 || labels[row - 1] != *label;
+                                        if first {
+                                            lane_header(label, theme)
+                                        } else {
+                                            div().h(px(lane_height(label)))
                                         }
-                                        // An empty lane's name is a step smaller, and
-                                        // opens the lane as its track does.
-                                        label
-                                            .id(("lane-label", i))
-                                            .when(t < 0.5, |el| el.text_size(px(Theme::FONT_SMALL)))
-                                            .on_hover(cx.listener(move |s, hovered, _, cx| {
-                                                s.hover_lane(i, LANE_HOVER_LABEL, *hovered, cx)
-                                            }))
-                                            .into_any_element()
                                     })),
                             )
                             .child(timeline),

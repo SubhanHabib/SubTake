@@ -108,10 +108,10 @@ closing has somewhere to go. `SUBTAKE_GALLERY_WIDTH=1100` shows the folded
 editor in the gallery, and `=inspector-open` the inspector slid in.
 
 The inspector's left edge and the console's top edge each take a drag: the
-inspector from 300 to 520 wide, and the lane region from the source lane and
-one more up to half the window, whatever lanes the project has. The stage
+inspector from 300 to 520 wide, and the lane region from the ruler and two
+lanes up to half the window, whatever lanes the project has. The stage
 gives or takes the difference, and a double click puts either back at rest
-(340, and six lanes). A 36×4 grip fades in on the edge under the pointer and
+(340, and five lanes). A 36×4 grip fades in on the edge under the pointer and
 stays while it is dragged. The drag follows the pointer over the floats as
 well as the stage, so it runs both ways. Not drawn by the design: the handoff's floats
 are fixed. Not wired: remembering the sizes between launches.
@@ -161,12 +161,29 @@ as three round icons. The transport belongs here and not on
 a pod: the thing that moves the playhead sits on the same surface as the
 playhead.
 
-Every lane is 30, the source lane with them, 4 between them, each on a
-`lane_track` plate at radius 12. Not drawn by
-the design: the handoff draws the source 42 over the 30 for the rest, with the
-document's title over a shorter strip of frames; the titlebar already names
-the document, so the source lane is only its frames. The stack has a 78px
-label gutter 14 from the tracks. A region is a solid fill with an ink, both from its lane's hue: in light
+The timeline is option 3a of the seek bar handoff (`Timeline 3a.md`). It is
+two columns 10 apart: a 44-wide column of lane headers and the track column.
+The track column starts with a 34 band for the playhead's bubble, then the
+ruler, 10 of air and the lanes, 8 apart. Lanes are 44 and the clip lane 52,
+top to bottom Zoom, Clip, Annotation, Caption, Audio; speed and trim regions
+sit in the clip lane. There is no track under a lane, no text gutter and no
+source lane: regions float on the console's glass, the headers name the
+lanes, and the recording's frames are drawn inside its clips. A header is a
+44 circle on `sunk` with a hairline and the lane's glyph at 17 in `text`
+(`MagnifyingGlassPlus`, `FilmStrip`, `TextT`, `ClosedCaptioning`,
+`MusicNotes`), centred on its lane.
+
+A lane with nothing on it is not drawn, header included; adding a region of
+its kind brings it back. `SUBTAKE_GALLERY_SCREEN=lanes-sparse` has only zooms
+and the recording's sound, with an imported voice-over on a second audio
+lane. Not drawn by the design: a lane that overflows onto a second row shares
+the first row's header; and the take itself — its kept spans in the clip lane
+while the project has no clips of its own, and its sound first in the audio
+lane (`Region::TAKE_CLIP`, `TAKE_AUDIO`). Neither is a project region, so a
+press on one seeks rather than selecting it. Not wired: dragging a new region
+from Add over the timeline to show its lane.
+
+A region is a solid fill with an ink, both from its lane's hue: in light
 the fill at 75% saturation and 82% lightness under an ink at 65% and 25%, in
 dark the fill at 35% and 34% under an ink at 60% and 88%. The label is
 Geist 500 at 11 in the ink, 10 in from the edge, and the trim handles' marks
@@ -183,19 +200,6 @@ playhead moves on. Not drawn by the design: the chip at the stack's top edge
 rather than 2 above it, since the stack clips at its top. Not wired: the
 app's transport still reads milliseconds (`00:37.150`); the gallery's reads
 hundredths, as the chip does.
-
-A lane with nothing on it folds to a 16-tall strip, radius 8, with no fill
-and a 1px `line` edge, its name a step down at 11. The pointer over the strip
-or its name opens it to the full 30 with a `hover` fill and "Click or drag to
-add a zoom region" at 11 `muted`, 12 in; a click on the opened lane adds a
-region of that kind at the playhead, and the lane folds back 300ms after the
-pointer leaves. The clip lane adds a trim, since a clip comes only from
-splitting the take. The source lane never folds, and the gap stays 4.
-`SUBTAKE_GALLERY_SCREEN=lanes-sparse` has only zooms and a voice-over, and
-`SUBTAKE_HOVER_PIN=lane-Annotation` holds that lane open. Not drawn by the
-design: the open runs over the 150ms of every other state fade rather than
-140; and the audio lane counts as full while it shows the recording's
-waveform. Not wired: opening on a drag over the lane.
 
 A region's label sits on one line and ends in an ellipsis when the region is
 shorter than it. Speed, trim, annotation and caption regions carry their

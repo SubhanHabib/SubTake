@@ -174,12 +174,26 @@ pub fn run() -> Result<()> {
             g.before_selection = Some("Frame".into());
         }
         Ok("selection-empty") => editor.set_panel("Selection".into()),
-        // A project with only zooms and a voice-over: every other lane folds
-        // to a strip. `SUBTAKE_HOVER_PIN=lane-Annotation` holds that one open.
-        Ok("lanes-sparse") => gallery
-            .borrow_mut()
-            .regions
-            .retain(|r| matches!(r.kind.as_str(), "zoomRegions" | "audioRegions")),
+        // A project with only zooms and its sound: every other lane is
+        // gone. An imported voice-over under the recording's sound takes a
+        // second audio lane.
+        Ok("lanes-sparse") => {
+            let mut g = gallery.borrow_mut();
+            g.regions
+                .retain(|r| matches!(r.kind.as_str(), "zoomRegions" | Region::TAKE_AUDIO));
+            g.regions.push(fixture_region(
+                "audioRegions",
+                "au1",
+                "Voice-over",
+                20.,
+                64.,
+                5,
+                0xa468e9,
+            ));
+            let mut labels: Vec<String> = editor.get_track_labels().iter().collect();
+            labels.push("Audio".into());
+            editor.set_track_labels(ModelRc::new(VecModel::from(labels)));
+        }
         // The Cursor panel, and with the cursor hidden.
         Ok("cursor") => editor.set_panel("Cursor".into()),
         // The Camera panel, and with the overlay off.
