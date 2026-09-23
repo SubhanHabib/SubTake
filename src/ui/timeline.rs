@@ -568,6 +568,9 @@ impl RootView {
         }
         let console = panel(theme)
             .id("timeline")
+            // A zoomed picture runs on under the console; the console's
+            // presses are its own.
+            .occlude()
             .mx(px(Theme::INSET))
             .mb(px(Theme::INSET))
             .flex_shrink_0()

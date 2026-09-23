@@ -215,6 +215,8 @@ pub struct RootView {
     timeline_bounds: Rc<Cell<Bounds<Pixels>>>,
     preview_bounds: Rc<Cell<Bounds<Pixels>>>,
     preview_viewport: Rc<Cell<Bounds<Pixels>>>,
+    /// The window-wide layer the picture is drawn in, under everything else.
+    preview_layer: Rc<Cell<Bounds<Pixels>>>,
     pinch: Option<(bool, f32, f32, Point<Pixels>)>,
     gesture: Option<Gesture>,
     menu: Option<String>,
@@ -309,6 +311,7 @@ impl RootView {
             timeline_bounds: Rc::new(Cell::new(Bounds::default())),
             preview_bounds: Rc::new(Cell::new(Bounds::default())),
             preview_viewport: Rc::new(Cell::new(Bounds::default())),
+            preview_layer: Rc::new(Cell::new(Bounds::default())),
             pinch: None,
             gesture: None,
             menu: None,

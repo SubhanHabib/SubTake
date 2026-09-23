@@ -214,11 +214,11 @@ impl RootView {
         e: &EditorWindow,
         window: &mut Window,
         cx: &mut Context<Self>,
-    ) -> AnyElement {
+    ) -> (AnyElement, Option<AnyElement>) {
         let theme = self.theme;
         self.sync_preview_context(e);
         if !e.get_has_video() {
-            return self.empty_stage(e);
+            return (self.empty_stage(e), None);
         }
         let viewport = self.preview_viewport.get();
         let available_w = if viewport.size.width > px(0.) {
@@ -241,10 +241,28 @@ impl RootView {
         if (e.get_preview_pixel_width() - width).abs() > 0.5 {
             e.set_preview_pixel_width(width);
         }
+        // The picture's rest centre is the stage's, and the pan moves it off
+        // that. It is drawn in a layer the size of the window, so a picture
+        // zoomed past the stage runs on under the pods, the titlebar and the
+        // console instead of being cut off at the stage's edge. The stage is
+        // still what it is sized to and what the pan is held inside, so every
+        // part of it can be brought out into the clear.
+        let layer = self.preview_layer.get();
+        let centre = if viewport.size.width > px(0.) {
+            viewport.center()
+        } else {
+            point(
+                px(STAGE_RESERVE_LEFT + available_w / 2.),
+                px(Theme::TITLEBAR_HEIGHT + Theme::STAGE_PICTURE_MARGIN + available_h / 2.),
+            )
+        };
+        let left = centre.x - layer.origin.x + self.preview_pan.x - px(width / 2.);
+        let top = centre.y - layer.origin.y + self.preview_pan.y - px(height / 2.);
         let mut picture = div()
             .id("preview-image")
-            .relative()
-            .flex_shrink_0()
+            .absolute()
+            .left(left)
+            .top(top)
             .w(px(width))
             .h(px(height))
             .rounded(px(Theme::STAGE_PICTURE_RADIUS))
@@ -262,6 +280,11 @@ impl RootView {
         picture = picture.on_mouse_down(
             MouseButton::Left,
             cx.listener(|s, event: &MouseDownEvent, _, cx| {
+                // Past the stage the picture is only showing through: the
+                // console, the titlebar and the pods above it take the press.
+                if !s.preview_viewport.get().contains(&event.position) {
+                    return;
+                }
                 if let Surface::Editor(e) = &s.surface {
                     let b = s.preview_bounds.get();
                     e.invoke_preview_click(
@@ -297,6 +320,9 @@ impl RootView {
                     .on_mouse_down(
                         MouseButton::Left,
                         cx.listener(|s, event: &MouseDownEvent, _, cx| {
+                            if !s.preview_viewport.get().contains(&event.position) {
+                                return;
+                            }
                             s.gesture = Some(Gesture::Canvas {
                                 origin: event.position,
                                 resize: false,
@@ -321,6 +347,9 @@ impl RootView {
                             .on_mouse_down(
                                 MouseButton::Left,
                                 cx.listener(|s, event: &MouseDownEvent, _, cx| {
+                                    if !s.preview_viewport.get().contains(&event.position) {
+                                        return;
+                                    }
                                     s.gesture = Some(Gesture::Canvas {
                                         origin: event.position,
                                         resize: true,
@@ -337,17 +366,13 @@ impl RootView {
         // column holding it has to take the stage's height rather than its
         // content's: sized by its content, it measured the picture, which
         // was sized by it, and the two shrank to nothing.
-        stage_reserve(
+        let stage = stage_reserve(
             div().flex().flex_col().flex_1().min_h_0().child(
                 div()
                     .id("preview-viewport")
                     .relative()
                     .flex_1()
                     .min_h_0()
-                    .overflow_hidden()
-                    .flex()
-                    .items_center()
-                    .justify_center()
                     .child(measure(self.preview_viewport.clone()))
                     .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, window, cx| {
                         let delta = event.delta.pixel_delta(px(20.));
@@ -373,27 +398,26 @@ impl RootView {
                         }
                         cx.stop_propagation();
                         cx.notify();
-                    }))
-                    .child(
-                        div()
-                            .relative()
-                            .left(self.preview_pan.x)
-                            .top(self.preview_pan.y)
-                            .child(picture),
-                    ),
+                    })),
             ),
             stage_reserve_right(window),
         )
-        .into_any_element()
+        .into_any_element();
+        let layer = div()
+            .absolute()
+            .inset_0()
+            .overflow_hidden()
+            .child(measure(self.preview_layer.clone()))
+            .child(picture)
+            .into_any_element();
+        (stage, Some(layer))
     }
 
     /// The aspect pod: the frame's ratio, the crop tool and the zoom reset.
     ///
     /// The handoff floats it at the stage's top left rather than over the
     /// picture's centre, so it hangs from the stage itself and not from the
-    /// viewport inside it. The viewport clips — the picture has to be able to
-    /// run past its own edge under zoom — and a float that lives in a clipped
-    /// box is a float that disappears the moment the picture grows.
+    /// viewport inside it.
     pub(super) fn aspect_pod(
         &mut self,
         e: &EditorWindow,

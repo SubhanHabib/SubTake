@@ -305,7 +305,7 @@ impl RootView {
                 UiSurface::Pod.blur(),
                 rail,
             ));
-        let preview = self.preview(e, window, cx);
+        let (preview, picture) = self.preview(e, window, cx);
         let aspect_pod = self.aspect_pod(e, cx);
         // The empty state has no tools to pod and no scene to inspect. The
         // inspector still opens over it for the panels that stand on their
@@ -317,6 +317,9 @@ impl RootView {
             .flex_col()
             .size_full()
             .gap_0()
+            // First, so the titlebar, the pods and the console all draw over
+            // a picture zoomed out past the stage.
+            .children(picture)
             .child(header)
             .child(
                 // The stage. Everything over it is absolute, so the preview

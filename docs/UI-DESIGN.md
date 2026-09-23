@@ -361,7 +361,12 @@ the handoff's 18 backdrop blur.
 
 Pinch over the timeline zooms between 1x and 100x, anchoring the time under the
 pointer. Pinch over the stage magnifies from Fit to 8x, anchoring the image
-point under the gesture; two-finger scroll pans, and Fit resets both. All of it
+point under the gesture; two-finger scroll pans, and Fit resets both. A
+magnified picture is not cut off at the stage: it runs on under the titlebar,
+the pods and the console to the window's edge, and shows through their frost,
+while the pan still stops where the picture's edge meets the stage's, so every
+part of it can be brought into the clear. Not drawn by the design: the handoff
+draws the stage at Fit only. All of it
 is viewport state — none of it touches project content, the playhead, or the
 exported framing. The Fit pill's percentage is set in tabular figures so the
 pill holds its width while a pinch runs. `SUBTAKE_GALLERY_SCREEN=zoom-111` (any
