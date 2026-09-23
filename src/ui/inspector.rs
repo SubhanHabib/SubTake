@@ -329,8 +329,17 @@ impl RootView {
                 choices = choices.child(tile);
             }
             body = body.child(caps_label(label, theme)).child(choices);
-            if field.choice >= 5 {
-                body = body.child(format!("Current: {}", field.value));
+            // Not drawn by the design: a style the project names that has no
+            // tile — one from a newer build, or written by hand — so it says
+            // which, rather than showing no tile picked and nothing else.
+            if !CURSOR_STYLES.iter().any(|style| style.value == field.value) {
+                body = body.child(
+                    div()
+                        .px(px(Theme::GAP_SMALL))
+                        .text_size(px(Theme::FONT_SECONDARY))
+                        .text_color(theme.muted)
+                        .child(format!("Using “{}”, which has no tile here", field.value)),
+                );
             }
             return body.into_any_element();
         }
@@ -339,22 +348,21 @@ impl RootView {
             // webcam lands, which is why the marker stays a dot rather than an
             // arrow glyph the icon set does not carry.
             let mut choices = tile_grid(3);
-            for (i, value) in [
-                "top-left",
-                "top-center",
-                "top-right",
-                "center-left",
-                "center",
-                "center-right",
-                "bottom-left",
-                "bottom-center",
-                "bottom-right",
+            for (i, (value, name)) in [
+                ("top-left", "Top left"),
+                ("top-center", "Top"),
+                ("top-right", "Top right"),
+                ("center-left", "Left"),
+                ("center", "Center"),
+                ("center-right", "Right"),
+                ("bottom-left", "Bottom left"),
+                ("bottom-center", "Bottom"),
+                ("bottom-right", "Bottom right"),
             ]
-            .iter()
+            .into_iter()
             .enumerate()
             {
                 let editor = e.clone();
-                let value = *value;
                 choices = choices.child(
                     choice_tile(value, field.value == value, true, theme)
                         .h(px(Theme::CONTROL_HEIGHT))
@@ -383,9 +391,7 @@ impl RootView {
                                     },
                                 )),
                         )
-                        .tooltip(move |_, cx| {
-                            tooltip(format!("Webcam position {value}"), theme, cx)
-                        })
+                        .tooltip(move |_, cx| tooltip(name, theme, cx))
                         .on_click(move |_, _, _| {
                             editor.defer_field("webcam.positionPreset".into(), value.into())
                         }),

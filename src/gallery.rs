@@ -131,6 +131,11 @@ pub fn run() -> Result<()> {
         }
         // Any other panel by its name, `panel-Frame` through `panel-Recent`.
         Ok(screen) if screen.starts_with("panel-") => editor.set_panel(screen[6..].into()),
+        // A style the project names that has no tile.
+        Ok("cursor-unknown") => {
+            gallery.borrow_mut().set_value("cursorStyle", "retro");
+            editor.set_panel("Cursor".into());
+        }
         Ok("cursor-hidden") => {
             gallery.borrow_mut().set_value("showCursor", "false");
             editor.set_panel("Cursor".into());

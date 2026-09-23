@@ -237,7 +237,8 @@ the Presets dialog owns them. Palette churn: Click effect is None / Ripple /
 Spotlight / Echo, because the renderer has no Pulse. Not wired: Tab still
 reaches the dimmed rows.
 
-`SUBTAKE_GALLERY_SCREEN=cursor` (or `cursor-hidden`) opens the gallery on it.
+`SUBTAKE_GALLERY_SCREEN=cursor` (or `cursor-hidden`, or `cursor-unknown` for a
+style with no tile) opens the gallery on it.
 
 ## Camera
 
