@@ -5,6 +5,11 @@ Extracted verbatim from the "Stage" redesign handoff
 numbers below are the spec, not a summary of it: where this document and a
 prose description of the same thing disagree, this document wins.
 
+The 23 Sep implementation review (`docs/IMPLEMENTATION-REVIEW.md`) supersedes
+parts of it — the dark recesses, the segmented control, the toggle, the slider
+row and the timeline's regions, ruler and playhead. Where the two disagree,
+the review wins.
+
 The handoff ships two HTML files. `SubTake Redesign 1a.dc.html` draws six
 screens; `Design Spec.dc.html` is the system. Most of the spec is prose in the
 markup, but **section 6 renders from a JavaScript array inside the page's own

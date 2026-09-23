@@ -36,6 +36,10 @@ impl Theme {
             sunk2: css("#ffffffe6"),
             raise: css("#ffffffc7"),
             raise_line: css("#14141a14"),
+            seg_active: css("#ffffff"),
+            slider_fill: css("#14141a0f"),
+            lane_track: css("#14141a12"),
+            switch_on: css("#5b5d65"),
 
             hover: css("#14141a0d"),
             press: css("#14141a1a"),
@@ -70,10 +74,16 @@ impl Theme {
             bg: css("#0d0d10d4"),
             glass: css("#1e1e249e"),
             card: css("#222229c7"),
-            sunk: css("#16161b9e"),
-            sunk2: css("#ffffff24"),
+            // Recesses lighten on dark: a darkening under `card` was darker
+            // than the card and the plates on it vanished.
+            sunk: css("#ffffff0d"),
+            sunk2: css("#ffffff1a"),
             raise: css("#ffffff1a"),
             raise_line: css("#ffffff24"),
+            seg_active: css("#ffffff24"),
+            slider_fill: css("#ffffff12"),
+            lane_track: css("#ffffff0d"),
+            switch_on: css("#6e707a"),
 
             hover: css("#ffffff12"),
             press: css("#ffffff1f"),

@@ -53,6 +53,17 @@ pub struct Theme {
     pub raise: Hsla,
     /// The hairline on a raised control.
     pub raise_line: Hsla,
+    /// The active segment of a segmented control: a raised white pill on
+    /// light, a lift of white on dark.
+    pub seg_active: Hsla,
+    /// The filled part of a slider row — flat and faint, so the level reads
+    /// without the row becoming a control of its own.
+    pub slider_fill: Hsla,
+    /// A timeline lane's track, under its regions.
+    pub lane_track: Hsla,
+    /// A toggle's track while it is on. A mid-grey, not `ink` and not the
+    /// accent: on and off are the plate and the thumb's side.
+    pub switch_on: Hsla,
 
     // ---- state washes ----
     /// Hover overlay on transparent controls.
