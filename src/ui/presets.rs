@@ -269,7 +269,7 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         .gap(px(Theme::GAP_BLOCK))
         .p(px(Theme::CONTROL_PADDING_SMALL))
         .rounded(px(Theme::RADIUS_ROW))
-        .cursor_pointer()
+        .map(|row| pressable(row, selected, theme))
         .child(preview)
         .child(
             column()
@@ -315,8 +315,10 @@ fn motion_tile(
     selected: bool,
     theme: Theme,
 ) -> Stateful<Div> {
+    let id = ElementId::from(SharedString::from(format!("motion-{name}")));
+    let hover_key = subtake_ui::motion::tween_key(&id, "hover");
     let mut tile = div()
-        .id(SharedString::from(format!("motion-{name}")))
+        .id(id)
         .relative()
         .flex()
         .flex_col()
@@ -326,9 +328,13 @@ fn motion_tile(
         .py(px(Theme::CONTROL_PADDING_SMALL))
         .px(px(Theme::CONTROL_PADDING))
         .rounded(px(Theme::RADIUS_MENU))
-        .bg(theme.sunk)
-        .cursor_pointer()
-        .hover(|s| s.bg(theme.sunk2))
+        .bg(subtake_ui::motion::hover_blend(
+            &hover_key,
+            theme.sunk,
+            theme.sunk2,
+        ))
+        .on_hover(subtake_ui::motion::hover_listener(hover_key))
+        .map(|tile| pressable(tile, selected, theme))
         .child(
             div()
                 .font_weight(FontWeight::MEDIUM)
@@ -344,6 +350,18 @@ fn motion_tile(
         tile = tile.child(selection_ring(Theme::RADIUS_MENU, theme));
     }
     tile
+}
+
+/// A look row's or motion tile's pointer, press and keyboard focus, as a
+/// `Button` carries them. The one in use only dims when pressed: its fill is
+/// what says it is picked, and pressing it again picks nothing new.
+fn pressable(el: Stateful<Div>, selected: bool, theme: Theme) -> Stateful<Div> {
+    let ring = subtake_ui::focus_ring(theme);
+    let press = theme.press;
+    el.cursor_pointer()
+        .tab_index(0)
+        .focus_visible(move |s| s.shadow(vec![ring]))
+        .active(move |s| if selected { s } else { s.bg(press) }.opacity(Theme::PRESSED_OPACITY))
 }
 
 /// The 1.5 accent inset a selected row or tile carries, on a layer of its
