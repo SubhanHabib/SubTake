@@ -157,6 +157,8 @@ impl Theme {
     /// A chip: a context label, a piece of metadata on a plate.
     pub const CHIP_HEIGHT: f32 = 26.0;
     pub const TOOLTIP_HEIGHT: f32 = 28.0;
+    /// The widest a tooltip grows before its text wraps.
+    pub const TOOLTIP_MAX_WIDTH: f32 = 320.0;
     pub const FOOTER_HEIGHT: f32 = 28.0;
 
     // ---- horizontal rhythm -----------------------------------------------
@@ -321,6 +323,15 @@ impl Theme {
     /// Small marks: the unsaved dot, a progress rule, a colour sample and a
     /// picker thumbnail. Named here so no view invents its own.
     pub const DOT_SIZE: f32 = 7.0;
+    /// The marker in a webcam position tile: a dot a step up, since it is
+    /// the whole picture of where the webcam lands, not a status mark.
+    pub const POSITION_DOT_SIZE: f32 = 9.0;
+    /// The square at the corner of the stage's selection box that resizes
+    /// it, hanging past the corner so it can be grabbed from outside the box,
+    /// its corners softened like everything else the stage draws.
+    pub const SELECTION_HANDLE_SIZE: f32 = 14.0;
+    pub const SELECTION_HANDLE_OFFSET: f32 = -5.0;
+    pub const SELECTION_HANDLE_RADIUS: f32 = 3.0;
     /// A progress rule: a `sunk` track under an `accent` fill, with its
     /// percentage set beside the bar rather than inside it — the bar is too
     /// thin to hold text and a number on top of a moving fill is unreadable.

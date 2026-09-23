@@ -195,6 +195,14 @@ impl Theme {
         self.raise.opacity((self.raise.a * 1.6).min(1.))
     }
 
+    /// The plate under a label set over live screen content — the
+    /// countdown's "Press esc" hint, the camera preview's tag. The same in
+    /// both appearances: what is under it is somebody's screen or face, not
+    /// our palette, so it is a fixed dark tint rather than a theme fill.
+    pub fn scrim_chip(&self) -> Hsla {
+        gpui::hsla(225. / 360., 0.25, 0.063, 0.55)
+    }
+
     /// An off toggle's thumb and the scrubber's dots. White in both
     /// appearances — the redesign specifies `#ffffff` on a `sunk2` track in
     /// both, so this is not a palette entry. An on toggle's thumb is `on_ink`.

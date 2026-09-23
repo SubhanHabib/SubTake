@@ -770,7 +770,7 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
                 .h(px(Theme::CHIP_HEIGHT))
                 .px(px(Theme::GAP_LARGE))
                 .rounded_full()
-                .bg(hsla(225. / 360., 0.25, 0.063, 0.55))
+                .bg(theme.scrim_chip())
                 .text_size(px(Theme::FONT_SMALL))
                 .text_color(gpui::white())
                 .child("Preview"),

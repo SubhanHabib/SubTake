@@ -345,7 +345,7 @@ impl RootView {
                 .child(dismiss)
             }
             "failed" => pill
-                .shadow(vec![hairline(theme.danger, 1.)])
+                .shadow(vec![hairline(theme.danger, Theme::BORDER_WIDTH)])
                 .child(
                     div()
                         .flex_none()

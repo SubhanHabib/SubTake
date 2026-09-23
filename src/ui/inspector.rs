@@ -383,7 +383,7 @@ impl RootView {
                                     1 => el.items_center(),
                                     _ => el.items_end(),
                                 })
-                                .child(div().size(px(Theme::DOT_SIZE + 2.0)).rounded_full().bg(
+                                .child(div().size(px(Theme::POSITION_DOT_SIZE)).rounded_full().bg(
                                     if field.value == value {
                                         theme.accent
                                     } else {

@@ -45,7 +45,7 @@ impl RootView {
             .gap(px(Theme::COUNTDOWN_CHIP_GAP))
             .px(px(Theme::COUNTDOWN_CHIP_PADDING))
             .rounded_full()
-            .bg(hsla(225. / 360., 0.25, 0.063, 0.55))
+            .bg(self.theme.scrim_chip())
             .text_color(white)
             .text_size(px(Theme::FONT_SECONDARY))
             .whitespace_nowrap()

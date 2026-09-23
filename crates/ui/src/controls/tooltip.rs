@@ -23,7 +23,7 @@ impl Render for Tooltip {
             div()
                 .flex()
                 .items_center()
-                .max_w(px(320.))
+                .max_w(px(Theme::TOOLTIP_MAX_WIDTH))
                 .h(px(Theme::TOOLTIP_HEIGHT))
                 .px(px(Theme::ICON_GAP_ROW))
                 .rounded(px(Theme::RADIUS_REGION))
