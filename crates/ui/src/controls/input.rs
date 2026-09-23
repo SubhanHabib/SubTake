@@ -944,9 +944,15 @@ impl Render for TextInput {
                 this.commit(w, cx);
             }));
         }
+        // Every field is `text-input`, so its hover wash is keyed off the
+        // entity, which is the thing that is unique per field.
+        let hover_key = format!("input-{:?}-hover", cx.entity_id());
+        let theme = self.theme;
+        let focused = self.focus_handle.is_focused(window);
         div()
             .flex()
             .id("text-input")
+            .on_hover(crate::motion::hover_listener(hover_key.clone()))
             .key_context("SubTakeInput")
             .on_action(cx.listener(Self::accept))
             .on_action(cx.listener(Self::cancel))
@@ -993,8 +999,16 @@ impl Render for TextInput {
                     .px(px(Theme::INPUT_PADDING))
                     .flex()
                     .items_center()
-                    .bg(self.theme.sunk)
+                    .bg(crate::motion::hover_blend(
+                        &hover_key,
+                        theme.sunk,
+                        theme.sunk2,
+                    ))
                     .rounded_full()
+                    // A field shows its focus however it got it, not only
+                    // from the keyboard: the caret alone is a 2px line, and
+                    // a clicked field is where the typing is about to go.
+                    .when(focused, |el| el.shadow(vec![crate::focus_ring(theme)]))
                     .overflow_hidden()
                     .child(TextElement { input: cx.entity() }),
             )
