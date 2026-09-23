@@ -107,6 +107,8 @@ impl Theme {
     pub const RADIUS_PLATE: f32 = 26.0;
     /// The window shell, the console, the inspector, a dialog.
     pub const RADIUS_PANEL: f32 = 28.0;
+    /// The editor window's own corners, the shell the panels sit in.
+    pub const RADIUS_WINDOW: f32 = Self::RADIUS_PANEL;
     /// The tool pod.
     pub const RADIUS_POD: f32 = 30.0;
     /// The recorder bar.
@@ -626,6 +628,13 @@ pub const PANEL_WIDTH_MAX: f32 = 520.0;
 /// right edge. The right reserve follows the inspector's width, which the
 /// user can drag.
 pub const STAGE_RESERVE_LEFT: f32 = Theme::INSET * 2.0 + Theme::POD_WIDTH;
+
+/// What the stage keeps clear under the picture for the aspect pod, which
+/// floats at the bottom centre: the pod's inset from the console, and the
+/// thin pod itself — 34 controls on 4 of padding. The picture's own margin
+/// is the air between it and the pod.
+pub const STAGE_RESERVE_BOTTOM: f32 =
+    Theme::INSET + Theme::CONTROL_HEIGHT_SMALL + Theme::POD_PADDING_SMALL * 2.0;
 
 /// Below this window width the side reserve squeezes the picture, so the
 /// inspector folds away to a round toggle and slides in over the stage when

@@ -71,7 +71,7 @@ A titlebar with no fill of its own — traffic lights, the document on a `sunk`
 pill centred on the window, and Record / Presets / Export at the right. Then
 one stage filling the rest, with three floats over it: the tool pod at the left
 (60 wide, inset 24, centred on the stage's height), the aspect and crop
-controls at the stage's top left, and the 340-wide inspector on `card` at the
+controls centred along the stage's bottom, and the 340-wide inspector on `card` at the
 right.
 
 The pod offers tools — Scene, Cursor, Camera, Captions, Audio — then a hairline
@@ -400,7 +400,11 @@ is viewport state — none of it touches project content, the playhead, or the
 exported framing.
 
 The aspect pod is the thin pod: 34 controls — the aspect dropdown, Crop — on
-4 of padding, so it stands 42 tall over the picture rather than 60. After Crop
+4 of padding, so it stands 42 tall rather than 60. It floats centred between
+the tool pod and the inspector, 24 above the console, and the stage keeps that
+much clear below the picture, so at rest the picture never runs under it; the aspect menu opens upward from it. Not drawn by the design: the handoff
+hangs the pod from the stage's top left, over the picture.
+`SUBTAKE_GALLERY_OPEN=aspect` opens the gallery with the aspect menu showing. After Crop
 comes the zoom group: zoom out, the percentage and zoom in on one `sunk` plate,
 then Fit as a pill like Crop. The two steps go a quarter at a time between Fit
 and 8x, keeping whatever is at the stage's centre where it is; Fit puts the

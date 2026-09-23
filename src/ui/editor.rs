@@ -306,7 +306,7 @@ impl RootView {
                 rail,
             ));
         let (preview, picture) = self.preview(e, window, cx);
-        let aspect_pod = self.aspect_pod(e, cx);
+        let aspect_pod = self.aspect_pod(e, window, cx);
         // The empty state has no tools to pod and no scene to inspect. The
         // inspector still opens over it for the panels that stand on their
         // own — Settings from the menu, Projects when a recovery is waiting.

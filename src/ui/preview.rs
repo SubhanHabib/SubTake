@@ -387,39 +387,48 @@ impl RootView {
         // content's: sized by its content, it measured the picture, which
         // was sized by it, and the two shrank to nothing.
         let stage = stage_reserve(
-            div().flex().flex_col().flex_1().min_h_0().child(
-                div()
-                    .id("preview-viewport")
-                    .relative()
-                    .flex_1()
-                    .min_h_0()
-                    .child(measure(self.preview_viewport.clone()))
-                    .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, window, cx| {
-                        let delta = event.delta.pixel_delta(px(20.));
-                        if event.modifiers.control || event.modifiers.platform {
-                            s.magnify(
-                                f32::from(event.position.x),
-                                f32::from(event.position.y),
-                                (-f32::from(delta.y) * 0.01).exp() - 1.,
-                                2,
-                                window,
-                                cx,
-                            );
+            div()
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_h_0()
+                .pb(px(STAGE_RESERVE_BOTTOM))
+                .child(
+                    div()
+                        .id("preview-viewport")
+                        .relative()
+                        .flex_1()
+                        .min_h_0()
+                        .child(measure(self.preview_viewport.clone()))
+                        .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, window, cx| {
+                            let delta = event.delta.pixel_delta(px(20.));
+                            if event.modifiers.control || event.modifiers.platform {
+                                s.magnify(
+                                    f32::from(event.position.x),
+                                    f32::from(event.position.y),
+                                    (-f32::from(delta.y) * 0.01).exp() - 1.,
+                                    2,
+                                    window,
+                                    cx,
+                                );
+                                cx.stop_propagation();
+                                return;
+                            }
+                            if let Surface::Editor(e) = &s.surface
+                                && e.get_preview_zoom() > 1.
+                            {
+                                s.preview_pan.x += delta.x;
+                                s.preview_pan.y += delta.y;
+                                let image = s.preview_bounds.get().size;
+                                s.clamp_preview_pan(
+                                    f32::from(image.width),
+                                    f32::from(image.height),
+                                );
+                            }
                             cx.stop_propagation();
-                            return;
-                        }
-                        if let Surface::Editor(e) = &s.surface
-                            && e.get_preview_zoom() > 1.
-                        {
-                            s.preview_pan.x += delta.x;
-                            s.preview_pan.y += delta.y;
-                            let image = s.preview_bounds.get().size;
-                            s.clamp_preview_pan(f32::from(image.width), f32::from(image.height));
-                        }
-                        cx.stop_propagation();
-                        cx.notify();
-                    })),
-            ),
+                            cx.notify();
+                        })),
+                ),
             stage_reserve_right(window, self.inspector_width),
         )
         .into_any_element();
@@ -510,10 +519,13 @@ impl RootView {
 
     /// The aspect pod: the frame's ratio, the crop tool and the zoom.
     ///
-    /// The handoff floats it at the stage's top left rather than over the
-    /// picture's centre, so it hangs from the stage itself and not from the
-    /// viewport inside it. It is the thin pod, at the 34 the handoff gives
-    /// an aspect pill, since it hangs over the picture.
+    /// It floats at the bottom centre of the stage, between the tool pod and
+    /// the inspector, and the picture stops short of it, so at rest the two
+    /// never overlap. It is the thin pod, at the 34 the handoff gives an
+    /// aspect pill.
+    ///
+    /// Not drawn by the design: the handoff hangs it from the stage's top
+    /// left, over the picture.
     ///
     /// Not drawn by the design: the zoom steps and the readout between them.
     /// The handoff has a single Fit pill; zoom out and in step by a quarter
@@ -521,6 +533,7 @@ impl RootView {
     pub(super) fn aspect_pod(
         &mut self,
         e: &EditorWindow,
+        window: &Window,
         cx: &mut Context<Self>,
     ) -> Option<AnyElement> {
         if !e.get_has_video() {
@@ -544,7 +557,10 @@ impl RootView {
                 );
             },
         );
-        aspect_control.update(cx, |d, _| d.compact = true);
+        aspect_control.update(cx, |d, _| {
+            d.compact = true;
+            d.opens_up = true;
+        });
         let zoom = e.get_preview_zoom();
         // The steps dim by where the zoom is going, so Fit greys out on the
         // click that sends it home rather than when it arrives.
@@ -553,7 +569,10 @@ impl RootView {
             div()
                 .absolute()
                 .left(px(STAGE_RESERVE_LEFT))
-                .top(px(Theme::INSET))
+                .right(px(stage_reserve_right(window, self.inspector_width)))
+                .bottom(px(Theme::INSET))
+                .flex()
+                .justify_center()
                 .child(frosted(
                     Theme::RADIUS_ROW,
                     UiSurface::Pod.blur(),
