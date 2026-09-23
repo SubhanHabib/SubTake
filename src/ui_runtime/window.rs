@@ -249,6 +249,31 @@ impl Window {
         }
     }
 
+    /// Hands the window input as the platform would, through its hit testing
+    /// and handlers, without moving the pointer. For scripted runs; call it
+    /// from a timer, outside gpui's app borrow.
+    pub fn dispatch_input(&self, input: gpui::PlatformInput) {
+        let context = CONTEXT.with(|c| c.borrow().clone());
+        if let (Some(handle), Some(mut context)) = (self.0.handle.get(), context) {
+            // Not `handle.update`: that holds the root view, and the
+            // handlers the input reaches update it themselves.
+            let _ = context.update_window(handle.into(), |_, window, cx| {
+                window.dispatch_event(input, cx);
+            });
+        }
+    }
+
+    /// A trackpad pinch step at the point, in window coordinates, as
+    /// `native_magnify` delivers one. `phase` is 0 began, 1 changed, 2 ended.
+    pub fn magnify(&self, x: f32, y: f32, delta: f32, phase: u8) {
+        let context = CONTEXT.with(|c| c.borrow().clone());
+        if let (Some(handle), Some(mut context)) = (self.0.handle.get(), context) {
+            let _ = handle.update(&mut context, |root, window, cx| {
+                root.magnify(x, y, delta, phase, window, cx)
+            });
+        }
+    }
+
     pub fn take_snapshot(&self) -> Result<SharedPixelBuffer<Rgba8Pixel>> {
         let view = self.native_view().context("Window is not open yet")?;
         let number = unsafe { crate::platform::ui_window_number(view) };
