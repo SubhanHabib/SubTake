@@ -80,7 +80,9 @@ whatever panel was showing, and deselecting goes back to that panel. Not drawn b
 design: the round-2 pod starts with a Sparkle "Zoom" and moves Scene onto the
 aspect pod, but neither the Zoom inspector nor that way into Scene is drawn
 yet, so the Sparkle still opens Scene; and Help stays under Settings, because
-it is the only way to the shortcut reference until the menus are drawn. The stage keeps each float's width clear at its side, so the picture
+it is the only way to the shortcut reference until the menus are drawn. In a
+window too short for it, the whole pod scrolls as one, Settings and Help with
+the tools, cut hard at the glass's edge (`SUBTAKE_GALLERY_HEIGHT=640`). The stage keeps each float's width clear at its side, so the picture
 runs under nothing; the preview centres in what is left and therefore reads
 slightly left of the window's true centre. That is the handoff's own answer to
 its own open question — the alternative was a larger frame with its right edge

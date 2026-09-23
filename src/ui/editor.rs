@@ -244,17 +244,18 @@ impl RootView {
         // picture runs under it. It was a full-height column in the content
         // flex, which is the layout the redesign exists to replace.
         //
-        // Only the panel list scrolls. Settings and Help used to sit after a
-        // `flex_1` spacer INSIDE the scroll region, which pins them to the
-        // bottom only while the content fits — the moment it overflows the
-        // spacer collapses and they scroll away with everything else, so at
-        // 980x680 they were unreachable. They live outside the scroller.
+        // The whole pod is one scroll region, Settings and Help included, so
+        // a short window scrolls the pod rather than cutting one of its
+        // halves short. The region runs to the glass's edge and cuts there,
+        // with the pod's padding inside it: nothing stands after a spacer,
+        // so nothing is pinned to an end that overflowing would lose.
         let mut panels = div()
             .id("rail")
             .flex()
             .flex_col()
             .items_center()
             .gap(px(Theme::GAP_SMALL))
+            .p(px(Theme::POD_PADDING))
             .w_full()
             .min_h_0()
             .overflow_y_scroll();
@@ -281,14 +282,21 @@ impl RootView {
         // Not drawn by the design: Help. The round-2 pod stops at six with
         // Settings, but Help is the only way to the shortcut reference until
         // the menus and the reference (3e, 3f) are drawn, so it stays.
+        let panels = panels
+            .child(
+                div()
+                    .w_full()
+                    .px(px(Theme::GAP_SMALL))
+                    .child(divider(theme)),
+            )
+            .child(self.rail_panel_button(e, "Settings", "Preferences", "Gear-regular"))
+            .child(self.rail_panel_button(e, "Help", "shortcut-reference", "Question-regular"));
         let rail = pod(theme)
+            .p_0()
             .flex_col()
             .w(px(Theme::POD_WIDTH))
             .max_h_full()
-            .child(panels)
-            .child(divider(theme).mx(px(Theme::GAP_SMALL)))
-            .child(self.rail_panel_button(e, "Settings", "Preferences", "Gear-regular"))
-            .child(self.rail_panel_button(e, "Help", "shortcut-reference", "Question-regular"));
+            .child(panels);
         // Centred on the stage's own height. gpui at the pinned revision has
         // no transform, so a float is centred by a full-height strip around
         // it rather than by a half-height offset.
