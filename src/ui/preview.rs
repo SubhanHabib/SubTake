@@ -40,7 +40,7 @@ const ASPECT_TRIGGER_WIDTH: f32 = 96.0;
 /// the figure changes.
 const PREVIEW_ZOOM_STEP: f32 = 1.25;
 pub(super) const PREVIEW_ZOOM_MAX: f32 = 8.;
-const PREVIEW_ZOOM_READOUT_WIDTH: f32 = 40.0;
+const PREVIEW_ZOOM_READOUT_WIDTH: f32 = 44.0;
 
 /// The stage's right reserve: the inspector's, or only its toggle's while it
 /// is folded away.
@@ -498,51 +498,69 @@ impl RootView {
                         )
                         .child(self.action("crop", "Crop", "visual-crop", true).compact())
                         .child(
-                            icon_button(
-                                "preview-zoom-out",
-                                "MagnifyingGlassMinus-regular",
-                                "Zoom out",
-                                theme,
-                            )
-                            .ghost()
-                            .small()
-                            .enabled(zoom > 1.)
-                            .on_click(cx.listener(|s, _, _, cx| {
-                                if let Surface::Editor(e) = &s.surface {
-                                    let zoom = e.get_preview_zoom() / PREVIEW_ZOOM_STEP;
-                                    s.zoom_preview(zoom, cx);
-                                }
-                            })),
-                        )
-                        .child(
-                            div()
-                                .w(px(PREVIEW_ZOOM_READOUT_WIDTH))
+                            // One plate for the pair and the figure between
+                            // them, so they read as one control that is set
+                            // rather than three that are pressed.
+                            row()
+                                .gap_0()
                                 .flex_none()
-                                .text_center()
-                                .text_size(px(Theme::FONT_SECONDARY))
-                                .text_color(theme.muted)
-                                .child(mono(format!("{}%", (zoom * 100.).round()))),
-                        )
-                        .child(
-                            icon_button(
-                                "preview-zoom-in",
-                                "MagnifyingGlassPlus-regular",
-                                "Zoom in",
-                                theme,
-                            )
-                            .ghost()
-                            .small()
-                            .enabled(zoom < PREVIEW_ZOOM_MAX)
-                            .on_click(cx.listener(|s, _, _, cx| {
-                                if let Surface::Editor(e) = &s.surface {
-                                    let zoom = e.get_preview_zoom() * PREVIEW_ZOOM_STEP;
-                                    s.zoom_preview(zoom, cx);
-                                }
-                            })),
+                                .rounded_full()
+                                .bg(theme.sunk)
+                                .child(
+                                    icon_button(
+                                        "preview-zoom-out",
+                                        "MagnifyingGlassMinus-regular",
+                                        "Zoom out",
+                                        theme,
+                                    )
+                                    .ghost()
+                                    .small()
+                                    .strong()
+                                    .enabled(zoom > 1.)
+                                    .on_click(cx.listener(
+                                        |s, _, _, cx| {
+                                            if let Surface::Editor(e) = &s.surface {
+                                                let zoom = e.get_preview_zoom() / PREVIEW_ZOOM_STEP;
+                                                s.zoom_preview(zoom, cx);
+                                            }
+                                        },
+                                    )),
+                                )
+                                .child(
+                                    div()
+                                        .w(px(PREVIEW_ZOOM_READOUT_WIDTH))
+                                        .flex_none()
+                                        .text_center()
+                                        .text_color(theme.text)
+                                        .font_features(FontFeatures(Arc::new(vec![(
+                                            "tnum".into(),
+                                            1,
+                                        )])))
+                                        .child(format!("{}%", (zoom * 100.).round())),
+                                )
+                                .child(
+                                    icon_button(
+                                        "preview-zoom-in",
+                                        "MagnifyingGlassPlus-regular",
+                                        "Zoom in",
+                                        theme,
+                                    )
+                                    .ghost()
+                                    .small()
+                                    .strong()
+                                    .enabled(zoom < PREVIEW_ZOOM_MAX)
+                                    .on_click(cx.listener(
+                                        |s, _, _, cx| {
+                                            if let Surface::Editor(e) = &s.surface {
+                                                let zoom = e.get_preview_zoom() * PREVIEW_ZOOM_STEP;
+                                                s.zoom_preview(zoom, cx);
+                                            }
+                                        },
+                                    )),
+                                ),
                         )
                         .child(
                             button("fit-preview", "Fit", theme)
-                                .ghost()
                                 .compact()
                                 .enabled(zoom > 1.)
                                 .on_click(cx.listener(|s, _, _, cx| s.zoom_preview(1., cx))),
