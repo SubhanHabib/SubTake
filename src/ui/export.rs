@@ -243,7 +243,6 @@ impl RootView {
             .pl(px(Theme::EXPORT_PILL_INSET_LEFT))
             .pr(px(Theme::EXPORT_PILL_INSET_RIGHT))
             .rounded_full()
-            .bg(theme.sunk)
             .text_color(theme.text);
         let pill = match state.as_str() {
             "exporting" => pill

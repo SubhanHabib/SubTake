@@ -136,7 +136,6 @@ impl RootView {
                 .px(px(Theme::CONTROL_PADDING_SMALL))
                 .gap(px(Theme::GAP_SMALL))
                 .rounded_full()
-                .bg(theme.sunk)
                 // The handoff's dot is decoration. This one says
                 // the document has unsaved work, which is the
                 // only thing the titlebar has left to say it
@@ -170,16 +169,30 @@ impl RootView {
             } else {
                 Theme::EXPORT_PILL_WIDTH
             };
+            // Neither pill paints its own plate: mid-morph the one growing
+            // around them does, and a plate of their own, clipped square by
+            // it, would show corners.
             let piece = match export {
-                Some(pill) if shown >= 1. => pill.w(px(export_width)).into_any_element(),
-                None if shown <= 0. => title_pill.into_any_element(),
+                Some(pill) if shown >= 1. => {
+                    pill.w(px(export_width)).bg(theme.sunk).into_any_element()
+                }
+                None if shown <= 0. => title_pill.bg(theme.sunk).into_any_element(),
                 export => {
                     let title_width = f32::from(self.title_pill.get().size.width);
+                    // The title holds the first half whichever way it runs;
+                    // the export pill, while there is one, the second. An
+                    // export that has already gone leaves that half empty.
                     let (content, fade) = match export {
-                        Some(pill) => {
+                        Some(pill) if shown >= 0.5 => {
                             (pill.w(px(export_width)).into_any_element(), shown * 2. - 1.)
                         }
-                        None => (title_pill.into_any_element(), 1. - shown * 2.),
+                        // At the width it had in the titlebar: its cap is a
+                        // share of its parent, which is now the morph.
+                        _ if shown < 0.5 => (
+                            title_pill.max_w(px(title_width)).into_any_element(),
+                            1. - shown * 2.,
+                        ),
+                        _ => (div().into_any_element(), 0.),
                     };
                     div()
                         .flex()
