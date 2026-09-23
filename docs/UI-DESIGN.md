@@ -115,6 +115,11 @@ in the panel's right padding while it has more than fits, so the fade reads as
 it only shows where the view is. `SUBTAKE_GALLERY_SCREEN=export` shows one at
 the gallery's size.
 
+Each edge's fade can be turned off (`fade_edges(..).top(false)` /
+`.bottom(false)`), cutting hard at the edge instead. The console's lanes fade
+at the top and cut hard at the bottom, where the status line's hairline or the
+console's edge already closes them. `SUBTAKE_GALLERY_LANES=130` shows the cut.
+
 A new recording opens on Apricot: a 135° peach-to-rose gradient
 (`#f7dcc2`, `#eda88f`, `#d27b86`), padding 56, radius 4 and shadow 50%. The
 shadow is three layers — a contact shadow at the edge, a key shadow under it

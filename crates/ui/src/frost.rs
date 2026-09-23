@@ -221,6 +221,8 @@ pub const FADE_BAND: f32 = Theme::FADE_BAND;
 pub fn fade_edges(child: impl IntoElement) -> FadeEdges {
     FadeEdges {
         band: FADE_BAND,
+        top: true,
+        bottom: true,
         scroll: None,
         thumb: None,
         child: child.into_any_element(),
@@ -229,6 +231,8 @@ pub fn fade_edges(child: impl IntoElement) -> FadeEdges {
 
 pub struct FadeEdges {
     band: f32,
+    top: bool,
+    bottom: bool,
     scroll: Option<ScrollHandle>,
     thumb: Option<(Hsla, f32)>,
     child: AnyElement,
@@ -237,6 +241,20 @@ pub struct FadeEdges {
 impl FadeEdges {
     pub fn band(mut self, band: f32) -> Self {
         self.band = band;
+        self
+    }
+
+    /// Whether the top edge fades. Off, content scrolled past it is cut
+    /// hard at the edge, for a region whose top is already a line.
+    pub fn top(mut self, fades: bool) -> Self {
+        self.top = fades;
+        self
+    }
+
+    /// Whether the bottom edge fades. Off, content scrolled past it is cut
+    /// hard at the edge, for a region that ends on a rule of its own.
+    pub fn bottom(mut self, fades: bool) -> Self {
+        self.bottom = fades;
         self
     }
 
@@ -313,7 +331,16 @@ impl Element for FadeEdges {
             }
             None => (band, band),
         };
-        let (top, bottom) = (above.clamp(0.0, band), below.clamp(0.0, band));
+        let top = if self.top {
+            above.clamp(0.0, band)
+        } else {
+            0.0
+        };
+        let bottom = if self.bottom {
+            below.clamp(0.0, band)
+        } else {
+            0.0
+        };
         let fade = (top > 0.5 || bottom > 0.5).then_some(EdgeFade {
             bounds,
             band: px(band),

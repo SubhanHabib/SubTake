@@ -758,10 +758,13 @@ impl RootView {
                                 )
                                 .child(timeline),
                         )
-                        // Each edge fades by what is scrolled past it, so a
+                        // The top fades by what is scrolled past it, so a
                         // stack that fits ends at its last lane rather than
-                        // on a band of air kept for the fade to rest on.
-                        .tracking(&self.lane_scroll),
+                        // on a band of air kept for the fade to rest on. The
+                        // bottom cuts hard: the status line's hairline, or
+                        // the console's own edge, already closes it.
+                        .tracking(&self.lane_scroll)
+                        .bottom(false),
                     )
                     .children(status.map(|(status, _)| status)),
             )
