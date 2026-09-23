@@ -24,7 +24,8 @@
 //! opens that recorder card; `=panel-<name>` opens any other panel by its
 //! model name (`=panel-Preferences`); `=inspector-open` slides the folded
 //! inspector in, with `SUBTAKE_GALLERY_WIDTH=1100` (any width under 1280)
-//! folding it; `=rec-counting`, `=rec-recording`, `=rec-paused` or
+//! folding it, and `SUBTAKE_GALLERY_HEIGHT` sets the height the same way
+//! (for a panel too long for 880); `=rec-counting`, `=rec-recording`, `=rec-paused` or
 //! `=rec-stopping` shows the bar mid-capture (counting also covers the screen);
 //! `=status-cycle` brings the console's status line in and out on a timer;
 //! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
@@ -370,9 +371,13 @@ pub fn run() -> Result<()> {
         .ok()
         .and_then(|w| w.parse::<f32>().ok())
         .unwrap_or(1360.);
+    let height = std::env::var("SUBTAKE_GALLERY_HEIGHT")
+        .ok()
+        .and_then(|h| h.parse::<f32>().ok())
+        .unwrap_or(880.);
     editor
         .window()
-        .set_size(ui_runtime::LogicalSize::new(width, 880.));
+        .set_size(ui_runtime::LogicalSize::new(width, height));
     editor.show()?;
     show_recorder(&launcher, &options);
 
