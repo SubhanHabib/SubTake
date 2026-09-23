@@ -275,6 +275,9 @@ impl Theme {
     pub const LANE_HEADER: f32 = 44.0;
     pub const LANE_HEADER_GAP: f32 = 10.0;
     pub const LANE_HEADER_ICON: f32 = 17.0;
+    /// A zoomed lane runs on under the headers, blurred by 16 behind them.
+    /// Not drawn by the design, whose lanes stop at the track column.
+    pub const LANE_HEADER_BLUR: f32 = 16.0;
     /// The band above the ruler the playhead's bubble lives in, and the air
     /// between the ruler and the first lane.
     pub const BUBBLE_ZONE: f32 = 34.0;

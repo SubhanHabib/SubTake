@@ -175,13 +175,18 @@ lanes, and the recording's frames are drawn inside its clips. A header is a
 
 A lane with nothing on it is not drawn, header included; adding a region of
 its kind brings it back. `SUBTAKE_GALLERY_SCREEN=lanes-sparse` has only zooms
-and the recording's sound, with an imported voice-over on a second audio
-lane. Not drawn by the design: a lane that overflows onto a second row shares
-the first row's header; and the take itself — its kept spans in the clip lane
+and the recording's sound, with an imported voice-over on a second audio lane.
+Not drawn by the design: a lane that overflows onto a second row shares the
+first row's header; and the take itself — its kept spans in the clip lane
 while the project has no clips of its own, and its sound first in the audio
 lane (`Region::TAKE_CLIP`, `TAKE_AUDIO`). Neither is a project region, so a
 press on one seeks rather than selecting it. Not wired: dragging a new region
-from Add over the timeline to show its lane.
+from Add over the timeline to show its lane. Zoomed in, the lanes run on past
+the track column, out to the console's own edge on the right and under the
+headers on the left, as a region's pill runs under its plate; the ruler keeps
+to the track column. The headers blur what runs under them by 16.
+`SUBTAKE_GALLERY_SCREEN=timeline-zoomed` shows the timeline at 300%, 30
+seconds in. Not drawn by the design, whose lanes stop at the track column.
 
 A region is a pill the lane's height, a solid fill with an ink, both from its
 lane's hue: in light the fill at 75% saturation and 82% lightness under an ink

@@ -174,6 +174,12 @@ pub fn run() -> Result<()> {
             g.before_selection = Some("Frame".into());
         }
         Ok("selection-empty") => editor.set_panel("Selection".into()),
+        // The timeline zoomed to a third of the take, 30 seconds in, so its
+        // lanes run on past both ends of the track column.
+        Ok("timeline-zoomed") => {
+            editor.set_timeline_zoom(3.);
+            editor.set_timeline_offset(30.);
+        }
         // A project with only zooms and its sound: every other lane is
         // gone. An imported voice-over under the recording's sound takes a
         // second audio lane.

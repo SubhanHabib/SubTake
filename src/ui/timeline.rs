@@ -69,7 +69,8 @@ fn split_frames(strip: &RenderImage) -> Vec<Arc<RenderImage>> {
 /// A clip: the recording's frames, one tile per 88 across, the frame each
 /// shows the one nearest the time at its middle. The first and last tiles
 /// round the clip's ends; a last tile too short to take the curve is folded
-/// into the one before it. Only the tiles over the visible track are built.
+/// into the one before it. Only the tiles in sight are built: over the
+/// track, under the headers and out to the console's edge.
 fn clip_tiles(
     frames: &[Arc<RenderImage>],
     (start, end): (f32, f32),
@@ -78,8 +79,12 @@ fn clip_tiles(
 ) -> Vec<AnyElement> {
     let pitch = Theme::CLIP_TILE_WIDTH + Theme::CLIP_TILE_DIVIDER;
     let radius = height / 2.;
-    let first = ((-left).max(0.) / pitch).floor() as usize;
-    let last = ((track_width - left).min(width) / pitch).ceil() as usize;
+    let (seen_left, seen_right) = (
+        -Theme::LANE_HEADER - Theme::LANE_HEADER_GAP,
+        track_width + Theme::PANEL_PADDING,
+    );
+    let first = ((seen_left - left).max(0.) / pitch).floor() as usize;
+    let last = ((seen_right - left).min(width) / pitch).ceil() as usize;
     let mut tiles = Vec::new();
     for tile in first..=last {
         let x = tile as f32 * pitch;
@@ -238,18 +243,17 @@ fn waveform(
                     .min(peaks.len().saturating_sub(1))
             };
             let row = f32::from(bounds.size.height);
-            // From the first bar over the track to the last, so a zoomed
-            // take does not paint thousands of bars out of sight.
+            // From the first bar in sight to the last, so a zoomed take
+            // does not paint thousands of bars out of sight. The lanes are
+            // seen past the track column: under the headers, and out to the
+            // console's edge.
+            let seen_left = f32::from(track.left()) - Theme::LANE_HEADER - Theme::LANE_HEADER_GAP;
+            let seen_right = f32::from(track.right()) + Theme::PANEL_PADDING;
             let left = f32::from(bounds.left());
-            let skipped = ((f32::from(track.left()) - left) / Theme::WAVEFORM_PITCH)
-                .floor()
-                .max(0.);
+            let skipped = ((seen_left - left) / Theme::WAVEFORM_PITCH).floor().max(0.);
             let mut x = left + skipped * Theme::WAVEFORM_PITCH;
             let right = f32::from(bounds.right());
-            while !peaks.is_empty()
-                && x + Theme::WAVEFORM_BAR <= right
-                && x < f32::from(track.right())
-            {
+            while !peaks.is_empty() && x + Theme::WAVEFORM_BAR <= right && x < seen_right {
                 let (from, to) = (index(time(x)), index(time(x + Theme::WAVEFORM_PITCH)));
                 let peak = peaks[from..=to.max(from)]
                     .iter()
@@ -344,7 +348,11 @@ fn lane_header(label: &str, theme: Theme) -> Div {
         .flex()
         .flex_none()
         .items_center()
-        .child(
+        // Frosted, so a zoomed lane running on under it blurs away behind
+        // its glyph rather than cutting through it.
+        .child(frosted(
+            Theme::LANE_HEADER / 2.,
+            Theme::LANE_HEADER_BLUR,
             div()
                 .size(px(Theme::LANE_HEADER))
                 .flex()
@@ -358,7 +366,7 @@ fn lane_header(label: &str, theme: Theme) -> Div {
                     Theme::LANE_HEADER_ICON,
                     theme.text,
                 )),
-        )
+        ))
 }
 
 /// How short and how tall the console's top edge can drag the lane region:
@@ -1189,9 +1197,6 @@ impl RootView {
             .min_w_0()
             .pt(px(Theme::BUBBLE_ZONE))
             .gap(px(Theme::RULER_GAP))
-            // Cut at the ends of the take, not above it, so the bubble's
-            // glow is not sheared off at the band's top.
-            .overflow_x_hidden()
             .child(measure(self.timeline_bounds.clone()))
             .child(ruler)
             .child(tracks)
@@ -1377,10 +1382,19 @@ impl RootView {
             .child(
                 column().gap_0().flex_none().child(
                     fade_edges(
+                        // Zoomed in, the lanes run on past the track column:
+                        // out to the console's own edge on the right, and
+                        // under the headers on the left, as a region's pill
+                        // runs under its plate. The ruler keeps to the
+                        // track column.
                         row()
                             .id("track-scroll")
-                            .gap(px(Theme::LANE_HEADER_GAP))
+                            .relative()
                             .items_start()
+                            .pl(px(Theme::LANE_HEADER + Theme::LANE_HEADER_GAP))
+                            .mr(px(-Theme::PANEL_PADDING))
+                            .pr(px(Theme::PANEL_PADDING))
+                            .overflow_x_hidden()
                             .h(px({
                                 let (min, max) = lane_stack_range(win);
                                 self.lane_height.clamp(min, max)
@@ -1388,15 +1402,21 @@ impl RootView {
                             .flex_none()
                             .overflow_y_scroll()
                             .track_scroll(&self.lane_scroll)
+                            .child(timeline)
                             // The headers run on the track column's own grid,
                             // row for row: down past the bubble's band, the
                             // ruler and the air under it, then one row per
                             // lane at that lane's height with the same gap.
                             // A lane that overflows onto a second row shares
                             // the first row's header. Not drawn by the
-                            // design, which gives every lane one row.
-                            .child(
+                            // design, which gives every lane one row. They
+                            // come after the lanes, in a layer of their own,
+                            // so they sit over a clip's frames run under them.
+                            .child(layered(
                                 column()
+                                    .absolute()
+                                    .left_0()
+                                    .top_0()
                                     .w(px(Theme::LANE_HEADER))
                                     .flex_shrink_0()
                                     .gap(px(Theme::LANE_GAP))
@@ -1410,8 +1430,7 @@ impl RootView {
                                             div().h(px(lane_height(label)))
                                         }
                                     })),
-                            )
-                            .child(timeline),
+                            )),
                     )
                     // The top fades by what is scrolled past it, so a
                     // stack that fits ends at its last lane rather than
