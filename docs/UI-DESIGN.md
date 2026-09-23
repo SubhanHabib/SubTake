@@ -67,8 +67,8 @@ filmed or watched without anyone clicking.
 Nothing is docked. That is the change the redesign is named for, and every
 other difference follows from it.
 
-A titlebar with no fill of its own — traffic lights, the document on a `sunk`
-pill centred on the window, and Record / Presets / Export at the right as 44
+A titlebar with no fill of its own — traffic lights, the document on a pill
+centred on the window, and Record / Presets / Export at the right as 44
 round icon-only controls, each named by its tooltip: Record and Presets on
 `sunk` plates, Export on the accent. Not drawn by the design: the handoff
 gives Record and Export their captions. While the document has a status — a
@@ -76,7 +76,11 @@ running job, an error, "Gallery mode" in the gallery — it is a chip at the end
 of the title pill: 26 tall, `sunk2`, the small size in `muted`, 12 after the
 title to match the pill's left padding, with the pill's right padding closing
 to 6 around it. Not drawn by the design: a running job's
-small X, which cancels it, and the chip's tooltip with the whole status. Then
+small X, which cancels it, and the chip's tooltip with the whole status. Also
+not drawn by the design, whose pill is `sunk` on the window's own ground: the
+pill, and the export pill in its place, is a pod's frosted `glass` with its
+hairline and shadow, hovering to `card`, since the stage and the desktop run
+under the titlebar and a `sunk` tint over them left the title unreadable. Then
 one stage filling the rest, with three floats over it: the tool pod at the left
 (60 wide, inset 24, centred on the stage's height), the aspect and crop
 controls centred along the stage's bottom, and the 340-wide inspector on `card` at the

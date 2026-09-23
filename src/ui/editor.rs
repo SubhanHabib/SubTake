@@ -187,18 +187,35 @@ impl RootView {
             };
             // Neither pill paints its own plate: mid-morph the one growing
             // around them does, and a plate of their own, clipped square by
-            // it, would show corners.
-            let piece = match export {
-                Some(pill) if shown >= 1. => {
-                    pill.w(px(export_width)).bg(theme.sunk).into_any_element()
-                }
-                None if shown <= 0. => title_pill
-                    .bg(subtake_ui::motion::hover_blend(
-                        &title_hover,
-                        theme.sunk,
-                        theme.sunk2,
-                    ))
-                    .into_any_element(),
+            // it, would show corners. The plate is a pod's frosted `glass`
+            // with its hairline and shadow, since the stage and the desktop
+            // run under the titlebar and a `sunk` tint over them left the
+            // title unreadable. Not drawn by the design, whose pill is
+            // `sunk` on the window's own ground.
+            let edge = || {
+                let mut edge = vec![subtake_ui::hairline(theme.line, Theme::HAIRLINE_WIDTH)];
+                edge.extend(theme.panel_shadow());
+                edge
+            };
+            let (piece, height) = match export {
+                Some(pill) if shown >= 1. => (
+                    pill.w(px(export_width))
+                        .bg(theme.glass)
+                        .shadow(edge())
+                        .into_any_element(),
+                    Theme::CONTROL_HEIGHT_LARGE,
+                ),
+                None if shown <= 0. => (
+                    title_pill
+                        .bg(subtake_ui::motion::hover_blend(
+                            &title_hover,
+                            theme.glass,
+                            theme.card,
+                        ))
+                        .shadow(edge())
+                        .into_any_element(),
+                    Theme::TITLE_PILL_HEIGHT,
+                ),
                 export => {
                     let title_width = f32::from(self.title_pill.get().size.width);
                     // The title holds the first half whichever way it runs;
@@ -216,27 +233,33 @@ impl RootView {
                         ),
                         _ => (div().into_any_element(), 0.),
                     };
-                    div()
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .w(px(subtake_ui::motion::lerp(
-                            title_width,
-                            export_width,
-                            shown,
-                        )))
-                        .h(px(subtake_ui::motion::lerp(
-                            Theme::TITLE_PILL_HEIGHT,
-                            Theme::CONTROL_HEIGHT_LARGE,
-                            shown,
-                        )))
-                        .rounded_full()
-                        .bg(theme.sunk)
-                        .overflow_hidden()
-                        .child(div().flex_none().opacity(fade.clamp(0., 1.)).child(content))
-                        .into_any_element()
+                    let height = subtake_ui::motion::lerp(
+                        Theme::TITLE_PILL_HEIGHT,
+                        Theme::CONTROL_HEIGHT_LARGE,
+                        shown,
+                    );
+                    (
+                        div()
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .w(px(subtake_ui::motion::lerp(
+                                title_width,
+                                export_width,
+                                shown,
+                            )))
+                            .h(px(height))
+                            .rounded_full()
+                            .bg(theme.glass)
+                            .shadow(edge())
+                            .overflow_hidden()
+                            .child(div().flex_none().opacity(fade.clamp(0., 1.)).child(content))
+                            .into_any_element(),
+                        height,
+                    )
                 }
             };
+            let piece = frosted(height / 2., UiSurface::Pod.blur(), piece);
             header = header.child(
                 div()
                     .absolute()
