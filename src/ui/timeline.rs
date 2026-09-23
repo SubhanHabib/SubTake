@@ -559,25 +559,25 @@ impl RootView {
                     ),
             );
         }
-        let console =
-            panel(theme)
-                .id("timeline")
-                // A zoomed picture runs on under the console; the console's
-                // presses are its own.
-                .occlude()
-                .mx(px(Theme::INSET))
-                .mb(px(Theme::INSET))
-                .flex_shrink_0()
-                .child(toolbar)
-                // The lanes and the export/transcription line share one box, so
-                // the line folds away without leaving the console's gap behind.
-                // It sits inside the console rather than under it so the console
-                // keeps the shell's own inset on all three of its edges.
-                .child(
-                    column()
-                        .gap_0()
-                        .flex_none()
-                        .child(fade_edges(
+        let console = panel(theme)
+            .id("timeline")
+            // A zoomed picture runs on under the console; the console's
+            // presses are its own.
+            .occlude()
+            .mx(px(Theme::INSET))
+            .mb(px(Theme::INSET))
+            .flex_shrink_0()
+            .child(toolbar)
+            // The lanes and the export/transcription line share one box, so
+            // the line folds away without leaving the console's gap behind.
+            // It sits inside the console rather than under it so the console
+            // keeps the shell's own inset on all three of its edges.
+            .child(
+                column()
+                    .gap_0()
+                    .flex_none()
+                    .child(
+                        fade_edges(
                             row()
                                 .id("track-scroll")
                                 .gap(px(Theme::LANE_GUTTER_GAP))
@@ -585,7 +585,7 @@ impl RootView {
                                 .h(px(Theme::LANE_STACK_HEIGHT))
                                 .flex_none()
                                 .overflow_y_scroll()
-                                .pb(px(FADE_BAND))
+                                .track_scroll(&self.lane_scroll)
                                 .child(
                                     column()
                                         .w(px(Theme::LANE_GUTTER))
@@ -605,51 +605,56 @@ impl RootView {
                                         })),
                                 )
                                 .child(timeline),
-                        ))
-                        .children(status),
-                )
-                .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
-                    if let Surface::Editor(window) = &s.surface {
-                        let delta = event.delta.pixel_delta(px(20.));
-                        if event.modifiers.control || event.modifiers.platform {
-                            let b = s.timeline_bounds.get();
-                            let fraction = (f32::from(event.position.x - b.left())
-                                / f32::from(b.size.width).max(1.))
-                            .clamp(0., 1.);
-                            let anchor = window.get_timeline_offset()
-                                + fraction * window.get_timeline_visible();
-                            window.set_timeline_zoom(
-                                (window.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
-                                    .clamp(1., 100.),
-                            );
-                            window.set_timeline_offset(
-                                (anchor - fraction * window.get_timeline_visible()).clamp(
-                                    0.,
-                                    (window.get_duration() - window.get_timeline_visible()).max(0.),
-                                ),
-                            );
-                            cx.stop_propagation();
-                        } else if delta.x != px(0.) || event.modifiers.shift {
-                            let dx = if event.modifiers.shift {
-                                delta.y
-                            } else {
-                                delta.x
-                            };
-                            window.set_timeline_offset(
-                                (window.get_timeline_offset()
-                                    - f32::from(dx)
-                                        / f32::from(s.timeline_bounds.get().size.width).max(1.)
-                                        * window.get_timeline_visible())
-                                .clamp(
-                                    0.,
-                                    (window.get_duration() - window.get_timeline_visible()).max(0.),
-                                ),
-                            );
-                            cx.stop_propagation();
-                        }
+                        )
+                        // Each edge fades by what is scrolled past it, so a
+                        // stack that fits ends at its last lane rather than
+                        // on a band of air kept for the fade to rest on.
+                        .tracking(&self.lane_scroll),
+                    )
+                    .children(status),
+            )
+            .on_scroll_wheel(cx.listener(|s, event: &ScrollWheelEvent, _, cx| {
+                if let Surface::Editor(window) = &s.surface {
+                    let delta = event.delta.pixel_delta(px(20.));
+                    if event.modifiers.control || event.modifiers.platform {
+                        let b = s.timeline_bounds.get();
+                        let fraction = (f32::from(event.position.x - b.left())
+                            / f32::from(b.size.width).max(1.))
+                        .clamp(0., 1.);
+                        let anchor =
+                            window.get_timeline_offset() + fraction * window.get_timeline_visible();
+                        window.set_timeline_zoom(
+                            (window.get_timeline_zoom() * (-f32::from(delta.y) * 0.01).exp())
+                                .clamp(1., 100.),
+                        );
+                        window.set_timeline_offset(
+                            (anchor - fraction * window.get_timeline_visible()).clamp(
+                                0.,
+                                (window.get_duration() - window.get_timeline_visible()).max(0.),
+                            ),
+                        );
+                        cx.stop_propagation();
+                    } else if delta.x != px(0.) || event.modifiers.shift {
+                        let dx = if event.modifiers.shift {
+                            delta.y
+                        } else {
+                            delta.x
+                        };
+                        window.set_timeline_offset(
+                            (window.get_timeline_offset()
+                                - f32::from(dx)
+                                    / f32::from(s.timeline_bounds.get().size.width).max(1.)
+                                    * window.get_timeline_visible())
+                            .clamp(
+                                0.,
+                                (window.get_duration() - window.get_timeline_visible()).max(0.),
+                            ),
+                        );
+                        cx.stop_propagation();
                     }
-                }))
-                .into_any_element();
+                }
+            }))
+            .into_any_element();
         frosted(UiSurface::Panel.radius(), UiSurface::Panel.blur(), console).into_any_element()
     }
 }

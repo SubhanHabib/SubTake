@@ -22,12 +22,12 @@ use subtake_theme::{
     STATUS_SLIDE_MS, Theme,
 };
 use subtake_ui::{
-    Button, Dropdown, FADE_BAND, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button,
-    caps_label, choice_tile, column, composer_footer, content_panel, context_chip, divider,
-    empty_state, fade_edges, frosted, group_card, hairline, icon, icon_button, measure, media_tile,
-    menu_in, menu_list, menu_row, menu_surface, mono, mono_small, panel, panel_variant, pod,
-    pod_small, progress_bar, row, segmented_control, setting_card, status_dot, swatch, switch,
-    tile_grid, title, toggle, tool_button, tooltip,
+    Button, Dropdown, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button, caps_label,
+    choice_tile, column, composer_footer, content_panel, context_chip, divider, empty_state,
+    fade_edges, frosted, group_card, hairline, icon, icon_button, measure, media_tile, menu_in,
+    menu_list, menu_row, menu_surface, mono, mono_small, panel, panel_variant, pod, pod_small,
+    progress_bar, row, segmented_control, setting_card, status_dot, swatch, switch, tile_grid,
+    title, toggle, tool_button, tooltip,
 };
 
 mod camera;
@@ -214,6 +214,7 @@ pub struct RootView {
     sliders: HashMap<String, Entity<Slider>>,
     timecodes: HashMap<String, Entity<subtake_ui::TimecodeField>>,
     timeline_bounds: Rc<Cell<Bounds<Pixels>>>,
+    lane_scroll: ScrollHandle,
     preview_bounds: Rc<Cell<Bounds<Pixels>>>,
     preview_viewport: Rc<Cell<Bounds<Pixels>>>,
     /// The window-wide layer the picture is drawn in, under everything else.
@@ -312,6 +313,7 @@ impl RootView {
             sliders: HashMap::new(),
             timecodes: HashMap::new(),
             timeline_bounds: Rc::new(Cell::new(Bounds::default())),
+            lane_scroll: ScrollHandle::new(),
             preview_bounds: Rc::new(Cell::new(Bounds::default())),
             preview_viewport: Rc::new(Cell::new(Bounds::default())),
             preview_layer: Rc::new(Cell::new(Bounds::default())),

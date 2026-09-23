@@ -546,16 +546,14 @@ impl Theme {
     pub const SCROLL_THUMB_INSET: f32 = 6.0;
 
     /// The lane region's height: the stack the handoff draws — a ruler, the
-    /// source lane and five lanes — plus the fade band the scroller rests on.
-    /// A project with more lanes than that scrolls inside the region rather
+    /// source lane and five lanes. A project with more lanes than that scrolls inside the region rather
     /// than growing the console into the stage.
     ///
     /// The figure is the region's, not the console's. The console is that
     /// region plus its own padding, its transport row, and whatever else it
     /// is carrying at the time — so a line it only sometimes shows adds to
     /// its height instead of being taken out of the lanes.
-    pub const LANE_STACK_HEIGHT: f32 =
-        Self::RULER_HEIGHT + Self::LANE_GAP + 6.0 * Self::LANE_PITCH + Self::FADE_BAND;
+    pub const LANE_STACK_HEIGHT: f32 = Self::RULER_HEIGHT + Self::LANE_GAP + 6.0 * Self::LANE_PITCH;
 }
 
 // ---------------------------------------------------------------------------
