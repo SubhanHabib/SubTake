@@ -94,6 +94,16 @@ This complete lifecycle test supersedes the earlier helper-only acceptance limit
 
 The native capture helper now uses an explicit selected-window inclusion filter for window recording, retaining its crop and window tracking. The earlier display-crop implementation could include another application covering the chosen window. The current capture test covers the blue fixture with a separate red window and checks four saved frames (0.25, 0.75, 1.5 and 2.5 seconds): the selected blue content is present and the red occluder is absent. Both lifecycle and image-content checks passed on the packaged helper. Initial retries while both displays were asleep produced no frames; the successful run kept the displays awake. This does not establish sleep/wake recovery or mixed-display movement.
 
+## GPUI real-app walkthrough
+
+On 23 September 2026, the GPUI build passed `SUBTAKE_WALKTHROUGH` (see [RUNNING.md](../RUNNING.md)) in both appearances. The run went through launcher cards, countdown, a built-in display capture with pause and resume, stop and finalisation, the editor with playback, every inspector panel, visual crop, a zoom region, Presets and an export. Both exports probed at **5414 × 3044**: dark ran 9.4 s and light 9.3 s. The camera and microphone were off, and settings were isolated.
+
+The screen was locked during the run, so the captured content is the lock screen. The runs were filmed app-only over grey. Input came from the controls' callbacks; pointer hit testing was not exercised.
+
+The run found two issues that are still open:
+- The export is larger than its 3600 × 2338 source and took about 40 s.
+- The clip lane shows flat mint until its thumbnails load.
+
 ## Repository root migration
 
 The native project now occupies the repository root; the Electron application, original workflows and shell spike are preserved in `legacy-electron/`. Build helpers and reference generators use that explicit location. The package is `dist/SubTake.app`. Root Rust tests and packaged editor/recorder layout checks are rerun after the move. The prior screen-capture acceptance is preserved separately in `capture-validation-before-root-move.json`; its timestamps and original paths describe that earlier run, whose generated media now lives under root `test-output/`. Moving the repository does not establish any additional device or platform acceptance.

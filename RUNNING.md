@@ -40,6 +40,26 @@ skip watching. Without dev.py, any built binary opens the gallery with
 `--gallery` as its first argument or `SUBTAKE_GALLERY=dark|light` in the
 environment.
 
+## Real-app walkthrough
+
+The walkthrough is the gallery tour on the real app. It records the built-in
+display, opens the take in the editor, visits every panel, adds a zoom, opens
+Presets and exports, then quits. It needs no clicks, so it can be filmed.
+
+```sh
+SUBTAKE_WALKTHROUGH=light SUBTAKE_WALKTHROUGH_DIR="$PWD/test-output/walkthrough" python3 scripts/dev.py --once
+```
+
+Use `dark` for the dark appearance. The recording and `walkthrough-<theme>.mp4`
+land in the directory. The run prints `WALKTHROUGH_PASSED` with the export's
+size and length, or `WALKTHROUGH_FAILED` with the step and exits 1. It runs in
+about 110 seconds.
+
+The microphone and camera stay off, and settings and recovery are isolated, so
+your preferences are untouched. It fires the callbacks the controls fire;
+pointer hit testing is not exercised. Screen Recording permission is needed,
+and the Mac must be unlocked: a locked screen records only the lock screen.
+
 ## Debug vs release
 
 Debug is what dev mode builds: fast compile, slow code, debug assertions on.
