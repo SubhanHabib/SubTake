@@ -339,7 +339,7 @@ impl RootView {
         let status = self.status_strip(e, divided, window);
         if divided {
             root = root.child(self.timeline(e, status, window, cx));
-        } else if let Some(status) = status {
+        } else if let Some((status, _)) = status {
             root = root.child(div().px(px(Theme::GAP_LARGE)).child(status));
         }
         root.children(self.presets_dialog(e, window, cx))
@@ -347,9 +347,9 @@ impl RootView {
             .into_any_element()
     }
 
-    /// The transcription and background-job line. `None` when there is
-    /// nothing to say, so the console keeps the shell's own bottom margin
-    /// instead of reserving a strip under it.
+    /// The transcription and background-job line, with how far it has
+    /// grown in. `None` when there is nothing to say, so the console keeps
+    /// the shell's own bottom margin instead of reserving a strip under it.
     ///
     /// Not drawn by the design: the handoff has no status strip at all.
     /// Export has left it for the titlebar pill; transcription, captions and
@@ -366,7 +366,7 @@ impl RootView {
         e: &EditorWindow,
         divided: bool,
         window: &mut Window,
-    ) -> Option<AnyElement> {
+    ) -> Option<(AnyElement, f32)> {
         let theme = self.theme;
         let busy = e.get_busy();
         let text = e.get_status();
@@ -410,7 +410,7 @@ impl RootView {
             .child(status)
             .child(measure(self.status_bounds.clone()));
         let full = f32::from(self.status_bounds.get().size.height);
-        Some(
+        Some((
             div()
                 .flex()
                 .flex_col()
@@ -419,6 +419,7 @@ impl RootView {
                 .when(shown < 1., |el| el.h(px(full * shown)).opacity(shown))
                 .child(body)
                 .into_any_element(),
-        )
+            shown,
+        ))
     }
 }

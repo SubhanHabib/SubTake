@@ -236,7 +236,7 @@ impl RootView {
     pub(super) fn timeline(
         &mut self,
         window: &EditorWindow,
-        status: Option<AnyElement>,
+        status: Option<(AnyElement, f32)>,
         win: &Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -700,12 +700,19 @@ impl RootView {
                     ),
             );
         }
+        let status_shown = status.as_ref().map_or(0., |(_, shown)| *shown);
         let console = panel(theme)
             .id("timeline")
             .relative()
             // A zoomed picture runs on under the console; the console's
             // presses are its own.
             .occlude()
+            // Under the status line's hairline the line sits as far above
+            // the console's edge as below the rule: the bottom padding
+            // gives way to the footnote's gap, and comes back as it folds.
+            .pb(px(
+                Theme::PANEL_PADDING - (Theme::PANEL_PADDING - Theme::GAP) * status_shown
+            ))
             .mx(px(Theme::INSET))
             .mb(px(Theme::INSET))
             .flex_shrink_0()
@@ -756,7 +763,7 @@ impl RootView {
                         // on a band of air kept for the fade to rest on.
                         .tracking(&self.lane_scroll),
                     )
-                    .children(status),
+                    .children(status.map(|(status, _)| status)),
             )
             // Its top edge takes a drag, trading lane height for stage.
             .child(self.resize_edge(ResizeEdge::Console, cx))

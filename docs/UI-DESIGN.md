@@ -153,8 +153,9 @@ region.
 The status line has no counterpart in the redesign, which puts progress on the
 thing that is progressing. It is carried because export and transcription still
 need somewhere to speak, and it lives inside the console, only while it has
-something to report. It is a footnote: 8 above its hairline and 8 below, in
-the small size. It grows in and folds away over 180ms, keeping its last
+something to report. It is a footnote: 8 above its hairline, 8 below, and 8
+from the line to the console's bottom edge, in the small size; the console's
+bottom padding gives way to it and comes back as it folds. It grows in and folds away over 180ms, keeping its last
 words while it folds, so the stage above it eases rather than jumping.
 `SUBTAKE_GALLERY_SCREEN=status-cycle` brings it in and out on a timer.
 
