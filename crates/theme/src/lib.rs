@@ -202,6 +202,21 @@ impl Theme {
         gpui::hsla(225. / 360., 0.25, 0.063, 0.55)
     }
 
+    /// A timeline region's fill and ink, from its lane's hue. Light regions
+    /// are a clear pastel with a deep ink, dark ones a muted mid-tone with
+    /// a pale ink; both put the label past 4.5:1 on its fill and the fill
+    /// clear of `lane_track`.
+    pub fn region_tones(&self, tint: Hsla) -> (Hsla, Hsla) {
+        let ((fill_s, fill_l), (ink_s, ink_l)) = match self.appearance {
+            Appearance::Light => ((0.75, 0.82), (0.65, 0.25)),
+            Appearance::Dark => ((0.35, 0.34), (0.60, 0.88)),
+        };
+        (
+            gpui::hsla(tint.h, fill_s, fill_l, 1.),
+            gpui::hsla(tint.h, ink_s, ink_l, 1.),
+        )
+    }
+
     /// A toggle's thumb, on or off, and the scrubber's dots. White in both
     /// appearances — the review specifies `#ffffff` on the `sunk2` and
     /// `switch_on` tracks in both, so this is not a palette entry.

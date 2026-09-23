@@ -258,8 +258,9 @@ impl Theme {
         Self::TOGGLE_WIDTH - Self::TOGGLE_INSET * 2.0 - Self::TOGGLE_THUMB;
 
     /// The lane stack: every lane at one height, the source lane with them.
-    /// The handoff draws 42 for the source and 30 for the rest.
-    pub const LANE_HEIGHT: f32 = 36.0;
+    /// The first handoff drew 42 for the source; the review keeps the rest
+    /// at 30.
+    pub const LANE_HEIGHT: f32 = 30.0;
     pub const LANE_GAP: f32 = 4.0;
     /// The column of lane names, and its gap to the tracks.
     pub const LANE_GUTTER: f32 = 78.0;
@@ -270,20 +271,18 @@ impl Theme {
 
     // ---- timeline regions ------------------------------------------------
     //
-    // A region is painted in its lane's tint at four strengths, which the
-    // handoff gives as hex suffixes on that tint: `22` at rest, `2e` under
-    // the pointer, `3d` when selected, `66` for the edge and `cc` for a trim
-    // handle. They are alphas of one colour rather than five colours, which
-    // is what keeps seven lane tints from becoming thirty-five.
-    pub const REGION_FILL: f32 = 0x22 as f32 / 255.0;
-    pub const REGION_FILL_HOVER: f32 = 0x2e as f32 / 255.0;
-    pub const REGION_FILL_SELECTED: f32 = 0x3d as f32 / 255.0;
-    /// Not drawn by the design: a selected region under the pointer, one
-    /// step past `3d` as `2e` is one step past `22`.
-    pub const REGION_FILL_SELECTED_HOVER: f32 = 0x4a as f32 / 255.0;
-    pub const REGION_EDGE: f32 = 0x66 as f32 / 255.0;
+    // A region is a solid fill and an ink, both taken from its lane's hue
+    // by `Theme::region_tones`, so seven lane tints stay seven pairs.
+    /// Not drawn by the design: a region under the pointer, its fill moved
+    /// this far toward its ink.
+    pub const REGION_HOVER_INK: f32 = 0.1;
+    /// A trim handle's mark, in the region's ink.
     pub const REGION_HANDLE_ALPHA: f32 = 0xcc as f32 / 255.0;
-    pub const REGION_PADDING: f32 = 12.0;
+    /// The audio waveform over its region, in the region's ink at `55`, 6
+    /// in from the lane's top and bottom.
+    pub const WAVEFORM_ALPHA: f32 = 0x55 as f32 / 255.0;
+    pub const WAVEFORM_INSET: f32 = 6.0;
+    pub const REGION_PADDING: f32 = 10.0;
     /// The narrowest region that still shows its label: room for the
     /// padding and three letters with the ellipsis. Below it a label is only
     /// "…", so it is left off and the tooltip carries it.

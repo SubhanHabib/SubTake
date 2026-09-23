@@ -435,7 +435,7 @@ impl RootView {
                 }
             }
         }
-        // The source lane: the recording's frames, on the same 36 as every
+        // The source lane: the recording's frames, on the same 30 as every
         // other lane. It carried the document's title over a shorter strip,
         // which the titlebar already names, and it stood taller than the
         // lanes for it.
@@ -470,20 +470,8 @@ impl RootView {
                     .top(px(i as f32 * Theme::LANE_PITCH))
                     .w_full()
                     .h(px(Theme::LANE_HEIGHT))
-                    .rounded(px(Theme::RADIUS_REGION))
-                    .bg(theme.sunk),
-            );
-        }
-        if let Some(image) = window.get_waveform().0 {
-            tracks = tracks.child(
-                img(image)
-                    .absolute()
-                    .top(px(window.get_audio_row() as f32 * Theme::LANE_PITCH))
-                    .left(relative(-offset / visible))
-                    .w(relative(window.get_timeline_zoom()))
-                    .h(px(Theme::LANE_HEIGHT))
-                    .opacity(0.3)
-                    .object_fit(ObjectFit::Fill),
+                    .rounded(px(Theme::RADIUS_LANE))
+                    .bg(theme.lane_track),
             );
         }
         for region in window.get_regions().iter() {
@@ -504,20 +492,15 @@ impl RootView {
                     end += delta;
                 }
             }
-            let tint = region.tint.to_gpui();
-            // Fill and edge are the lane's own tint at four strengths. The
-            // edge is an inset shadow rather than a border: a border adds to
-            // what the block measures, so a region would have grown by two
-            // pixels the moment it was selected and shifted its own label.
-            let fill = tint.opacity(if region.selected {
-                Theme::REGION_FILL_SELECTED
+            // A solid fill and an ink from the lane's hue, with no edge at
+            // rest. Selected, it gains an accent edge and nothing else — an
+            // inset shadow rather than a border, since a border adds to
+            // what the block measures and would shift its own label.
+            let (fill, ink) = theme.region_tones(region.tint.to_gpui());
+            let edges = if region.selected {
+                vec![hairline(theme.accent, Theme::SELECTED_WIDTH)]
             } else {
-                Theme::REGION_FILL
-            });
-            let edge = if region.selected {
-                tint
-            } else {
-                tint.opacity(Theme::REGION_EDGE)
+                Vec::new()
             };
             let width = (f32::from(self.timeline_bounds.get().size.width) * (end - start)
                 / visible)
@@ -526,11 +509,7 @@ impl RootView {
                 SharedString::from(format!("region-{}-{}", region.kind, region.id)).into();
             let hover_key = subtake_ui::motion::tween_key(&block_id, "hover");
             let mark_key = hover_key.clone();
-            let hover_fill = tint.opacity(if region.selected {
-                Theme::REGION_FILL_SELECTED_HOVER
-            } else {
-                Theme::REGION_FILL_HOVER
-            });
+            let hover_fill = subtake_ui::motion::blend(fill, ink, Theme::REGION_HOVER_INK);
             let ring = subtake_ui::focus_ring(theme);
             let mut block = div()
                 .id(block_id)
@@ -546,13 +525,13 @@ impl RootView {
                     &hover_key, fill, hover_fill,
                 ))
                 .on_hover(subtake_ui::motion::hover_listener(hover_key))
-                .shadow(vec![hairline(edge, Theme::BORDER_WIDTH)])
+                .shadow(edges.clone())
                 // Held, a region dims as every pressed control does, and
                 // stays dimmed while it is dragged. Tab reaches it, and Enter
                 // or Space selects it, which is what a click does.
                 .active(|s| s.opacity(Theme::PRESSED_OPACITY))
                 .tab_index(0)
-                .focus_visible(move |s| s.shadow(vec![hairline(edge, Theme::BORDER_WIDTH), ring]))
+                .focus_visible(move |s| s.shadow(edges.iter().cloned().chain([ring]).collect()))
                 .cursor(CursorStyle::ClosedHand)
                 .child(
                     div()
@@ -561,7 +540,8 @@ impl RootView {
                         .items_center()
                         .px(px(Theme::REGION_PADDING))
                         .text_size(px(Theme::FONT_SMALL))
-                        .text_color(theme.text)
+                        .font_weight(FontWeight::MEDIUM)
+                        .text_color(ink)
                         .overflow_hidden()
                         // On one line, in a box that may shrink below it: a
                         // flex row gives bare text its full width, and a
@@ -644,17 +624,17 @@ impl RootView {
                             .rounded(px(Theme::REGION_HANDLE_RADIUS))
                             .bg(subtake_ui::motion::hover_blend(
                                 &mark_key,
-                                tint.opacity(if selected {
+                                ink.opacity(if selected {
                                     Theme::REGION_HANDLE_ALPHA
                                 } else {
                                     0.
                                 }),
-                                tint.opacity(Theme::REGION_HANDLE_ALPHA),
+                                ink.opacity(Theme::REGION_HANDLE_ALPHA),
                             ))
                             // Not drawn by the design: a held handle's mark
-                            // goes to the full tint, so the grab reads before
+                            // goes to the full ink, so the grab reads before
                             // the edge has moved.
-                            .group_active("region-handle", move |s| s.bg(tint)),
+                            .group_active("region-handle", move |s| s.bg(ink)),
                     );
                 handle = if right {
                     handle.right_0()
@@ -684,6 +664,25 @@ impl RootView {
                 ));
             }
             tracks = tracks.child(block);
+        }
+        // The waveform over the audio lane, drawn after the regions so the
+        // opaque region under it does not hide it, 6 in from the lane's top
+        // and bottom at `55`. Not wired: the waveform in the region's ink.
+        // It is an image ffmpeg paints in one colour, and gpui cannot tint
+        // an image, so it keeps that colour at the review's strength.
+        if let Some(image) = window.get_waveform().0 {
+            tracks = tracks.child(
+                img(image)
+                    .absolute()
+                    .top(px(
+                        window.get_audio_row() as f32 * Theme::LANE_PITCH + Theme::WAVEFORM_INSET
+                    ))
+                    .left(relative(-offset / visible))
+                    .w(relative(window.get_timeline_zoom()))
+                    .h(px(Theme::LANE_HEIGHT - Theme::WAVEFORM_INSET * 2.))
+                    .opacity(Theme::WAVEFORM_ALPHA)
+                    .object_fit(ObjectFit::Fill),
+            );
         }
         let mut timeline = column()
             .id("timeline-content")

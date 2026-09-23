@@ -159,12 +159,20 @@ as three round icons. The transport belongs here and not on
 a pod: the thing that moves the playhead sits on the same surface as the
 playhead.
 
-Every lane is 36, the source lane with them, 4 between them. Not drawn by
-the design: the handoff draws the source 42 over a 30 for the rest, with the
+Every lane is 30, the source lane with them, 4 between them, each on a
+`lane_track` plate at radius 12. Not drawn by
+the design: the handoff draws the source 42 over the 30 for the rest, with the
 document's title over a shorter strip of frames; the titlebar already names
 the document, so the source lane is only its frames. The stack has a 78px
-label gutter 14 from the tracks. A region is its lane's tint at four strengths: `22` at rest, `2e` under the pointer, `3d` when selected,
-`66` for the edge. The playhead is a 2px accent rule the full height of the
+label gutter 14 from the tracks. A region is a solid fill with an ink, both from its lane's hue: in light
+the fill at 75% saturation and 82% lightness under an ink at 65% and 25%, in
+dark the fill at 35% and 34% under an ink at 60% and 88%. The label is
+Geist 500 at 11 in the ink, 10 in from the edge, and the trim handles' marks
+are the ink too. A selected region takes a 1.5px accent edge; an unselected
+one has none. The waveform sits over the regions, 6 in from the lane's top
+and bottom, at a third strength. Not drawn by the design: the hover, a 10%
+step of the fill toward the ink. Not wired: the waveform in the region's
+ink; it is an ffmpeg image and gpui can't tint one. The playhead is a 2px accent rule the full height of the
 stack, with its time as `m:ss.cc` on a 20-tall accent chip over the ruler, in
 Geist Mono 500 at 11. The ruler counts in `m:ss`, at the smallest of 1, 2, 5,
 10, 15, 30, 60, 120 or 300 seconds that keeps its labels 80 apart, recomputed
@@ -501,8 +509,8 @@ Not drawn by the design:
 - the hover washes on the switch, text fields, colour swatches, the
   titlebar's document pill, the Recent cards and Resume (a white lift over
   `rec`);
-- a selected timeline region's hover (`REGION_FILL_SELECTED_HOVER`) and a
-  held trim handle's full-tint mark;
+- a timeline region's hover (`REGION_HOVER_INK`) and a held trim handle's
+  mark at the full ink;
 - every pressed and focused look.
 
 The focus ring snaps on everywhere, the buttons included; only hover fades.
