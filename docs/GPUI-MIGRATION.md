@@ -161,7 +161,12 @@ design needs:
 One zui crate carries SubTake's own changes: `gpui_macos`, the Metal
 renderer, is vendored in `vendor/gpui_macos` from the same rev with
 `patches/gpui_macos/*.patch` applied, and Cargo.toml's `[patch]` builds on it.
-Every other zui crate still comes from zui.
+Every other zui crate still comes from zui. The patches:
+
+* `0001` — a drop shadow paints only outside its element, as a CSS
+  box-shadow does. zui paints it under the element too, so it showed through
+  a translucent panel as a dark middle fading out to the panel's edges. Metal
+  only: the wgpu and DirectX shaders still paint it under.
 
 Changing the zui rev: edit it in Cargo.toml, run
 `python3 scripts/vendor-gpui.py`, and build. The script copies the crate from
