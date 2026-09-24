@@ -532,6 +532,11 @@ impl Theme {
     pub const PRESET_PREVIEW_WIDTH: f32 = 74.0;
     pub const PRESET_PREVIEW_HEIGHT: f32 = 50.0;
     pub const PRESET_PREVIEW_SCALE: f32 = 0.35;
+    /// The Saved tab's list, which scrolls past about four rows so the
+    /// picked preset's settings stay in the dialog.
+    pub const PRESET_LIST_HEIGHT: f32 = 216.0;
+    /// The parts a saved preset carries, as tiles this many across.
+    pub const PRESET_PART_COLUMNS: f32 = 3.0;
 
     // ---- empty state ------------------------------------------------------
 

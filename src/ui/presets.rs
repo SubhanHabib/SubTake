@@ -13,6 +13,8 @@ use subtake_ui::{edge, layered};
 pub(super) struct PresetsDraft {
     look: String,
     motion: String,
+    /// Built-in (0) or Saved (1).
+    tab: usize,
 }
 
 impl RootView {
@@ -41,6 +43,7 @@ impl RootView {
             .get_or_insert_with(|| PresetsDraft {
                 look: e.get_look_choice(),
                 motion: e.get_motion_choice(),
+                tab: 0,
             })
             .clone();
         let theme = self.theme;
@@ -98,6 +101,21 @@ impl RootView {
         });
         let enabled = e.get_has_video() && !e.get_busy();
 
+        let view = cx.entity().downgrade();
+        let tabs = segmented_control(
+            "presets-tab",
+            &["Built-in", "Saved"],
+            draft.tab,
+            theme,
+            move |index, _, cx| {
+                let _ = view.update(cx, |s, cx| {
+                    if let Some(d) = s.presets.as_mut() {
+                        d.tab = index;
+                    }
+                    cx.notify();
+                });
+            },
+        );
         let mut card = column()
             .gap(px(Theme::gap_block()))
             .child(
@@ -109,77 +127,54 @@ impl RootView {
                             .on_click(close),
                     ),
             )
-            // The guarantee stated at the top of `src/presets.rs`. Keep the
-            // two in step if what a preset carries ever changes.
-            .child(div().text_color(theme.muted).child(
-                "A preset stores appearance, motion, cursor and export settings. \
-                 It never replaces source media, regions or document identity.",
-            ))
-            .child(caps_label("Appearance", theme))
-            .child(looks)
-            .child(caps_label("Motion", theme))
-            .child(motions);
+            // Not drawn by the design: the tabs, and everything on Saved.
+            // The handoff's dialog is the Built-in tab as it stands.
+            .child(tabs);
 
-        // Not drawn by the design: presets saved to disk, and loading one
-        // from a file. The handoff shows only the built-ins, but a saved
-        // preset is one the user made on purpose, so it is listed here
-        // rather than stranded in the inspector panel this dialog replaced.
-        // Each sits on a plate, as the tiles above do.
-        let mut saved = column().gap(px(Theme::gap_small()));
-        for (index, name) in e.get_saved_presets().iter().enumerate() {
-            saved = saved.child(
-                row()
-                    .child(
-                        button(
-                            SharedString::from(format!("saved-preset-{index}")),
-                            name,
-                            theme,
+        if draft.tab == 0 {
+            card = card
+                // The guarantee stated at the top of `src/presets.rs`. Keep
+                // the two in step if what a preset carries ever changes.
+                .child(div().text_color(theme.muted).child(
+                    "A preset stores appearance, motion, cursor and export settings. \
+                     It never replaces source media, regions or document identity.",
+                ))
+                .child(caps_label("Appearance", theme))
+                .child(looks)
+                .child(caps_label("Motion", theme))
+                .child(motions)
+                .child(
+                    row()
+                        .gap(px(Theme::gap_large()))
+                        .child(
+                            button("presets-save", "Save current", theme)
+                                .glyph("Plus-regular")
+                                .dialog()
+                                .stretch()
+                                .enabled(enabled)
+                                .on_click({
+                                    let surface = self.surface.clone();
+                                    cx.listener(move |s, _, _, cx| {
+                                        surface.action("new-preset");
+                                        if let Some(d) = s.presets.as_mut() {
+                                            d.tab = 1;
+                                        }
+                                        cx.notify();
+                                    })
+                                }),
                         )
-                        .stretch()
-                        .enabled(enabled)
-                        .on_click(self.command(&format!("apply-preset-{index}"))),
-                    )
-                    .child(
-                        icon_button(
-                            SharedString::from(format!("remove-preset-{index}")),
-                            "Trash-regular",
-                            "Delete preset",
-                            theme,
-                        )
-                        .ghost()
-                        .on_click(self.command(&format!("remove-preset-{index}"))),
-                    ),
-            );
+                        .child(
+                            button("presets-apply", "Apply", theme)
+                                .primary()
+                                .dialog()
+                                .stretch()
+                                .enabled(enabled)
+                                .on_click(apply),
+                        ),
+                );
+        } else {
+            card = card.children(self.saved_presets(e, enabled, window, cx));
         }
-        saved = saved.child(
-            button("presets-load", "Load preset file…", theme)
-                .glyph("FolderOpen-regular")
-                .stretch()
-                .enabled(enabled)
-                .on_click(self.command("load-preset")),
-        );
-        card = card.child(caps_label("Saved", theme)).child(saved);
-
-        card = card.child(
-            row()
-                .gap(px(Theme::gap_large()))
-                .child(
-                    button("presets-save", "Save current", theme)
-                        .glyph("Plus-regular")
-                        .dialog()
-                        .stretch()
-                        .enabled(enabled)
-                        .on_click(self.command("save-preset")),
-                )
-                .child(
-                    button("presets-apply", "Apply", theme)
-                        .primary()
-                        .dialog()
-                        .stretch()
-                        .enabled(enabled)
-                        .on_click(apply),
-                ),
-        );
 
         let card = panel_variant(theme, UiSurface::Content)
             .id("presets-dialog")
@@ -352,7 +347,7 @@ fn motion_tile(
 
 /// The 1.5 accent inset a selected row or tile carries, as an `edge` over
 /// the fill: set on the row itself, it would draw under the row's own `sunk`.
-fn selection_ring(radius: f32, theme: Theme) -> impl IntoElement {
+pub(super) fn selection_ring(radius: f32, theme: Theme) -> impl IntoElement {
     edge(
         radius,
         vec![hairline(theme.accent, Theme::selected_width())],

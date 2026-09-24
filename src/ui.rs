@@ -42,6 +42,7 @@ mod options;
 mod presets;
 mod preview;
 mod recorder;
+mod saved_presets;
 mod selection;
 mod timeline;
 
