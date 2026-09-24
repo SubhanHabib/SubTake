@@ -157,7 +157,13 @@ pub fn choice_tile(
         // A tile is too big to invert wholesale, so "selected" reads as the
         // deeper grey wash plus a full-strength outline — the outlined half
         // of the same filled/outlined language the buttons use.
-        .bg(motion::hover_blend(&hover_key, wash, theme.hover))
+        // Hover steps the grey one up the fill scale, as a tinted button's
+        // does; a picked tile keeps its accent wash.
+        .bg(motion::hover_blend(
+            &hover_key,
+            wash,
+            motion::blend(theme.sunk2, theme.accent_soft, pick),
+        ))
         .border_1()
         .border_color(motion::blend(theme.line, theme.accent, pick))
         .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })

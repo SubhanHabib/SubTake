@@ -172,10 +172,12 @@ impl Render for Dropdown {
                         Theme::CONTROL_PADDING
                     }))
                     .rounded_full()
+                    // `sunk`, one step up to `sunk2` under the pointer, as
+                    // every tinted control's hover goes; open holds it there.
                     .bg(motion::hover_blend(
                         &trigger_key,
-                        if open { theme.hover } else { theme.sunk },
-                        theme.hover,
+                        if open { theme.sunk2 } else { theme.sunk },
+                        theme.sunk2,
                     ))
                     .text_size(px(Theme::FONT_CONTROL))
                     .font_weight(if row {
