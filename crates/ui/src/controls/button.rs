@@ -657,6 +657,11 @@ impl RenderOnce for Button {
 /// it takes the accent fill outright. That is the exception to "selection is an
 /// inset edge, never a fill swap": the pod has no captions and no other state
 /// to read, so the fill *is* the state.
+///
+/// Every tool is one Ghost at 40, and the active one is `selected` rather
+/// than a Primary: a Primary is 44 where a Ghost is 40, so a click grew one
+/// button and shrank another and the whole pod jumped by the difference.
+/// 40, not 44, so the seven fit a short stage as they did before.
 pub fn tool_button(
     id: impl Into<ElementId>,
     glyph: &str,
@@ -665,7 +670,10 @@ pub fn tool_button(
     theme: Theme,
     on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 ) -> Button {
-    let mut el = button(id, label, theme).glyph(glyph).icon_only();
-    el = if active { el.primary() } else { el.ghost() };
-    el.on_click(on_click)
+    button(id, label, theme)
+        .glyph(glyph)
+        .icon_only()
+        .ghost()
+        .selected(active)
+        .on_click(on_click)
 }
