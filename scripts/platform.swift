@@ -4,6 +4,17 @@ import ScreenCaptureKit
 import AVFoundation
 
 let _ = NSApplication.shared
+
+/// A source's still, 160 pixels tall, as base64 JPEG; `nil` if it cannot be
+/// taken.
+func still(_ filter: SCContentFilter, _ frame: CGRect) async -> String? {
+    let config = SCStreamConfiguration()
+    config.height = 160
+    config.width = max(1, Int((160 * frame.width / max(frame.height, 1)).rounded()))
+    config.showsCursor = false
+    guard let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config) else { return nil }
+    return NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.8])?.base64EncodedString()
+}
 let command = CommandLine.arguments.dropFirst().first ?? "sources"
 if command == "sources" || command == "sources-passive" {
     // Opening the overlay must never request access. Only an explicit source
@@ -15,12 +26,36 @@ if command == "sources" || command == "sources-passive" {
     Task {
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-            var sources: [[String: Any]] = content.displays.map { d in
-                ["kind": "display", "nativeId": d.displayID, "name": "Display \(d.displayID) · \(d.width) × \(d.height)", "x": d.frame.minX, "y": d.frame.minY, "width": d.frame.width, "height": d.frame.height]
+            // SubTake's own windows (the recorder bar, its cards) stay out of
+            // a display's still, as they stay out of the recording.
+            let own = content.applications.filter { $0.processID == getppid() || $0.processID == getpid() }
+            var sources: [[String: Any]] = []
+            var filters: [(SCContentFilter, CGRect)] = []
+            for d in content.displays {
+                sources.append(["kind": "display", "nativeId": d.displayID, "name": "Display \(d.displayID) · \(d.width) × \(d.height)", "x": d.frame.minX, "y": d.frame.minY, "width": d.frame.width, "height": d.frame.height])
+                filters.append((SCContentFilter(display: d, excludingApplications: own, exceptingWindows: []), d.frame))
             }
-            sources += content.windows.filter { $0.windowLayer == 0 && $0.frame.width >= 80 && $0.frame.height >= 80 && $0.owningApplication?.processID != getpid() }.map { w in
-                ["kind": "window", "nativeId": w.windowID, "name": "\(w.owningApplication?.applicationName ?? "App") — \(w.title ?? "Window")", "x": w.frame.minX, "y": w.frame.minY, "width": w.frame.width, "height": w.frame.height]
+            for w in content.windows.filter({ $0.windowLayer == 0 && $0.frame.width >= 80 && $0.frame.height >= 80 && $0.owningApplication?.processID != getpid() }) {
+                sources.append(["kind": "window", "nativeId": w.windowID, "name": "\(w.owningApplication?.applicationName ?? "App") — \(w.title ?? "Window")", "x": w.frame.minX, "y": w.frame.minY, "width": w.frame.width, "height": w.frame.height])
+                filters.append((SCContentFilter(desktopIndependentWindow: w), w.frame))
             }
+            // A small still of each source for the Source card, all at once and
+            // given a second: a source that is slower than that keeps its
+            // placeholder rather than holding up the list.
+            let stills = await withTaskGroup(of: (Int, String?).self) { group in
+                for (index, (filter, frame)) in filters.enumerated() {
+                    group.addTask { (index, await still(filter, frame)) }
+                }
+                group.addTask { try? await Task.sleep(nanoseconds: 1_000_000_000); return (-1, nil) }
+                var stills: [Int: String] = [:]
+                for await (index, still) in group {
+                    if index < 0 { group.cancelAll(); break }
+                    if let still { stills[index] = still }
+                    if stills.count == filters.count { group.cancelAll(); break }
+                }
+                return stills
+            }
+            for (index, still) in stills { sources[index]["thumbnail"] = still }
             let data = try JSONSerialization.data(withJSONObject: sources, options: [.sortedKeys])
             FileHandle.standardOutput.write(data)
             exit(0)

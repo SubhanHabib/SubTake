@@ -427,8 +427,32 @@ fn capture_source(source: &Value) -> CaptureSource {
         kind: source["kind"].as_str().unwrap_or("window").into(),
         name: name.into(),
         detail,
-        // Not wired: the platform layer takes no stills of its sources yet,
-        // so every source draws its placeholder.
-        thumbnail: Default::default(),
+        thumbnail: source_still(source),
     }
 }
+
+/// The platform's still of a source, sent as base64 JPEG, or the placeholder
+/// for a source it could not take one of in time.
+fn source_still(source: &Value) -> ui_runtime::Image {
+    use base64::Engine;
+    let still = source["thumbnail"]
+        .as_str()
+        .and_then(|encoded| {
+            base64::engine::general_purpose::STANDARD
+                .decode(encoded)
+                .ok()
+        })
+        .and_then(|bytes| image::load_from_memory(&bytes).ok());
+    let Some(still) = still else {
+        return Default::default();
+    };
+    let still = still.into_rgba8();
+    ui_runtime::Image::from_rgba8(ui_runtime::SharedPixelBuffer::clone_from_slice(
+        still.as_raw(),
+        still.width(),
+        still.height(),
+    ))
+}
+
+#[cfg(test)]
+mod tests;
