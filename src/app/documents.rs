@@ -121,6 +121,21 @@ impl App {
                     Ok(info) => {
                         let mut project = project;
                         project.video_path = source.to_string_lossy().into();
+                        // A new video starts from the default preset, before
+                        // its own camera file is found, so that stays on.
+                        let mut preset_warning = None;
+                        if let (false, Some(name)) = (is_project, &app.preferences.default_preset) {
+                            let applied = subtake_native::presets::directory()
+                                .and_then(|d| {
+                                    subtake_native::presets::load(&d.join(format!("{name}.json")))
+                                })
+                                .and_then(|data| {
+                                    subtake_native::presets::apply(&mut project, &data)
+                                });
+                            if let Err(error) = applied {
+                                preset_warning = Some(format!("Default preset {name}: {error:#}"));
+                            }
+                        }
                         if !is_project {
                             let webcam = source.with_extension("webcam.mp4");
                             if webcam.is_file() {
@@ -133,7 +148,7 @@ impl App {
                         }
                         // Cursor positions are normalized; square and portrait captures
                         // use the same suggestion and camera pipeline as landscape ones.
-                        let mut zoom_warning = None;
+                        let mut zoom_warning = preset_warning;
                         if auto_zoom {
                             match subtake_native::autozoom::from_source(
                                 &project,

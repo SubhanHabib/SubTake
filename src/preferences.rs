@@ -21,6 +21,8 @@ pub struct Preferences {
     /// last dragged to. `None` until the first drag.
     pub lane_height: Option<f32>,
     pub inspector_width: Option<f32>,
+    /// The saved preset, by name, a newly opened video starts from.
+    pub default_preset: Option<String>,
 }
 
 impl Default for Preferences {
@@ -45,6 +47,7 @@ impl Default for Preferences {
             editor_shortcuts: crate::shortcuts::defaults(),
             lane_height: None,
             inspector_width: None,
+            default_preset: None,
         }
     }
 }

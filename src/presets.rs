@@ -87,6 +87,7 @@ pub fn snapshot(project: &Project) -> Value {
 }
 
 pub fn apply(project: &mut Project, data: &Value) -> Result<()> {
+    let on = groups(data);
     let data = data.get("snapshot").unwrap_or(data);
     ensure!(data.is_object(), "Preset must contain settings");
     let source = project
@@ -95,6 +96,9 @@ pub fn apply(project: &mut Project, data: &Value) -> Result<()> {
         .and_then(|v| v.get("sourcePath"))
         .cloned();
     for key in KEYS {
+        if !on.iter().any(|group| group_of(key) == Some(group.as_str())) {
+            continue;
+        }
         if let Some(v) = data.get(*key) {
             let mut v = v.clone();
             if *key == "webcam" {
@@ -124,17 +128,258 @@ pub fn load(path: &Path) -> Result<Value> {
 }
 
 pub fn save(path: &Path, project: &Project) -> Result<()> {
+    write(path, &json!({"version":1,"snapshot":snapshot(project)}))
+}
+
+/// Replace `path` with `data` in one step, so a crash leaves the old file.
+fn write(path: &Path, data: &Value) -> Result<()> {
     let dir = path.parent().context("Preset needs a parent folder")?;
     std::fs::create_dir_all(dir)?;
     let mut file = tempfile::NamedTempFile::new_in(dir)?;
-    serde_json::to_writer_pretty(
-        &mut file,
-        &json!({"version":1,"snapshot":snapshot(project)}),
-    )?;
+    serde_json::to_writer_pretty(&mut file, data)?;
     file.write_all(b"\n")?;
     file.as_file().sync_all()?;
     file.persist(path).map_err(|e| e.error)?;
     Ok(())
+}
+
+/// The parts a saved preset can carry, by key, name and the project
+/// settings each writes. Every key in `KEYS` is in exactly one.
+///
+/// A preset keeps every setting it was saved with and applies only the
+/// parts it has on, so turning a part off and on again loses nothing.
+pub const GROUPS: [(&str, &str, &[&str]); 6] = [
+    (
+        "look",
+        "Look",
+        &[
+            "wallpaper",
+            "shadowIntensity",
+            "shadowColor",
+            "frameEdgeColor",
+            "backgroundBlur",
+            "borderRadius",
+            "borderRadiusUnit",
+            "padding",
+            "aspectRatio",
+            "cropRegion",
+        ],
+    ),
+    (
+        "motion",
+        "Motion",
+        &[
+            "zoomMotionBlur",
+            "zoomMotionBlurTuning",
+            "zoomTemporalMotionBlur",
+            "zoomMotionBlurSampleCount",
+            "zoomMotionBlurShutterFraction",
+            "connectZooms",
+            "zoomInDurationMs",
+            "zoomInOverlapMs",
+            "zoomOutDurationMs",
+            "connectedZoomGapMs",
+            "connectedZoomDurationMs",
+            "zoomInEasing",
+            "zoomOutEasing",
+            "connectedZoomEasing",
+            "cameraSpringStiffnessMultiplier",
+            "cameraSpringDampingMultiplier",
+            "cameraSpringMassMultiplier",
+        ],
+    ),
+    (
+        "cursor",
+        "Cursor",
+        &[
+            "showCursor",
+            "loopCursor",
+            "cursorStyle",
+            "cursorSize",
+            "cursorSmoothing",
+            "cursorSpringStiffnessMultiplier",
+            "cursorSpringDampingMultiplier",
+            "cursorSpringMassMultiplier",
+            "cursorMotionBlur",
+            "cursorClickEffect",
+            "cursorClickEffectColor",
+            "cursorClickEffectScale",
+            "cursorClickEffectOpacity",
+            "cursorClickEffectDurationMs",
+            "cursorClickBounce",
+            "cursorClickBounceDuration",
+            "cursorSway",
+        ],
+    ),
+    ("camera", "Camera", &["webcam"]),
+    (
+        "captions",
+        "Captions",
+        &[
+            "autoCaptionSettings",
+            "nativeFonts",
+            "nativeCaptionSidecars",
+        ],
+    ),
+    (
+        "export",
+        "Export",
+        &[
+            "exportEncodingMode",
+            "exportBackendPreference",
+            "exportPipelineModel",
+            "exportQuality",
+            "mp4FrameRate",
+            "exportFormat",
+            "gifFrameRate",
+            "gifLoop",
+            "gifSizePreset",
+            "nativeExportWidth",
+            "nativeExportHeight",
+            "nativeExportFps",
+            "nativeExportQuality",
+            "nativeExportHardware",
+            "nativeExportGif",
+            "nativeExportLoop",
+        ],
+    ),
+];
+
+fn group_of(key: &str) -> Option<&'static str> {
+    GROUPS
+        .iter()
+        .find(|(_, _, keys)| keys.contains(&key))
+        .map(|(group, _, _)| *group)
+}
+
+/// The parts a preset file has on. A file saved before there were parts
+/// carries all of them, as it always did.
+pub fn groups(data: &Value) -> Vec<String> {
+    match data.get("groups").and_then(Value::as_array) {
+        Some(on) => on
+            .iter()
+            .filter_map(Value::as_str)
+            .filter(|g| GROUPS.iter().any(|(group, _, _)| group == g))
+            .map(str::to_owned)
+            .collect(),
+        None => GROUPS.iter().map(|(group, _, _)| (*group).into()).collect(),
+    }
+}
+
+/// A preset's name is its file's name.
+pub fn name(path: &Path) -> String {
+    path.file_stem()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// A free file in `directory` for a preset called `base`, counting up
+/// from `base 2` when that name is taken.
+fn unused(directory: &Path, base: &str) -> PathBuf {
+    let path = directory.join(format!("{base}.json"));
+    if !path.exists() {
+        return path;
+    }
+    (2..)
+        .map(|n| directory.join(format!("{base} {n}.json")))
+        .find(|p| !p.exists())
+        .expect("a free name")
+}
+
+fn managed(directory: &Path, path: &Path) -> Result<()> {
+    ensure!(
+        path.parent()
+            .context("Preset parent missing")?
+            .canonicalize()?
+            == directory.canonicalize()?,
+        "Preset is outside the managed preset directory"
+    );
+    Ok(())
+}
+
+/// Save the project's settings as a new preset in `directory` carrying
+/// `on`, named "Preset", "Preset 2" and so on.
+pub fn create(directory: &Path, project: &Project, on: &[&str]) -> Result<PathBuf> {
+    std::fs::create_dir_all(directory)?;
+    let path = unused(directory, "Preset");
+    write(
+        &path,
+        &json!({"version":1,"groups":on,"snapshot":snapshot(project)}),
+    )?;
+    Ok(path)
+}
+
+/// Rename a preset, returning where it now is. A name another preset has
+/// is refused rather than overwritten.
+pub fn rename(directory: &Path, path: &Path, to: &str) -> Result<PathBuf> {
+    managed(directory, path)?;
+    let to = to.trim();
+    ensure!(!to.is_empty(), "A preset needs a name");
+    ensure!(
+        !to.starts_with('.') && !to.contains(['/', '\\', ':']),
+        "A preset name can't contain / \\ or : or start with a dot"
+    );
+    let target = directory.join(format!("{to}.json"));
+    // On a case-insensitive disk a new casing of the same name exists
+    // already, and is the same file.
+    let same = target
+        .canonicalize()
+        .is_ok_and(|t| path.canonicalize().is_ok_and(|p| p == t));
+    ensure!(
+        same || !target.exists(),
+        "A preset called {to} already exists"
+    );
+    std::fs::rename(path, &target)?;
+    Ok(target)
+}
+
+/// Copy a preset beside itself as "<name> copy".
+pub fn duplicate(directory: &Path, path: &Path) -> Result<PathBuf> {
+    managed(directory, path)?;
+    let target = unused(directory, &format!("{} copy", name(path)));
+    std::fs::copy(path, &target)?;
+    Ok(target)
+}
+
+/// Replace a preset's settings with the project's, keeping its parts.
+pub fn update(path: &Path, project: &Project) -> Result<()> {
+    let mut data = load(path)?;
+    let on = groups(&data);
+    data = json!({"version":1,"groups":on,"snapshot":snapshot(project)});
+    write(path, &data)
+}
+
+/// Turn one of a preset's parts on or off. The last part stays on, since
+/// a preset with none would apply nothing.
+pub fn set_group(path: &Path, group: &str, on: bool) -> Result<()> {
+    ensure!(
+        GROUPS.iter().any(|(g, _, _)| *g == group),
+        "Unknown preset part"
+    );
+    let mut data = load(path)?;
+    let mut groups = groups(&data);
+    groups.retain(|g| g != group);
+    if on {
+        groups.push(group.into());
+    }
+    ensure!(!groups.is_empty(), "A preset needs at least one part");
+    // Kept in the table's order, so the file reads the same however the
+    // parts were toggled.
+    groups.sort_by_key(|g| GROUPS.iter().position(|(k, _, _)| k == g));
+    let snapshot = data.get("snapshot").cloned().unwrap_or(data.clone());
+    data = json!({"version":1,"groups":groups,"snapshot":snapshot});
+    write(path, &data)
+}
+
+/// Copy a preset file into `directory` under its own name, or the next
+/// free one.
+pub fn import(directory: &Path, from: &Path) -> Result<PathBuf> {
+    load(from)?;
+    std::fs::create_dir_all(directory)?;
+    let target = unused(directory, &name(from));
+    std::fs::copy(from, &target)?;
+    Ok(target)
 }
 
 pub fn directory() -> Result<PathBuf> {
@@ -303,13 +548,7 @@ pub fn remove(path: &Path) -> Result<PathBuf> {
 }
 
 fn remove_from(directory: &Path, path: &Path) -> Result<PathBuf> {
-    ensure!(
-        path.parent()
-            .context("Preset parent missing")?
-            .canonicalize()?
-            == directory.canonicalize()?,
-        "Preset is outside the managed preset directory"
-    );
+    managed(directory, path)?;
     let trash = directory.join(".trash");
     std::fs::create_dir_all(&trash)?;
     let target = trash.join(format!(
