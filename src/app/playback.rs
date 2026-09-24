@@ -87,6 +87,7 @@ impl Preview {
                     }
                     match result {
                         Ok((pixels, bounds, shown)) => {
+                            ui.set_stage_annotations(shown.iter().map(|(_, b)| *b).collect());
                             app.shown_annotations = shown;
                             ui.set_edit_visible(bounds.is_some());
                             if let Some([x, y, w, h, scale]) = bounds {

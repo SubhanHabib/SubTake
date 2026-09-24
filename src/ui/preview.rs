@@ -295,6 +295,68 @@ impl RootView {
                     .object_fit(ObjectFit::Contain),
             );
         }
+        // A press on an annotation selects it (`App`'s preview click), so
+        // the one under the pointer is outlined and takes a pointing hand.
+        // Not while a zoom is selected, whose press places its focus, nor on
+        // the panels whose press means something else.
+        let pickable = !e.get_playing()
+            && !matches!(e.get_panel().as_str(), "Crop" | "Webcam")
+            && !e
+                .get_regions()
+                .iter()
+                .any(|r| r.selected && r.kind == "zoomRegions");
+        let shown = e.get_stage_annotations();
+        let hovered = usize::try_from(e.get_hovered_annotation())
+            .ok()
+            .and_then(|i| shown.get(i).copied())
+            .filter(|_| pickable);
+        if let Some([x, y, w, h]) = hovered {
+            let edit = [
+                e.get_edit_x(),
+                e.get_edit_y(),
+                e.get_edit_width(),
+                e.get_edit_height(),
+            ];
+            // The selected one already has its edit box.
+            if !(e.get_edit_visible() && edit == [x, y, w, h]) {
+                picture = picture.cursor_pointer().child(
+                    div()
+                        .absolute()
+                        .left(relative(x))
+                        .top(relative(y))
+                        .w(relative(w))
+                        .h(relative(h))
+                        .border_1()
+                        .border_color(theme.accent),
+                );
+            }
+        }
+        let editor = e.clone();
+        picture = picture
+            .on_mouse_move(cx.listener(move |s, event: &MouseMoveEvent, _, _| {
+                let b = s.preview_bounds.get();
+                let at = (
+                    f32::from(event.position.x - b.left()) / f32::from(b.size.width).max(1.),
+                    f32::from(event.position.y - b.top()) / f32::from(b.size.height).max(1.),
+                );
+                let over = s.preview_viewport.get().contains(&event.position);
+                let index = editor
+                    .get_stage_annotations()
+                    .iter()
+                    .rposition(|[x, y, w, h]| {
+                        over && (*x..=x + w).contains(&at.0) && (*y..=y + h).contains(&at.1)
+                    })
+                    .map_or(-1, |i| i as i32);
+                editor.set_hovered_annotation(index);
+            }))
+            .on_hover({
+                let editor = e.clone();
+                move |inside, _, _| {
+                    if !inside {
+                        editor.set_hovered_annotation(-1);
+                    }
+                }
+            });
         picture = picture.on_mouse_down(
             MouseButton::Left,
             cx.listener(|s, event: &MouseDownEvent, _, cx| {

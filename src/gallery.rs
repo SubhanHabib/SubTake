@@ -19,7 +19,8 @@
 //! `=export-done` or `=export-failed` holds the pill in one state;
 //! `=selection` opens Selection on a zoom region, `=selection-empty` with
 //! nothing selected (clicking any region opens it too), `=selection-a1` to
-//! `-a4` on an annotation; `=cursor` and
+//! `-a4` on an annotation, `=stage-hover` with an annotation's outline under
+//! the pointer; `=cursor` and
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
 //! opens that recorder card (`=card-sources-busy` with its controls off);
@@ -181,6 +182,12 @@ pub fn run() -> Result<()> {
             g.before_selection = Some("Frame".into());
         }
         Ok("selection-empty") => editor.set_panel("Selection".into()),
+        // The pointer over an annotation on the stage. The gallery's picture
+        // draws none, so the outline stands where one would be.
+        Ok("stage-hover") => {
+            editor.set_stage_annotations(vec![[0.36, 0.42, 0.28, 0.14]]);
+            editor.set_hovered_annotation(0);
+        }
         // Selection over an annotation: `=selection-a1` (text), `-a2` (arrow),
         // `-a3` (step) or `-a4` (blur).
         Ok(screen) if screen.starts_with("selection-a") => {

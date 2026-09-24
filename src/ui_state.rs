@@ -110,6 +110,11 @@ struct Properties {
     waveform: Image,
     edit_x: f32,
     edit_y: f32,
+    /// The annotations on the preview, bottom first, as normalized
+    /// [x, y, width, height] on the picture.
+    stage_annotations: Vec<[f32; 4]>,
+    /// The one of them under the pointer, or -1.
+    hovered_annotation: i32,
     edit_width: f32,
     edit_height: f32,
     edit_scale: f32,
@@ -198,6 +203,8 @@ impl Default for Properties {
             waveform: Image::default(),
             edit_x: 0.,
             edit_y: 0.,
+            stage_annotations: vec![],
+            hovered_annotation: -1,
             edit_width: 0.,
             edit_height: 0.,
             edit_scale: 1.,
@@ -706,6 +713,30 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.waveform != value {
             props.waveform = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_stage_annotations(&self) -> Vec<[f32; 4]> {
+        self.0.props.borrow().stage_annotations.clone()
+    }
+
+    pub fn set_stage_annotations(&self, value: Vec<[f32; 4]>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.stage_annotations != value {
+            props.stage_annotations = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_hovered_annotation(&self) -> i32 {
+        self.0.props.borrow().hovered_annotation
+    }
+
+    pub fn set_hovered_annotation(&self, value: i32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.hovered_annotation != value {
+            props.hovered_annotation = value;
             self.window().invalidate();
         }
     }
