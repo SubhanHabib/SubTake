@@ -27,6 +27,9 @@ impl RootView {
     pub(super) fn add_panel(&mut self, e: &EditorWindow) -> (Div, Div) {
         let theme = self.theme;
         let heading = panel_heading("Add", e, theme);
+        // Open with no video, as when the take closes under it, the tiles
+        // stay but dim, since there is nothing to add to.
+        let enabled = e.get_has_video();
         let mut content = column().gap(px(Theme::gap_large()));
         for (group, actions) in GROUPS {
             let mut tiles = tile_grid(Theme::add_tile_columns() as u16);
@@ -39,7 +42,7 @@ impl RootView {
                 };
                 let editor = e.clone();
                 tiles = tiles.child(
-                    choice_tile(action, false, true, theme)
+                    choice_tile(action, false, enabled, theme)
                         .items_center()
                         .justify_center()
                         .h(px(Theme::add_tile_height()))
@@ -51,7 +54,9 @@ impl RootView {
                                 .truncate()
                                 .child(label),
                         )
-                        .on_click(move |_, _, _| editor.defer_action(action.into())),
+                        .when(enabled, |tile| {
+                            tile.on_click(move |_, _, _| editor.defer_action(action.into()))
+                        }),
                 );
             }
             content = content.child(caps_label(group, theme)).child(tiles);
