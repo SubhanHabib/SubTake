@@ -715,29 +715,17 @@ impl App {
                             );
                         }
                         "annotationRegions" => {
-                            for (key, label, default) in [
-                                ("textContent", "Text", json!("")),
-                                ("style.fontFamily", "Font family", json!("Helvetica")),
-                                ("style.color", "Text color", json!("#ffffff")),
-                                ("style.backgroundColor", "Box color", json!("transparent")),
-                                (
-                                    "figureData.arrowDirection",
-                                    "Arrow direction",
-                                    json!("right"),
-                                ),
-                                ("figureData.color", "Arrow color", json!("#2563eb")),
-                            ] {
-                                add(&format!("region.{key}"), label, 0, 0., 0., default);
-                            }
-                            for (key, label, default) in [
-                                ("position.x", "Position X", 50.),
-                                ("position.y", "Position Y", 50.),
-                                ("size.width", "Width", 30.),
-                                ("size.height", "Height", 20.),
-                                ("style.fontSize", "Font size", 32.),
-                                ("blurIntensity", "Blur strength", 20.),
-                            ] {
-                                add(&format!("region.{key}"), label, 1, 0., 120., json!(default));
+                            let annotation = self
+                                .selected
+                                .as_ref()
+                                .and_then(|(kind, id)| {
+                                    p?.regions(kind).iter().find(|r| r["id"] == *id)
+                                })
+                                .cloned()
+                                .unwrap_or_default();
+                            for row in subtake_native::annotations::rows(&annotation) {
+                                let (min, max) = row.range;
+                                add(&row.key, row.label, row.kind, min, max, row.value);
                             }
                         }
                         _ => (),
@@ -1013,6 +1001,7 @@ impl App {
                 | "region.style.textAlign"
                 | "region.figureData.arrowDirection"
                 | "region.figureData.color"
+                | "region.blurMode"
                 | "region.mode"
         );
         let v = if text_field {

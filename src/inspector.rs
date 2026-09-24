@@ -122,6 +122,32 @@ pub fn present(mut fields: Vec<Field>, panel: &str, language: &str) -> Vec<Field
                 ("Times New Roman", "Times New Roman"),
                 ("Courier New", "Courier New"),
             ],
+            "region.style.fontFamily" => &[
+                ("Helvetica", "Helvetica"),
+                ("Helvetica Neue", "Helvetica Neue"),
+                ("Avenir Next", "Avenir Next"),
+                ("Futura", "Futura"),
+                ("Gill Sans", "Gill Sans"),
+                ("Georgia", "Georgia"),
+                ("Times New Roman", "Times New Roman"),
+                ("Menlo", "Menlo"),
+                ("Marker Felt", "Marker Felt"),
+            ],
+            "region.style.fontWeight" => &[("bold", "Bold"), ("normal", "Regular")],
+            "region.style.textAlign" => {
+                &[("left", "Left"), ("center", "Centre"), ("right", "Right")]
+            }
+            "region.blurMode" => &[("blur", "Blur"), ("pixelate", "Pixelate")],
+            "region.figureData.arrowDirection" => &[
+                ("right", "Right"),
+                ("left", "Left"),
+                ("up", "Up"),
+                ("down", "Down"),
+                ("up-right", "Up right"),
+                ("up-left", "Up left"),
+                ("down-right", "Down right"),
+                ("down-left", "Down left"),
+            ],
             "prefs.countdown_seconds" => &[
                 ("0", "No delay"),
                 ("3", "3 seconds"),

@@ -18,7 +18,8 @@
 //! a fake eight-second export in the titlebar pill; `=export-progress`,
 //! `=export-done` or `=export-failed` holds the pill in one state;
 //! `=selection` opens Selection on a zoom region, `=selection-empty` with
-//! nothing selected (clicking any region opens it too); `=cursor` and
+//! nothing selected (clicking any region opens it too), `=selection-a1` to
+//! `-a4` on an annotation; `=cursor` and
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
 //! opens that recorder card (`=card-sources-busy` with its controls off);
@@ -180,6 +181,18 @@ pub fn run() -> Result<()> {
             g.before_selection = Some("Frame".into());
         }
         Ok("selection-empty") => editor.set_panel("Selection".into()),
+        // Selection over an annotation: `=selection-a1` (text), `-a2` (arrow),
+        // `-a3` (step) or `-a4` (blur).
+        Ok(screen) if screen.starts_with("selection-a") => {
+            let id = &screen["selection-".len()..];
+            let mut g = gallery.borrow_mut();
+            for r in g.regions.iter_mut() {
+                r.selected = r.id == id;
+            }
+            editor.set_selected_id(id.into());
+            editor.set_panel("Selection".into());
+            g.before_selection = Some("Frame".into());
+        }
         // The timeline zoomed to a third of the take, 30 seconds in, so its
         // lanes run on past both ends of the track column.
         Ok("timeline-zoomed") => {

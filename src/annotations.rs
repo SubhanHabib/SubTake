@@ -20,6 +20,20 @@ pub const KINDS: [(&str, &str, &str); 11] = [
     ("add-text", "Text", "TextT-regular"),
 ];
 
+/// The colours an annotation's colour rows offer as swatches, before the
+/// field that takes any other. `transparent` is "none".
+pub const COLOURS: [&str; 9] = [
+    "transparent",
+    "#ffffff",
+    "#111114",
+    "#ff453a",
+    "#ff9f0a",
+    "#facc15",
+    "#30d158",
+    "#2563eb",
+    "#bf5af2",
+];
+
 /// An annotation's kind, by its type, as its name and glyph: what its plate on
 /// the lane shows.
 pub fn kind_of(annotation: &Value) -> (&'static str, &'static str) {
@@ -110,6 +124,125 @@ pub fn new(action: &str, existing: &[Value], aspect: f64) -> Option<Value> {
         top + 1.
     });
     Some(region)
+}
+
+/// One inspector row for an annotation: its key under `region.`, label,
+/// field kind (0 text, 1 slider, 5 section, 6 colour), slider range and the
+/// annotation's value, or the kind's default where it has none.
+pub struct Row {
+    pub key: String,
+    pub label: &'static str,
+    pub kind: i32,
+    pub range: (f32, f32),
+    pub value: Value,
+}
+
+/// The inspector's rows for `annotation`, by its kind: what it is made of,
+/// then where it sits.
+pub fn rows(annotation: &Value) -> Vec<Row> {
+    let (name, _) = kind_of(annotation);
+    let mut rows = Vec::new();
+    let mut add = |key: &str, label: &'static str, kind: i32, range: (f32, f32), default: Value| {
+        let own = key
+            .split('.')
+            .try_fold(annotation, |value, part| value.get(part))
+            .filter(|value| !value.is_null());
+        rows.push(Row {
+            key: if key.is_empty() {
+                String::new()
+            } else {
+                format!("region.{key}")
+            },
+            label,
+            kind,
+            range,
+            value: own.cloned().unwrap_or(default),
+        });
+    };
+    let none = (0., 0.);
+    let corners = (0., 120.);
+    let thickness = (1., 24.);
+    add("", name, 5, none, json!(""));
+    match annotation["type"].as_str().unwrap_or("text") {
+        "figure" => {
+            add(
+                "figureData.arrowDirection",
+                "Direction",
+                0,
+                none,
+                json!("right"),
+            );
+            add("figureData.color", "Colour", 6, none, json!("#ff453a"));
+            add(
+                "figureData.strokeWidth",
+                "Thickness",
+                1,
+                thickness,
+                json!(6),
+            );
+        }
+        "blur" => {
+            add("blurMode", "Effect", 0, none, json!("blur"));
+            let amount = if name == "Pixelate" {
+                "Block size"
+            } else {
+                "Strength"
+            };
+            add("blurIntensity", amount, 1, (2., 80.), json!(20));
+            add("style.borderRadius", "Corners", 1, corners, json!(0));
+        }
+        "highlight" => {
+            add("figureData.color", "Outline", 6, none, json!("#facc15"));
+            add(
+                "style.backgroundColor",
+                "Fill",
+                6,
+                none,
+                json!("transparent"),
+            );
+            add(
+                "figureData.strokeWidth",
+                "Thickness",
+                1,
+                thickness,
+                json!(6),
+            );
+            add("style.borderRadius", "Corners", 1, corners, json!(16));
+        }
+        "spotlight" => {
+            add("dimOpacity", "Dim outside", 1, (0., 100.), json!(60));
+            add("style.borderRadius", "Corners", 1, corners, json!(16));
+        }
+        "step" => {
+            add("textContent", "Number", 0, none, json!("1"));
+            add("figureData.color", "Badge", 6, none, json!("#2563eb"));
+            add("style.color", "Number colour", 6, none, json!("#ffffff"));
+        }
+        "image" => {}
+        _ => {
+            add("textContent", "Text", 0, none, json!(""));
+            add("style.fontFamily", "Font", 0, none, json!("Helvetica"));
+            add("style.fontWeight", "Weight", 0, none, json!("bold"));
+            add("style.textAlign", "Align", 0, none, json!("center"));
+            add("style.fontSize", "Size", 1, (8., 240.), json!(64));
+            add("style.color", "Colour", 6, none, json!("#ffffff"));
+            add(
+                "style.backgroundColor",
+                "Box",
+                6,
+                none,
+                json!("transparent"),
+            );
+            add("style.borderRadius", "Box corners", 1, corners, json!(8));
+        }
+    }
+    add("", "Placement", 5, none, json!(""));
+    let percent = (0., 100.);
+    add("position.x", "Left", 1, percent, json!(50));
+    add("position.y", "Top", 1, percent, json!(50));
+    add("size.width", "Width", 1, percent, json!(30));
+    add("size.height", "Height", 1, percent, json!(20));
+    rows
 }
 
 #[cfg(test)]

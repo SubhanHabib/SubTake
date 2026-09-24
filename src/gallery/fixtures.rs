@@ -391,6 +391,37 @@ pub(super) fn fixture_regions() -> Vec<Region> {
 
 /// Field kinds as `ui::inspector` renders them: 0 text/number, 1 slider,
 /// 2 toggle, 3 action row, 4 dropdown, 5 section label.
+/// The app's rows for an annotation of the region's kind, as its add
+/// action makes it, through the same presentation as the app's.
+fn annotation_fields(r: &Region) -> Vec<Field> {
+    use subtake_native::annotations;
+    let action = annotations::KINDS
+        .iter()
+        .find(|(_, _, glyph)| !r.glyph.is_empty() && *glyph == r.glyph)
+        .map_or("add-text", |(action, _, _)| action);
+    let mut annotation = annotations::new(action, &[], 16. / 9.).unwrap_or_default();
+    if action == "add-text" {
+        annotation["textContent"] = r.label.as_str().into();
+    }
+    let fields = annotations::rows(&annotation)
+        .into_iter()
+        .map(|row| Field {
+            key: row.key.into(),
+            label: row.label.into(),
+            value: row
+                .value
+                .as_str()
+                .map_or_else(|| row.value.to_string(), str::to_owned)
+                .into(),
+            kind: row.kind,
+            minimum: row.range.0,
+            maximum: row.range.1,
+            ..Default::default()
+        })
+        .collect();
+    crate::inspector::present(fields, "Selection", "en")
+}
+
 pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
     let v = |key: &str, default: &str| fixture.value(key, default).to_owned();
     let section = |label: &str| Field {
@@ -676,9 +707,8 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
                     slider("region.volume", "Volume", "1", 0., 3.),
                     toggle("region.normalize", "Normalize audio", false),
                 ]),
-                "autoCaptions" | "annotationRegions" => {
-                    fields.push(text("region.text", "Text", &r.label))
-                }
+                "autoCaptions" => fields.push(text("region.text", "Text", &r.label)),
+                "annotationRegions" => fields.extend(annotation_fields(r)),
                 _ => {}
             }
             fields

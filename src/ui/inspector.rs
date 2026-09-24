@@ -10,7 +10,13 @@ use super::*;
 /// a cross, a length in points. Returned as (scale, suffix); anything not
 /// listed keeps the bare number it has today.
 pub(super) fn field_unit(key: &str) -> (f32, &'static str) {
+    // An annotation is placed and sized in percent of the picture.
+    if key.starts_with("region.position.") || key.starts_with("region.size.") {
+        return (1.0, "%");
+    }
     match key.rsplit('.').next().unwrap_or(key) {
+        "fontSize" | "strokeWidth" => (1.0, " px"),
+        "dimOpacity" => (1.0, "%"),
         "borderRadius" | "backgroundBlur" | "margin" => (1.0, " px"),
         "cursorSize" | "cursorSmoothing" | "cursorSway" | "cursorMotionBlur"
         | "cursorClickBounce" | "depth" | "speed" | "volume" => (1.0, "\u{00d7}"),
@@ -38,6 +44,9 @@ struct CursorTile {
     /// little smaller here.
     height: f32,
 }
+
+/// The lightness above which a colour swatch's check is drawn dark.
+const LIGHT_SWATCH: f32 = 0.6;
 
 const CURSOR_STYLES: [CursorTile; 5] = [
     CursorTile {
@@ -419,6 +428,50 @@ impl RootView {
                 .into_any_element();
         }
         match field.kind {
+            6 => {
+                // A colour: the common ones as swatches, the first "none",
+                // then a field that takes any other as hex.
+                let mut swatches = row().gap(px(Theme::gap_small()));
+                for value in crate::annotations::COLOURS {
+                    let [r, g, b, a] = crate::project::parse_color(value);
+                    let colour: Hsla = rgba(u32::from_be_bytes([r, g, b, a])).into();
+                    let editor = e.clone();
+                    let key = key.clone();
+                    let picked = field.value.eq_ignore_ascii_case(value);
+                    let mut tile = swatch(format!("{id}:{value}"), colour, picked, theme)
+                        .on_click(move |_, _, _| editor.defer_field(key.clone(), value.into()));
+                    // The accent ring is lost on a blue swatch, so the picked
+                    // one also carries a check, dark on light colours.
+                    let mark = if picked {
+                        let ink = if colour.l > LIGHT_SWATCH {
+                            black()
+                        } else {
+                            white()
+                        };
+                        Some(("Check-regular", if a == 0 { theme.accent } else { ink }))
+                    } else if a == 0 {
+                        Some(("X-regular", theme.muted))
+                    } else {
+                        None
+                    };
+                    if let Some((glyph, ink)) = mark {
+                        tile =
+                            tile.flex().items_center().justify_center().child(
+                                subtake_ui::icon_sized(glyph, Theme::icon_size_small(), ink),
+                            );
+                    }
+                    swatches = swatches.child(tile);
+                }
+                let editor = e.clone();
+                let input = self.input(&id, &field.value, window, cx, move |v, _, _| {
+                    editor.defer_field(key.clone(), v)
+                });
+                return body
+                    .child(caps_label(label, theme))
+                    .child(swatches)
+                    .child(input)
+                    .into_any_element();
+            }
             5 => {
                 // A small muted caption. The handoff draws it bare, with no
                 // rule running out to the edge.
