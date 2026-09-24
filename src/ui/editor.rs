@@ -381,6 +381,7 @@ impl RootView {
             root = root.child(div().px(px(Theme::gap_large())).child(status));
         }
         root.children(self.presets_dialog(e, window, cx))
+            .children(self.settings_dialog(e, window, cx))
             .child(self.menu_overlay(window, cx))
             .into_any_element()
     }

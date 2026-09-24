@@ -465,6 +465,7 @@ impl App {
             ui.set_edit_visible(false);
         }
         ui.set_fields(ModelRc::new(VecModel::from(self.fields(&ui.get_panel()))));
+        ui.set_settings_fields(ModelRc::new(VecModel::from(self.fields("Settings"))));
         self.update_time(ui);
     }
 }

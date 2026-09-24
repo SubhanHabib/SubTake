@@ -178,43 +178,53 @@ impl RootView {
 
         let card = panel_variant(theme, UiSurface::Content)
             .id("presets-dialog")
-            .relative()
-            .top(px(DIALOG_RISE * (1. - shown)))
-            .opacity(shown)
             .w(px(Theme::dialog_width()))
             .p(px(Theme::dialog_padding()))
-            .occlude()
-            .on_mouse_down_out({
-                let editor = e.clone();
-                move |_, _, _| editor.set_dialog(String::new())
-            })
             .child(card);
-
-        // The scrim takes the pointer from everything under the dialog; it
-        // draws nothing, because the handoff sets the dialog straight over
-        // the stage. A closing dialog lets the pointer through at once. Its
-        // frost is a backdrop blur, which opacity does not reach, so the
-        // blur itself eases with the fade.
-        Some(
-            deferred(
-                div()
-                    .id("presets-scrim")
-                    .absolute()
-                    .inset_0()
-                    .when(open, |s| s.occlude())
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .child(frosted(
-                        UiSurface::Content.radius(),
-                        subtake_ui::BAR_BLUR * shown,
-                        card,
-                    )),
-            )
-            .with_priority(20)
-            .into_any_element(),
-        )
+        Some(dialog_frame("presets-scrim", e, open, shown, card))
     }
+}
+
+/// A centred dialog's plate over the editor, rising and fading in by
+/// `shown`; a press outside it closes it.
+pub(super) fn dialog_frame(
+    scrim: &'static str,
+    e: &EditorWindow,
+    open: bool,
+    shown: f32,
+    plate: Stateful<Div>,
+) -> AnyElement {
+    let plate = plate
+        .relative()
+        .top(px(DIALOG_RISE * (1. - shown)))
+        .opacity(shown)
+        .occlude()
+        .on_mouse_down_out({
+            let editor = e.clone();
+            move |_, _, _| editor.set_dialog(String::new())
+        });
+    // The scrim takes the pointer from everything under the dialog; it
+    // draws nothing, because the handoff sets the dialog straight over the
+    // stage. A closing dialog lets the pointer through at once. Its frost
+    // is a backdrop blur, which opacity does not reach, so the blur itself
+    // eases with the fade.
+    deferred(
+        div()
+            .id(scrim)
+            .absolute()
+            .inset_0()
+            .when(open, |s| s.occlude())
+            .flex()
+            .items_center()
+            .justify_center()
+            .child(frosted(
+                UiSurface::Content.radius(),
+                subtake_ui::BAR_BLUR * shown,
+                plate,
+            )),
+    )
+    .with_priority(20)
+    .into_any_element()
 }
 
 /// One built-in look: a preview of its background and frame, its name, and

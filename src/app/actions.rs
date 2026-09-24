@@ -285,6 +285,7 @@ impl App {
                                 app.preferences.whisper_model = Some(path);
                                 let result = app.preferences.save();
                                 report(ui, result);
+                                app.refresh(ui);
                                 ui.set_status(
                                     "Whisper Small is ready. Transcription runs locally.".into(),
                                 );
@@ -303,6 +304,7 @@ impl App {
                     self.preferences.whisper_model = Some(path);
                     self.preferences.save()?;
                     ui.set_status("Caption model selected".into());
+                    self.refresh(ui);
                 }
             }
             "import-font" => {
@@ -413,6 +415,7 @@ impl App {
                 {
                     self.preferences.recording_directory = Some(directory);
                     self.preferences.save()?;
+                    self.refresh(ui);
                 }
             }
             "quit" => {

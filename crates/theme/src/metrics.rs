@@ -537,6 +537,11 @@ impl Theme {
     pub const PRESET_LIST_HEIGHT: f32 = 216.0;
     /// The parts a saved preset carries, as tiles this many across.
     pub const PRESET_PART_COLUMNS: f32 = 3.0;
+    /// The Settings dialog: a sidebar of sections beside a scrolling page,
+    /// its height fixed so moving between sections never resizes it.
+    pub const SETTINGS_WIDTH: f32 = 640.0;
+    pub const SETTINGS_HEIGHT: f32 = 520.0;
+    pub const SETTINGS_SIDEBAR_WIDTH: f32 = 176.0;
 
     // ---- empty state ------------------------------------------------------
 

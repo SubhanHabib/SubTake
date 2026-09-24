@@ -137,6 +137,8 @@ struct Properties {
     track_labels: ModelRc<String>,
     selected_id: String,
     fields: ModelRc<Field>,
+    settings_fields: ModelRc<Field>,
+    settings_section: String,
     source_names: ModelRc<String>,
     capture_sources: ModelRc<CaptureSource>,
     mic_level: f32,
@@ -234,6 +236,8 @@ impl Default for Properties {
             ])),
             selected_id: String::new(),
             fields: ModelRc::default(),
+            settings_fields: ModelRc::default(),
+            settings_section: "General".into(),
             source_names: ModelRc::default(),
             capture_sources: ModelRc::default(),
             mic_level: f32::NEG_INFINITY,
@@ -562,7 +566,8 @@ impl UiHandle {
         }
     }
 
-    /// The centred dialog over the editor: `"presets"`, or empty for none.
+    /// The centred dialog over the editor: `"presets"`, `"settings"`, or
+    /// empty for none.
     pub fn get_dialog(&self) -> String {
         self.0.props.borrow().dialog.clone()
     }
@@ -1009,6 +1014,34 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.fields != value {
             props.fields = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The Settings dialog's rows, whatever panel the inspector shows:
+    /// the app's preferences and shortcuts, and the folders it keeps.
+    pub fn get_settings_fields(&self) -> ModelRc<Field> {
+        self.0.props.borrow().settings_fields.clone()
+    }
+
+    pub fn set_settings_fields(&self, value: ModelRc<Field>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.settings_fields != value {
+            props.settings_fields = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The Settings dialog's section: `General`, `Recording`, `Shortcuts`,
+    /// `Library` or `Captions`.
+    pub fn get_settings_section(&self) -> String {
+        self.0.props.borrow().settings_section.clone()
+    }
+
+    pub fn set_settings_section(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.settings_section != value {
+            props.settings_section = value;
             self.window().invalidate();
         }
     }

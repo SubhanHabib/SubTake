@@ -44,6 +44,7 @@ mod preview;
 mod recorder;
 mod saved_presets;
 mod selection;
+mod settings;
 mod timeline;
 
 pub use menus::menu_commands;
@@ -311,6 +312,8 @@ pub struct RootView {
     /// The Presets dialog's fade in and out, as `inspector_slide`. It starts
     /// closed rather than `None`, so the first opening plays too.
     presets_slide: Option<(bool, f32, Instant)>,
+    /// The Settings dialog's fade, as `presets_slide`.
+    settings_slide: Option<(bool, f32, Instant)>,
     /// When the microphone meter last clipped, so its top bars can hold red
     /// for a second after the peak has passed.
     mic_clipped: Option<Instant>,
@@ -410,6 +413,7 @@ impl RootView {
             preview_zoom_move: None,
             presets: None,
             presets_slide: Some((false, 0., Instant::now())),
+            settings_slide: Some((false, 0., Instant::now())),
             mic_clipped: None,
             export_dismiss: None,
             export_done: None,

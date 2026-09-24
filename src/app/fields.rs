@@ -47,6 +47,39 @@ impl App {
         crate::inspector::present(raw, panel, &self.preferences.language)
     }
 
+    /// The folders and model file the app keeps, each a button whose
+    /// action picks another and whose value is where it is now, or empty.
+    fn folder_fields(&self) -> Vec<Field> {
+        let path =
+            |p: Option<&std::path::Path>| p.map(|p| p.display().to_string()).unwrap_or_default();
+        [
+            (
+                "choose-library",
+                "Project folder",
+                path(self.preferences.library_directory.as_deref()),
+            ),
+            (
+                "recording-folder",
+                "Recordings folder",
+                path(self.recording_directory().ok().as_deref()),
+            ),
+            (
+                "choose-model",
+                "Transcription model",
+                path(self.preferences.whisper_model.as_deref()),
+            ),
+        ]
+        .into_iter()
+        .map(|(key, label, value)| Field {
+            key: key.into(),
+            label: label.into(),
+            value,
+            kind: 3,
+            ..Default::default()
+        })
+        .collect()
+    }
+
     pub(super) fn raw_fields(&self, panel: &str) -> Vec<Field> {
         let p = self.history.as_ref().map(|h| &h.project);
         let settings = p
@@ -58,7 +91,7 @@ impl App {
             })
             .unwrap_or_default();
         let mut fields = vec![];
-        if panel == "Preferences" || panel == "Shortcuts" {
+        if panel == "Preferences" || panel == "Shortcuts" || panel == "Settings" {
             return [
                 (
                     "prefs.language",
@@ -113,6 +146,7 @@ impl App {
                     }
                 },
             ))
+            .chain(self.folder_fields())
             .collect();
         }
         if panel == "Wallpapers" {
