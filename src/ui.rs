@@ -262,7 +262,7 @@ pub struct RootView {
     /// it was read from so a new one is read again.
     wave_peaks: Option<(Arc<RenderImage>, Arc<[f32]>)>,
     /// The lane region's height and the inspector's width, as their edges
-    /// were last dragged. Not wired: remembering them between launches.
+    /// were last dragged, kept between launches in the preferences.
     lane_height: f32,
     inspector_width: f32,
     preview_bounds: Rc<Cell<Bounds<Pixels>>>,

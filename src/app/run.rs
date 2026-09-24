@@ -130,6 +130,23 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         })
     });
     ui.on_seek(|time| with_app(|app, ui| app.seek(ui, time as f64)));
+    {
+        let preferences = &state.borrow().preferences;
+        if let (Some(lanes), Some(inspector)) =
+            (preferences.lane_height, preferences.inspector_width)
+        {
+            ui.set_saved_layout(lanes, inspector);
+        }
+    }
+    ui.on_layout_change(|lanes, inspector| {
+        with_app(|app, _| {
+            app.preferences.lane_height = Some(lanes);
+            app.preferences.inspector_width = Some(inspector);
+            if let Err(error) = app.preferences.save() {
+                eprintln!("Save the editor layout: {error:#}");
+            }
+        })
+    });
     ui.on_panel_change(|panel| {
         with_app(|app, ui| {
             ui.set_panel(panel.clone());

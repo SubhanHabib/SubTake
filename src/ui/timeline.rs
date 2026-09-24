@@ -684,7 +684,9 @@ impl RootView {
                             (f32::from(event.position.x), s.inspector_width)
                         }
                     };
-                    if !rest {
+                    if rest {
+                        s.layout_changed();
+                    } else {
                         s.gesture = Some(Gesture::Resize {
                             edge,
                             origin,
@@ -778,6 +780,14 @@ impl RootView {
         cx.notify();
     }
 
+    /// Hands the two dragged edges to the app, which keeps them for the
+    /// next launch.
+    fn layout_changed(&self) {
+        if let Surface::Editor(e) = &self.surface {
+            e.invoke_layout_change(self.lane_height, self.inspector_width);
+        }
+    }
+
     pub(super) fn end_gesture(
         &mut self,
         event: &MouseUpEvent,
@@ -801,7 +811,7 @@ impl RootView {
                             e.invoke_move_region(region.kind, region.id, delta, mode);
                         }
                     }
-                    Gesture::Resize { .. } => {}
+                    Gesture::Resize { .. } => self.layout_changed(),
                     Gesture::Canvas { origin, resize, .. } => {
                         let b = self.preview_bounds.get();
                         e.invoke_canvas_edit(
@@ -958,6 +968,16 @@ impl RootView {
                             })),
                     ),
             );
+        // Where the last session left the two edges, unless the gallery
+        // asked for its own.
+        if let Some((lanes, inspector)) = window.take_saved_layout() {
+            if std::env::var_os("SUBTAKE_GALLERY_LANES").is_none() {
+                self.lane_height = lanes;
+            }
+            if std::env::var_os("SUBTAKE_GALLERY_INSPECTOR").is_none() {
+                self.inspector_width = inspector.clamp(PANEL_WIDTH_MIN, PANEL_WIDTH_MAX);
+            }
+        }
         let regions: Vec<Region> = window.get_regions().iter().collect();
         // The gallery's held states: the selected region moved or its end
         // trimmed a few seconds on, or the playhead held. A pointer moving

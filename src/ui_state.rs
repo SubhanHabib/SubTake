@@ -120,6 +120,9 @@ struct Properties {
     playhead: f32,
     timeline_zoom: f32,
     timeline_offset: f32,
+    /// The lane height and inspector width the last session left, for the
+    /// editor to take up once.
+    saved_layout: Option<(f32, f32)>,
     snap: bool,
     time_label: String,
     regions: ModelRc<Region>,
@@ -205,6 +208,7 @@ impl Default for Properties {
             playhead: 0.,
             timeline_zoom: 1.,
             timeline_offset: 0.,
+            saved_layout: None,
             snap: true,
             time_label: "00:00.000".into(),
             regions: ModelRc::default(),
@@ -260,6 +264,7 @@ struct Callbacks {
     select_region: Option<Rc<dyn Fn(String, String, bool)>>,
     move_region: Option<Rc<dyn Fn(String, String, f32, i32)>>,
     canvas_edit: Option<Rc<dyn Fn(f32, f32, bool)>>,
+    layout_change: Option<Rc<dyn Fn(f32, f32)>>,
     preview_click: Option<Rc<dyn Fn(f32, f32)>>,
     keyboard: Option<Rc<dyn Fn(String, bool, bool, bool) -> bool>>,
     translate: Option<Rc<dyn Fn(String, String) -> String>>,
@@ -837,6 +842,15 @@ impl UiHandle {
         }
     }
 
+    pub fn set_saved_layout(&self, lane_height: f32, inspector_width: f32) {
+        self.0.props.borrow_mut().saved_layout = Some((lane_height, inspector_width));
+        self.window().invalidate();
+    }
+
+    pub fn take_saved_layout(&self) -> Option<(f32, f32)> {
+        self.0.props.borrow_mut().saved_layout.take()
+    }
+
     pub fn get_timeline_offset(&self) -> f32 {
         self.0.props.borrow().timeline_offset
     }
@@ -1386,6 +1400,17 @@ impl UiHandle {
             callback(a0, a1, a2)
         } else {
             Default::default()
+        }
+    }
+
+    pub fn on_layout_change(&self, callback: impl Fn(f32, f32) + 'static) {
+        self.0.callbacks.borrow_mut().layout_change = Some(Rc::new(callback));
+    }
+
+    pub fn invoke_layout_change(&self, lane_height: f32, inspector_width: f32) {
+        let callback = self.0.callbacks.borrow().layout_change.clone();
+        if let Some(callback) = callback {
+            callback(lane_height, inspector_width)
         }
     }
 

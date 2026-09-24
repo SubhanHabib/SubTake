@@ -17,6 +17,10 @@ pub struct Preferences {
     pub countdown_seconds: u32,
     pub recent_projects: Vec<PathBuf>,
     pub editor_shortcuts: std::collections::BTreeMap<String, String>,
+    /// The editor's lane stack height and inspector width, where they were
+    /// last dragged to. `None` until the first drag.
+    pub lane_height: Option<f32>,
+    pub inspector_width: Option<f32>,
 }
 
 impl Default for Preferences {
@@ -39,6 +43,8 @@ impl Default for Preferences {
             countdown_seconds: 3,
             recent_projects: vec![],
             editor_shortcuts: crate::shortcuts::defaults(),
+            lane_height: None,
+            inspector_width: None,
         }
     }
 }
