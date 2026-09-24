@@ -18,8 +18,8 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> Vec<AnyElement> {
         let theme = self.theme;
-        let names: Vec<String> = e.get_saved_presets().iter().map(Into::into).collect();
-        let parts: Vec<String> = e.get_saved_preset_parts().iter().map(Into::into).collect();
+        let names: Vec<String> = e.get_saved_presets().iter().collect();
+        let parts: Vec<String> = e.get_saved_preset_parts().iter().collect();
         let default = e.get_default_preset();
         // The one the app last pointed at, or the first.
         let chosen = e.get_selected_preset();

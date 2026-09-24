@@ -839,16 +839,8 @@ impl Gallery {
     /// The saved presets' names and parts, as the dialog reads them.
     fn saved_presets(&self) -> (Vec<String>, Vec<String>) {
         (
-            self.editor
-                .get_saved_presets()
-                .iter()
-                .map(Into::into)
-                .collect(),
-            self.editor
-                .get_saved_preset_parts()
-                .iter()
-                .map(Into::into)
-                .collect(),
+            self.editor.get_saved_presets().iter().collect(),
+            self.editor.get_saved_preset_parts().iter().collect(),
         )
     }
 
