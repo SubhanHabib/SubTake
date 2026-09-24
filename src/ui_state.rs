@@ -12,9 +12,9 @@ pub struct Region {
     pub row: i32,
     pub tint: Color,
     pub selected: bool,
-    /// An annotation drawn as an arrow (`"type": "figure"`), which takes
-    /// the arrow's icon rather than the text one.
-    pub arrow: bool,
+    /// An annotation's own glyph, by its type; empty for every other kind,
+    /// which takes its kind's.
+    pub glyph: &'static str,
 }
 
 impl Region {

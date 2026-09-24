@@ -299,7 +299,14 @@ pub(super) fn fixture_region(
         row,
         tint: Color::from_rgb_u8((tint >> 16) as u8, (tint >> 8) as u8, tint as u8),
         selected: false,
-        arrow: kind == "annotationRegions" && label == "Arrow",
+        glyph: match label {
+            _ if kind != "annotationRegions" => "",
+            "Arrow" => "ArrowUpRight-regular",
+            "Blur" => "Drop-regular",
+            "Spotlight" => "Flashlight-regular",
+            "Step 1" => "NumberCircleOne-regular",
+            _ => "",
+        },
     }
 }
 
@@ -332,6 +339,8 @@ pub(super) fn fixture_regions() -> Vec<Region> {
             0xcbb44f,
         ),
         region("annotationRegions", "a2", "Arrow", 86., 94., 2, 0xcbb44f),
+        region("annotationRegions", "a3", "Step 1", 27., 32., 2, 0xcbb44f),
+        region("annotationRegions", "a4", "Blur", 56., 64., 2, 0xcbb44f),
         region(
             Region::TAKE_AUDIO,
             "take",

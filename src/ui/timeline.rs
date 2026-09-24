@@ -34,7 +34,7 @@ fn region_icon(region: &Region) -> Option<&'static str> {
         "zoomRegions" => Some("MagnifyingGlassPlus-regular"),
         "speedRegions" => Some("Timer-regular"),
         "trimRegions" => Some("Scissors-regular"),
-        "annotationRegions" if region.arrow => Some("ArrowUpRight-regular"),
+        "annotationRegions" if !region.glyph.is_empty() => Some(region.glyph),
         "annotationRegions" => Some("TextT-regular"),
         "autoCaptions" => Some("ClosedCaptioning-regular"),
         "audioRegions" | Region::TAKE_AUDIO => Some("MusicNotes-regular"),

@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 
 /// Every annotation the Add panel and menu offer, as (action, label, glyph).
 pub const KINDS: [(&str, &str, &str); 11] = [
-    ("add-title", "Title", "TextT-regular"),
+    ("add-title", "Title", "TextAa-regular"),
     ("add-lower-third", "Lower third", "TextAlignLeft-regular"),
     ("add-label", "Label", "Tag-regular"),
     ("add-figure", "Arrow", "ArrowUpRight-regular"),
@@ -17,8 +17,29 @@ pub const KINDS: [(&str, &str, &str); 11] = [
     ("add-spotlight", "Spotlight", "Flashlight-regular"),
     ("add-step", "Step", "NumberCircleOne-regular"),
     ("add-image", "Image", "Image-regular"),
-    ("add-text", "Text", "TextAa-regular"),
+    ("add-text", "Text", "TextT-regular"),
 ];
+
+/// An annotation's kind, by its type, as its name and glyph: what its plate on
+/// the lane shows.
+pub fn kind_of(annotation: &Value) -> (&'static str, &'static str) {
+    let action = match annotation["type"].as_str().unwrap_or("text") {
+        "figure" => "add-figure",
+        "blur" if annotation["blurMode"] == "pixelate" => "add-pixelate",
+        "blur" => "add-blur",
+        "highlight" => "add-highlight",
+        "spotlight" => "add-spotlight",
+        "step" => "add-step",
+        "image" => "add-image",
+        _ => "add-text",
+    };
+    KINDS
+        .iter()
+        .find(|(kind, _, _)| *kind == action)
+        .map_or(("Text", "TextT-regular"), |(_, name, glyph)| {
+            (*name, *glyph)
+        })
+}
 
 /// The new annotation for `action`, over `existing` ones in an output
 /// `aspect` (width over height) wide, or `None` for an action that adds no

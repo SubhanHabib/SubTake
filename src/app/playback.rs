@@ -331,7 +331,7 @@ impl App {
                     row,
                     tint: ui_runtime::Color::from_rgb_u8(red, green, blue),
                     selected: false,
-                    arrow: false,
+                    glyph: "",
                 };
                 if key == "clipRegions" && history.project.regions(key).is_empty() {
                     for (i, span) in timeline::spans(&history.project, duration)
@@ -350,17 +350,29 @@ impl App {
                 }
                 for r in history.project.regions(key) {
                     let [red, green, blue, _] = subtake_native::project::parse_color(tint);
+                    // An annotation without text of its own, a blur or an
+                    // arrow, is labelled by its kind; a step by its number.
+                    let (kind, glyph) = if key == "annotationRegions" {
+                        subtake_native::annotations::kind_of(r)
+                    } else {
+                        (title, "")
+                    };
+                    let step = format!("Step {}", r["textContent"].as_str().unwrap_or(""));
                     // A speed region is labelled by its speed, `2×`.
                     let speed = format!("{}×", n(r, "speed", 1.));
                     regions.push(Region {
                         id: r["id"].as_str().unwrap_or("").into(),
                         kind: key.into(),
-                        label: r["text"]
-                            .as_str()
-                            .or(r["textContent"].as_str())
-                            .filter(|s| !s.is_empty())
-                            .unwrap_or(if key == "speedRegions" { &speed } else { title })
-                            .into(),
+                        label: if r["type"] == "step" {
+                            step.as_str()
+                        } else {
+                            r["text"]
+                                .as_str()
+                                .or(r["textContent"].as_str())
+                                .filter(|s| !s.is_empty())
+                                .unwrap_or(if key == "speedRegions" { &speed } else { kind })
+                        }
+                        .into(),
                         start: (n(r, "startMs", 0.) / 1000.) as f32,
                         end: ((n(r, "startMs", 0.)
                             + (n(r, "endMs", 0.) - n(r, "startMs", 0.))
@@ -375,7 +387,7 @@ impl App {
                         selected: selected_keys
                             .iter()
                             .any(|(kind, id)| kind == key && r["id"] == *id),
-                        arrow: key == "annotationRegions" && r["type"] == "figure",
+                        glyph,
                     });
                 }
             }
