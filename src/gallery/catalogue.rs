@@ -1354,7 +1354,12 @@ impl Render for Catalogue {
         } else {
             Theme::WINDOW_SATURATION
         };
-        subtake_native::platform::set_gpui_window_glass(window, Theme::WINDOW_BLUR, saturation);
+        subtake_native::platform::set_gpui_window_glass(
+            window,
+            Theme::WINDOW_BLUR,
+            saturation,
+            theme.ground,
+        );
         div()
             .size_full()
             .font_family(subtake_theme::FONT_SANS)

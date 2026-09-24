@@ -543,7 +543,12 @@ impl Render for RootView {
             } else {
                 Theme::WINDOW_SATURATION
             };
-            crate::platform::set_window_glass(e.window(), Theme::WINDOW_BLUR, saturation);
+            crate::platform::set_window_glass(
+                e.window(),
+                Theme::WINDOW_BLUR,
+                saturation,
+                self.theme.ground,
+            );
         }
         let content = match &surface {
             Surface::Editor(e) => self.editor(e, window, cx),

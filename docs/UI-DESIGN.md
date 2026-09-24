@@ -24,6 +24,12 @@ Not drawn by the design: the shell is 40% (`#fafaf966`, `#0d0d1066`) and
 little more, at 41%), so the desktop shows through every surface. `scripts/dev.py --gallery=light` shows them on any
 `panel-` screen.
 
+Also not drawn by the design: `ground` (`#e6e6e9`, `#1a1a1f`) is the opaque
+solid under the window's material. macOS drops the live blur in Mission
+Control's thumbnails and for a frame or two while it rebuilds the blur going
+into and out of them; the window shows `ground` under `bg` there, where it
+used to flash black.
+
 **There are no real borders anywhere.** Every edge is a `BoxShadow`: inset for
 a hairline, spread for a focus ring. A border adds to what an element measures,
 so an edge appearing or changing width would move the element and everything

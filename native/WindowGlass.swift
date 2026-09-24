@@ -21,6 +21,11 @@ final class WindowGlass: NSVisualEffectView {
         didSet { if saturation != oldValue { needsDisplay = true } }
     }
 
+    /// The theme's `ground`: what shows where the backdrop is not drawn.
+    var ground: CGColor = NSColor.black.cgColor {
+        didSet { if ground != oldValue { needsDisplay = true } }
+    }
+
     override func hitTest(_ point: NSPoint) -> NSView? {
         nil
     }
@@ -29,9 +34,12 @@ final class WindowGlass: NSVisualEffectView {
         super.updateLayer()
         guard let layer else { return }
         // Mission Control and the Spaces switcher draw window snapshots
-        // without backdrop layers. A dark base under the backdrop keeps the
-        // window reading as a solid surface there. The live blur covers it.
-        layer.backgroundColor = NSColor.black.cgColor
+        // without backdrop layers, and the blur is rebuilt going into and
+        // out of them. A base under the backdrop keeps the window reading as
+        // a solid surface there; it is the theme's `ground`, not black, so
+        // those frames match the frost instead of flashing dark. The live
+        // blur covers it.
+        layer.backgroundColor = ground
         layer.sublayers?.forEach(tune)
     }
 
@@ -67,10 +75,18 @@ func windowGlass(under view: NSView) -> WindowGlass? {
 }
 
 /// Frosts the whole window behind `view`: `blur` points of blur over the
-/// desktop, at `saturation` times its colour. The first call installs the
-/// material and the rest only retune it, so it is cheap to call every frame.
+/// desktop, at `saturation` times its colour, standing on an opaque `ground`
+/// of `red`, `green`, `blue` (0–1). The first call installs the material and
+/// the rest only retune it, so it is cheap to call every frame.
 @_cdecl("subtake_window_set_glass")
-public func subtake_window_set_glass(_ pointer: UnsafeMutableRawPointer?, _ blur: Double, _ saturation: Double) {
+public func subtake_window_set_glass(
+    _ pointer: UnsafeMutableRawPointer?,
+    _ blur: Double,
+    _ saturation: Double,
+    _ red: Double,
+    _ green: Double,
+    _ blue: Double
+) {
     guard borrowedWindow(pointer) != nil, let view = borrowedView(pointer) else { return }
 
     var glass = windowGlass(under: view)
@@ -90,4 +106,5 @@ public func subtake_window_set_glass(_ pointer: UnsafeMutableRawPointer?, _ blur
     }
     glass?.blurRadius = CGFloat(blur)
     glass?.saturation = CGFloat(saturation)
+    glass?.ground = CGColor(srgbRed: red, green: green, blue: blue, alpha: 1)
 }

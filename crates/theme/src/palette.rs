@@ -27,6 +27,7 @@ impl Theme {
             // Not drawn by the design: the shell at 40%, and the floats at
             // about half the handoff's alpha, so the desktop shows through.
             bg: css("#fafaf966"),
+            ground: css("#e6e6e9"),
             glass: css("#ffffff46"),
             card: css("#ffffff5a"),
             sunk: css("#ececeeb8"),
@@ -73,6 +74,7 @@ impl Theme {
             // Not drawn by the design: as the light shell and floats, but
             // `glass` at 41% — at half the handoff's it read too thin on dark.
             bg: css("#0d0d1066"),
+            ground: css("#1a1a1f"),
             glass: css("#1e1e2469"),
             card: css("#22222964"),
             // Recesses lighten on dark: a darkening under `card` was darker

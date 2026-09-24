@@ -40,6 +40,14 @@ pub struct Theme {
     // backdrop blur, because only they have the desktop behind them.
     /// The window shell. One per screen.
     pub bg: Hsla,
+    /// The solid the window's material stands on, under `bg`, for when macOS
+    /// draws it without its live blur: Mission Control's thumbnails, and the
+    /// frames while it rebuilds the blur going into and out of them. Opaque,
+    /// and near what the frost reads as, so those frames match the theme
+    /// rather than flash black.
+    ///
+    /// Not drawn by the design.
+    pub ground: Hsla,
     /// Anything that floats and holds controls: console, tool pod, player
     /// bar, recorder bar.
     pub glass: Hsla,

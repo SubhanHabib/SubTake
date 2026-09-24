@@ -350,7 +350,14 @@ unsafe extern "C" {
     pub(super) fn subtake_window_set_transparent(view: *mut std::ffi::c_void, transparent: bool);
     pub(super) fn subtake_window_set_blur(view: *mut std::ffi::c_void, enabled: bool);
     pub(super) fn subtake_window_set_corner_radius(view: *mut std::ffi::c_void, radius: f64);
-    pub(super) fn subtake_window_set_glass(view: *mut std::ffi::c_void, blur: f64, saturation: f64);
+    pub(super) fn subtake_window_set_glass(
+        view: *mut std::ffi::c_void,
+        blur: f64,
+        saturation: f64,
+        red: f64,
+        green: f64,
+        blue: f64,
+    );
     pub(super) fn subtake_resize_launcher_options(
         view: *mut std::ffi::c_void,
         width: f64,
@@ -421,48 +428,67 @@ pub fn set_recorder_glass_height(window: &crate::ui_runtime::Window, height: f32
     let _ = (window, height);
 }
 
-/// Tint a recorder window's material for a dark or a light theme, whatever
-/// the system's own appearance.
-/// Frosts the editor window behind its paint. Installs the material on the
-/// first call and only retunes it after, so it is safe to call every frame.
-pub fn set_window_glass(window: &crate::ui_runtime::Window, blur: f32, saturation: f32) {
+/// Frosts the editor window behind its paint, standing on `ground` where
+/// macOS draws it without the blur (see `Theme::ground`). Installs the
+/// material on the first call and only retunes it, so it is safe to call
+/// every frame.
+pub fn set_window_glass(
+    window: &crate::ui_runtime::Window,
+    blur: f32,
+    saturation: f32,
+    ground: gpui::Hsla,
+) {
     #[cfg(target_os = "macos")]
     {
         if let Ok(view) = native_view(window) {
-            unsafe {
-                subtake_window_set_glass(view, f64::from(blur), f64::from(saturation));
-            }
+            window_glass(view, blur, saturation, ground);
         }
     }
 
     #[cfg(not(target_os = "macos"))]
-    let _ = (window, blur, saturation);
+    let _ = (window, blur, saturation, ground);
+}
+
+#[cfg(target_os = "macos")]
+fn window_glass(view: *mut std::ffi::c_void, blur: f32, saturation: f32, ground: gpui::Hsla) {
+    let ground = gpui::Rgba::from(ground);
+    unsafe {
+        subtake_window_set_glass(
+            view,
+            f64::from(blur),
+            f64::from(saturation),
+            f64::from(ground.r),
+            f64::from(ground.g),
+            f64::from(ground.b),
+        );
+    }
 }
 
 /// `set_window_glass` for a window opened straight on gpui, outside the
 /// surface registry — the gallery's component catalogue — so it frosts as the
 /// editor does. Safe to call every frame, as that one is.
-pub fn set_gpui_window_glass(window: &gpui::Window, blur: f32, saturation: f32) {
+pub fn set_gpui_window_glass(
+    window: &gpui::Window,
+    blur: f32,
+    saturation: f32,
+    ground: gpui::Hsla,
+) {
     #[cfg(target_os = "macos")]
     {
         use raw_window_handle::{HasWindowHandle, RawWindowHandle};
         if let Ok(handle) = HasWindowHandle::window_handle(window)
             && let RawWindowHandle::AppKit(handle) = handle.as_raw()
         {
-            unsafe {
-                subtake_window_set_glass(
-                    handle.ns_view.as_ptr(),
-                    f64::from(blur),
-                    f64::from(saturation),
-                );
-            }
+            window_glass(handle.ns_view.as_ptr(), blur, saturation, ground);
         }
     }
 
     #[cfg(not(target_os = "macos"))]
-    let _ = (window, blur, saturation);
+    let _ = (window, blur, saturation, ground);
 }
 
+/// Tint a recorder window's material for a dark or a light theme, whatever
+/// the system's own appearance.
 pub fn set_recorder_glass_dark(window: &crate::ui_runtime::Window, dark: bool) {
     #[cfg(target_os = "macos")]
     {
