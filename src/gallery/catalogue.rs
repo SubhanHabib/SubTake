@@ -8,7 +8,8 @@
 //! take typing. The header's Light / Dark switch retints the whole page,
 //! the retained controls included. The frosted planes sit over a picture
 //! the header's Backdrop picker swaps, since a blur over a flat ground
-//! shows nothing.
+//! shows nothing. The window itself is frosted as the editor's is, the
+//! desktop blurred through it and `bg` over that.
 //!
 //! `SUBTAKE_GALLERY_COMPONENTS=off` leaves the window closed;
 //! `SUBTAKE_GALLERY_COMPONENTS=frost` (or any section's name, lowercased)
@@ -319,8 +320,13 @@ impl Catalogue {
             .flex_none()
             .items_center()
             .gap(px(Theme::GAP_LARGE))
-            .px(px(Theme::INSET))
-            .py(px(Theme::GAP_LARGE))
+            // The editor's titlebar: its height, clear of the traffic lights,
+            // and the drag that moves the window, since the titlebar is
+            // see-through and this is all of it there is.
+            .h(px(Theme::TITLEBAR_HEIGHT))
+            .pl(px(Theme::TITLEBAR_TRAFFIC_LIGHTS))
+            .pr(px(Theme::INSET))
+            .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move())
             .border_b_1()
             .border_color(theme.line)
             .child(ui::panel_title("Components").text_color(theme.text))
@@ -1340,18 +1346,17 @@ impl Render for Catalogue {
         if ui::tick_hover_fades() {
             window.request_animation_frame();
         }
-        // An opaque ground the product would get from the window's material:
-        // `bg` is a tint laid over the vibrancy, not a colour of its own.
-        let ground = if self.dark {
-            hsla(240. / 360., 0.06, 0.11, 1.)
+        // The editor's frost: the same native material at the same blur and
+        // saturation, with `bg` tinting it, so every specimen sits on what it
+        // sits on in the app.
+        let saturation = if self.dark {
+            Theme::WINDOW_SATURATION_DARK
         } else {
-            hsla(60. / 360., 0.05, 0.9, 1.)
+            Theme::WINDOW_SATURATION
         };
+        subtake_native::platform::set_gpui_window_glass(window, Theme::WINDOW_BLUR, saturation);
         div()
             .size_full()
-            .flex()
-            .flex_col()
-            .bg(ground)
             .font_family(subtake_theme::FONT_SANS)
             .text_color(theme.text)
             .text_size(px(Theme::FONT_BODY))

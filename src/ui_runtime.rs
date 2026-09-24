@@ -54,8 +54,9 @@ use window::*;
 
 /// Open a plain window around a view of the caller's own — the gallery's
 /// component catalogue — outside the surface registry, so `sync_windows`
-/// never titles, sizes or hides it. It opens opaque, unfocused and flush
-/// with the right of the main display. Call it from a timer, not from inside
+/// never titles, sizes or hides it. It opens unfocused and flush with the
+/// right of the main display, transparent with a see-through titlebar as the
+/// editor is, so the view can frost it with `platform::set_gpui_window_glass`. Call it from a timer, not from inside
 /// a render: it takes the app borrow.
 pub fn open_view_window<V: gpui::Render + 'static>(
     title: &str,
@@ -81,9 +82,10 @@ pub fn open_view_window<V: gpui::Render + 'static>(
             ))),
             titlebar: Some(gpui::TitlebarOptions {
                 title: Some(title),
+                appears_transparent: true,
                 ..Default::default()
             }),
-            window_background: gpui::WindowBackgroundAppearance::Opaque,
+            window_background: gpui::WindowBackgroundAppearance::Transparent,
             focus: false,
             ..Default::default()
         };

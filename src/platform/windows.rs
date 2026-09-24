@@ -439,6 +439,30 @@ pub fn set_window_glass(window: &crate::ui_runtime::Window, blur: f32, saturatio
     let _ = (window, blur, saturation);
 }
 
+/// `set_window_glass` for a window opened straight on gpui, outside the
+/// surface registry — the gallery's component catalogue — so it frosts as the
+/// editor does. Safe to call every frame, as that one is.
+pub fn set_gpui_window_glass(window: &gpui::Window, blur: f32, saturation: f32) {
+    #[cfg(target_os = "macos")]
+    {
+        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+        if let Ok(handle) = HasWindowHandle::window_handle(window)
+            && let RawWindowHandle::AppKit(handle) = handle.as_raw()
+        {
+            unsafe {
+                subtake_window_set_glass(
+                    handle.ns_view.as_ptr(),
+                    f64::from(blur),
+                    f64::from(saturation),
+                );
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, blur, saturation);
+}
+
 pub fn set_recorder_glass_dark(window: &crate::ui_runtime::Window, dark: bool) {
     #[cfg(target_os = "macos")]
     {
