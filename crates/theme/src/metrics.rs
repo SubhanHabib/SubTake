@@ -255,7 +255,8 @@ impl Theme {
     // ---- shadows ---------------------------------------------------------
     //
     // How far each shadow falls and how soft it is. Their colours, alpha
-    // included, are the `shadow_*` palette tokens.
+    // included, are the `shadow_*` palette tokens; a glow takes the colour
+    // of what glows, at the opacity given here.
 
     /// The wide layer under every float, which lifts it off the desktop.
     pub const PANEL_SHADOW_FAR_Y: f32 = 24.0;
@@ -278,6 +279,28 @@ impl Theme {
     /// Under a toggle's thumb.
     pub const THUMB_SHADOW_Y: f32 = 1.0;
     pub const THUMB_SHADOW_BLUR: f32 = 3.0;
+    /// The glow under a filled accent control, in `accent_soft`, and one
+    /// step wider under a hero-height one.
+    pub const GLOW_Y: f32 = 8.0;
+    pub const GLOW_BLUR: f32 = 20.0;
+    pub const GLOW_HERO_Y: f32 = 12.0;
+    pub const GLOW_HERO_BLUR: f32 = 28.0;
+    /// The glow under Record, in `rec` at the opacity below.
+    pub const RECORD_GLOW_Y: f32 = 10.0;
+    pub const RECORD_GLOW_BLUR: f32 = 26.0;
+    pub const RECORD_GLOW_OPACITY: f32 = 0.32;
+    /// A finished export's glow at its peak: its blur, which it spreads half
+    /// as far as, and the accent's opacity in it.
+    pub const EXPORT_GLOW: f32 = 6.0;
+    pub const EXPORT_GLOW_OPACITY: f32 = 0.35;
+    /// Under a preset's frame in its preview. Its strength is the look's.
+    pub const PRESET_SHADOW_Y: f32 = 2.0;
+    pub const PRESET_SHADOW_BLUR: f32 = 6.0;
+    /// The camera swatch on the recorder's preview: its ring, and the
+    /// shadow under it.
+    pub const CAMERA_SWATCH_RING: f32 = 2.0;
+    pub const CAMERA_SHADOW_Y: f32 = 6.0;
+    pub const CAMERA_SHADOW_BLUR: f32 = 14.0;
 
     // ---- fixed shapes ----------------------------------------------------
 
@@ -821,8 +844,7 @@ pub const DIALOG_IN_MS: u64 = 200;
 pub const DIALOG_OUT_MS: u64 = 140;
 pub const DIALOG_RISE: f32 = 12.0;
 /// A finished export's tick draws itself on left to right over the first
-/// time, while its label fades in; the pill swells a soft accent glow out
-/// to the spread below and back over the second.
+/// time, while its label fades in; the pill swells a soft accent glow
+/// (`Theme::EXPORT_GLOW`) out and back over the second.
 pub const EXPORT_DONE_TICK_MS: u64 = 300;
 pub const EXPORT_DONE_GLOW_MS: u64 = 500;
-pub const EXPORT_DONE_GLOW: f32 = 6.0;

@@ -233,13 +233,7 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         // A stand-in for the captured screen, the same light plate in both
         // themes: it is a picture of a recording, not a piece of chrome.
         .bg(hsla(0., 0., 0.9, 1.))
-        .shadow(vec![BoxShadow {
-            color: hsla(0., 0., 0., look.shadow as f32),
-            offset: point(px(0.), px(2.)),
-            blur_radius: px(6.),
-            spread_radius: px(0.),
-            inset: false,
-        }]);
+        .shadow(vec![theme.preset_shadow(look.shadow as f32)]);
     let preview = div()
         .flex_none()
         .w(px(Theme::preset_preview_width()))

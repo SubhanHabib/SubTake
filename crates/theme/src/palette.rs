@@ -72,6 +72,10 @@ impl Theme {
             shadow_picture: css("hsla(234, 33%, 12%, 0.18)"),
             shadow_segment: css("hsla(234, 33%, 12%, 0.12)"),
             shadow_thumb: css("hsla(0, 0%, 0%, 0.3)"),
+            // The camera swatch sits on the picture, not on chrome, so it
+            // keeps one ring and one shadow in both appearances.
+            shadow_camera: css("hsla(0, 0%, 0%, 0.35)"),
+            camera_ring: css("hsla(0, 0%, 100%, 0.7)"),
         }
     }
 
@@ -127,6 +131,10 @@ impl Theme {
             // The pill and the thumb keep light's shadow on dark.
             shadow_segment: css("hsla(234, 33%, 12%, 0.12)"),
             shadow_thumb: css("hsla(0, 0%, 0%, 0.3)"),
+            // The camera swatch sits on the picture, not on chrome, so it
+            // keeps one ring and one shadow in both appearances.
+            shadow_camera: css("hsla(0, 0%, 0%, 0.35)"),
+            camera_ring: css("hsla(0, 0%, 100%, 0.7)"),
         }
     }
 }

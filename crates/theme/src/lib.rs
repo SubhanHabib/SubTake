@@ -118,7 +118,9 @@ pub struct Theme {
 
     // ---- shadows ----
     //
-    // Colour and strength; how far each falls is in `metrics.rs`.
+    // Colour and strength; how far each falls is in `metrics.rs`. A glow is
+    // not here: it takes the colour of what glows, at an opacity kept with
+    // its size.
     /// The wide layer under every float, glass and card alike.
     pub shadow_far: Hsla,
     /// The tight layer under every float, and a raised control's lift.
@@ -129,6 +131,10 @@ pub struct Theme {
     pub shadow_segment: Hsla,
     /// Under a toggle's thumb.
     pub shadow_thumb: Hsla,
+    /// Under the camera swatch on the recorder's preview.
+    pub shadow_camera: Hsla,
+    /// The camera swatch's ring.
+    pub camera_ring: Hsla,
 }
 
 impl Theme {
@@ -218,6 +224,65 @@ impl Theme {
             self.shadow_thumb,
             (Self::thumb_shadow_y(), Self::thumb_shadow_blur()),
         )
+    }
+
+    /// The glow under a filled accent control, one step wider at hero
+    /// height, and Record's in its own red. Only those two glow: it is how
+    /// they say they are the action, without another colour.
+    pub fn action_glow(&self, hero: bool) -> gpui::BoxShadow {
+        let fall = if hero {
+            (Self::glow_hero_y(), Self::glow_hero_blur())
+        } else {
+            (Self::glow_y(), Self::glow_blur())
+        };
+        drop_shadow(self.accent_soft, fall)
+    }
+
+    pub fn record_glow(&self) -> gpui::BoxShadow {
+        drop_shadow(
+            self.rec.opacity(Self::record_glow_opacity()),
+            (Self::record_glow_y(), Self::record_glow_blur()),
+        )
+    }
+
+    /// A finished export's glow, `swell` of the way to its peak: an even
+    /// accent light around the pill, spreading half as far as it blurs.
+    pub fn export_done_glow(&self, swell: f32) -> gpui::BoxShadow {
+        let blur = Self::export_glow() * swell;
+        gpui::BoxShadow {
+            color: self.accent.opacity(Self::export_glow_opacity() * swell),
+            offset: gpui::point(gpui::px(0.), gpui::px(0.)),
+            blur_radius: gpui::px(blur),
+            spread_radius: gpui::px(blur / 2.),
+            inset: false,
+        }
+    }
+
+    /// The shadow a preset's frame casts in its preview, at the look's own
+    /// strength: it is a picture of that look, not a piece of chrome.
+    pub fn preset_shadow(&self, strength: f32) -> gpui::BoxShadow {
+        drop_shadow(
+            gpui::hsla(0., 0., 0., strength),
+            (Self::preset_shadow_y(), Self::preset_shadow_blur()),
+        )
+    }
+
+    /// The camera swatch on the recorder's preview: a ring, and the shadow
+    /// that lifts it off the picture.
+    pub fn camera_swatch_shadow(&self) -> Vec<gpui::BoxShadow> {
+        vec![
+            gpui::BoxShadow {
+                color: self.camera_ring,
+                offset: gpui::point(gpui::px(0.), gpui::px(0.)),
+                blur_radius: gpui::px(0.),
+                spread_radius: gpui::px(Self::camera_swatch_ring()),
+                inset: false,
+            },
+            drop_shadow(
+                self.shadow_camera,
+                (Self::camera_shadow_y(), Self::camera_shadow_blur()),
+            ),
+        ]
     }
 
     /// A raised control, hovered: its own tone one step up the fill scale.

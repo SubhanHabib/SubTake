@@ -337,18 +337,6 @@ pub fn pressable(
         .on_hover(motion::hover_listener(hover_key))
 }
 
-/// A glow under a filled control. Only the accent and Record carry one — it
-/// is how those two say they are the action, without another colour.
-fn glow(color: Hsla, blur: f32, offset: f32) -> BoxShadow {
-    BoxShadow {
-        color,
-        offset: point(px(0.), px(offset)),
-        blur_radius: px(blur),
-        spread_radius: px(0.),
-        inset: false,
-    }
-}
-
 /// A hairline drawn inside the control's own edge.
 pub fn hairline(color: Hsla, width: f32) -> BoxShadow {
     BoxShadow {
@@ -517,14 +505,11 @@ impl RenderOnce for Button {
         if self.enabled && filled {
             match self.variant {
                 ButtonVariant::Transport => {}
-                ButtonVariant::Record => shadows.push(glow(theme.rec.opacity(0.32), 26., 10.)),
+                ButtonVariant::Record => shadows.push(theme.record_glow()),
                 // A hero button glows one step wider than a primary one. It
                 // is the same accent saying the same thing, on a screen with
                 // nothing else on it to say it against.
-                _ if height >= Theme::control_height_hero() => {
-                    shadows.push(glow(theme.accent_soft, 28., 12.))
-                }
-                _ => shadows.push(glow(theme.accent_soft, 20., 8.)),
+                _ => shadows.push(theme.action_glow(height >= Theme::control_height_hero())),
             }
         }
         // A raised control lifts under the pointer: a `0 2 6` under whatever

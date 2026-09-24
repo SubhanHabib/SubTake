@@ -314,13 +314,7 @@ impl RootView {
                     }
                 }))
                 .when(swell > 0., |pill| {
-                    pill.shadow(vec![BoxShadow {
-                        color: theme.accent.opacity(0.35 * swell),
-                        offset: point(px(0.), px(0.)),
-                        blur_radius: px(EXPORT_DONE_GLOW * swell),
-                        spread_radius: px(EXPORT_DONE_GLOW * swell / 2.),
-                        inset: false,
-                    }])
+                    pill.shadow(vec![theme.export_done_glow(swell)])
                 })
                 .child(
                     div()

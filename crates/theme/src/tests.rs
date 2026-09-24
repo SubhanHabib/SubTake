@@ -211,7 +211,7 @@ fn every_colour_token_is_tunable_and_prints_back_as_it_was_written() {
     // The catalogue's colour table is generated from `struct Theme`; a field
     // the generator missed could not be tuned, and a hex that did not parse
     // back to itself would paste a different colour into `palette.rs`.
-    assert_eq!(tune::colours().len(), 32);
+    assert_eq!(tune::colours().len(), 34);
     for appearance in [Appearance::Light, Appearance::Dark] {
         for colour in tune::colours() {
             let written = tune::hex(colour.default(appearance));

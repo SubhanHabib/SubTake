@@ -786,22 +786,7 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
                 .size(px(Theme::camera_swatch()))
                 .rounded_full()
                 .bg(rgb(0x1b2434))
-                .shadow(vec![
-                    BoxShadow {
-                        color: hsla(0., 0., 1., 0.7),
-                        offset: point(px(0.), px(0.)),
-                        blur_radius: px(0.),
-                        spread_radius: px(2.),
-                        inset: false,
-                    },
-                    BoxShadow {
-                        color: hsla(0., 0., 0., 0.35),
-                        offset: point(px(0.), px(6.)),
-                        blur_radius: px(14.),
-                        spread_radius: px(0.),
-                        inset: false,
-                    },
-                ]),
+                .shadow(theme.camera_swatch_shadow()),
         )
         // Palette churn: the handoff blurs what is under this chip by 18.
         // A backdrop blur inside the card would be a second frosted layer
