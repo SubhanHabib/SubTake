@@ -49,10 +49,10 @@ pub struct Theme {
     ///
     /// Not drawn by the design.
     pub ground: Hsla,
-    /// Anything that floats and holds controls: console, tool pod, player
-    /// bar, recorder bar.
+    /// Anything that floats and holds controls: console, inspector, tool
+    /// pod, player bar, recorder bar.
     pub glass: Hsla,
-    /// Anything that floats and holds text: inspector, dialog, selected row.
+    /// Anything that floats and holds text: dialog, selected row.
     pub card: Hsla,
     /// A recess inside one of the above: lanes, sliders, segmented backings.
     pub sunk: Hsla,

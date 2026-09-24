@@ -1033,7 +1033,7 @@ impl RootView {
         let lead = 1000. / 60. / ms as f32;
         let enter = Animation::new(std::time::Duration::from_millis(ms))
             .with_easing(move |t| subtake_ui::motion::EASE_OUT.eval(lead + (1. - lead) * t));
-        let el = content_panel(theme)
+        let el = panel(theme)
             .py_0()
             .gap_0()
             .size_full()
@@ -1076,8 +1076,8 @@ impl RootView {
                 .flex()
                 .occlude()
                 .child(frosted(
-                    UiSurface::Content.radius(),
-                    UiSurface::Content.blur(),
+                    UiSurface::Panel.radius(),
+                    UiSurface::Panel.blur(),
                     el,
                 ))
                 // Its left edge takes a drag, trading stage for panel.

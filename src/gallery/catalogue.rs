@@ -1672,7 +1672,7 @@ impl Catalogue {
                 )
                 .child(Recorded {
                     reads: self.reads[index].clone(),
-                    child: ui::content_panel(theme)
+                    child: ui::panel(theme)
                         .flex()
                         .flex_col()
                         .gap(px(Theme::gap_large()))

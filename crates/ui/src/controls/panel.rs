@@ -9,15 +9,15 @@ use crate::{edge, frost, hairline, row};
 ///
 /// The split that matters is `Panel` against `Content`. The handoff gives one
 /// rule for which fill a float takes — "`--glass` for controls, `--card` for
-/// content" — and a single `Panel` variant could not express it: the console
-/// is a strip of buttons and belongs on glass, the inspector is a column of
-/// text and belongs on card. Both were glass, so the inspector's labels sat
-/// on the same translucent plane as the desktop behind them.
+/// content" — and a single `Panel` variant could not express it. The console
+/// and the inspector are both on glass, the inspector by choice rather than
+/// by the handoff, which puts it on card: it reads as the timeline's twin
+/// that way. A dialog, which is text first, is on card.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Surface {
-    /// A float that holds controls: the console, the player bar.
+    /// A float that holds controls: the console, the inspector, the player bar.
     Panel,
-    /// A float that holds text: the inspector, a dialog.
+    /// A float that holds text: a dialog.
     Content,
     /// A float that holds nothing but icons: the tool pod, the aspect pod.
     Pod,
@@ -99,12 +99,12 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     el
 }
 
-/// The default plane: a console-style panel holding controls.
+/// The default plane: a panel holding controls, the console or the inspector.
 pub fn panel(theme: Theme) -> Div {
     panel_variant(theme, Surface::Panel).p(px(Theme::panel_padding()))
 }
 
-/// A panel holding text rather than controls — the inspector, a dialog.
+/// A panel holding text rather than controls — a dialog.
 pub fn content_panel(theme: Theme) -> Div {
     panel_variant(theme, Surface::Content).p(px(Theme::panel_padding()))
 }

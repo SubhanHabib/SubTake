@@ -88,8 +88,9 @@ hairline and shadow, hovering to `card`, since the stage and the desktop run
 under the titlebar and a `sunk` tint over them left the title unreadable. Then
 one stage filling the rest, with three floats over it: the tool pod at the left
 (60 wide, inset 24, centred on the stage's height), the aspect and crop
-controls centred along the stage's bottom, and the 340-wide inspector on `card` at the
-right.
+controls centred along the stage's bottom, and the 340-wide inspector at the right on
+`glass`, as the timeline console is. The handoff puts the inspector on `card`; `glass`
+is a departure from it, so the two floats read as a pair.
 
 The pod offers tools — Scene, Cursor, Camera, Captions, Audio — then a hairline
 and Settings. Selection has no button: clicking a region opens it in place of
