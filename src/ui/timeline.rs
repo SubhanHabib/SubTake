@@ -1671,6 +1671,8 @@ impl RootView {
             .occlude()
             .mx(px(Theme::inset()))
             .mb(px(Theme::inset()))
+            // Its bottom padding moves into the lane scroll.
+            .pb_0()
             .flex_shrink_0()
             .child(toolbar)
             // The lanes and the export/transcription line share one box, so
@@ -1695,10 +1697,15 @@ impl RootView {
                                 + Theme::lane_header_gap()))
                             .mr(px(-Theme::panel_padding()))
                             .pr(px(Theme::panel_padding()))
+                            // The console's bottom padding is in here, below
+                            // the last lane, so a stack that overflows
+                            // scrolls to the console's own edge rather than
+                            // stopping a padding short of it.
+                            .pb(px(Theme::panel_padding()))
                             .overflow_x_hidden()
                             .h(px({
                                 let (min, max) = lane_stack_range(win);
-                                self.lane_height.clamp(min, max)
+                                self.lane_height.clamp(min, max) + Theme::panel_padding()
                             }))
                             .flex_none()
                             .overflow_y_scroll()
