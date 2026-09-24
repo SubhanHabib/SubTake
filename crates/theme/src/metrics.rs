@@ -186,7 +186,9 @@ impl Theme {
     /// exactly `TOOLTIP_HEIGHT` and a wrapped one grows by whole lines.
     pub const TOOLTIP_PADDING_Y: f32 =
         (Self::TOOLTIP_HEIGHT - Self::FONT_SECONDARY * Self::MESSAGE_LEADING) / 2.0;
-    pub const FOOTER_HEIGHT: f32 = 28.0;
+    /// A composer footer: as tall as the small icon controls it holds, so
+    /// one of them lit cannot spill over the row above it.
+    pub const FOOTER_HEIGHT: f32 = Self::CONTROL_HEIGHT_SMALL;
 
     // ---- horizontal rhythm -----------------------------------------------
 

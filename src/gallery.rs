@@ -37,7 +37,8 @@
 //! `SUBTAKE_GALLERY_INPUTS=off` turns the recorder's microphone, system
 //! audio and camera off, so its bar shows them struck through.
 //! `SUBTAKE_GALLERY_OPEN=aspect` opens the inspector dropdown with that id
-//! (the aspect pod's menu), as a click on its trigger would.
+//! (the aspect pod's menu), as a click on its trigger would; `=menu-Add`
+//! (or `-File`, `-Edit`, `-Help`) opens that command palette.
 //! `SUBTAKE_HOVER_PIN=switch,look` holds every control whose tween key
 //! contains one of those words hovered, since the gallery's unfocused windows
 //! never receive the pointer's hover.

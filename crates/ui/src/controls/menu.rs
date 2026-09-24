@@ -62,9 +62,36 @@ pub fn menu_row(
     theme: Theme,
     on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 ) -> Stateful<Div> {
+    menu_row_in(id, label, Some(selected), highlighted, theme, on_click)
+}
+
+/// A row of a list of actions, which has no current item: the command
+/// palette's. It drops the tick's gutter, which in a list that can never
+/// show a tick only pushed every label in by an empty column.
+pub fn command_row(
+    id: impl Into<ElementId>,
+    label: impl Into<SharedString>,
+    highlighted: bool,
+    theme: Theme,
+    on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+) -> Stateful<Div> {
+    menu_row_in(id, label, None, highlighted, theme, on_click)
+}
+
+/// `selected` is `None` for a row with no tick gutter at all.
+fn menu_row_in(
+    id: impl Into<ElementId>,
+    label: impl Into<SharedString>,
+    selected: Option<bool>,
+    highlighted: bool,
+    theme: Theme,
+    on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+) -> Stateful<Div> {
     let id = id.into();
     let click_id = id.clone();
     let hover_key = motion::tween_key(&id, "menu-row");
+    let gutter = selected.is_some();
+    let selected = selected.unwrap_or(false);
     // Hover and checked are the same fill, so a row that is both does not
     // stack two washes and come out darker than either. The keyboard cursor
     // joins them: it is the pointer's place in the list, not a third state.
@@ -98,7 +125,7 @@ pub fn menu_row(
         // The gutter is held whether or not this row is the current one, so
         // the labels in a menu line up with each other instead of stepping in
         // and out as the selection moves.
-        .child(
+        .when(gutter, |el| el.child(
             div()
                 .flex()
                 .flex_none()
@@ -111,7 +138,7 @@ pub fn menu_row(
                         theme.accent,
                     ))
                 }),
-        )
+        ))
         .child(div().flex_1().min_w_0().text_ellipsis().child(label.into()))
         .on_click(move |e, w, cx| {
             perf::log(format_args!("click menu row {click_id:?}"));

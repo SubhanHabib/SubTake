@@ -412,7 +412,10 @@ themes.
 - **Menu item** — 32 tall, radius 14, 10px side padding, 1px apart. Hover and
   checked both use `--sunk`; the checkmark is what marks state.
 - **Checkmark gutter** — fixed 14px column so labels align whether or not an
-  item is checked. Accent tick, 14px.
+  item is checked. Accent tick, 14px. *Not drawn by the design:* a list of
+  actions that is never checked — the command palette — drops the gutter
+  (`command_row`), which only pushed its labels in by an empty column, and its
+  highlight follows the pointer, so one row is lit, not two.
 - **Separator** — 1px `--line`, 5px above and below, inset 10 from each edge.
 - **Shortcut hint** — Geist Mono 11, `--muted`, right-aligned. Submenus show a
   12px chevron in the same slot.

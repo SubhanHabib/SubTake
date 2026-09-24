@@ -7,11 +7,20 @@ use super::*;
 /// without wrapping, and capped so a long menu scrolls rather than filling
 /// the window.
 pub(super) const PALETTE_WIDTH: f32 = 300.0;
-pub(super) const PALETTE_VISIBLE_ROWS: usize = 8;
-/// Chip, input, footer and the card's own padding — everything in the card
-/// that is not a command row.
-pub(super) const PALETTE_CHROME_HEIGHT: f32 =
-    Theme::CHIP_HEIGHT + Theme::CONTROL_HEIGHT + Theme::FOOTER_HEIGHT + 4.0 * Theme::GAP_SMALL;
+/// Nine, so the Add menu, the one the timeline's button opens, shows whole:
+/// at eight its last row sat under the list's fade and read as a gap.
+pub(super) const PALETTE_VISIBLE_ROWS: usize = 9;
+/// Chip, input (with room for its ring), footer, the gaps between the four
+/// and the card's own padding — everything in the card that is not a
+/// command row.
+pub(super) const PALETTE_CHROME_HEIGHT: f32 = Theme::CHIP_HEIGHT
+    + Theme::CONTROL_HEIGHT
+    + 2.0 * Theme::FOCUS_WIDTH
+    + Theme::FOOTER_HEIGHT
+    + 3.0 * Theme::MENU_ITEM_GAP
+    + 2.0 * Theme::MENU_PADDING;
+/// One command row and the hair after it.
+pub(super) const PALETTE_ROW_PITCH: f32 = Theme::MENU_ITEM_HEIGHT + Theme::MENU_ITEM_GAP;
 
 /// The command sets behind both the in-window palette and the native menu
 /// bar, grouped so the menu bar can keep its separators. One table, because
@@ -116,6 +125,30 @@ impl RootView {
         cx.notify();
     }
 
+    /// `SUBTAKE_GALLERY_OPEN=menu-Add` opens that menu's palette once, as a
+    /// click on its trigger would: the gallery's unfocused windows take no
+    /// clicks. It waits for a frame that has measured the trigger, which the
+    /// palette opens against.
+    fn gallery_open_menu(&mut self, window: &mut Window) {
+        static OPENED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+        let Some(name) = std::env::var("SUBTAKE_GALLERY_OPEN")
+            .ok()
+            .and_then(|open| open.strip_prefix("menu-").map(str::to_owned))
+        else {
+            return;
+        };
+        if OPENED.load(std::sync::atomic::Ordering::Relaxed) {
+            return;
+        }
+        if self.menu_anchor.get().size.width <= px(0.) {
+            window.request_animation_frame();
+            return;
+        }
+        OPENED.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.menu = Some(name.into());
+        self.menu_focus = true;
+    }
+
     /// The command palette: a context chip, a filter input, the command
     /// list, and a quiet row of the other menus beneath it.
     ///
@@ -128,6 +161,7 @@ impl RootView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        self.gallery_open_menu(window);
         if let Some(name) = &self.menu {
             self.menu_last = name.clone();
         }
@@ -159,7 +193,7 @@ impl RootView {
         // Card height is content-driven, so cap it and reserve that much when
         // deciding which way to open.
         let rows = matches.len().clamp(1, PALETTE_VISIBLE_ROWS) as f32;
-        let height = PALETTE_CHROME_HEIGHT + rows * Theme::CONTROL_HEIGHT;
+        let height = PALETTE_CHROME_HEIGHT + rows * PALETTE_ROW_PITCH;
         let below = f32::from(anchor.origin.y + anchor.size.height) + Theme::GAP;
         let top = if below + height <= f32::from(viewport.height) - Theme::GAP {
             below
@@ -229,32 +263,42 @@ impl RootView {
 
         let mut list = menu_list(
             "palette-list",
-            PALETTE_VISIBLE_ROWS as f32 * Theme::CONTROL_HEIGHT,
+            PALETTE_VISIBLE_ROWS as f32 * PALETTE_ROW_PITCH,
         )
         .track_scroll(&self.menu_scroll);
         if matches.is_empty() {
             list = list.child(
                 div()
-                    .h(px(Theme::CONTROL_HEIGHT))
+                    .h(px(Theme::MENU_ITEM_HEIGHT))
                     .flex()
                     .items_center()
-                    .px(px(Theme::CONTROL_PADDING))
+                    .px(px(Theme::MENU_ITEM_PADDING))
                     .text_color(theme.muted)
                     .child("No matching command"),
             );
         }
         // Rows carry no glyph: a third of these commands have no icon in the
         // set, and inventing one per row reads worse than a clean list.
+        //
+        // The pointer moves the highlight, so the list shows one lit row —
+        // the one Enter runs — rather than the keyboard's and the pointer's.
         for (i, (label, command)) in matches.into_iter().enumerate() {
             let command = command.to_string();
-            list = list.child(menu_row(
-                SharedString::from(format!("palette-{command}")),
-                *label,
-                false,
-                i == highlight,
-                theme,
-                cx.listener(move |s, _, _, cx| s.run_command(&command, cx)),
-            ));
+            list = list.child(
+                command_row(
+                    SharedString::from(format!("palette-{command}")),
+                    *label,
+                    i == highlight,
+                    theme,
+                    cx.listener(move |s, _, _, cx| s.run_command(&command, cx)),
+                )
+                .on_mouse_move(cx.listener(move |s, _: &MouseMoveEvent, _, cx| {
+                    if s.menu_highlight != i {
+                        s.menu_highlight = i;
+                        cx.notify();
+                    }
+                })),
+            );
         }
 
         // The footer doubles as the menu switcher, which is what finally
@@ -273,8 +317,12 @@ impl RootView {
                     menu,
                     theme,
                 )
+                // The menu showing is an on/off state, not the active tool:
+                // a `sunk` plate at the footer's small size, where the
+                // accent disc at 40 stood out of a 28 footer onto the list.
                 .ghost()
-                .selected(name == menu)
+                .small()
+                .toggled(name == menu)
                 .on_click(cx.listener(move |s, _, _, cx| {
                     s.menu = Some(menu.into());
                     s.menu_filter.clear();
@@ -284,13 +332,6 @@ impl RootView {
                 })),
             );
         }
-        footer = footer.child(
-            div()
-                .flex_1()
-                .text_ellipsis()
-                .min_w_0()
-                .child(SharedString::from(name.clone())),
-        );
 
         deferred(frosted(
             Theme::RADIUS_MENU,
@@ -308,8 +349,13 @@ impl RootView {
                         s.menu = None;
                         cx.notify();
                     }))
-                    .child(context_chip(theme, &[&name, "Commands"]))
-                    .child(search)
+                    // A chip, not a bar: stretched across the card it read
+                    // as a second field over the real one.
+                    .child(context_chip(theme, &[&name, "Commands"]).self_start())
+                    // The field is always focused here, so its ring always
+                    // shows; the ring's own width either side keeps it off
+                    // the chip and the first row.
+                    .child(div().py(px(Theme::FOCUS_WIDTH)).child(search))
                     .child(fade_edges(list).tracking(&self.menu_scroll))
                     .child(footer),
             ),

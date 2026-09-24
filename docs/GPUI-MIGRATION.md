@@ -330,7 +330,7 @@ a footer. Two primitives carry it, both in `crates/ui/src/lib.rs`:
 
 - `context_chip(theme, parts)` — `CHIP_HEIGHT` (24 px), `RADIUS_SMALL`,
   surface fill, `FONT_SMALL` muted text, parts joined with a separator.
-- `composer_footer(theme)` — a `FOOTER_HEIGHT` (28 px) row at `FONT_SMALL`
+- `composer_footer(theme)` — a `FOOTER_HEIGHT` (34 px, the small control height) row at `FONT_SMALL`
   and muted, for icon controls and a hint.
 
 No primitive changed colour: both reuse existing `surface` and `muted`
