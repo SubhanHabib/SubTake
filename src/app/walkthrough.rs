@@ -162,8 +162,12 @@ const STEPS: &[Step] = &[
     View(1800, |ui| ui.invoke_panel_change("Wallpapers".into())),
     View(1800, |ui| ui.invoke_action("visual-crop".into())),
     View(1800, |ui| ui.invoke_action("finish-crop".into())),
-    View(1500, |ui| ui.invoke_panel_change("Preferences".into())),
-    View(1800, |ui| ui.invoke_panel_change("Shortcuts".into())),
+    View(1500, |ui| ui.set_dialog("settings".into())),
+    View(1800, |ui| ui.set_settings_section("Shortcuts".into())),
+    View(300, |ui| {
+        ui.set_dialog(String::new());
+        ui.set_settings_section("General".into());
+    }),
     View(1800, |ui| ui.invoke_panel_change("Recent".into())),
     View(1800, |ui| ui.invoke_panel_change("Frame".into())),
     View(1200, |ui| ui.set_dialog("presets".into())),

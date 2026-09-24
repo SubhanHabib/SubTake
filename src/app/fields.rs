@@ -91,7 +91,7 @@ impl App {
             })
             .unwrap_or_default();
         let mut fields = vec![];
-        if panel == "Preferences" || panel == "Shortcuts" || panel == "Settings" {
+        if panel == "Settings" {
             return [
                 (
                     "prefs.language",

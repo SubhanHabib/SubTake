@@ -26,8 +26,12 @@ const STEPS: &[Step] = &[
     (3000, |g| g.toggle_play()),
     (800, |g| open_panel(g, "Cursor")),
     (1800, |g| open_panel(g, "Webcam")),
-    (1800, |g| open_panel(g, "Preferences")),
-    (2200, |g| open_panel(g, "Shortcuts")),
+    (1800, |g| g.action("open-settings")),
+    (2200, |g| g.editor.set_settings_section("Shortcuts".into())),
+    (300, |g| {
+        g.editor.set_dialog(String::new());
+        g.editor.set_settings_section("General".into());
+    }),
     (1800, |g| open_panel(g, "Frame")),
     (1500, |g| {
         for r in &mut g.regions {

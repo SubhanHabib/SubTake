@@ -8,7 +8,12 @@ impl App {
             !ui.get_busy()
                 || matches!(
                     action,
-                    "cancel" | "show" | "drag-window" | "drag-launcher" | "hide-launcher"
+                    "cancel"
+                        | "show"
+                        | "drag-window"
+                        | "drag-launcher"
+                        | "hide-launcher"
+                        | "open-settings"
                 ),
             "Wait for the current operation or cancel it first"
         );
@@ -54,6 +59,7 @@ impl App {
             return Ok(());
         }
         match action {
+            "open-settings" => ui.set_dialog("settings".into()),
             "visual-crop" | "finish-crop" => {
                 self.stop(ui);
                 ui.set_panel(

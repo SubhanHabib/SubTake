@@ -684,11 +684,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             "Recording",
                             "Export",
                             "Audio",
-                            "Preferences",
                             "Recent",
                             "Wallpapers",
                             "Crop",
-                            "Shortcuts",
                             "Add",
                         ]
                         .iter()

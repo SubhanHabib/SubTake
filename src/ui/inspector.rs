@@ -599,7 +599,6 @@ impl RootView {
         let name = e.get_panel();
         let shown = match name.as_str() {
             "Frame" => "Scene",
-            "Preferences" => "Settings",
             "Recent" => "Projects",
             "Wallpapers" => "Background",
             _ => &name,
@@ -735,127 +734,6 @@ impl RootView {
                     .child(input),
             );
         }
-        if name == "Preferences" {
-            // Appearance is one choice of three, so it is one segmented
-            // control rather than three buttons that happen to sit together.
-            let editor = e.clone();
-            let appearances = ["light", "dark", "system"];
-            let chosen = appearances
-                .iter()
-                .position(|v| *v == e.get_appearance())
-                .unwrap_or(2);
-            let e1 = e.clone();
-            let e2 = e.clone();
-            content = content
-                .child(caps_label("Appearance", theme))
-                .child(segmented_control(
-                    "appearance",
-                    &["Light", "Dark", "System"],
-                    chosen,
-                    theme,
-                    move |index, _, _| {
-                        editor.defer_field("prefs.appearance".into(), appearances[index].to_owned())
-                    },
-                ))
-                .child(caps_label("Zooms", theme))
-                // A setting and the sentence that explains it are one thing,
-                // so they share one plate. Loose muted lines under a control
-                // read as unattached commentary.
-                .child(
-                    setting_card(
-                        theme,
-                        "Automatic recording zooms",
-                        "Suggest zooms when a new recording opens.",
-                    )
-                    .child(switch(
-                        "auto-zooms",
-                        e.get_auto_apply_zooms(),
-                        true,
-                        theme,
-                        move |v, _, _| {
-                            e1.defer_field("prefs.auto_apply_zooms".into(), v.to_string())
-                        },
-                    )),
-                )
-                .child(
-                    setting_card(
-                        theme,
-                        "Connect zooms",
-                        "Join nearby zooms into a continuous camera move.",
-                    )
-                    .child(switch(
-                        "connect-zooms",
-                        e.get_connect_zooms(),
-                        e.get_has_video(),
-                        theme,
-                        move |v, _, _| e2.defer_field("connectZooms".into(), v.to_string()),
-                    )),
-                );
-        }
-        if name == "Preferences" {
-            // A preset is a choice you make once and live with, so it states
-            // what it does rather than making the name carry it alone.
-            let mut presets = tile_grid(2);
-            for (value, title, glyph, detail) in [
-                (
-                    "focused",
-                    "Focused",
-                    "Cursor-regular",
-                    "Snappier motion for demos, walkthroughs and everyday recordings.",
-                ),
-                (
-                    "smooth",
-                    "Smooth",
-                    "FilmStrip-regular",
-                    "Gentler motion for presentations, keynote-style videos and polished reveals.",
-                ),
-            ] {
-                let surface = self.surface.clone();
-                let command = format!("motion-{value}");
-                presets = presets.child(
-                    choice_tile(
-                        value,
-                        e.get_motion_choice() == value,
-                        e.get_has_video(),
-                        theme,
-                    )
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .justify_center()
-                            .flex_none()
-                            .size(px(Theme::control_height()))
-                            .rounded(px(Theme::radius_lane()))
-                            .bg(theme.sunk)
-                            .child(icon(glyph, theme.text)),
-                    )
-                    .child(
-                        div()
-                            .font_weight(FontWeight::MEDIUM)
-                            .text_color(theme.text)
-                            .child(title),
-                    )
-                    .child(
-                        div()
-                            .text_size(px(Theme::font_small()))
-                            .text_color(theme.muted)
-                            .child(detail),
-                    )
-                    .on_click(move |_, _, _| surface.action(&command)),
-                );
-            }
-            content = content
-                .child(caps_label("Motion presets", theme))
-                .child(presets);
-            if !e.get_has_video() {
-                content = content.child(
-                    div()
-                        .text_color(theme.muted)
-                        .child("Open a project to adjust its motion."),
-                );
-            }
-        }
         if name == "Recording" {
             let editor = e.clone();
             let source = self.dropdown(
@@ -950,10 +828,7 @@ impl RootView {
         // Only these panels pin an action strip under the scroll region. An
         // always-present empty column still cost the panel's gap plus its
         // bottom padding, which is what left the dead band under the last row.
-        let has_footer = matches!(
-            name.as_str(),
-            "Preferences" | "Recording" | "Export" | "Captions"
-        );
+        let has_footer = matches!(name.as_str(), "Recording" | "Export" | "Captions");
         let mut footer = column();
         // TODO(redesign): every arm below belongs to a panel the handoff does
         // not draw (see the panel list in `src/app/playback.rs`). The action
@@ -962,10 +837,6 @@ impl RootView {
         // rest of a panel is whatever fields the model hands over. Until
         // then each arm keeps the strip it has, on the new tokens.
         match name.as_str() {
-            "Preferences" => {
-                footer =
-                    footer.child(self.panel_button(e, "Customize keyboard shortcuts…", "Shortcuts"))
-            }
             "Recording" => {
                 footer = footer.child(e.get_recording_hint()).child(
                     self.action(
@@ -1184,7 +1055,6 @@ impl RootView {
 fn sub_panel_of(name: &str) -> Option<&'static str> {
     match name {
         "Crop" | "Wallpapers" => Some("Frame"),
-        "Shortcuts" => Some("Preferences"),
         _ => None,
     }
 }

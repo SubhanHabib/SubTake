@@ -71,7 +71,7 @@ pub(super) fn install_menus(cx: &mut gpui::App) {
             items: vec![
                 // The rail's gear opens Settings, but the empty state has no
                 // rail, so the app menu is where Settings always is.
-                action("Settings…", "@Preferences"),
+                action("Settings…", "open-settings"),
                 gpui::MenuItem::separator(),
                 gpui::MenuItem::os_submenu("Services", gpui::SystemMenuType::Services),
                 gpui::MenuItem::separator(),
@@ -104,7 +104,7 @@ pub(super) fn install_menus(cx: &mut gpui::App) {
     };
     cx.bind_keys([
         key("cmd-q", "quit"),
-        key("cmd-,", "@Preferences"),
+        key("cmd-,", "open-settings"),
         key("cmd-o", "open"),
         key("cmd-s", "save"),
         key("cmd-shift-s", "save-as"),

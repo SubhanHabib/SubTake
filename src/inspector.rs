@@ -21,15 +21,6 @@ pub fn present(mut fields: Vec<Field>, panel: &str, language: &str) -> Vec<Field
         fields.retain(|f| f.key == "backgroundBlur");
     }
     fields.retain(|f| !f.key.starts_with("motion-"));
-    if panel == "Preferences" {
-        fields.retain(|f| f.key == "prefs.language" || f.key == "prefs.countdown_seconds");
-    } else if panel == "Shortcuts" {
-        fields.retain(|f| {
-            f.key.starts_with("shortcut.")
-                || f.key == "prefs.record_shortcut"
-                || f.key == "prefs.pause_shortcut"
-        });
-    }
     for f in &mut fields {
         let key = f.key.as_str();
         f.label = match key {
@@ -302,15 +293,6 @@ fn group<'a>(panel: &str, key: &str) -> (i32, &'a str) {
                 (3, "Last export")
             } else {
                 (1, "Export settings")
-            }
-        }
-        "Preferences" => {
-            if key.starts_with("shortcut.") {
-                (2, "Keyboard shortcuts")
-            } else if key == "prefs.language" {
-                (0, "General")
-            } else {
-                (1, "Recording")
             }
         }
         "Audio" => (0, "Source audio"),

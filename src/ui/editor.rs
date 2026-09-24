@@ -322,7 +322,7 @@ impl RootView {
                     .px(px(Theme::gap_small()))
                     .child(divider(theme)),
             )
-            .child(self.rail_panel_button(e, "Settings", "Preferences", "Gear-regular"));
+            .child(self.rail_panel_button(e, "Settings", "open-settings", "Gear-regular"));
         let rail = pod(theme)
             .p_0()
             .flex_col()

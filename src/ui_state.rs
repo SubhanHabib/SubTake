@@ -1211,13 +1211,11 @@ impl UiHandle {
                 "Recording" => 5,
                 "Export" => 6,
                 "Audio" => 7,
-                "Preferences" => 8,
-                "Recent" => 9,
-                "Wallpapers" => 10,
-                "Crop" => 11,
-                "Shortcuts" => 12,
-                "Add" => 13,
-                _ => 14,
+                "Recent" => 8,
+                "Wallpapers" => 9,
+                "Crop" => 10,
+                "Add" => 11,
+                _ => 12,
             };
             props.panel = value;
             self.window().invalidate();

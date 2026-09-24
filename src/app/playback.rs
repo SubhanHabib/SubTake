@@ -264,20 +264,18 @@ impl App {
         // marking is per line rather than a regrouping.
         ui.set_panel_index(
             [
-                "Frame",       // drawn
-                "Cursor",      // drawn
-                "Webcam",      // drawn, as Camera
-                "Captions",    // not drawn
-                "Selection",   // drawn
-                "Recording",   // not drawn
-                "Export",      // drawn
-                "Audio",       // not drawn
-                "Preferences", // not drawn
-                "Recent",      // drawn
-                "Wallpapers",  // drawn
-                "Crop",        // not drawn
-                "Shortcuts",   // not drawn
-                "Add",         // not drawn
+                "Frame",      // drawn
+                "Cursor",     // drawn
+                "Webcam",     // drawn, as Camera
+                "Captions",   // not drawn
+                "Selection",  // drawn
+                "Recording",  // not drawn
+                "Export",     // drawn
+                "Audio",      // not drawn
+                "Recent",     // drawn
+                "Wallpapers", // drawn
+                "Crop",       // not drawn
+                "Add",        // not drawn
             ]
             .iter()
             .position(|p| *p == ui.get_panel().as_str())
