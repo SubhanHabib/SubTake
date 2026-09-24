@@ -688,7 +688,13 @@ impl Scene {
                     && n(r, "endMs", 0.) > source_time * 1000.
             })
             .collect();
-        annotations.sort_by(|a, b| n(a, "zIndex", 0.).total_cmp(&n(b, "zIndex", 0.)));
+        // A spotlight dims what is under it, so it goes under every other
+        // annotation, whatever its order.
+        annotations.sort_by(|a, b| {
+            (a["type"] != "spotlight")
+                .cmp(&(b["type"] != "spotlight"))
+                .then(n(a, "zIndex", 0.).total_cmp(&n(b, "zIndex", 0.)))
+        });
         for a in annotations {
             canvas.save();
             canvas.translate((tx as f32, ty as f32));

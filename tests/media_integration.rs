@@ -148,6 +148,38 @@ fn preview_edit_outline_matches_rendered_annotation() {
 }
 
 #[test]
+fn spotlight_step_and_pixelate_annotations_render() {
+    let dir = tempfile::tempdir().unwrap();
+    let source = dir.path().join("source.mp4");
+    fixture(&source);
+    let info = media::probe(&source).unwrap();
+    let mut scene = subtake_native::render::Scene::new(source.clone(), info, 128, 96).unwrap();
+    let mut p = Project::new(&source);
+    let plain = scene.render(&p, 0.1).unwrap();
+    p.set("annotationRegions", serde_json::json!([
+        {"id":"spot","type":"spotlight","startMs":0,"endMs":1000,"position":{"x":0,"y":0},"size":{"width":50,"height":50},"dimOpacity":60},
+        {"id":"step","type":"step","startMs":0,"endMs":1000,"textContent":"","position":{"x":60,"y":60},"size":{"width":30,"height":30},"figureData":{"color":"#ff0000"}},
+        {"id":"px","type":"blur","blurMode":"pixelate","startMs":0,"endMs":1000,"position":{"x":0,"y":50},"size":{"width":50,"height":50},"blurIntensity":2000}
+    ]));
+    let annotated = scene.render(&p, 0.1).unwrap();
+    let at =
+        |rgba: &[u8], x: usize, y: usize| rgba[(y * 128 + x) * 4..(y * 128 + x) * 4 + 3].to_vec();
+    let luma = |c: Vec<u8>| c.iter().map(|&v| v as u32).sum::<u32>();
+    // Inside the spotlight the picture is untouched; outside it dims.
+    assert_eq!(at(&annotated, 20, 20), at(&plain, 20, 20));
+    assert!(luma(at(&annotated, 100, 20)) * 10 < luma(at(&plain, 100, 20)) * 6);
+    // The badge's disc fills its centre.
+    let centre = at(&annotated, 96, 72);
+    assert!(
+        centre[0] > 90 && centre[1] < 10 && centre[2] < 10,
+        "{centre:?}"
+    );
+    // Blocks of 2000 at 1080p are wider than the region at this size, so
+    // the whole region takes one colour.
+    assert_eq!(at(&annotated, 10, 60), at(&annotated, 50, 90));
+}
+
+#[test]
 #[ignore = "requires a real audio output device; sends silence only"]
 fn silent_output_device_clock_and_cancel() {
     use std::{
