@@ -110,7 +110,47 @@ fn squircle(rect: Rect, radius: f32) -> sk::Path {
     path.detach()
 }
 
+/// The annotations showing at `time`, in the order they are drawn.
+fn shown_annotations(document: &Project, time: f64) -> Vec<&Value> {
+    let mut annotations: Vec<_> = document
+        .regions("annotationRegions")
+        .iter()
+        .filter(|r| n(r, "startMs", 0.) <= time * 1000. && n(r, "endMs", 0.) > time * 1000.)
+        .collect();
+    // A spotlight dims what is under it, so it goes under every other
+    // annotation, whatever its order.
+    annotations.sort_by(|a, b| {
+        (a["type"] != "spotlight")
+            .cmp(&(b["type"] != "spotlight"))
+            .then(n(a, "zIndex", 0.).total_cmp(&n(b, "zIndex", 0.)))
+    });
+    annotations
+}
+
 impl Scene {
+    /// Each annotation showing at `time` with its normalized bounds on the
+    /// composed image, bottom first, for a click on the picture to find.
+    pub fn annotation_bounds(&mut self, p: &Project, time: f64) -> Vec<(String, [f32; 4])> {
+        let (w, h) = (self.width as f64, self.height as f64);
+        let frame =
+            crate::geometry::frame(p, w, h, self.info.width as f64, self.info.height as f64);
+        let cam = self.camera.at(p, &self.cursor, time * 1000., w, h, &frame);
+        shown_annotations(p, time)
+            .into_iter()
+            .filter_map(|a| {
+                Some((
+                    a["id"].as_str()?.to_owned(),
+                    [
+                        (cam.x / w + cam.scale * n(&a["position"], "x", 50.) / 100.) as f32,
+                        (cam.y / h + cam.scale * n(&a["position"], "y", 50.) / 100.) as f32,
+                        (cam.scale * n(&a["size"], "width", 30.) / 100.) as f32,
+                        (cam.scale * n(&a["size"], "height", 20.) / 100.) as f32,
+                    ],
+                ))
+            })
+            .collect()
+    }
+
     /// Normalized edit bounds use the same camera transform as the composed image.
     pub fn edit_bounds(
         &mut self,
@@ -680,22 +720,7 @@ impl Scene {
             );
             canvas.restore();
         }
-        let mut annotations: Vec<_> = document
-            .regions("annotationRegions")
-            .iter()
-            .filter(|r| {
-                n(r, "startMs", 0.) <= source_time * 1000.
-                    && n(r, "endMs", 0.) > source_time * 1000.
-            })
-            .collect();
-        // A spotlight dims what is under it, so it goes under every other
-        // annotation, whatever its order.
-        annotations.sort_by(|a, b| {
-            (a["type"] != "spotlight")
-                .cmp(&(b["type"] != "spotlight"))
-                .then(n(a, "zIndex", 0.).total_cmp(&n(b, "zIndex", 0.)))
-        });
-        for a in annotations {
+        for a in shown_annotations(document, source_time) {
             canvas.save();
             canvas.translate((tx as f32, ty as f32));
             canvas.scale((cam.scale as f32, cam.scale as f32));

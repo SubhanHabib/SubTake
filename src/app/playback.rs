@@ -36,7 +36,8 @@ impl Preview {
                     }
                     pending.take().unwrap()
                 };
-                let result = (|| -> Result<(Vec<u8>, Option<[f32; 5]>)> {
+                type Shown = Vec<(String, [f32; 4])>;
+                let result = (|| -> Result<(Vec<u8>, Option<[f32; 5]>, Shown)> {
                     if scene.as_ref().is_none_or(|(path, w, h, revision, _)| {
                         *path != request.path
                             || *w != request.width
@@ -77,14 +78,16 @@ impl Preview {
                         request.selected.as_ref(),
                         &request.panel,
                     );
-                    Ok((pixels, bounds))
+                    let shown = scene.annotation_bounds(&request.project, request.time);
+                    Ok((pixels, bounds, shown))
                 })();
                 post(move |app, ui| {
                     if app.epoch != request.epoch {
                         return;
                     }
                     match result {
-                        Ok((pixels, bounds)) => {
+                        Ok((pixels, bounds, shown)) => {
+                            app.shown_annotations = shown;
                             ui.set_edit_visible(bounds.is_some());
                             if let Some([x, y, w, h, scale]) = bounds {
                                 ui.set_edit_x(x);

@@ -177,6 +177,12 @@ fn spotlight_step_and_pixelate_annotations_render() {
     // Blocks of 2000 at 1080p are wider than the region at this size, so
     // the whole region takes one colour.
     assert_eq!(at(&annotated, 10, 60), at(&annotated, 50, 90));
+    // A click finds them in drawing order, the spotlight at the bottom.
+    let shown = scene.annotation_bounds(&p, 0.1);
+    let ids: Vec<_> = shown.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(ids, ["spot", "step", "px"]);
+    assert_eq!(shown[1].1, [0.6, 0.6, 0.3, 0.3]);
+    assert!(scene.annotation_bounds(&p, 1.5).is_empty());
 }
 
 #[test]

@@ -314,6 +314,28 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     })
                 })();
                 report(ui, result);
+            } else if ui.get_panel() != "Webcam" {
+                // The topmost annotation under the press is selected, as a
+                // click on its region would; a press on none lets go of one.
+                let hit = app
+                    .shown_annotations
+                    .iter()
+                    .rev()
+                    .find(|(_, [ax, ay, aw, ah])| {
+                        (*ax..=ax + aw).contains(&x) && (*ay..=ay + ah).contains(&y)
+                    });
+                if let Some((id, _)) = hit {
+                    app.extra_selection.clear();
+                    app.selected = Some(("annotationRegions".into(), id.clone()));
+                    app.show_selection(ui);
+                    app.refresh(ui);
+                } else if app
+                    .selected
+                    .as_ref()
+                    .is_some_and(|(kind, _)| kind == "annotationRegions")
+                {
+                    app.deselect(ui);
+                }
             }
         })
     });

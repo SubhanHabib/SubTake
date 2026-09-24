@@ -81,6 +81,9 @@ pub struct App {
     source: Option<PathBuf>,
     info: Option<MediaInfo>,
     selected: Option<(String, String)>,
+    /// The annotations on the last preview frame, bottom first, with their
+    /// normalized bounds (`Scene::annotation_bounds`).
+    shown_annotations: Vec<(String, [f32; 4])>,
     clipboard: Vec<(String, Value, Option<Value>)>,
     extra_selection: Vec<(String, String)>,
     recovery: subtake_native::recovery::Store,
@@ -148,6 +151,7 @@ impl App {
             source: None,
             info: None,
             selected: None,
+            shown_annotations: vec![],
             clipboard: vec![],
             extra_selection: vec![],
             recovery: subtake_native::recovery::Store::new(|message| {
