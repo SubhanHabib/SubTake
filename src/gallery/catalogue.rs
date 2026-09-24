@@ -424,14 +424,15 @@ impl Catalogue {
                 cx.notify();
             });
         }
+        let dock = legible(theme);
         for s in self.tuners.values().chain(&self.channels) {
             s.update(cx, |s, cx| {
-                s.theme = theme;
+                s.theme = dock;
                 cx.notify();
             });
         }
         self.colour_field.update(cx, |i, cx| {
-            i.theme = theme;
+            i.theme = dock;
             cx.notify();
         });
     }
@@ -1686,7 +1687,7 @@ impl Catalogue {
     /// `metrics.rs` groups them, each with a slider, a nudge either way and
     /// a reset.
     fn tuner(&mut self, window: &Window, cx: &mut Context<Self>, index: usize) -> Div {
-        let theme = self.theme;
+        let theme = legible(self.theme);
         let reads = self.reads[index].borrow().clone();
         let colours = self.tuning_colours;
         let (title, note) = if colours {
@@ -1821,7 +1822,7 @@ impl Catalogue {
     /// brought to the metric's current value every frame after, so a
     /// derived metric follows the ones it is built from.
     fn tuner_slider(&mut self, cx: &mut Context<Self>, metric: &'static Metric) -> Entity<Slider> {
-        let theme = self.theme;
+        let theme = legible(self.theme);
         let slider = self
             .tuners
             .entry(metric.name)
@@ -1851,7 +1852,7 @@ impl Catalogue {
     /// The dock's Colours view: the chosen token's editor, and every token
     /// of the palette on show as a chip that chooses it.
     fn colour_tuner(&mut self, window: &Window, cx: &mut Context<Self>) -> Div {
-        let theme = self.theme;
+        let theme = legible(self.theme);
         let appearance = self.appearance();
         let picked = tune::colour(self.picked).unwrap_or(&tune::colours()[0]);
         let value = picked.value(appearance);
@@ -1976,7 +1977,7 @@ impl Catalogue {
         colour: &'static Colour,
         chosen: bool,
     ) -> AnyElement {
-        let theme = self.theme;
+        let theme = legible(self.theme);
         let appearance = self.appearance();
         let value = colour.value(appearance);
         div()
@@ -2024,6 +2025,16 @@ impl Catalogue {
                     ),
             )
             .into_any_element()
+    }
+}
+
+/// The dock's theme: secondary text at the primary text's colour. The dock
+/// sits on the bare window frost, where `muted` fell too near the ground to
+/// read, in both palettes.
+fn legible(theme: Theme) -> Theme {
+    Theme {
+        muted: theme.text,
+        ..theme
     }
 }
 
