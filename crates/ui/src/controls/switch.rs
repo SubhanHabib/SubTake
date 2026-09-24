@@ -75,13 +75,7 @@ pub fn switch(
                         // off track that is white on a near-white `sunk2`, so the
                         // thumb's own drop shadow is what separates it.
                         .bg(t.thumb())
-                        .shadow(vec![BoxShadow {
-                            color: hsla(0., 0., 0., 0.3),
-                            offset: point(px(0.), px(1.)),
-                            blur_radius: px(3.),
-                            spread_radius: px(0.),
-                            inset: false,
-                        }]),
+                        .shadow(vec![t.thumb_shadow()]),
                 ),
         ));
     if enabled {

@@ -52,13 +52,7 @@ pub fn segmented_control(
                 .size_full()
                 .rounded_full()
                 .bg(theme.seg_active)
-                .shadow(vec![BoxShadow {
-                    color: hsla(0.65, 0.33, 0.12, 0.12),
-                    offset: point(px(0.), px(1.)),
-                    blur_radius: px(3.),
-                    spread_radius: px(0.),
-                    inset: false,
-                }])
+                .shadow(vec![theme.segment_shadow()])
                 .child(pill_edge(vec![hairline(
                     theme.line,
                     Theme::hairline_width(),

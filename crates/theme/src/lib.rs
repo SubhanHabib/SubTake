@@ -115,6 +115,20 @@ pub struct Theme {
     pub rec: Hsla,
     /// Destructive text.
     pub danger: Hsla,
+
+    // ---- shadows ----
+    //
+    // Colour and strength; how far each falls is in `metrics.rs`.
+    /// The wide layer under every float, glass and card alike.
+    pub shadow_far: Hsla,
+    /// The tight layer under every float, and a raised control's lift.
+    pub shadow_near: Hsla,
+    /// The picture's shadow on the stage.
+    pub shadow_picture: Hsla,
+    /// Under a segmented control's active pill.
+    pub shadow_segment: Hsla,
+    /// Under a toggle's thumb.
+    pub shadow_thumb: Hsla,
 }
 
 impl Theme {
@@ -147,58 +161,63 @@ impl Theme {
     /// surface off the desktop and a tight one that seats its edge — and both
     /// go deeper on dark, where there is less contrast to do the lifting.
     pub fn panel_shadow(&self) -> Vec<gpui::BoxShadow> {
-        let (tint, far, near) = match self.appearance {
+        let (far, near) = match self.appearance {
             Appearance::Light => (
-                gpui::hsla(0.65, 0.33, 0.12, 1.),
-                (24., 60., 0.18),
-                (2., 6., 0.08),
+                (Self::panel_shadow_far_y(), Self::panel_shadow_far_blur()),
+                (Self::panel_shadow_near_y(), Self::panel_shadow_near_blur()),
             ),
-            Appearance::Dark => (gpui::hsla(0., 0., 0., 1.), (28., 70., 0.5), (2., 8., 0.3)),
+            Appearance::Dark => (
+                (
+                    Self::panel_shadow_far_y_dark(),
+                    Self::panel_shadow_far_blur_dark(),
+                ),
+                (
+                    Self::panel_shadow_near_y(),
+                    Self::panel_shadow_near_blur_dark(),
+                ),
+            ),
         };
-        [far, near]
-            .into_iter()
-            .map(|(offset, blur, alpha)| gpui::BoxShadow {
-                color: tint.opacity(alpha),
-                offset: gpui::point(gpui::px(0.), gpui::px(offset)),
-                blur_radius: gpui::px(blur),
-                spread_radius: gpui::px(0.),
-                inset: false,
-            })
-            .collect()
+        vec![
+            drop_shadow(self.shadow_far, far),
+            drop_shadow(self.shadow_near, near),
+        ]
     }
 
     /// The picture's shadow on the stage: one soft layer, short enough to
     /// fade out inside the stage's margin rather than being cut off at the
     /// timeline's edge the way a panel's deep shadow would be.
     pub fn picture_shadow(&self) -> Vec<gpui::BoxShadow> {
-        let (tint, alpha) = match self.appearance {
-            Appearance::Light => (gpui::hsla(0.65, 0.33, 0.12, 1.), 0.18),
-            Appearance::Dark => (gpui::hsla(0., 0., 0., 1.), 0.45),
-        };
-        vec![gpui::BoxShadow {
-            color: tint.opacity(alpha),
-            offset: gpui::point(gpui::px(0.), gpui::px(6.)),
-            blur_radius: gpui::px(18.),
-            spread_radius: gpui::px(0.),
-            inset: false,
-        }]
+        vec![drop_shadow(
+            self.shadow_picture,
+            (Self::picture_shadow_y(), Self::picture_shadow_blur()),
+        )]
     }
 
     /// The single `0 2 6` a raised control gains under the pointer — the
     /// near layer of `panel_shadow` and nothing else, so a button lifting on
     /// hover reads as the same material as a panel that is already lifted.
     pub fn lift_shadow(&self) -> gpui::BoxShadow {
-        let (tint, alpha) = match self.appearance {
-            Appearance::Light => (gpui::hsla(0.65, 0.33, 0.12, 1.), 0.08),
-            Appearance::Dark => (gpui::hsla(0., 0., 0., 1.), 0.3),
-        };
-        gpui::BoxShadow {
-            color: tint.opacity(alpha),
-            offset: gpui::point(gpui::px(0.), gpui::px(2.)),
-            blur_radius: gpui::px(6.),
-            spread_radius: gpui::px(0.),
-            inset: false,
-        }
+        drop_shadow(
+            self.shadow_near,
+            (Self::panel_shadow_near_y(), Self::panel_shadow_near_blur()),
+        )
+    }
+
+    /// The shadow under a segmented control's active pill.
+    pub fn segment_shadow(&self) -> gpui::BoxShadow {
+        drop_shadow(
+            self.shadow_segment,
+            (Self::segment_shadow_y(), Self::segment_shadow_blur()),
+        )
+    }
+
+    /// The shadow under a toggle's thumb, which is what separates a white
+    /// thumb from the near-white off track on light.
+    pub fn thumb_shadow(&self) -> gpui::BoxShadow {
+        drop_shadow(
+            self.shadow_thumb,
+            (Self::thumb_shadow_y(), Self::thumb_shadow_blur()),
+        )
     }
 
     /// A raised control, hovered: its own tone one step up the fill scale.
@@ -248,6 +267,17 @@ impl Theme {
         } else {
             gpui::WindowBackgroundAppearance::Opaque
         }
+    }
+}
+
+/// A shadow straight down: `(offset, blur)` below its box, no spread.
+fn drop_shadow(color: Hsla, (offset, blur): (f32, f32)) -> gpui::BoxShadow {
+    gpui::BoxShadow {
+        color,
+        offset: gpui::point(gpui::px(0.), gpui::px(offset)),
+        blur_radius: gpui::px(blur),
+        spread_radius: gpui::px(0.),
+        inset: false,
     }
 }
 

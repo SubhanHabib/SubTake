@@ -252,6 +252,33 @@ impl Theme {
     /// The window shell's hairline.
     pub const HAIRLINE_WIDTH: f32 = 0.5;
 
+    // ---- shadows ---------------------------------------------------------
+    //
+    // How far each shadow falls and how soft it is. Their colours, alpha
+    // included, are the `shadow_*` palette tokens.
+
+    /// The wide layer under every float, which lifts it off the desktop.
+    pub const PANEL_SHADOW_FAR_Y: f32 = 24.0;
+    pub const PANEL_SHADOW_FAR_BLUR: f32 = 60.0;
+    /// Dark goes deeper, where there is less contrast to do the lifting.
+    pub const PANEL_SHADOW_FAR_Y_DARK: f32 = 28.0;
+    pub const PANEL_SHADOW_FAR_BLUR_DARK: f32 = 70.0;
+    /// The tight layer under every float, which seats its edge. A raised
+    /// control lifting under the pointer takes it at the light blur.
+    pub const PANEL_SHADOW_NEAR_Y: f32 = 2.0;
+    pub const PANEL_SHADOW_NEAR_BLUR: f32 = 6.0;
+    pub const PANEL_SHADOW_NEAR_BLUR_DARK: f32 = 8.0;
+    /// The picture's shadow on the stage, short enough to fade out inside
+    /// the stage's margin.
+    pub const PICTURE_SHADOW_Y: f32 = 6.0;
+    pub const PICTURE_SHADOW_BLUR: f32 = 18.0;
+    /// Under a segmented control's active pill.
+    pub const SEGMENT_SHADOW_Y: f32 = 1.0;
+    pub const SEGMENT_SHADOW_BLUR: f32 = 3.0;
+    /// Under a toggle's thumb.
+    pub const THUMB_SHADOW_Y: f32 = 1.0;
+    pub const THUMB_SHADOW_BLUR: f32 = 3.0;
+
     // ---- fixed shapes ----------------------------------------------------
 
     /// The toggle: a 46-wide track with a 22 thumb inset 3, so the thumb
