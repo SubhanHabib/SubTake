@@ -59,17 +59,31 @@ pub fn menu_commands(name: &str) -> &'static [&'static [(&'static str, &'static 
                 ("Delete region", "delete"),
             ],
         ],
-        "Add" => &[&[
-            ("Zoom", "add-zoom"),
-            ("Text", "add-text"),
-            ("Arrow", "add-figure"),
-            ("Blur", "add-blur"),
-            ("Audio", "add-audio"),
-            ("Caption", "add-caption"),
-            ("Trim", "add-trim"),
-            ("Speed", "add-speed"),
-            ("Marker", "add-marker"),
-        ]],
+        // The annotations run in the Add panel's order
+        // (`crate::annotations::KINDS`).
+        "Add" => &[
+            &[("Zoom", "add-zoom")],
+            &[
+                ("Title", "add-title"),
+                ("Lower third", "add-lower-third"),
+                ("Label", "add-label"),
+                ("Text", "add-text"),
+                ("Arrow", "add-figure"),
+                ("Highlight", "add-highlight"),
+                ("Step", "add-step"),
+                ("Blur", "add-blur"),
+                ("Pixelate", "add-pixelate"),
+                ("Spotlight", "add-spotlight"),
+                ("Image", "add-image"),
+            ],
+            &[
+                ("Audio", "add-audio"),
+                ("Caption", "add-caption"),
+                ("Trim", "add-trim"),
+                ("Speed", "add-speed"),
+                ("Marker", "add-marker"),
+            ],
+        ],
         _ => &[&[
             ("Keyboard shortcuts", "shortcut-reference"),
             ("Feedback and issues", "feedback"),

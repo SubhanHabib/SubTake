@@ -66,9 +66,11 @@
 //! dragging must win over overlapping region hit targets. Render all model track
 //! labels/rows, source thumbnails, audio-row waveform and selected region state;
 //! old playhead used frosted-thumbnails as its backdrop. Position slider scrolls
-//! the timeline. Add menu maps Text/Image/Arrow/Blur/Audio/Caption/Trim/Speed/Marker
-//! to add-text/add-image/add-figure/add-blur/add-audio/add-caption/add-trim/
-//! add-speed/add-marker and closes after selection.
+//! the timeline. Add menu maps Zoom, then Title/Lower third/Label/Text/Arrow/
+//! Highlight/Step/Blur/Pixelate/Spotlight/Image, then Audio/Caption/Trim/Speed/
+//! Marker to add-zoom, add-title/add-lower-third/add-label/add-text/add-figure/
+//! add-highlight/add-step/add-blur/add-pixelate/add-spotlight/add-image and
+//! add-audio/add-caption/add-trim/add-speed/add-marker, and closes after selection.
 //!
 //! Recorder: initial panel=""; toggle same panel closes it. Panels are sources,
 //! audio, camera, countdown, more. Idle Record with no sources toggles sources
