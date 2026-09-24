@@ -139,7 +139,7 @@ impl RootView {
     ) -> AnyElement {
         let e = editor.clone();
         let target = name.to_owned();
-        // "Help" opens a command rather than a panel.
+        // A command name (it has a dash) runs rather than opening a panel.
         let is_panel = !target.contains('-');
         let active = is_panel && editor.get_panel() == target;
         let surface = self.surface.clone();

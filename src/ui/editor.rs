@@ -313,11 +313,8 @@ impl RootView {
         ] {
             panels = panels.child(self.rail_panel_button(e, label, name, glyph));
         }
-        // A hairline before the two that are not tools, as the pod is drawn.
-        //
-        // Not drawn by the design: Help. The round-2 pod stops at six with
-        // Settings, but Help is the only way to the shortcut reference until
-        // the menus and the reference (3e, 3f) are drawn, so it stays.
+        // A hairline before Settings, which is not a tool, as the pod is
+        // drawn. The shortcut reference is the Help menu's.
         let panels = panels
             .child(
                 div()
@@ -325,8 +322,7 @@ impl RootView {
                     .px(px(Theme::gap_small()))
                     .child(divider(theme)),
             )
-            .child(self.rail_panel_button(e, "Settings", "Preferences", "Gear-regular"))
-            .child(self.rail_panel_button(e, "Help", "shortcut-reference", "Question-regular"));
+            .child(self.rail_panel_button(e, "Settings", "Preferences", "Gear-regular"));
         let rail = pod(theme)
             .p_0()
             .flex_col()
