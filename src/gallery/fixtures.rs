@@ -406,13 +406,12 @@ fn annotation_fields(r: &Region) -> Vec<Field> {
     let fields = annotations::rows(&annotation)
         .into_iter()
         .map(|row| Field {
-            key: row.key.into(),
+            key: row.key,
             label: row.label.into(),
             value: row
                 .value
                 .as_str()
-                .map_or_else(|| row.value.to_string(), str::to_owned)
-                .into(),
+                .map_or_else(|| row.value.to_string(), str::to_owned),
             kind: row.kind,
             minimum: row.range.0,
             maximum: row.range.1,
