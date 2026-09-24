@@ -13,14 +13,18 @@ pub(super) const PALETTE_VISIBLE_ROWS: usize = 9;
 /// Chip, input (with room for its ring), footer, the gaps between the four
 /// and the card's own padding — everything in the card that is not a
 /// command row.
-pub(super) const PALETTE_CHROME_HEIGHT: f32 = Theme::CHIP_HEIGHT
-    + Theme::CONTROL_HEIGHT
-    + 2.0 * Theme::FOCUS_WIDTH
-    + Theme::FOOTER_HEIGHT
-    + 3.0 * Theme::MENU_ITEM_GAP
-    + 2.0 * Theme::MENU_PADDING;
+pub(super) fn palette_chrome_height() -> f32 {
+    Theme::chip_height()
+        + Theme::control_height()
+        + 2.0 * Theme::focus_width()
+        + Theme::footer_height()
+        + 3.0 * Theme::menu_item_gap()
+        + 2.0 * Theme::menu_padding()
+}
 /// One command row and the hair after it.
-pub(super) const PALETTE_ROW_PITCH: f32 = Theme::MENU_ITEM_HEIGHT + Theme::MENU_ITEM_GAP;
+pub(super) fn palette_row_pitch() -> f32 {
+    Theme::menu_item_height() + Theme::menu_item_gap()
+}
 
 /// The command sets behind both the in-window palette and the native menu
 /// bar, grouped so the menu bar can keep its separators. One table, because
@@ -188,17 +192,17 @@ impl RootView {
         let anchor = self.menu_anchor.get();
         let viewport = window.viewport_size();
         let left = f32::from(anchor.origin.x)
-            .min(f32::from(viewport.width) - PALETTE_WIDTH - Theme::GAP)
-            .max(Theme::GAP);
+            .min(f32::from(viewport.width) - PALETTE_WIDTH - Theme::gap())
+            .max(Theme::gap());
         // Card height is content-driven, so cap it and reserve that much when
         // deciding which way to open.
         let rows = matches.len().clamp(1, PALETTE_VISIBLE_ROWS) as f32;
-        let height = PALETTE_CHROME_HEIGHT + rows * PALETTE_ROW_PITCH;
-        let below = f32::from(anchor.origin.y + anchor.size.height) + Theme::GAP;
-        let top = if below + height <= f32::from(viewport.height) - Theme::GAP {
+        let height = palette_chrome_height() + rows * palette_row_pitch();
+        let below = f32::from(anchor.origin.y + anchor.size.height) + Theme::gap();
+        let top = if below + height <= f32::from(viewport.height) - Theme::gap() {
             below
         } else {
-            (f32::from(anchor.origin.y) - Theme::GAP - height).max(Theme::GAP)
+            (f32::from(anchor.origin.y) - Theme::gap() - height).max(Theme::gap())
         };
 
         let search = self.input("command-palette", "", window, cx, |_, _, _| {});
@@ -263,16 +267,16 @@ impl RootView {
 
         let mut list = menu_list(
             "palette-list",
-            PALETTE_VISIBLE_ROWS as f32 * PALETTE_ROW_PITCH,
+            PALETTE_VISIBLE_ROWS as f32 * palette_row_pitch(),
         )
         .track_scroll(&self.menu_scroll);
         if matches.is_empty() {
             list = list.child(
                 div()
-                    .h(px(Theme::MENU_ITEM_HEIGHT))
+                    .h(px(Theme::menu_item_height()))
                     .flex()
                     .items_center()
-                    .px(px(Theme::MENU_ITEM_PADDING))
+                    .px(px(Theme::menu_item_padding()))
                     .text_color(theme.muted)
                     .child("No matching command"),
             );
@@ -334,7 +338,7 @@ impl RootView {
         }
 
         deferred(frosted(
-            Theme::RADIUS_MENU,
+            Theme::radius_menu(),
             MENU_BLUR * leave,
             menu_in(
                 ("command-menu-in", self.menu_leave.opens),
@@ -355,7 +359,7 @@ impl RootView {
                     // The field is always focused here, so its ring always
                     // shows; the ring's own width either side keeps it off
                     // the chip and the first row.
-                    .child(div().py(px(Theme::FOCUS_WIDTH)).child(search))
+                    .child(div().py(px(Theme::focus_width())).child(search))
                     .child(fade_edges(list).tracking(&self.menu_scroll))
                     .child(footer),
             ),

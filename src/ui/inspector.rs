@@ -305,12 +305,12 @@ impl RootView {
         } else {
             label
         };
-        let mut body = column().gap(px(Theme::GAP_SMALL));
+        let mut body = column().gap(px(Theme::gap_small()));
         if key == "cursorStyle" {
             // Three across, the last row centred: five in a grid of four left
             // a lone tile hanging under an even row. Each tile spans two of
             // six columns, so the last row can start half a tile in.
-            let columns = Theme::CURSOR_TILE_COLUMNS as u16;
+            let columns = Theme::cursor_tile_columns() as u16;
             let full_rows = CURSOR_STYLES.len() / columns as usize * columns as usize;
             let short = (CURSOR_STYLES.len() - full_rows) as i16;
             let mut choices = tile_grid(columns * 2);
@@ -322,7 +322,7 @@ impl RootView {
                     .items_center()
                     .justify_center()
                     .col_span(2)
-                    .h(px(Theme::CURSOR_TILE_HEIGHT))
+                    .h(px(Theme::cursor_tile_height()))
                     .child(style.glyph(theme))
                     .tooltip(move |_, cx| tooltip(label, theme, cx))
                     .on_click(move |_, _, _| {
@@ -340,8 +340,8 @@ impl RootView {
             if !CURSOR_STYLES.iter().any(|style| style.value == field.value) {
                 body = body.child(
                     div()
-                        .px(px(Theme::GAP_SMALL))
-                        .text_size(px(Theme::FONT_SECONDARY))
+                        .px(px(Theme::gap_small()))
+                        .text_size(px(Theme::font_secondary()))
                         .text_color(theme.muted)
                         .child(format!("Using “{}”, which has no tile here", field.value)),
                 );
@@ -370,7 +370,7 @@ impl RootView {
                 let editor = e.clone();
                 choices = choices.child(
                     choice_tile(value, field.value == value, true, theme)
-                        .h(px(Theme::CONTROL_HEIGHT))
+                        .h(px(Theme::control_height()))
                         .items_center()
                         .justify_center()
                         .child(
@@ -388,13 +388,16 @@ impl RootView {
                                     1 => el.items_center(),
                                     _ => el.items_end(),
                                 })
-                                .child(div().size(px(Theme::POSITION_DOT_SIZE)).rounded_full().bg(
-                                    if field.value == value {
-                                        theme.accent
-                                    } else {
-                                        theme.muted
-                                    },
-                                )),
+                                .child(
+                                    div()
+                                        .size(px(Theme::position_dot_size()))
+                                        .rounded_full()
+                                        .bg(if field.value == value {
+                                            theme.accent
+                                        } else {
+                                            theme.muted
+                                        }),
+                                ),
                         )
                         .tooltip(move |_, cx| tooltip(name, theme, cx))
                         .on_click(move |_, _, _| {
@@ -420,7 +423,7 @@ impl RootView {
                 // A small muted caption. The handoff draws it bare, with no
                 // rule running out to the edge.
                 return caps_label(label, theme)
-                    .mt(px(Theme::GAP_SMALL))
+                    .mt(px(Theme::gap_small()))
                     .into_any_element();
             }
             3 => {
@@ -465,7 +468,7 @@ impl RootView {
                 // happens to end.
                 body = body.child(
                     row()
-                        .h(px(Theme::CONTROL_HEIGHT))
+                        .h(px(Theme::control_height()))
                         .child(
                             div()
                                 .flex_none()
@@ -512,7 +515,7 @@ impl RootView {
                 });
                 body = body.child(
                     row()
-                        .h(px(Theme::CONTROL_HEIGHT))
+                        .h(px(Theme::control_height()))
                         .child(
                             div()
                                 .flex_none()
@@ -547,9 +550,9 @@ impl RootView {
         // Grotesk 19 and a close control. A sub-panel keeps its way back, a
         // caret before the name.
         let mut heading = row()
-            .h(px(Theme::CONTROL_HEIGHT_SMALL))
+            .h(px(Theme::control_height_small()))
             .flex_none()
-            .gap(px(Theme::ICON_GAP_ROW));
+            .gap(px(Theme::icon_gap_row()));
         if let Some(back) = sub_panel_of(&name) {
             let editor = e.clone();
             heading = heading.child(
@@ -562,7 +565,7 @@ impl RootView {
                     }),
             );
         }
-        heading = heading.child(title(shown.to_owned(), Theme::FONT_HEADING).flex_1());
+        heading = heading.child(title(shown.to_owned(), Theme::font_heading()).flex_1());
         // Folded, every panel's close slides the inspector back out and
         // leaves the panel as it was, for the toggle to bring back.
         //
@@ -588,7 +591,7 @@ impl RootView {
                     }),
             );
         }
-        let mut content = column().gap(px(Theme::GAP));
+        let mut content = column().gap(px(Theme::gap()));
         if name == "Frame" || name == "Wallpapers" {
             // Scene / Background is one segmented control, not two buttons.
             let editor = e.clone();
@@ -764,8 +767,8 @@ impl RootView {
                             .items_center()
                             .justify_center()
                             .flex_none()
-                            .size(px(Theme::CONTROL_HEIGHT))
-                            .rounded(px(Theme::RADIUS_LANE))
+                            .size(px(Theme::control_height()))
+                            .rounded(px(Theme::radius_lane()))
                             .bg(theme.sunk)
                             .child(icon(glyph, theme.text)),
                     )
@@ -777,7 +780,7 @@ impl RootView {
                     )
                     .child(
                         div()
-                            .text_size(px(Theme::FONT_SMALL))
+                            .text_size(px(Theme::font_small()))
                             .text_color(theme.muted)
                             .child(detail),
                     )
@@ -968,7 +971,7 @@ impl RootView {
             .child(
                 div()
                     .flex_none()
-                    .pt(px(Theme::PANEL_PADDING))
+                    .pt(px(Theme::panel_padding()))
                     .child(heading),
             )
             .child(
@@ -983,25 +986,25 @@ impl RootView {
                         .min_h_0()
                         .overflow_y_scroll()
                         .track_scroll(&scroll)
-                        .pt(px(Theme::GAP_LARGE))
+                        .pt(px(Theme::gap_large()))
                         .pb(px(if has_footer {
-                            Theme::GAP_LARGE
+                            Theme::gap_large()
                         } else {
-                            Theme::PANEL_PADDING
+                            Theme::panel_padding()
                         }))
                         .child(content),
                 )
-                .band(Theme::SCROLL_FADE_BAND)
+                .band(Theme::scroll_fade_band())
                 .tracking(&scroll)
                 .bottom(has_footer)
-                .thumb(theme.muted.opacity(0.5), Theme::PANEL_PADDING),
+                .thumb(theme.muted.opacity(0.5), Theme::panel_padding()),
             );
         // Without a footer the scroll region runs to the glass's bottom edge
         // and cuts there, unfaded: the edge of the card is the clip line, and
         // the content's own padding keeps the last row the panel's padding
         // clear of it at rest. Above a footer it still fades into the footer.
         if has_footer {
-            body = body.child(footer.pb(px(Theme::PANEL_PADDING)));
+            body = body.child(footer.pb(px(Theme::panel_padding())));
         }
         // A newly picked panel fades in and rises into place; the card
         // around it stays put. Keyed by the panel, so each pick starts over.
@@ -1067,8 +1070,8 @@ impl RootView {
             div()
                 .absolute()
                 .right(px(right))
-                .top(px(Theme::INSET_TOP))
-                .bottom(px(Theme::INSET))
+                .top(px(Theme::inset_top()))
+                .bottom(px(Theme::inset()))
                 .w(px(width))
                 .flex()
                 .occlude()
@@ -1083,7 +1086,7 @@ impl RootView {
         if !collapsed {
             self.inspector_slide = None;
             e.set_inspector_open(false);
-            return float(Theme::INSET).into_any_element();
+            return float(Theme::inset()).into_any_element();
         }
         // Folded: a 44 round toggle where the float's corner would be, and
         // the float sliding in over the stage from past the window's edge.
@@ -1097,20 +1100,20 @@ impl RootView {
         let editor = e.clone();
         let toggle = div()
             .absolute()
-            .right(px(Theme::INSET))
-            .top(px(Theme::INSET_TOP))
+            .right(px(Theme::inset()))
+            .top(px(Theme::inset_top()))
             .child(
                 button("inspector-toggle", "Show inspector", theme)
                     .glyph("SlidersHorizontal-regular")
                     .icon_only()
                     .on_click(move |_, _, _| editor.set_inspector_open(true)),
             );
-        let away = (width + Theme::INSET * 2.) * (1. - shown);
+        let away = (width + Theme::inset() * 2.) * (1. - shown);
         div()
             .absolute()
             .inset_0()
             .child(toggle)
-            .when(shown > 0., |el| el.child(float(Theme::INSET - away)))
+            .when(shown > 0., |el| el.child(float(Theme::inset() - away)))
             .into_any_element()
     }
 }

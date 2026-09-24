@@ -66,25 +66,25 @@ impl RootView {
         let Some(region) = region else {
             return (
                 row()
-                    .h(px(Theme::CONTROL_HEIGHT_SMALL))
+                    .h(px(Theme::control_height_small()))
                     .flex_none()
-                    .child(title("Selection", Theme::FONT_HEADING)),
+                    .child(title("Selection", Theme::font_heading())),
                 nothing_selected(theme),
             );
         };
 
         let heading = row()
-            .h(px(Theme::CONTROL_HEIGHT_SMALL))
+            .h(px(Theme::control_height_small()))
             .flex_none()
-            .gap(px(Theme::ICON_GAP_ROW))
+            .gap(px(Theme::icon_gap_row()))
             .child(
                 div()
                     .flex_none()
-                    .size(px(Theme::SELECTION_SWATCH))
-                    .rounded(px(Theme::SELECTION_SWATCH_RADIUS))
+                    .size(px(Theme::selection_swatch()))
+                    .rounded(px(Theme::selection_swatch_radius()))
                     .bg(region.tint.to_gpui()),
             )
-            .child(title(kind_title(&region.kind), Theme::FONT_HEADING).flex_1())
+            .child(title(kind_title(&region.kind), Theme::font_heading()).flex_1())
             .child(
                 icon_button("selection-close", "X-regular", "Deselect", theme)
                     .small()
@@ -122,19 +122,19 @@ impl RootView {
             move |v, _, _| editor.defer_field("region.endMs".into(), v.round().to_string()),
         );
         let mut content = column()
-            .gap(px(Theme::GAP_LARGE))
+            .gap(px(Theme::gap_large()))
             .child(caps_label("Timing", theme))
             .child(
                 row()
-                    .gap(px(Theme::GAP))
+                    .gap(px(Theme::gap()))
                     .child(start_field)
                     .child(end_field),
             )
             .child(
                 row()
                     .justify_between()
-                    .px(px(Theme::GAP_SMALL))
-                    .text_size(px(Theme::FONT_SECONDARY))
+                    .px(px(Theme::gap_small()))
+                    .text_size(px(Theme::font_secondary()))
                     .text_color(theme.muted)
                     .child("Duration")
                     .child(mono(format!("{:.1} s", (end - start).max(0.) / 1000.))),
@@ -203,8 +203,8 @@ impl RootView {
                 .flex()
                 .items_center()
                 .justify_center()
-                .gap(px(Theme::ICON_GAP_ROW))
-                .h(px(Theme::CONTROL_HEIGHT_LARGE))
+                .gap(px(Theme::icon_gap_row()))
+                .h(px(Theme::control_height_large()))
                 .rounded_full()
                 .cursor_pointer()
                 .text_color(theme.danger)
@@ -214,13 +214,13 @@ impl RootView {
                     theme.sunk2,
                 ))
                 .on_hover(subtake_ui::motion::hover_listener(delete_hover))
-                .active(|s| s.bg(theme.press).opacity(Theme::PRESSED_OPACITY))
+                .active(|s| s.bg(theme.press).opacity(Theme::pressed_opacity()))
                 .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
-                .child(icon_sized("X-regular", Theme::ICON_SIZE, theme.danger))
+                .child(icon_sized("X-regular", Theme::icon_size(), theme.danger))
                 .child("Delete region")
                 .child(
                     mono("⌫")
-                        .text_size(px(Theme::FONT_SMALL))
+                        .text_size(px(Theme::font_small()))
                         .text_color(theme.muted),
                 )
                 .on_click(self.command("delete")),
@@ -234,21 +234,21 @@ fn nothing_selected(theme: Theme) -> Div {
     column()
         .items_center()
         .justify_center()
-        .gap(px(Theme::GAP))
-        .min_h(px(Theme::SELECTION_EMPTY_HEIGHT))
-        .py(px(Theme::SELECTION_EMPTY_PADDING_Y))
-        .px(px(Theme::SELECTION_EMPTY_PADDING_X))
+        .gap(px(Theme::gap()))
+        .min_h(px(Theme::selection_empty_height()))
+        .py(px(Theme::selection_empty_padding_y()))
+        .px(px(Theme::selection_empty_padding_x()))
         .child(
             div()
                 .flex()
                 .items_center()
                 .justify_center()
-                .size(px(Theme::CONTROL_HEIGHT_HERO))
+                .size(px(Theme::control_height_hero()))
                 .rounded_full()
                 .bg(theme.sunk)
                 .child(icon_sized(
                     "Selection-regular",
-                    Theme::SELECTION_EMPTY_ICON,
+                    Theme::selection_empty_icon(),
                     theme.muted,
                 )),
         )
@@ -260,9 +260,9 @@ fn nothing_selected(theme: Theme) -> Div {
         )
         .child(
             div()
-                .max_w(px(Theme::SELECTION_EMPTY_TEXT_WIDTH))
+                .max_w(px(Theme::selection_empty_text_width()))
                 .text_center()
-                .text_size(px(Theme::FONT_SECONDARY))
+                .text_size(px(Theme::font_secondary()))
                 .text_color(theme.muted)
                 .child("Click a region in the timeline to edit it."),
         )

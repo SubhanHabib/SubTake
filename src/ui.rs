@@ -23,9 +23,9 @@ use subtake_theme::{
 };
 use subtake_ui::{
     Button, Dropdown, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button, caps_label,
-    choice_tile, column, composer_footer, content_panel, context_chip, divider, empty_state,
-    fade_edges, frosted, group_card, hairline, icon, icon_button, measure, media_tile, menu_in,
-    command_row, menu_list, menu_surface, mono, panel, panel_variant, pod, pod_small, progress_bar,
+    choice_tile, column, command_row, composer_footer, content_panel, context_chip, divider,
+    empty_state, fade_edges, frosted, group_card, hairline, icon, icon_button, measure, media_tile,
+    menu_in, menu_list, menu_surface, mono, panel, panel_variant, pod, pod_small, progress_bar,
     row, segmented_control, setting_card, status_chip, status_dot, swatch, switch, tile_grid,
     title, toggle, tool_button, tooltip, zoom_control,
 };
@@ -372,7 +372,7 @@ impl RootView {
             wave_peaks: None,
             // The gallery cannot drag, so it can start either edge where a
             // drag would have left it.
-            lane_height: env_size("SUBTAKE_GALLERY_LANES").unwrap_or(Theme::LANE_STACK_HEIGHT),
+            lane_height: env_size("SUBTAKE_GALLERY_LANES").unwrap_or(Theme::lane_stack_height()),
             inspector_width: env_size("SUBTAKE_GALLERY_INSPECTOR")
                 .map_or(PANEL_WIDTH, |w| w.clamp(PANEL_WIDTH_MIN, PANEL_WIDTH_MAX)),
             preview_bounds: Rc::new(Cell::new(Bounds::default())),
@@ -539,13 +539,13 @@ impl Render for RootView {
 
         if let Surface::Editor(e) = &surface {
             let saturation = if self.theme.appearance.is_dark() {
-                Theme::WINDOW_SATURATION_DARK
+                Theme::window_saturation_dark()
             } else {
-                Theme::WINDOW_SATURATION
+                Theme::window_saturation()
             };
             crate::platform::set_window_glass(
                 e.window(),
-                Theme::WINDOW_BLUR,
+                Theme::window_blur(),
                 saturation,
                 self.theme.ground,
             );
@@ -590,7 +590,7 @@ impl Render for RootView {
             .tab_group()
             .tab_stop(false)
             .font_family(FONT_SANS)
-            .text_size(px(Theme::FONT_BODY))
+            .text_size(px(Theme::font_body()))
             .text_color(self.theme.text)
             // `bg` carries its own alpha: it is a tint over the window's
             // vibrancy material, not a paint.

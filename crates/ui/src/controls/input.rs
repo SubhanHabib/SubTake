@@ -990,13 +990,13 @@ impl Render for TextInput {
             .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .on_mouse_move(cx.listener(Self::on_mouse_move))
-            .line_height(px(Theme::CONTROL_HEIGHT))
-            .text_size(px(Theme::FONT_CONTROL))
+            .line_height(px(Theme::control_height()))
+            .text_size(px(Theme::font_control()))
             .child(
                 div()
-                    .h(px(Theme::CONTROL_HEIGHT))
+                    .h(px(Theme::control_height()))
                     .w_full()
-                    .px(px(Theme::INPUT_PADDING))
+                    .px(px(Theme::input_padding()))
                     .flex()
                     .items_center()
                     .bg(crate::motion::hover_blend(

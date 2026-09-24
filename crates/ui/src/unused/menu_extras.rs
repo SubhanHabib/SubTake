@@ -25,7 +25,7 @@ pub fn shortcut_hint(text: impl Into<SharedString>, theme: Theme) -> Div {
     div()
         .flex_none()
         .font_family(FONT_MONO)
-        .text_size(px(Theme::FONT_SMALL))
+        .text_size(px(Theme::font_small()))
         .text_color(theme.muted)
         .child(text.into())
 }
@@ -43,7 +43,7 @@ pub fn menu_section_header(text: impl Into<SharedString>, theme: Theme) -> Div {
     row()
         .flex_none()
         .h(px(SECTION_HEIGHT))
-        .px(px(Theme::MENU_ITEM_PADDING))
+        .px(px(Theme::menu_item_padding()))
         .child(caps_label(text, theme))
 }
 
@@ -63,23 +63,23 @@ pub fn destructive_menu_row(
     row()
         .id(id)
         .flex_none()
-        .h(px(Theme::MENU_ITEM_HEIGHT))
-        .px(px(Theme::MENU_ITEM_PADDING))
-        .gap(px(Theme::ICON_GAP_ROW))
-        .rounded(px(Theme::MENU_ITEM_RADIUS))
+        .h(px(Theme::menu_item_height()))
+        .px(px(Theme::menu_item_padding()))
+        .gap(px(Theme::icon_gap_row()))
+        .rounded(px(Theme::menu_item_radius()))
         .bg(motion::hover_blend(
             &hover_key,
             theme.danger.opacity(0.),
             theme.danger.opacity(0.12),
         ))
-        .text_size(px(Theme::FONT_BODY))
+        .text_size(px(Theme::font_body()))
         .text_color(theme.danger)
         .cursor_pointer()
         .on_hover(motion::hover_listener(hover_key))
         // The same fixed gutter every other row holds, left empty: a
         // destructive item is never the checked one, and without the gutter
         // its label would sit a tick's width left of the list it is in.
-        .child(div().flex_none().w(px(Theme::CHECK_GUTTER)))
+        .child(div().flex_none().w(px(Theme::check_gutter())))
         .child(div().flex_1().min_w_0().text_ellipsis().child(label.into()))
         .on_click(on_click)
 }

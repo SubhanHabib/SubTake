@@ -10,8 +10,8 @@ use subtake_theme::Theme;
 pub fn status_dot(theme: Theme) -> Div {
     div()
         .flex_none()
-        .size(px(Theme::DOT_SIZE))
-        .rounded(px(Theme::DOT_SIZE / 2.0))
+        .size(px(Theme::dot_size()))
+        .rounded(px(Theme::dot_size() / 2.0))
         .bg(theme.accent)
 }
 
@@ -24,12 +24,12 @@ pub fn status_chip(theme: Theme) -> Div {
         .flex()
         .min_w_0()
         .items_center()
-        .gap(px(Theme::GAP_SMALL))
-        .h(px(Theme::CHIP_HEIGHT))
-        .px(px(Theme::STATUS_CHIP_PADDING))
+        .gap(px(Theme::gap_small()))
+        .h(px(Theme::chip_height()))
+        .px(px(Theme::status_chip_padding()))
         .rounded_full()
         .bg(theme.sunk2)
-        .text_size(px(Theme::FONT_SMALL))
+        .text_size(px(Theme::font_small()))
         .text_color(theme.muted)
         .whitespace_nowrap()
 }
@@ -44,12 +44,12 @@ pub fn context_chip(theme: Theme, parts: &[&str]) -> Div {
         .flex()
         .flex_none()
         .items_center()
-        .gap(px(Theme::GAP))
-        .h(px(Theme::CHIP_HEIGHT))
-        .px(px(Theme::GAP_LARGE))
+        .gap(px(Theme::gap()))
+        .h(px(Theme::chip_height()))
+        .px(px(Theme::gap_large()))
         .rounded_full()
         .bg(theme.sunk)
-        .text_size(px(Theme::FONT_SMALL))
+        .text_size(px(Theme::font_small()))
         .text_color(theme.muted)
         .whitespace_nowrap()
         .children(parts.iter().enumerate().flat_map(|(i, part)| {
@@ -70,10 +70,10 @@ pub fn composer_footer(theme: Theme) -> Div {
     div()
         .flex()
         .items_center()
-        .gap(px(Theme::GAP_SMALL))
-        .px(px(Theme::GAP_SMALL))
-        .h(px(Theme::FOOTER_HEIGHT))
-        .text_size(px(Theme::FONT_SMALL))
+        .gap(px(Theme::gap_small()))
+        .px(px(Theme::gap_small()))
+        .h(px(Theme::footer_height()))
+        .text_size(px(Theme::font_small()))
         .text_color(theme.muted)
 }
 
@@ -85,15 +85,15 @@ pub fn composer_footer(theme: Theme) -> Div {
 pub fn progress_bar(fraction: f32, theme: Theme) -> Div {
     div()
         .flex_none()
-        .h(px(Theme::PROGRESS_HEIGHT))
-        .rounded(px(Theme::PROGRESS_RADIUS))
+        .h(px(Theme::progress_height()))
+        .rounded(px(Theme::progress_radius()))
         .overflow_hidden()
         .bg(theme.sunk)
         .child(
             div()
                 .h_full()
                 .w(relative(fraction.clamp(0., 1.)))
-                .rounded(px(Theme::PROGRESS_RADIUS))
+                .rounded(px(Theme::progress_radius()))
                 .bg(theme.accent),
         )
 }

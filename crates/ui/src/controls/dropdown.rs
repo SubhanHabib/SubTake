@@ -156,20 +156,24 @@ impl Render for Dropdown {
                     .flex()
                     .items_center()
                     .justify_between()
-                    .gap(px(if row { Theme::ICON_GAP_ROW } else { Theme::GAP }))
-                    .h(px(if row {
-                        Theme::CONTROL_HEIGHT_LARGE
-                    } else if self.compact {
-                        Theme::CONTROL_HEIGHT_SMALL
+                    .gap(px(if row {
+                        Theme::icon_gap_row()
                     } else {
-                        Theme::CONTROL_HEIGHT
+                        Theme::gap()
+                    }))
+                    .h(px(if row {
+                        Theme::control_height_large()
+                    } else if self.compact {
+                        Theme::control_height_small()
+                    } else {
+                        Theme::control_height()
                     }))
                     .px(px(if row {
-                        Theme::CONTROL_PADDING_LARGE
+                        Theme::control_padding_large()
                     } else if self.compact {
-                        Theme::CONTROL_PADDING_SMALL
+                        Theme::control_padding_small()
                     } else {
-                        Theme::CONTROL_PADDING
+                        Theme::control_padding()
                     }))
                     .rounded_full()
                     // `sunk`, one step up to `sunk2` under the pointer, as
@@ -179,7 +183,7 @@ impl Render for Dropdown {
                         if open { theme.sunk2 } else { theme.sunk },
                         theme.sunk2,
                     ))
-                    .text_size(px(Theme::FONT_CONTROL))
+                    .text_size(px(Theme::font_control()))
                     .font_weight(if row {
                         FontWeight::NORMAL
                     } else {
@@ -190,17 +194,17 @@ impl Render for Dropdown {
                     .opacity(if self.enabled {
                         1.
                     } else {
-                        Theme::DISABLED_OPACITY
+                        Theme::disabled_opacity()
                     })
                     .when(self.enabled, |s| {
                         s.cursor_pointer()
-                            .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                            .active(|s| s.opacity(Theme::pressed_opacity()))
                             .on_hover(motion::hover_listener(trigger_key))
                     })
                     .children(
                         self.glyph
                             .as_ref()
-                            .map(|g| icon_sized(g, Theme::ICON_SIZE_MEDIUM, theme.text)),
+                            .map(|g| icon_sized(g, Theme::icon_size_medium(), theme.text)),
                     )
                     .map(|el| match &self.caption {
                         Some(caption) => el
@@ -220,7 +224,7 @@ impl Render for Dropdown {
                     // label.
                     .child(icon_sized(
                         "CaretDown-regular",
-                        Theme::ICON_SIZE_CARET,
+                        Theme::icon_size_caret(),
                         theme.muted,
                     ))
                     .on_click(cx.listener(|this, _, w, cx| {
@@ -254,9 +258,9 @@ impl Render for Dropdown {
             let viewport = window.viewport_size();
             let trigger = self.bounds.get();
             let width = trigger.size.width;
-            let max_height = Theme::MENU_MAX_HEIGHT
-                .min(f32::from(viewport.height) - Theme::GAP * 2.0 - Theme::CONTROL_HEIGHT)
-                .max(Theme::CONTROL_HEIGHT);
+            let max_height = Theme::menu_max_height()
+                .min(f32::from(viewport.height) - Theme::gap() * 2.0 - Theme::control_height())
+                .max(Theme::control_height());
             root = root.child(
                 deferred(
                     anchored()
@@ -266,15 +270,17 @@ impl Render for Dropdown {
                         // the menu would open on top of the control it belongs
                         // to instead of under it.
                         .when(!self.opens_up, |el| {
-                            el.position(trigger.bottom_left() + point(px(0.), px(Theme::GAP_SMALL)))
+                            el.position(
+                                trigger.bottom_left() + point(px(0.), px(Theme::gap_small())),
+                            )
                         })
                         .when(self.opens_up, |el| {
                             el.anchor(Anchor::BottomLeft)
-                                .position(trigger.origin - point(px(0.), px(Theme::GAP_SMALL)))
+                                .position(trigger.origin - point(px(0.), px(Theme::gap_small())))
                         })
-                        .snap_to_window_with_margin(px(Theme::GAP))
+                        .snap_to_window_with_margin(px(Theme::gap()))
                         .child(frost::frosted(
-                            Theme::RADIUS_MENU,
+                            Theme::radius_menu(),
                             frost::MENU_BLUR * leave,
                             (if self.opens_up {
                                 menu_in_above

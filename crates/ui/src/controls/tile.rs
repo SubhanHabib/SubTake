@@ -23,8 +23,8 @@ pub fn swatch(
     let ring = focus_ring(theme);
     div()
         .id(id)
-        .size(px(Theme::SWATCH_SIZE))
-        .rounded(px(Theme::RADIUS_LANE))
+        .size(px(Theme::swatch_size()))
+        .rounded(px(Theme::radius_lane()))
         .bg(colour)
         .border_2()
         .border_color(motion::blend(
@@ -35,7 +35,7 @@ pub fn swatch(
         .cursor_pointer()
         .tab_index(0)
         .focus_visible(move |s| s.shadow(vec![ring]))
-        .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+        .active(|s| s.opacity(Theme::pressed_opacity()))
         .on_hover(motion::hover_listener(hover_key))
 }
 
@@ -63,11 +63,11 @@ pub fn media_tile(
     // The border sits inside the frame, so the picture's own corners are
     // rounded to the border's inner edge: gpui's clip is square, and would
     // leave the picture's corners poking past a rounded frame.
-    let inner = Theme::RADIUS_INNER - Theme::TILE_RING_WIDTH;
+    let inner = Theme::radius_inner() - Theme::tile_ring_width();
     let frame = div()
-        .h(px(Theme::TILE_HEIGHT))
+        .h(px(Theme::tile_height()))
         .w_full()
-        .rounded(px(Theme::RADIUS_INNER))
+        .rounded(px(Theme::radius_inner()))
         .border_2()
         .border_color(ring)
         .bg(theme.sunk)
@@ -83,21 +83,21 @@ pub fn media_tile(
     div()
         .flex()
         .flex_col()
-        .gap(px(Theme::GAP_SMALL))
+        .gap(px(Theme::gap_small()))
         .id(id)
-        .w(px(Theme::TILE_WIDTH))
+        .w(px(Theme::tile_width()))
         // The radius is for the focus ring alone, which goes round the
         // picture and its caption together: the tile is both.
-        .rounded(px(Theme::RADIUS_INNER))
+        .rounded(px(Theme::radius_inner()))
         .tab_index(0)
         .focus_visible(move |s| s.shadow(vec![focus]))
         .cursor_pointer()
-        .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+        .active(|s| s.opacity(Theme::pressed_opacity()))
         .on_hover(motion::hover_listener(hover_key))
         .child(frame)
         .child(
             div()
-                .text_size(px(Theme::FONT_SMALL))
+                .text_size(px(Theme::font_small()))
                 .text_color(if selected { theme.text } else { theme.muted })
                 .text_ellipsis()
                 .child(title.into()),
@@ -115,18 +115,18 @@ pub fn empty_state(
         .flex_1()
         .items_center()
         .justify_center()
-        .gap(px(Theme::EMPTY_GAP))
-        .px(px(Theme::EMPTY_PADDING_X))
-        .pb(px(Theme::EMPTY_PADDING_BOTTOM))
+        .gap(px(Theme::empty_gap()))
+        .px(px(Theme::empty_padding_x()))
+        .pb(px(Theme::empty_padding_bottom()))
         // Space Grotesk at 40, the one place the redesign is loud. It was
         // Geist SemiBold: the face was bundled and registered and nothing had
         // ever asked for it.
-        .child(crate::title(headline, Theme::FONT_DISPLAY))
+        .child(crate::title(headline, Theme::font_display()))
         .child(
             div()
-                .max_w(px(Theme::EMPTY_TEXT_WIDTH))
+                .max_w(px(Theme::empty_text_width()))
                 .text_center()
-                .text_size(px(Theme::FONT_ACTION))
+                .text_size(px(Theme::font_action()))
                 .text_color(theme.muted)
                 .child(detail.into()),
         )
@@ -149,11 +149,11 @@ pub fn choice_tile(
     div()
         .flex()
         .flex_col()
-        .gap(px(Theme::GAP_SMALL))
+        .gap(px(Theme::gap_small()))
         .id(id)
         .min_w_0()
-        .p(px(Theme::GAP))
-        .rounded(px(Theme::RADIUS_MENU))
+        .p(px(Theme::gap()))
+        .rounded(px(Theme::radius_menu()))
         // A tile is too big to invert wholesale, so "selected" reads as the
         // deeper grey wash plus a full-strength outline — the outlined half
         // of the same filled/outlined language the buttons use.
@@ -166,7 +166,11 @@ pub fn choice_tile(
         ))
         .border_1()
         .border_color(motion::blend(theme.line, theme.accent, pick))
-        .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
+        .opacity(if enabled {
+            1.
+        } else {
+            Theme::disabled_opacity()
+        })
         .tab_index(0)
         .tab_stop(enabled)
         // The ring thickens inward, as a second hairline inside the border,
@@ -174,11 +178,11 @@ pub fn choice_tile(
         // took a pixel off every side of what the tile holds.
         .focus_visible(move |s| {
             s.border_color(theme.accent)
-                .shadow(vec![crate::hairline(theme.accent, Theme::BORDER_WIDTH)])
+                .shadow(vec![crate::hairline(theme.accent, Theme::border_width())])
         })
         .when(enabled, |s| {
             s.cursor_pointer()
-                .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                .active(|s| s.opacity(Theme::pressed_opacity()))
                 .on_hover(motion::hover_listener(hover_key))
         })
 }

@@ -111,7 +111,7 @@ impl RenderOnce for ZoomControl {
                 }
             };
         row()
-            .gap(px(Theme::GAP_SMALL))
+            .gap(px(Theme::gap_small()))
             .flex_none()
             .child(
                 row()
@@ -128,10 +128,10 @@ impl RenderOnce for ZoomControl {
                     ))
                     .child(
                         div()
-                            .w(px(Theme::ZOOM_READOUT_WIDTH))
+                            .w(px(Theme::zoom_readout_width()))
                             .flex_none()
                             .text_center()
-                            .text_size(px(Theme::FONT_CONTROL))
+                            .text_size(px(Theme::font_control()))
                             .text_color(theme.text)
                             .font_features(FontFeatures(std::sync::Arc::new(vec![(
                                 "tnum".into(),

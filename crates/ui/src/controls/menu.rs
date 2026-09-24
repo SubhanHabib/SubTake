@@ -18,9 +18,9 @@ use crate::{Surface, column, icon_sized, motion, panel_variant, perf, row};
 /// reached whatever it was covering.
 pub fn menu_surface(theme: Theme) -> Div {
     panel_variant(theme, Surface::Popup)
-        .p(px(Theme::MENU_PADDING))
-        .gap(px(Theme::MENU_ITEM_GAP))
-        .min_w(px(Theme::MENU_MIN_WIDTH))
+        .p(px(Theme::menu_padding()))
+        .gap(px(Theme::menu_item_gap()))
+        .min_w(px(Theme::menu_min_width()))
         .occlude()
 }
 
@@ -29,7 +29,7 @@ pub fn menu_surface(theme: Theme) -> Div {
 pub fn menu_list(id: impl Into<ElementId>, max_height: f32) -> Stateful<Div> {
     column()
         .id(id)
-        .gap(px(Theme::MENU_ITEM_GAP))
+        .gap(px(Theme::menu_item_gap()))
         .min_h_0()
         .max_h(px(max_height))
         .overflow_y_scroll()
@@ -40,9 +40,9 @@ pub fn menu_list(id: impl Into<ElementId>, max_height: f32) -> Stateful<Div> {
 pub fn menu_separator(theme: Theme) -> Div {
     div()
         .flex_none()
-        .h(px(Theme::BORDER_WIDTH))
-        .mx(px(Theme::MENU_SEPARATOR_INSET))
-        .my(px(Theme::MENU_SEPARATOR_MARGIN))
+        .h(px(Theme::border_width()))
+        .mx(px(Theme::menu_separator_inset()))
+        .my(px(Theme::menu_separator_margin()))
         .bg(theme.line)
 }
 
@@ -104,12 +104,12 @@ fn menu_row_in(
     row()
         .id(id)
         .flex_none()
-        .h(px(Theme::MENU_ITEM_HEIGHT))
-        .px(px(Theme::MENU_ITEM_PADDING))
-        .gap(px(Theme::ICON_GAP_ROW))
-        .rounded(px(Theme::MENU_ITEM_RADIUS))
+        .h(px(Theme::menu_item_height()))
+        .px(px(Theme::menu_item_padding()))
+        .gap(px(Theme::icon_gap_row()))
+        .rounded(px(Theme::menu_item_radius()))
         .bg(motion::hover_blend(&hover_key, resting, theme.sunk))
-        .text_size(px(Theme::FONT_BODY))
+        .text_size(px(Theme::font_body()))
         .text_color(theme.text)
         .font_weight(if selected {
             FontWeight::MEDIUM
@@ -120,25 +120,27 @@ fn menu_row_in(
         // Pressed is the hover fill, dimmed: the row is already on `sunk`
         // under the pointer, and a second, deeper wash would read as a
         // different kind of row rather than this one being pushed.
-        .active(move |s| s.bg(sunk).opacity(Theme::PRESSED_OPACITY))
+        .active(move |s| s.bg(sunk).opacity(Theme::pressed_opacity()))
         .on_hover(motion::hover_listener(hover_key))
         // The gutter is held whether or not this row is the current one, so
         // the labels in a menu line up with each other instead of stepping in
         // and out as the selection moves.
-        .when(gutter, |el| el.child(
-            div()
-                .flex()
-                .flex_none()
-                .w(px(Theme::CHECK_GUTTER))
-                .justify_center()
-                .when(selected, |el| {
-                    el.child(icon_sized(
-                        "Check-regular",
-                        Theme::CHECK_GUTTER,
-                        theme.accent,
-                    ))
-                }),
-        ))
+        .when(gutter, |el| {
+            el.child(
+                div()
+                    .flex()
+                    .flex_none()
+                    .w(px(Theme::check_gutter()))
+                    .justify_center()
+                    .when(selected, |el| {
+                        el.child(icon_sized(
+                            "Check-regular",
+                            Theme::check_gutter(),
+                            theme.accent,
+                        ))
+                    }),
+            )
+        })
         .child(div().flex_1().min_w_0().text_ellipsis().child(label.into()))
         .on_click(move |e, w, cx| {
             perf::log(format_args!("click menu row {click_id:?}"));

@@ -33,7 +33,7 @@ impl RootView {
             move |_: &ClickEvent, _: &mut Window, _: &mut App| options.defer_panel("".into())
         };
         let header = row()
-            .gap(px(Theme::ICON_GAP_ROW))
+            .gap(px(Theme::icon_gap_row()))
             .child(context_chip(theme, &["Recorder", title]).min_w_0())
             .child(div().flex_1())
             .child(
@@ -49,7 +49,7 @@ impl RootView {
             _ => self.more_card(state),
         };
         let content = column()
-            .gap(px(Theme::GAP_LARGE))
+            .gap(px(Theme::gap_large()))
             .child(header)
             .children(body);
 
@@ -68,7 +68,7 @@ impl RootView {
             .right_0()
             .h(px(height))
             .overflow_hidden()
-            .rounded(px(Theme::RADIUS_PANEL))
+            .rounded(px(Theme::radius_panel()))
             .bg(theme.card)
             .child(
                 div()
@@ -76,7 +76,7 @@ impl RootView {
                     .top_0()
                     .left_0()
                     .right_0()
-                    .p(px(Theme::PANEL_PADDING))
+                    .p(px(Theme::panel_padding()))
                     .child(content)
                     .child(options_fit(state.clone(), self.card_measured.clone())),
             )
@@ -180,8 +180,8 @@ impl RootView {
         let selected = state.get_source_index();
         let enabled = !state.get_busy();
         let sources: Vec<_> = state.get_capture_sources().iter().enumerate().collect();
-        let mut displays = row().gap(px(Theme::GAP)).items_start();
-        let mut windows = column().gap(px(Theme::LIST_GAP));
+        let mut displays = row().gap(px(Theme::gap())).items_start();
+        let mut windows = column().gap(px(Theme::list_gap()));
         for (index, source) in &sources {
             let chosen = *index as i32 == selected;
             let options = state.clone();
@@ -210,7 +210,7 @@ impl RootView {
         if has("window") {
             body.push(
                 caps_label("Windows", theme)
-                    .mt(px(Theme::LIST_GAP))
+                    .mt(px(Theme::list_gap()))
                     .into_any_element(),
             );
             body.push(windows.into_any_element());
@@ -271,7 +271,7 @@ impl RootView {
             self.level_meter(state.get_mic_level(), on)
                 .into_any_element(),
             caps_label("System", theme)
-                .mt(px(Theme::LIST_GAP))
+                .mt(px(Theme::list_gap()))
                 .into_any_element(),
             toggle(
                 "system-toggle",
@@ -296,7 +296,7 @@ impl RootView {
     /// for a second. With the microphone off the meter dims and stops.
     fn level_meter(&mut self, level: f32, on: bool) -> Div {
         let theme = self.theme;
-        let floor = Theme::METER_FLOOR_DB;
+        let floor = Theme::meter_floor_db();
         let bars = Theme::METER_BARS.len();
         let lit = if on && level > floor {
             (((level - floor) / -floor) * bars as f32)
@@ -306,7 +306,7 @@ impl RootView {
             0
         };
         let now = Instant::now();
-        if on && level >= Theme::METER_CLIP_DB {
+        if on && level >= Theme::meter_clip_db() {
             self.mic_clipped = Some(now);
         }
         let clipped = on
@@ -314,9 +314,9 @@ impl RootView {
                 .mic_clipped
                 .is_some_and(|at| now.duration_since(at) < std::time::Duration::from_secs(1));
         let mut meter = row()
-            .h(px(Theme::METER_HEIGHT))
-            .gap(px(Theme::METER_GAP))
-            .opacity(if on { 1. } else { Theme::DISABLED_OPACITY });
+            .h(px(Theme::meter_height()))
+            .gap(px(Theme::meter_gap()))
+            .opacity(if on { 1. } else { Theme::disabled_opacity() });
         for (i, height) in Theme::METER_BARS.into_iter().enumerate() {
             let fill = if clipped && i >= bars - 2 {
                 theme.rec
@@ -328,9 +328,9 @@ impl RootView {
             meter = meter.child(
                 div()
                     .flex_none()
-                    .w(px(Theme::METER_BAR_WIDTH))
+                    .w(px(Theme::meter_bar_width()))
                     .h(px(height))
-                    .rounded(px(Theme::METER_BAR_RADIUS))
+                    .rounded(px(Theme::meter_bar_radius()))
                     .bg(fill),
             );
         }
@@ -344,7 +344,7 @@ impl RootView {
         };
         meter.child(div().flex_1()).child(
             mono(peak)
-                .text_size(px(Theme::FONT_SMALL))
+                .text_size(px(Theme::font_small()))
                 .text_color(theme.muted),
         )
     }
@@ -371,10 +371,10 @@ impl RootView {
             // the preview's size so the card does not jump when one appears.
             body.push(
                 row()
-                    .h(px(Theme::CAMERA_PREVIEW_HEIGHT))
+                    .h(px(Theme::camera_preview_height()))
                     .justify_center()
-                    .gap(px(Theme::ICON_GAP_ROW))
-                    .rounded(px(Theme::RADIUS_MENU))
+                    .gap(px(Theme::icon_gap_row()))
+                    .rounded(px(Theme::radius_menu()))
                     .bg(theme.sunk)
                     .text_color(theme.muted)
                     .child(icon("VideoCameraSlash-regular", theme.muted))
@@ -407,7 +407,7 @@ impl RootView {
 
     fn countdown_card(&self, state: &RecordingOptions) -> Vec<AnyElement> {
         let theme = self.theme;
-        let mut choices = column().gap(px(Theme::LIST_GAP));
+        let mut choices = column().gap(px(Theme::list_gap()));
         for (label, value) in [
             ("No delay", 0),
             ("3 seconds", 3),
@@ -423,9 +423,9 @@ impl RootView {
                 .relative()
                 .flex()
                 .items_center()
-                .gap(px(Theme::ICON_GAP_ROW))
-                .h(px(Theme::CONTROL_HEIGHT_LARGE))
-                .px(px(Theme::CONTROL_PADDING))
+                .gap(px(Theme::icon_gap_row()))
+                .h(px(Theme::control_height_large()))
+                .px(px(Theme::control_padding()))
                 .rounded_full()
                 .map(|s| {
                     subtake_ui::pressable(
@@ -445,7 +445,7 @@ impl RootView {
                     .font_weight(FontWeight::MEDIUM)
                     .child(icon_sized(
                         "Check-regular",
-                        Theme::ICON_SIZE_MEDIUM,
+                        Theme::icon_size_medium(),
                         theme.accent,
                     ))
                     .child(selection_ring(None, theme));
@@ -467,7 +467,7 @@ impl RootView {
     fn more_card(&self, state: &RecordingOptions) -> Vec<AnyElement> {
         let theme = self.theme;
         let items = column()
-            .gap(px(Theme::LIST_GAP))
+            .gap(px(Theme::list_gap()))
             .child(self.more_item(
                 "open",
                 "FolderOpen-regular",
@@ -504,10 +504,10 @@ impl RootView {
                 true,
             ));
         let path = row()
-            .h(px(Theme::CONTROL_HEIGHT_LARGE))
-            .gap(px(Theme::ICON_GAP_ROW))
-            .pl(px(Theme::CONTROL_PADDING_LARGE))
-            .pr(px(Theme::GAP_BLOCK))
+            .h(px(Theme::control_height_large()))
+            .gap(px(Theme::icon_gap_row()))
+            .pl(px(Theme::control_padding_large()))
+            .pr(px(Theme::gap_block()))
             .rounded_full()
             .bg(theme.sunk)
             .child(
@@ -515,7 +515,7 @@ impl RootView {
                     .flex_1()
                     .min_w_0()
                     .text_ellipsis()
-                    .text_size(px(Theme::FONT_SECONDARY))
+                    .text_size(px(Theme::font_secondary()))
                     .text_color(theme.muted),
             )
             .child(
@@ -525,7 +525,7 @@ impl RootView {
             );
         vec![
             items.into_any_element(),
-            divider(theme).my(px(Theme::LIST_GAP)).into_any_element(),
+            divider(theme).my(px(Theme::list_gap())).into_any_element(),
             caps_label("Recordings path", theme).into_any_element(),
             path.into_any_element(),
             helper(
@@ -552,16 +552,20 @@ impl RootView {
             .id(id)
             .flex()
             .items_center()
-            .gap(px(Theme::ICON_GAP_ROW))
-            .h(px(Theme::CONTROL_HEIGHT_SMALL))
-            .px(px(Theme::CONTROL_PADDING_SMALL))
-            .rounded(px(Theme::RADIUS_LANE))
-            .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
+            .gap(px(Theme::icon_gap_row()))
+            .h(px(Theme::control_height_small()))
+            .px(px(Theme::control_padding_small()))
+            .rounded(px(Theme::radius_lane()))
+            .opacity(if enabled {
+                1.
+            } else {
+                Theme::disabled_opacity()
+            })
             .child(icon(glyph, theme.muted))
             .child(div().flex_1().child(label))
             .children(shortcut.map(|s| {
                 mono(s)
-                    .text_size(px(Theme::FONT_SMALL))
+                    .text_size(px(Theme::font_small()))
                     .text_color(theme.muted)
             }))
             .bg(subtake_ui::motion::hover_blend(
@@ -594,28 +598,28 @@ fn display_tile(
     // halves are one inset edge on a plate grown by the outer half: gpui
     // does not clip an outer shadow to what is outside its box, so a spread
     // shadow on a see-through overlay would fill the picture with accent.
-    let grow = Theme::SELECTED_WIDTH;
+    let grow = Theme::selected_width();
     let ring = div()
         .absolute()
         .top(px(-grow))
         .left(px(-grow))
         .right(px(-grow))
         .bottom(px(-grow))
-        .rounded(px(Theme::RADIUS_INNER + grow))
+        .rounded(px(Theme::radius_inner() + grow))
         .when(chosen, |s| {
-            s.shadow(vec![hairline(theme.accent, Theme::SELECTED_WIDTH * 2.)])
+            s.shadow(vec![hairline(theme.accent, Theme::selected_width() * 2.)])
         })
         .when(!chosen && enabled, |s| {
             s.shadow(vec![hairline(
                 subtake_ui::motion::hover_blend(&hover_key, theme.line.opacity(0.), theme.line),
-                Theme::SELECTED_WIDTH,
+                Theme::selected_width(),
             )])
         });
     let picture = thumbnail(
         &source.thumbnail,
         "Monitor-regular",
-        Theme::SOURCE_THUMB_HEIGHT,
-        Theme::RADIUS_INNER,
+        Theme::source_thumb_height(),
+        Theme::radius_inner(),
         theme,
     )
     .w_full();
@@ -625,28 +629,28 @@ fn display_tile(
         .flex_col()
         .flex_1()
         .min_w_0()
-        .gap(px(Theme::SOURCE_TILE_GAP))
+        .gap(px(Theme::source_tile_gap()))
         // The radius is for the focus ring alone, which goes round the
         // picture and its caption together, as a wallpaper tile's does.
-        .rounded(px(Theme::RADIUS_INNER))
+        .rounded(px(Theme::radius_inner()))
         .map(|s| {
             if enabled {
                 subtake_ui::pressable(s, theme, None, hover_key)
             } else {
-                s.opacity(Theme::DISABLED_OPACITY)
+                s.opacity(Theme::disabled_opacity())
             }
         })
         .child(div().relative().child(picture).child(layered(ring)))
         .child(
             div()
-                .text_size(px(Theme::FONT_SECONDARY))
+                .text_size(px(Theme::font_secondary()))
                 .text_ellipsis()
                 .when(chosen, |s| s.font_weight(FontWeight::MEDIUM))
                 .child(source.name.clone()),
         )
         .child(
             mono(source.detail.clone())
-                .text_size(px(Theme::FONT_SMALL))
+                .text_size(px(Theme::font_small()))
                 .text_color(theme.muted),
         )
 }
@@ -666,10 +670,10 @@ fn window_row(
         .relative()
         .flex()
         .items_center()
-        .gap(px(Theme::ICON_GAP_ROW))
-        .h(px(Theme::CONTROL_HEIGHT_SMALL))
-        .px(px(Theme::CONTROL_PADDING_SMALL))
-        .rounded(px(Theme::RADIUS_LANE))
+        .gap(px(Theme::icon_gap_row()))
+        .h(px(Theme::control_height_small()))
+        .px(px(Theme::control_padding_small()))
+        .rounded(px(Theme::radius_lane()))
         .map(|s| {
             if enabled {
                 s.bg(subtake_ui::motion::hover_blend(
@@ -679,18 +683,18 @@ fn window_row(
                 ))
                 .map(|s| subtake_ui::pressable(s, theme, Some(theme.press), hover_key))
             } else {
-                s.opacity(Theme::DISABLED_OPACITY)
+                s.opacity(Theme::disabled_opacity())
             }
         })
         .child(
             thumbnail(
                 &source.thumbnail,
                 "Image-regular",
-                Theme::WINDOW_THUMB_HEIGHT,
-                Theme::WINDOW_THUMB_RADIUS,
+                Theme::window_thumb_height(),
+                Theme::window_thumb_radius(),
                 theme,
             )
-            .w(px(Theme::WINDOW_THUMB_WIDTH)),
+            .w(px(Theme::window_thumb_width())),
         )
         .child(
             div()
@@ -700,7 +704,7 @@ fn window_row(
                 .child(source.name.clone()),
         )
         .when(chosen, |s| {
-            s.child(selection_ring(Some(Theme::RADIUS_LANE), theme))
+            s.child(selection_ring(Some(Theme::radius_lane()), theme))
         })
 }
 
@@ -734,7 +738,7 @@ fn thumbnail(
             .justify_center()
             .child(icon_sized(
                 glyph,
-                (height * 0.4).min(Theme::ICON_SIZE_LARGE),
+                (height * 0.4).min(Theme::icon_size_large()),
                 theme.muted,
             )),
     }
@@ -745,18 +749,18 @@ fn thumbnail(
 fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Div {
     let plate = div()
         .relative()
-        .h(px(Theme::CAMERA_PREVIEW_HEIGHT))
-        .rounded(px(Theme::RADIUS_MENU))
+        .h(px(Theme::camera_preview_height()))
+        .rounded(px(Theme::radius_menu()))
         .overflow_hidden()
         .bg(theme.sunk)
-        .opacity(if on { 1. } else { Theme::DISABLED_OPACITY });
+        .opacity(if on { 1. } else { Theme::disabled_opacity() });
     let plate = match image.0 {
         Some(image) => plate.child(
             img(image)
                 .absolute()
                 .inset_0()
                 .size_full()
-                .rounded(px(Theme::RADIUS_MENU))
+                .rounded(px(Theme::radius_menu()))
                 .object_fit(ObjectFit::Cover),
         ),
         // Not wired: the app does not stream the camera into this card yet,
@@ -767,7 +771,7 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
             .justify_center()
             .child(icon_sized(
                 "VideoCamera-regular",
-                Theme::ICON_SIZE_LARGE,
+                Theme::icon_size_large(),
                 theme.muted,
             )),
     };
@@ -777,9 +781,9 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
         .child(
             div()
                 .absolute()
-                .left(px(Theme::GAP_LARGE))
-                .bottom(px(Theme::GAP_LARGE))
-                .size(px(Theme::CAMERA_SWATCH))
+                .left(px(Theme::gap_large()))
+                .bottom(px(Theme::gap_large()))
+                .size(px(Theme::camera_swatch()))
                 .rounded_full()
                 .bg(rgb(0x1b2434))
                 .shadow(vec![
@@ -805,15 +809,15 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
         .child(
             div()
                 .absolute()
-                .right(px(Theme::GAP_LARGE))
-                .top(px(Theme::GAP_LARGE))
+                .right(px(Theme::gap_large()))
+                .top(px(Theme::gap_large()))
                 .flex()
                 .items_center()
-                .h(px(Theme::CHIP_HEIGHT))
-                .px(px(Theme::GAP_LARGE))
+                .h(px(Theme::chip_height()))
+                .px(px(Theme::gap_large()))
                 .rounded_full()
                 .bg(theme.scrim_chip())
-                .text_size(px(Theme::FONT_SMALL))
+                .text_size(px(Theme::font_small()))
                 .text_color(gpui::white())
                 .child("Preview"),
         )
@@ -824,8 +828,8 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
 fn refreshing(theme: Theme) -> Div {
     row()
         .justify_center()
-        .gap(px(Theme::ICON_GAP))
-        .h(px(Theme::CONTROL_HEIGHT))
+        .gap(px(Theme::icon_gap()))
+        .h(px(Theme::control_height()))
         .rounded_full()
         .bg(theme.sunk)
         .child(icon("ArrowClockwise-regular", theme.text).with_animation(
@@ -839,8 +843,8 @@ fn refreshing(theme: Theme) -> Div {
 /// The muted sentence a card ends on.
 fn helper(text: impl Into<SharedString>, theme: Theme) -> Div {
     div()
-        .text_size(px(Theme::FONT_SECONDARY))
-        .line_height(relative(Theme::HELPER_LEADING))
+        .text_size(px(Theme::font_secondary()))
+        .line_height(relative(Theme::helper_leading()))
         .text_color(theme.muted)
         .child(text.into())
 }
@@ -851,7 +855,7 @@ fn selection_ring(radius: Option<f32>, theme: Theme) -> impl IntoElement {
     let ring = div()
         .absolute()
         .inset_0()
-        .shadow(vec![hairline(theme.accent, Theme::SELECTED_WIDTH)]);
+        .shadow(vec![hairline(theme.accent, Theme::selected_width())]);
     layered(match radius {
         Some(r) => ring.rounded(px(r)),
         None => ring.rounded_full(),

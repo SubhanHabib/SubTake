@@ -11,13 +11,13 @@ use crate::{column, row};
 /// takes — a bare label above a bare control reads as two things, not one.
 pub fn field_row(theme: Theme, label: impl Into<SharedString>) -> Div {
     row()
-        .h(px(Theme::CONTROL_HEIGHT_LARGE))
+        .h(px(Theme::control_height_large()))
         .flex_none()
-        .px(px(Theme::CONTROL_PADDING_LARGE))
-        .gap(px(Theme::GAP))
+        .px(px(Theme::control_padding_large()))
+        .gap(px(Theme::gap()))
         .rounded_full()
         .bg(theme.sunk)
-        .text_size(px(Theme::FONT_CONTROL))
+        .text_size(px(Theme::font_control()))
         .text_color(theme.text)
         .child(div().flex_1().min_w_0().text_ellipsis().child(label.into()))
 }
@@ -33,15 +33,15 @@ pub fn setting_card(
     row()
         .items_start()
         .flex_none()
-        .p(px(Theme::GAP_LARGE))
-        .gap(px(Theme::GAP))
-        .rounded(px(Theme::RADIUS_ROW))
+        .p(px(Theme::gap_large()))
+        .gap(px(Theme::gap()))
+        .rounded(px(Theme::radius_row()))
         .bg(theme.sunk)
         .child(
             column()
                 .flex_1()
                 .min_w_0()
-                .gap(px(Theme::GAP_SMALL))
+                .gap(px(Theme::gap_small()))
                 .child(
                     div()
                         .font_weight(FontWeight::MEDIUM)
@@ -50,7 +50,7 @@ pub fn setting_card(
                 )
                 .child(
                     div()
-                        .text_size(px(Theme::FONT_SMALL))
+                        .text_size(px(Theme::font_small()))
                         .text_color(theme.muted)
                         .child(detail.into()),
                 ),
@@ -62,13 +62,13 @@ pub fn setting_card(
 pub fn group_card(theme: Theme, label: impl Into<SharedString>) -> Div {
     column()
         .flex_none()
-        .gap(px(Theme::GAP))
-        .p(px(Theme::GAP_LARGE))
-        .rounded(px(Theme::RADIUS_ROW))
+        .gap(px(Theme::gap()))
+        .p(px(Theme::gap_large()))
+        .rounded(px(Theme::radius_row()))
         .bg(theme.sunk)
         .child(
             div()
-                .text_size(px(Theme::FONT_SMALL))
+                .text_size(px(Theme::font_small()))
                 .text_color(theme.muted)
                 .child(label.into()),
         )
@@ -77,5 +77,5 @@ pub fn group_card(theme: Theme, label: impl Into<SharedString>) -> Div {
 /// An even grid of tiles `columns` across — a picker reads as a grid or as a
 /// ragged wrap, and the reference's are grids.
 pub fn tile_grid(columns: u16) -> Div {
-    div().grid().grid_cols(columns).gap(px(Theme::GAP_SMALL))
+    div().grid().grid_cols(columns).gap(px(Theme::gap_small()))
 }

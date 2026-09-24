@@ -120,13 +120,13 @@ impl Render for TimecodeField {
         let value = match &self.typed {
             // The whole value, selected: the next key replaces it.
             Some(typed) if typed.is_empty() => crate::mono(format_timecode(self.value))
-                .px(px(Theme::TIMECODE_SELECTION_PADDING))
-                .rounded(px(Theme::TIMECODE_SELECTION_RADIUS))
+                .px(px(Theme::timecode_selection_padding()))
+                .rounded(px(Theme::timecode_selection_radius()))
                 .bg(theme.accent_soft)
                 .text_color(theme.text),
             Some(typed) => crate::mono(typed.clone())
                 .text_color(theme.text)
-                .border_r(px(Theme::BORDER_WIDTH))
+                .border_r(px(Theme::border_width()))
                 .border_color(theme.accent),
             None => crate::mono(format_timecode(self.value))
                 .text_color(theme.text)
@@ -149,16 +149,16 @@ impl Render for TimecodeField {
             .flex_1()
             .min_w_0()
             .items_center()
-            .gap(px(Theme::GAP))
-            .h(px(Theme::CONTROL_HEIGHT_LARGE))
-            .px(px(Theme::CONTROL_PADDING_LARGE))
+            .gap(px(Theme::gap()))
+            .h(px(Theme::control_height_large()))
+            .px(px(Theme::control_padding_large()))
             .rounded_full()
             .bg(motion::hover_blend(&hover_key, theme.sunk, theme.sunk2))
             .when(self.enabled, |el| {
                 el.on_hover(motion::hover_listener(hover_key.clone()))
                     .cursor(CursorStyle::ResizeLeftRight)
             })
-            .when(!self.enabled, |el| el.opacity(Theme::DISABLED_OPACITY))
+            .when(!self.enabled, |el| el.opacity(Theme::disabled_opacity()))
             .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
             .when(self.typed.is_some(), move |el| {
                 el.shadow(vec![focus_ring(theme)])
@@ -166,11 +166,11 @@ impl Render for TimecodeField {
             .child(
                 div()
                     .flex_1()
-                    .text_size(px(Theme::FONT_SECONDARY))
+                    .text_size(px(Theme::font_secondary()))
                     .text_color(theme.muted)
                     .child(self.label.clone()),
             )
-            .child(value.text_size(px(Theme::FONT_CONTROL)))
+            .child(value.text_size(px(Theme::font_control())))
             .on_key_down(cx.listener(|s, e: &KeyDownEvent, w, cx| {
                 if !s.enabled {
                     return;

@@ -28,7 +28,7 @@ pub fn mono(text: impl Into<SharedString>) -> Div {
 /// timecode, the meta line under a preset's name.
 pub fn mono_small(text: impl Into<SharedString>, theme: Theme) -> Div {
     mono(text)
-        .text_size(px(Theme::FONT_SMALL))
+        .text_size(px(Theme::font_small()))
         .text_color(theme.muted)
 }
 
@@ -45,10 +45,10 @@ pub fn title(text: impl Into<SharedString>, size: f32) -> Div {
 
 /// A panel's or dialog's own name.
 pub fn panel_title(text: impl Into<SharedString>) -> Div {
-    title(text, Theme::FONT_PANEL)
+    title(text, Theme::font_panel())
 }
 
 /// An inspector's heading — the step below a panel title.
 pub fn heading(text: impl Into<SharedString>) -> Div {
-    title(text, Theme::FONT_HEADING)
+    title(text, Theme::font_heading())
 }

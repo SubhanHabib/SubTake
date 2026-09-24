@@ -6,11 +6,11 @@ use std::{cell::Cell, rc::Rc};
 use subtake_theme::Theme;
 
 pub fn row() -> Div {
-    div().flex().items_center().gap(px(Theme::GAP))
+    div().flex().items_center().gap(px(Theme::gap()))
 }
 
 pub fn column() -> Div {
-    div().flex().flex_col().gap(px(Theme::GAP))
+    div().flex().flex_col().gap(px(Theme::gap()))
 }
 
 /// Captures actual layout bounds for pixel-accurate canvas and timeline gestures.

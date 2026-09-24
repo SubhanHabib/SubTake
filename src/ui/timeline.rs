@@ -81,9 +81,9 @@ fn clip_tiles(
     (left, width, height, cut): (f32, f32, f32, f32),
     (track_width, duration): (f32, f32),
 ) -> Vec<AnyElement> {
-    let pitch = Theme::CLIP_TILE_WIDTH + Theme::CLIP_TILE_DIVIDER;
+    let pitch = Theme::clip_tile_width() + Theme::clip_tile_divider();
     let radius = height / 2.;
-    let seen_right = track_width + Theme::PANEL_PADDING;
+    let seen_right = track_width + Theme::panel_padding();
     let first = (cut / pitch).floor() as usize;
     let last = ((seen_right - left).min(width) / pitch).ceil() as usize;
     let mut tiles = Vec::new();
@@ -94,13 +94,13 @@ fn clip_tiles(
         }
         // What is left of a clip narrower than it is tall is one frame,
         // cut to the circle its lane is left as.
-        let rest = width - x - Theme::CLIP_TILE_WIDTH;
+        let rest = width - x - Theme::clip_tile_width();
         let closing =
-            (cut > 0. && width - cut < height) || rest < Theme::CLIP_TILE_DIVIDER + radius;
+            (cut > 0. && width - cut < height) || rest < Theme::clip_tile_divider() + radius;
         let w = if closing {
             width - x
         } else {
-            Theme::CLIP_TILE_WIDTH
+            Theme::clip_tile_width()
         };
         let time = start + (x + w / 2.) / width * (end - start);
         let index = ((time / duration.max(f32::EPSILON) * frames.len() as f32).floor() as usize)
@@ -138,7 +138,7 @@ fn clip_tiles(
         }
         // A divider inside the round end's curve is as tall as the curve is
         // there.
-        let into = x + Theme::CLIP_TILE_WIDTH - cut;
+        let into = x + Theme::clip_tile_width() - cut;
         let tall = if into < radius {
             2. * (radius * radius - (radius - into).max(0.).powi(2)).sqrt()
         } else {
@@ -147,11 +147,11 @@ fn clip_tiles(
         tiles.push(
             div()
                 .absolute()
-                .left(px(x + Theme::CLIP_TILE_WIDTH))
+                .left(px(x + Theme::clip_tile_width()))
                 .top(px((height - tall) / 2.))
-                .w(px(Theme::CLIP_TILE_DIVIDER))
+                .w(px(Theme::clip_tile_divider()))
                 .h(px(tall))
-                .bg(gpui::black().opacity(Theme::CLIP_DIVIDER_ALPHA))
+                .bg(gpui::black().opacity(Theme::clip_divider_alpha()))
                 .into_any_element(),
         );
     }
@@ -213,47 +213,47 @@ fn cut_tile(frame: Arc<RenderImage>, cut: f32, (radius, closing): (f32, bool)) -
 /// glass; and a clip shorter than the chip itself, which shows its frames
 /// with no chip.
 fn clip_chip(label: &str, width: f32, theme: Theme) -> Option<impl IntoElement> {
-    let inset = Theme::CLIP_CHIP_INSET;
-    if width < Theme::CLIP_CHIP_HEIGHT + 2. * inset {
+    let inset = Theme::clip_chip_inset();
+    if width < Theme::clip_chip_height() + 2. * inset {
         return None;
     }
     let room = width
         - 2. * inset
-        - Theme::REGION_PLATE_INSET
-        - Theme::CLIP_CHIP_PLATE
-        - Theme::CLIP_CHIP_GAP
-        - Theme::REGION_PADDING_END;
-    let labelled = room >= Theme::REGION_LABEL_MIN_ROOM;
+        - Theme::region_plate_inset()
+        - Theme::clip_chip_plate()
+        - Theme::clip_chip_gap()
+        - Theme::region_padding_end();
+    let labelled = room >= Theme::region_label_min_room();
     // Blurring the frames under it, in a layer of its own: the console is
     // one layer, and in one layer the frames paint over the chip's fill.
     Some(layered(frosted(
-        Theme::CLIP_CHIP_HEIGHT / 2.,
-        Theme::CLIP_CHIP_BLUR,
+        Theme::clip_chip_height() / 2.,
+        Theme::clip_chip_blur(),
         div()
             .absolute()
             .left(px(inset))
             .top(px(inset))
-            .h(px(Theme::CLIP_CHIP_HEIGHT))
+            .h(px(Theme::clip_chip_height()))
             .max_w(px(width - 2. * inset))
             .flex()
             .items_center()
-            .gap(px(Theme::CLIP_CHIP_GAP))
-            .pl(px(Theme::REGION_PLATE_INSET))
-            .when(labelled, |el| el.pr(px(Theme::REGION_PADDING_END)))
-            .when(!labelled, |el| el.pr(px(Theme::REGION_PLATE_INSET)))
+            .gap(px(Theme::clip_chip_gap()))
+            .pl(px(Theme::region_plate_inset()))
+            .when(labelled, |el| el.pr(px(Theme::region_padding_end())))
+            .when(!labelled, |el| el.pr(px(Theme::region_plate_inset())))
             .rounded_full()
             .bg(theme.card)
             // A border rather than an inset hairline, which gpui paints
             // under the chip's own fill.
-            .border(px(Theme::HAIRLINE_WIDTH))
+            .border(px(Theme::hairline_width()))
             .border_color(theme.line)
-            .text_size(px(Theme::FONT_BODY))
+            .text_size(px(Theme::font_body()))
             .font_weight(FontWeight::MEDIUM)
             .text_color(theme.text)
             .child(
                 div()
                     .flex_none()
-                    .size(px(Theme::CLIP_CHIP_PLATE))
+                    .size(px(Theme::clip_chip_plate()))
                     .flex()
                     .items_center()
                     .justify_center()
@@ -261,7 +261,7 @@ fn clip_chip(label: &str, width: f32, theme: Theme) -> Option<impl IntoElement> 
                     .bg(theme.plate)
                     .child(subtake_ui::icon_sized(
                         "FilmStrip-regular",
-                        Theme::CLIP_CHIP_ICON,
+                        Theme::clip_chip_icon(),
                         theme.text,
                     )),
             )
@@ -321,50 +321,54 @@ fn waveform(
             // does not paint thousands of bars out of sight. The lanes are
             // seen past the track column: under the headers to their
             // centres, and out to the console's edge.
-            let seen_left = f32::from(track.left()) + HEADER_CENTRE;
-            let seen_right = f32::from(track.right()) + Theme::PANEL_PADDING;
+            let seen_left = f32::from(track.left()) + header_centre();
+            let seen_right = f32::from(track.right()) + Theme::panel_padding();
             let left = f32::from(bounds.left());
-            let skipped = ((seen_left - left) / Theme::WAVEFORM_PITCH).floor().max(0.);
-            let mut x = left + skipped * Theme::WAVEFORM_PITCH;
+            let skipped = ((seen_left - left) / Theme::waveform_pitch())
+                .floor()
+                .max(0.);
+            let mut x = left + skipped * Theme::waveform_pitch();
             let right = f32::from(bounds.right());
-            while !peaks.is_empty() && x + Theme::WAVEFORM_BAR <= right && x < seen_right {
-                let (from, to) = (index(time(x)), index(time(x + Theme::WAVEFORM_PITCH)));
+            while !peaks.is_empty() && x + Theme::waveform_bar() <= right && x < seen_right {
+                let (from, to) = (index(time(x)), index(time(x + Theme::waveform_pitch())));
                 let peak = peaks[from..=to.max(from)]
                     .iter()
                     .copied()
                     .fold(0., f32::max);
                 let bar = row
-                    * (Theme::WAVEFORM_FLOOR
-                        + (Theme::WAVEFORM_CEILING - Theme::WAVEFORM_FLOOR) * peak);
-                let past = time(x + Theme::WAVEFORM_BAR / 2.) <= playhead;
+                    * (Theme::waveform_floor()
+                        + (Theme::waveform_ceiling() - Theme::waveform_floor()) * peak);
+                let past = time(x + Theme::waveform_bar() / 2.) <= playhead;
                 let color = if past {
                     ink
                 } else {
-                    ink.opacity(Theme::WAVEFORM_AHEAD_ALPHA)
+                    ink.opacity(Theme::waveform_ahead_alpha())
                 };
                 window.paint_quad(
                     fill(
                         Bounds::new(
                             point(px(x), bounds.top() + px((row - bar) / 2.)),
-                            size(px(Theme::WAVEFORM_BAR), px(bar)),
+                            size(px(Theme::waveform_bar()), px(bar)),
                         ),
                         color,
                     )
-                    .corner_radii(px(Theme::WAVEFORM_BAR_RADIUS)),
+                    .corner_radii(px(Theme::waveform_bar_radius())),
                 );
-                x += Theme::WAVEFORM_PITCH;
+                x += Theme::waveform_pitch();
             }
         },
     )
     .flex_1()
     .min_w_0()
-    .h(px(Theme::WAVEFORM_HEIGHT))
+    .h(px(Theme::waveform_height()))
 }
 
 /// The centre of a lane's header, from the track column's left. What a lane
 /// shows over its fill, its label, plate, sound and chip, is cut there,
 /// where the header's circle covers it top to bottom.
-const HEADER_CENTRE: f32 = -Theme::LANE_HEADER_GAP - Theme::LANE_HEADER / 2.;
+fn header_centre() -> f32 {
+    -Theme::lane_header_gap() - Theme::lane_header() / 2.
+}
 
 /// Where a lane `height` tall is cut on the left, from the track column's
 /// left: half its height before its header's centre, so what runs under the
@@ -372,7 +376,7 @@ const HEADER_CENTRE: f32 = -Theme::LANE_HEADER_GAP - Theme::LANE_HEADER / 2.;
 /// does under its plate. A lane taller than its header runs past the
 /// circle by the difference.
 fn tuck(height: f32) -> f32 {
-    HEADER_CENTRE - height / 2.
+    header_centre() - height / 2.
 }
 
 /// A lane's span from `start` to `end`, cut at [`tuck`]: its left edge
@@ -415,7 +419,7 @@ fn tucked<E: Styled>(
         (
             el.left(relative((start - offset) / visible))
                 .w(relative(((end - start) / visible).max(0.001)))
-                .min_w(px(Theme::GAP))
+                .min_w(px(Theme::gap()))
                 .top(px(top))
                 .h(px(height)),
             0.,
@@ -438,15 +442,15 @@ fn lane_icon(label: &str) -> &'static str {
 /// A lane's height: the clip lane is taller, for the frames it carries.
 fn lane_height(label: &str) -> f32 {
     if label == "Clip" {
-        Theme::CLIP_LANE_HEIGHT
+        Theme::clip_lane_height()
     } else {
-        Theme::LANE_HEIGHT
+        Theme::lane_height()
     }
 }
 
 /// How wide a label is in Geist Mono at `size`, known before layout.
 fn mono_width(text: &str, size: f32) -> f32 {
-    text.chars().count() as f32 * size * Theme::MONO_ADVANCE
+    text.chars().count() as f32 * size * Theme::mono_advance()
 }
 
 /// The playhead's soft light: `accent_glow`, spread evenly around a part.
@@ -503,7 +507,7 @@ fn lane_header(
         div()
             .id(id)
             .relative()
-            .size(px(Theme::LANE_HEADER))
+            .size(px(Theme::lane_header()))
             .flex()
             .items_center()
             .justify_center()
@@ -515,7 +519,7 @@ fn lane_header(
             .when(!off, |el| {
                 el.child(subtake_ui::pill_edge(vec![hairline(
                     theme.line,
-                    Theme::HAIRLINE_WIDTH,
+                    Theme::hairline_width(),
                 )]))
             }),
         theme,
@@ -524,7 +528,7 @@ fn lane_header(
     )
     .child(subtake_ui::icon_sized(
         lane_icon(label),
-        Theme::LANE_HEADER_ICON,
+        Theme::lane_header_icon(),
         ink,
     ))
     .when(off, |el| el.child(lane_slash(ink)))
@@ -540,7 +544,7 @@ fn lane_header(
         .child(if off {
             layered(button).into_any_element()
         } else {
-            frosted(Theme::LANE_HEADER / 2., Theme::LANE_HEADER_BLUR, button).into_any_element()
+            frosted(Theme::lane_header() / 2., Theme::lane_header_blur(), button).into_any_element()
         })
 }
 
@@ -573,8 +577,8 @@ fn lane_slash(color: Hsla) -> Canvas<()> {
         |_, _, _| {},
         move |bounds, _, window, _| {
             let centre = bounds.center();
-            let half = Theme::LANE_SLASH_LENGTH / 2.;
-            let side = Theme::LANE_SLASH_WIDTH / 2.;
+            let half = Theme::lane_slash_length() / 2.;
+            let side = Theme::lane_slash_width() / 2.;
             let diagonal = std::f32::consts::FRAC_1_SQRT_2;
             // Along the slash, bottom left to top right, and across it.
             let along = |t: f32| point(px(t * diagonal), px(-t * diagonal));
@@ -599,8 +603,8 @@ fn lane_slash(color: Hsla) -> Canvas<()> {
 /// is not held to the lanes the project has, so a console at rest on a short
 /// project still drags taller, and room above the lanes waits for new ones.
 pub(super) fn lane_stack_range(window: &Window) -> (f32, f32) {
-    let share = f32::from(window.viewport_size().height) * Theme::LANE_STACK_MAX_SHARE;
-    (Theme::LANE_STACK_MIN, share.max(Theme::LANE_STACK_MIN))
+    let share = f32::from(window.viewport_size().height) * Theme::lane_stack_max_share();
+    (Theme::lane_stack_min(), share.max(Theme::lane_stack_min()))
 }
 
 impl RootView {
@@ -638,14 +642,14 @@ impl RootView {
                 el.top_0()
                     .left_0()
                     .right_0()
-                    .h(px(Theme::RESIZE_HANDLE))
+                    .h(px(Theme::resize_handle()))
                     .cursor(CursorStyle::ResizeUpDown)
             })
             .when(!across, |el| {
                 el.left_0()
                     .top_0()
                     .bottom_0()
-                    .w(px(Theme::RESIZE_HANDLE))
+                    .w(px(Theme::resize_handle()))
                     .cursor(CursorStyle::ResizeLeftRight)
             })
             .on_hover(subtake_ui::motion::hover_listener(hover))
@@ -654,12 +658,12 @@ impl RootView {
                     .rounded_full()
                     .bg(grip)
                     .when(across, |el| {
-                        el.w(px(Theme::RESIZE_GRIP_LENGTH))
-                            .h(px(Theme::RESIZE_GRIP_WIDTH))
+                        el.w(px(Theme::resize_grip_length()))
+                            .h(px(Theme::resize_grip_width()))
                     })
                     .when(!across, |el| {
-                        el.w(px(Theme::RESIZE_GRIP_WIDTH))
-                            .h(px(Theme::RESIZE_GRIP_LENGTH))
+                        el.w(px(Theme::resize_grip_width()))
+                            .h(px(Theme::resize_grip_length()))
                     }),
             )
             .on_mouse_down(
@@ -669,7 +673,7 @@ impl RootView {
                     let (origin, start) = match edge {
                         ResizeEdge::Console => {
                             if rest {
-                                s.lane_height = Theme::LANE_STACK_HEIGHT;
+                                s.lane_height = Theme::lane_stack_height();
                             }
                             (f32::from(event.position.y), s.lane_height)
                         }
@@ -832,7 +836,7 @@ impl RootView {
             .map(|(a, b)| (a.to_owned(), format!(" / {b}")))
             .unwrap_or_else(|| (window.get_time_label(), String::new()));
         let toolbar = row()
-            .gap(px(Theme::GAP_LARGE))
+            .gap(px(Theme::gap_large()))
             // The transport belongs to the console, not to the stage. It had
             // been floated over the picture on a pod of its own, which is the
             // one thing the handoff does NOT float: the pods carry the tools
@@ -840,11 +844,11 @@ impl RootView {
             // the same surface as the playhead.
             .child(
                 row()
-                    .gap(px(Theme::GAP_LARGE))
+                    .gap(px(Theme::gap_large()))
                     .flex_none()
                     .child(
                         row()
-                            .gap(px(Theme::GAP_SMALL))
+                            .gap(px(Theme::gap_small()))
                             .child(self.icon_action(
                                 "previous-frame",
                                 "SkipBack-fill",
@@ -886,11 +890,11 @@ impl RootView {
                     .child(
                         mono(elapsed)
                             .flex_none()
-                            .text_size(px(Theme::FONT_TIMECODE))
+                            .text_size(px(Theme::font_timecode()))
                             .text_color(theme.text)
                             .child(
                                 div()
-                                    .text_size(px(Theme::FONT_TIMECODE))
+                                    .text_size(px(Theme::font_timecode()))
                                     .text_color(theme.muted)
                                     .child(total),
                             )
@@ -901,7 +905,7 @@ impl RootView {
             .child(div().flex_1())
             .child(
                 row()
-                    .gap(px(Theme::GAP))
+                    .gap(px(Theme::gap()))
                     .flex_none()
                     .child(
                         button("auto-zoom", "Suggest zooms", theme)
@@ -922,7 +926,7 @@ impl RootView {
             // so the two zooms read alike.
             .child(
                 row()
-                    .gap(px(Theme::GAP_SMALL))
+                    .gap(px(Theme::gap_small()))
                     .flex_none()
                     .child(
                         icon_button("snap", "Magnet-regular", "Snap", theme)
@@ -985,20 +989,20 @@ impl RootView {
         // would run off either end of the band is left out.
         let interval = RULER_INTERVALS
             .into_iter()
-            .find(|seconds| seconds / visible * track_width >= Theme::RULER_LABEL_SPACING)
+            .find(|seconds| seconds / visible * track_width >= Theme::ruler_label_spacing())
             .unwrap_or(RULER_INTERVALS[RULER_INTERVALS.len() - 1]);
-        let minor = interval / Theme::RULER_MINOR_STEPS;
+        let minor = interval / Theme::ruler_minor_steps();
         let mut ruler = div()
             .id("ruler")
             .relative()
-            .h(px(Theme::RULER_HEIGHT))
+            .h(px(Theme::ruler_height()))
             .rounded_full()
             .bg(theme.sunk)
             // An edge over the band, not its own shadow, which inside the
             // frosted console went under the band's fill.
             .child(subtake_ui::pill_edge(vec![hairline(
                 theme.line,
-                Theme::HAIRLINE_WIDTH,
+                Theme::hairline_width(),
             )]));
         if track_width > 0. {
             let first = (offset / minor).ceil() as i64;
@@ -1007,10 +1011,10 @@ impl RootView {
                 let seconds = tick as f32 * minor;
                 let x = (seconds - offset) / visible * track_width;
                 let past = seconds <= playhead_time;
-                if tick % Theme::RULER_MINOR_STEPS as i64 == 0 {
+                if tick % Theme::ruler_minor_steps() as i64 == 0 {
                     let label = ruler_clock(seconds, false);
                     let width =
-                        mono_width(&label, Theme::FONT_SMALL) + 2. * Theme::RULER_LABEL_PADDING;
+                        mono_width(&label, Theme::font_small()) + 2. * Theme::ruler_label_padding();
                     if x - width / 2. >= 0. && x + width / 2. <= track_width {
                         ruler = ruler.child(
                             mono(label)
@@ -1022,7 +1026,7 @@ impl RootView {
                                 .flex()
                                 .items_center()
                                 .justify_center()
-                                .text_size(px(Theme::FONT_SMALL))
+                                .text_size(px(Theme::font_small()))
                                 .text_color(if past { theme.text } else { theme.muted }),
                         );
                     }
@@ -1031,24 +1035,25 @@ impl RootView {
                     // label beside it is left out. At the closest spacing
                     // the design allows the dot either side of a label ran
                     // into its text.
-                    let steps = Theme::RULER_MINOR_STEPS as i64;
+                    let steps = Theme::ruler_minor_steps() as i64;
                     let near = (tick as f32 / steps as f32).round() * interval;
-                    let half = mono_width(&ruler_clock(near, false), Theme::FONT_SMALL) / 2.
-                        + Theme::RULER_LABEL_PADDING;
-                    if ((seconds - near) / visible * track_width).abs() < half + Theme::RULER_DOT {
+                    let half = mono_width(&ruler_clock(near, false), Theme::font_small()) / 2.
+                        + Theme::ruler_label_padding();
+                    if ((seconds - near) / visible * track_width).abs() < half + Theme::ruler_dot()
+                    {
                         continue;
                     }
                     let dot = if past {
-                        theme.text.opacity(Theme::RULER_DOT_PAST)
+                        theme.text.opacity(Theme::ruler_dot_past())
                     } else {
-                        theme.muted.opacity(Theme::RULER_DOT_AHEAD)
+                        theme.muted.opacity(Theme::ruler_dot_ahead())
                     };
                     ruler = ruler.child(
                         div()
                             .absolute()
-                            .left(px(x - Theme::RULER_DOT / 2.))
-                            .top(px((Theme::RULER_HEIGHT - Theme::RULER_DOT) / 2.))
-                            .size(px(Theme::RULER_DOT))
+                            .left(px(x - Theme::ruler_dot() / 2.))
+                            .top(px((Theme::ruler_height() - Theme::ruler_dot()) / 2.))
+                            .size(px(Theme::ruler_dot()))
                             .rounded_full()
                             .bg(dot),
                     );
@@ -1068,9 +1073,9 @@ impl RootView {
         let mut stack = 0.;
         for &row in &shown {
             tops[row] = Some(stack);
-            stack += lane_height(&labels[row]) + Theme::LANE_GAP;
+            stack += lane_height(&labels[row]) + Theme::lane_gap();
         }
-        let stack = (stack - Theme::LANE_GAP).max(0.);
+        let stack = (stack - Theme::lane_gap()).max(0.);
         // The recording's frames, cut once per strip rather than per frame.
         let frames = match (window.get_thumbnails().0, &self.clip_frames) {
             (Some(strip), Some((cut, frames))) if Arc::ptr_eq(&strip, cut) => frames.clone(),
@@ -1127,7 +1132,7 @@ impl RootView {
                 Some(Gesture::Region { region: dragged, mode: 0, .. })
                     if dragged.id == region.id && dragged.kind == region.kind
             );
-            let width = (track_width * (end - start) / visible).max(Theme::GAP);
+            let width = (track_width * (end - start) / visible).max(Theme::gap());
             let clip = matches!(region.kind.as_str(), "clipRegions" | Region::TAKE_CLIP);
             if moving
                 && let Some((ghost, _, _)) = tucked(
@@ -1139,7 +1144,7 @@ impl RootView {
                 tracks = tracks.child(
                     ghost
                         .rounded_full()
-                        .border(px(Theme::REGION_GHOST_WIDTH))
+                        .border(px(Theme::region_ghost_width()))
                         .border_dashed()
                         .border_color(theme.line),
                 );
@@ -1159,14 +1164,14 @@ impl RootView {
             let block = block
                 .rounded_full()
                 .bg(fill)
-                .when(lane_off, |el| el.opacity(Theme::LANE_OFF_ALPHA))
+                .when(lane_off, |el| el.opacity(Theme::lane_off_alpha()))
                 .on_hover(subtake_ui::motion::hover_listener(hover_key))
                 .when(moving, |el| el.shadow(theme.panel_shadow()))
                 // Held, a region dims as every pressed control does, and
                 // stays dimmed while it is dragged. Tab reaches it, and Enter
                 // or Space selects it, which is what a click does.
                 .when(!take, |el| {
-                    el.active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                    el.active(|s| s.opacity(Theme::pressed_opacity()))
                         .tab_index(0)
                         .focus_visible(move |s| s.shadow(vec![ring]))
                         .cursor(CursorStyle::ClosedHand)
@@ -1227,24 +1232,24 @@ impl RootView {
                         // plate to fit, and drops the icon once the plate is
                         // smaller than it.
                         let icon = region_icon(region);
-                        let inset = Theme::REGION_PLATE_INSET;
+                        let inset = Theme::region_plate_inset();
                         let plate = (height - 2. * inset).min(width - 2. * inset).max(0.);
                         let room = width
-                            - Theme::REGION_PADDING_START
-                            - icon.map_or(0., |_| plate + Theme::REGION_GAP)
-                            - Theme::REGION_PADDING_END;
-                        let labelled = room >= Theme::REGION_LABEL_MIN_ROOM;
+                            - Theme::region_padding_start()
+                            - icon.map_or(0., |_| plate + Theme::region_gap())
+                            - Theme::region_padding_end();
+                        let labelled = room >= Theme::region_label_min_room();
                         div()
                             .size_full()
                             .flex()
                             .items_center()
-                            .gap(px(Theme::REGION_GAP))
+                            .gap(px(Theme::region_gap()))
                             .when(labelled, |el| {
-                                el.pl(px(Theme::REGION_PADDING_START))
-                                    .pr(px(Theme::REGION_PADDING_END))
+                                el.pl(px(Theme::region_padding_start()))
+                                    .pr(px(Theme::region_padding_end()))
                             })
                             .when(!labelled, |el| el.justify_center())
-                            .text_size(px(Theme::FONT_BODY))
+                            .text_size(px(Theme::font_body()))
                             .font_weight(FontWeight::MEDIUM)
                             .text_color(ink)
                             .when_some(icon, |el, name| {
@@ -1257,10 +1262,10 @@ impl RootView {
                                         .justify_center()
                                         .rounded_full()
                                         .bg(theme.plate)
-                                        .when(plate >= Theme::REGION_ICON_SIZE, |el| {
+                                        .when(plate >= Theme::region_icon_size(), |el| {
                                             el.child(subtake_ui::icon_sized(
                                                 name,
-                                                Theme::REGION_ICON_SIZE,
+                                                Theme::region_icon_size(),
                                                 ink,
                                             ))
                                         }),
@@ -1305,7 +1310,7 @@ impl RootView {
                         .absolute()
                         .inset_0()
                         .rounded_full()
-                        .border(px(Theme::REGION_SELECTED_RING))
+                        .border(px(Theme::region_selected_ring()))
                         .border_color(theme.accent),
                 ));
             }
@@ -1387,32 +1392,32 @@ impl RootView {
                         if *held == mode && dragged.id == region.id && dragged.kind == region.kind
                 );
                 let shown = f32::from(region.selected || held);
-                let hovered = shown.max(Theme::REGION_HANDLE_HOVER);
+                let hovered = shown.max(Theme::region_handle_hover());
                 let (mark_width, mark_height) = if held {
                     (
-                        Theme::REGION_HANDLE_WIDTH_HELD,
-                        Theme::REGION_HANDLE_HEIGHT_HELD,
+                        Theme::region_handle_width_held(),
+                        Theme::region_handle_height_held(),
                     )
                 } else {
-                    (Theme::REGION_HANDLE_WIDTH, Theme::REGION_HANDLE_HEIGHT)
+                    (Theme::region_handle_width(), Theme::region_handle_height())
                 };
                 let white = gpui::white();
-                let centre = Theme::REGION_HANDLE_WIDTH / 2. - Theme::REGION_HANDLE_OUTSET;
+                let centre = Theme::region_handle_width() / 2. - Theme::region_handle_outset();
                 let mut handle = div()
                     .id(("resize", mode as usize))
                     .absolute()
                     .top_0()
-                    .w(px(Theme::REGION_HANDLE_TARGET))
+                    .w(px(Theme::region_handle_target()))
                     .h_full()
                     .cursor(CursorStyle::ResizeLeftRight)
                     .child(
                         div()
                             .absolute()
-                            .left(px((Theme::REGION_HANDLE_TARGET - mark_width) / 2.))
+                            .left(px((Theme::region_handle_target() - mark_width) / 2.))
                             .top(px((height - mark_height) / 2.))
                             .w(px(mark_width))
                             .h(px(mark_height))
-                            .rounded(px(Theme::REGION_HANDLE_RADIUS))
+                            .rounded(px(Theme::region_handle_radius()))
                             .bg(subtake_ui::motion::hover_blend(
                                 &mark_key,
                                 theme.accent.opacity(shown),
@@ -1426,11 +1431,11 @@ impl RootView {
                                 ),
                                 offset: point(px(0.), px(0.)),
                                 blur_radius: px(0.),
-                                spread_radius: px(Theme::REGION_HANDLE_RING),
+                                spread_radius: px(Theme::region_handle_ring()),
                                 inset: false,
                             }]),
                     );
-                let edge = px(centre - Theme::REGION_HANDLE_TARGET / 2.);
+                let edge = px(centre - Theme::region_handle_target() / 2.);
                 handle = if right {
                     handle.right(edge)
                 } else {
@@ -1465,8 +1470,8 @@ impl RootView {
             .relative()
             .flex_1()
             .min_w_0()
-            .pt(px(Theme::BUBBLE_ZONE))
-            .gap(px(Theme::RULER_GAP))
+            .pt(px(Theme::bubble_zone()))
+            .gap(px(Theme::ruler_gap()))
             .child(measure(self.timeline_bounds.clone()))
             .child(ruler)
             .child(tracks)
@@ -1490,19 +1495,19 @@ impl RootView {
                 .find(|&row| labels[row] == "Clip")
                 .or(shown.first().copied());
             let handle_top = handle_lane.map(|row| {
-                Theme::LANE_STACK_TOP
+                Theme::lane_stack_top()
                     + tops[row].unwrap_or(0.)
-                    + (lane_height(&labels[row]) - Theme::PLAYHEAD_HANDLE_HEIGHT) / 2.
+                    + (lane_height(&labels[row]) - Theme::playhead_handle_height()) / 2.
             });
             let chip_label = ruler_clock(playhead_time, true);
-            let bubble_width = mono_width(&chip_label, Theme::FONT_SECONDARY)
-                + 2. * Theme::PLAYHEAD_BUBBLE_PADDING;
+            let bubble_width = mono_width(&chip_label, Theme::font_secondary())
+                + 2. * Theme::playhead_bubble_padding();
             let bubble_left =
                 (x - bubble_width / 2.).clamp(0., (track_width - bubble_width).max(0.));
             let handle_width = if scrubbing {
-                Theme::PLAYHEAD_HANDLE_WIDTH_HELD
+                Theme::playhead_handle_width_held()
             } else {
-                Theme::PLAYHEAD_HANDLE_WIDTH
+                Theme::playhead_handle_width()
             };
             // A press on any part of the playhead picks it up where it is.
             let grab = || {
@@ -1526,22 +1531,22 @@ impl RootView {
                 .child(layered(
                     div()
                         .absolute()
-                        .left(px(x - Theme::PLAYHEAD_LINE_WIDTH / 2.))
-                        .top(px(Theme::BUBBLE_ZONE))
+                        .left(px(x - Theme::playhead_line_width() / 2.))
+                        .top(px(Theme::bubble_zone()))
                         .bottom_0()
-                        .w(px(Theme::PLAYHEAD_LINE_WIDTH))
-                        .rounded(px(Theme::PLAYHEAD_LINE_RADIUS))
+                        .w(px(Theme::playhead_line_width()))
+                        .rounded(px(Theme::playhead_line_radius()))
                         .bg(theme.accent)
-                        .shadow(vec![glow(theme, Theme::PLAYHEAD_LINE_GLOW)]),
+                        .shadow(vec![glow(theme, Theme::playhead_line_glow())]),
                 ))
                 .child(
                     div()
                         .id("playhead-line")
                         .absolute()
-                        .left(px(x - Theme::PLAYHEAD_HIT))
-                        .top(px(Theme::BUBBLE_ZONE))
+                        .left(px(x - Theme::playhead_hit()))
+                        .top(px(Theme::bubble_zone()))
                         .bottom_0()
-                        .w(px(Theme::PLAYHEAD_HIT * 2.))
+                        .w(px(Theme::playhead_hit() * 2.))
                         .cursor(CursorStyle::ResizeLeftRight)
                         .on_mouse_down(MouseButton::Left, grab()),
                 )
@@ -1549,16 +1554,16 @@ impl RootView {
                     div()
                         .id("playhead-dot")
                         .absolute()
-                        .left(px(x - Theme::PLAYHEAD_DOT / 2.))
-                        .top(px(Theme::BUBBLE_ZONE - Theme::PLAYHEAD_DOT / 2.))
-                        .size(px(Theme::PLAYHEAD_DOT))
+                        .left(px(x - Theme::playhead_dot() / 2.))
+                        .top(px(Theme::bubble_zone() - Theme::playhead_dot() / 2.))
+                        .size(px(Theme::playhead_dot()))
                         .rounded_full()
                         .bg(theme.accent)
                         .shadow(vec![BoxShadow {
                             color: theme.accent_soft,
                             offset: point(px(0.), px(0.)),
                             blur_radius: px(0.),
-                            spread_radius: px(Theme::PLAYHEAD_DOT_RING),
+                            spread_radius: px(Theme::playhead_dot_ring()),
                             inset: false,
                         }])
                         .on_mouse_down(MouseButton::Left, grab()),
@@ -1566,10 +1571,10 @@ impl RootView {
                 .child(
                     playhead_tail(theme.accent)
                         .absolute()
-                        .left(px(x - Theme::PLAYHEAD_TAIL_WIDTH / 2.))
-                        .top(px(Theme::PLAYHEAD_BUBBLE_HEIGHT))
-                        .w(px(Theme::PLAYHEAD_TAIL_WIDTH))
-                        .h(px(Theme::PLAYHEAD_TAIL_HEIGHT)),
+                        .left(px(x - Theme::playhead_tail_width() / 2.))
+                        .top(px(Theme::playhead_bubble_height()))
+                        .w(px(Theme::playhead_tail_width()))
+                        .h(px(Theme::playhead_tail_height())),
                 )
                 // Held inside the track at either end rather than cut off by
                 // it; the tail stays on the true time.
@@ -1580,7 +1585,7 @@ impl RootView {
                         .top_0()
                         .left(px(bubble_left))
                         .w(px(bubble_width))
-                        .h(px(Theme::PLAYHEAD_BUBBLE_HEIGHT))
+                        .h(px(Theme::playhead_bubble_height()))
                         .flex()
                         .items_center()
                         .justify_center()
@@ -1589,13 +1594,13 @@ impl RootView {
                         .shadow(vec![glow(
                             theme,
                             if scrubbing {
-                                Theme::PLAYHEAD_BUBBLE_GLOW_HELD
+                                Theme::playhead_bubble_glow_held()
                             } else {
-                                Theme::PLAYHEAD_BUBBLE_GLOW
+                                Theme::playhead_bubble_glow()
                             },
                         )])
                         .text_color(theme.on_accent)
-                        .text_size(px(Theme::FONT_SECONDARY))
+                        .text_size(px(Theme::font_secondary()))
                         .font_weight(FontWeight::MEDIUM)
                         .cursor(CursorStyle::ResizeLeftRight)
                         .on_mouse_down(MouseButton::Left, grab()),
@@ -1608,26 +1613,26 @@ impl RootView {
                             .left(px(x - handle_width / 2.))
                             .top(px(top))
                             .w(px(handle_width))
-                            .h(px(Theme::PLAYHEAD_HANDLE_HEIGHT))
-                            .rounded(px(Theme::PLAYHEAD_HANDLE_RADIUS))
+                            .h(px(Theme::playhead_handle_height()))
+                            .rounded(px(Theme::playhead_handle_radius()))
                             .bg(theme.accent)
                             .shadow(vec![glow(
                                 theme,
                                 if scrubbing {
-                                    Theme::PLAYHEAD_HANDLE_GLOW_HELD
+                                    Theme::playhead_handle_glow_held()
                                 } else {
-                                    Theme::PLAYHEAD_HANDLE_GLOW
+                                    Theme::playhead_handle_glow()
                                 },
                             )])
                             .flex()
                             .flex_col()
                             .items_center()
                             .justify_center()
-                            .gap(px(Theme::PLAYHEAD_GRIP_GAP))
+                            .gap(px(Theme::playhead_grip_gap()))
                             .cursor(CursorStyle::ResizeLeftRight)
                             .children((0..3).map(|_| {
                                 div()
-                                    .size(px(Theme::PLAYHEAD_GRIP_DOT))
+                                    .size(px(Theme::playhead_grip_dot()))
                                     .rounded_full()
                                     .bg(theme.on_accent)
                             }))
@@ -1664,8 +1669,8 @@ impl RootView {
             // A zoomed picture runs on under the console; the console's
             // presses are its own.
             .occlude()
-            .mx(px(Theme::INSET))
-            .mb(px(Theme::INSET))
+            .mx(px(Theme::inset()))
+            .mb(px(Theme::inset()))
             .flex_shrink_0()
             .child(toolbar)
             // The lanes and the export/transcription line share one box, so
@@ -1684,12 +1689,12 @@ impl RootView {
                             .id("track-scroll")
                             .relative()
                             .items_start()
-                            .ml(px(-Theme::LANE_TUCK_OUTSET))
-                            .pl(px(Theme::LANE_TUCK_OUTSET
-                                + Theme::LANE_HEADER
-                                + Theme::LANE_HEADER_GAP))
-                            .mr(px(-Theme::PANEL_PADDING))
-                            .pr(px(Theme::PANEL_PADDING))
+                            .ml(px(-Theme::lane_tuck_outset()))
+                            .pl(px(Theme::lane_tuck_outset()
+                                + Theme::lane_header()
+                                + Theme::lane_header_gap()))
+                            .mr(px(-Theme::panel_padding()))
+                            .pr(px(Theme::panel_padding()))
                             .overflow_x_hidden()
                             .h(px({
                                 let (min, max) = lane_stack_range(win);
@@ -1711,12 +1716,12 @@ impl RootView {
                             .child(layered(
                                 column()
                                     .absolute()
-                                    .left(px(Theme::LANE_TUCK_OUTSET))
+                                    .left(px(Theme::lane_tuck_outset()))
                                     .top_0()
-                                    .w(px(Theme::LANE_HEADER))
+                                    .w(px(Theme::lane_header()))
                                     .flex_shrink_0()
-                                    .gap(px(Theme::LANE_GAP))
-                                    .pt(px(Theme::LANE_STACK_TOP))
+                                    .gap(px(Theme::lane_gap()))
+                                    .pt(px(Theme::lane_stack_top()))
                                     .children(headers),
                             )),
                     )

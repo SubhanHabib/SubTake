@@ -55,7 +55,7 @@ pub(super) fn stage_reserve_right(window: &Window, inspector_width: f32) -> f32 
     if inspector_collapsed(window) {
         STAGE_RESERVE_RIGHT_COLLAPSED
     } else {
-        Theme::INSET * 2.0 + inspector_width
+        Theme::inset() * 2.0 + inspector_width
     }
 }
 
@@ -248,7 +248,7 @@ impl RootView {
             .max(100.)
         };
         let available_h = if viewport.size.height > px(0.) {
-            f32::from(viewport.size.height) - Theme::STAGE_PICTURE_MARGIN * 2.
+            f32::from(viewport.size.height) - Theme::stage_picture_margin() * 2.
         } else {
             (f32::from(window.viewport_size().height) - 492.).max(80.)
         };
@@ -271,7 +271,7 @@ impl RootView {
         } else {
             point(
                 px(STAGE_RESERVE_LEFT + available_w / 2.),
-                px(Theme::TITLEBAR_HEIGHT + Theme::STAGE_PICTURE_MARGIN + available_h / 2.),
+                px(Theme::titlebar_height() + Theme::stage_picture_margin() + available_h / 2.),
             )
         };
         let left = centre.x - layer.origin.x + self.preview_pan.x - px(width / 2.);
@@ -283,7 +283,7 @@ impl RootView {
             .top(top)
             .w(px(width))
             .h(px(height))
-            .rounded(px(Theme::STAGE_PICTURE_RADIUS))
+            .rounded(px(Theme::stage_picture_radius()))
             .shadow(theme.picture_shadow())
             .overflow_hidden()
             .child(measure(self.preview_bounds.clone()));
@@ -291,7 +291,7 @@ impl RootView {
             picture = picture.child(
                 img(image)
                     .size_full()
-                    .rounded(px(Theme::STAGE_PICTURE_RADIUS))
+                    .rounded(px(Theme::stage_picture_radius()))
                     .object_fit(ObjectFit::Contain),
             );
         }
@@ -354,10 +354,10 @@ impl RootView {
                         div()
                             .id("selection-resize")
                             .absolute()
-                            .right(px(Theme::SELECTION_HANDLE_OFFSET))
-                            .bottom(px(Theme::SELECTION_HANDLE_OFFSET))
-                            .size(px(Theme::SELECTION_HANDLE_SIZE))
-                            .rounded(px(Theme::SELECTION_HANDLE_RADIUS))
+                            .right(px(Theme::selection_handle_offset()))
+                            .bottom(px(Theme::selection_handle_offset()))
+                            .size(px(Theme::selection_handle_size()))
+                            .rounded(px(Theme::selection_handle_radius()))
                             .bg(theme.on_accent)
                             .border_1()
                             .border_color(theme.accent)
@@ -568,11 +568,11 @@ impl RootView {
                 .absolute()
                 .left(px(STAGE_RESERVE_LEFT))
                 .right(px(stage_reserve_right(window, self.inspector_width)))
-                .bottom(px(Theme::INSET))
+                .bottom(px(Theme::inset()))
                 .flex()
                 .justify_center()
                 .child(frosted(
-                    Theme::RADIUS_ROW,
+                    Theme::radius_row(),
                     UiSurface::Pod.blur(),
                     pod_small(theme)
                         .child(

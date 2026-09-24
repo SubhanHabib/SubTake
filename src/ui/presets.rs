@@ -48,7 +48,7 @@ impl RootView {
         let close =
             move |_: &ClickEvent, _: &mut Window, _: &mut App| editor.set_dialog(String::new());
 
-        let mut looks = column().gap(px(Theme::GAP_SMALL));
+        let mut looks = column().gap(px(Theme::gap_small()));
         for look in LOOKS {
             let name = look.name;
             looks = looks.child(
@@ -63,7 +63,7 @@ impl RootView {
             );
         }
 
-        let mut motions = row().gap(px(Theme::GAP_LARGE)).items_stretch();
+        let mut motions = row().gap(px(Theme::gap_large())).items_stretch();
         for (name, title, smooth) in [("focused", "Focused", false), ("smooth", "Smooth", true)] {
             let (zoom_in, zoom_out) = motion_durations(smooth);
             motions = motions.child(
@@ -99,10 +99,10 @@ impl RootView {
         let enabled = e.get_has_video() && !e.get_busy();
 
         let mut card = column()
-            .gap(px(Theme::GAP_BLOCK))
+            .gap(px(Theme::gap_block()))
             .child(
                 row()
-                    .child(title("Presets", Theme::FONT_HEADING).flex_1())
+                    .child(title("Presets", Theme::font_heading()).flex_1())
                     .child(
                         icon_button("presets-close", "X-regular", "Close", theme)
                             .small()
@@ -125,7 +125,7 @@ impl RootView {
         // preset is one the user made on purpose, so it is listed here
         // rather than stranded in the inspector panel this dialog replaced.
         // Each sits on a plate, as the tiles above do.
-        let mut saved = column().gap(px(Theme::GAP_SMALL));
+        let mut saved = column().gap(px(Theme::gap_small()));
         for (index, name) in e.get_saved_presets().iter().enumerate() {
             saved = saved.child(
                 row()
@@ -162,7 +162,7 @@ impl RootView {
 
         card = card.child(
             row()
-                .gap(px(Theme::GAP_LARGE))
+                .gap(px(Theme::gap_large()))
                 .child(
                     button("presets-save", "Save current", theme)
                         .glyph("Plus-regular")
@@ -186,8 +186,8 @@ impl RootView {
             .relative()
             .top(px(DIALOG_RISE * (1. - shown)))
             .opacity(shown)
-            .w(px(Theme::DIALOG_WIDTH))
-            .p(px(Theme::DIALOG_PADDING))
+            .w(px(Theme::dialog_width()))
+            .p(px(Theme::dialog_padding()))
             .occlude()
             .on_mouse_down_out({
                 let editor = e.clone();
@@ -225,7 +225,7 @@ impl RootView {
 /// One built-in look: a preview of its background and frame, its name, and
 /// the values it writes.
 fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
-    let scale = Theme::PRESET_PREVIEW_SCALE;
+    let scale = Theme::preset_preview_scale();
     let background = parse_hex(look.wallpaper);
     let frame = div()
         .size_full()
@@ -242,9 +242,9 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         }]);
     let preview = div()
         .flex_none()
-        .w(px(Theme::PRESET_PREVIEW_WIDTH))
-        .h(px(Theme::PRESET_PREVIEW_HEIGHT))
-        .rounded(px(Theme::RADIUS_LANE))
+        .w(px(Theme::preset_preview_width()))
+        .h(px(Theme::preset_preview_height()))
+        .rounded(px(Theme::radius_lane()))
         .bg(background)
         .p(px(look.padding as f32 * scale))
         // The frame's shadow is the look's shadow, so it has to show: on a
@@ -264,9 +264,9 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         .relative()
         .flex()
         .items_center()
-        .gap(px(Theme::GAP_BLOCK))
-        .p(px(Theme::CONTROL_PADDING_SMALL))
-        .rounded(px(Theme::RADIUS_ROW))
+        .gap(px(Theme::gap_block()))
+        .p(px(Theme::control_padding_small()))
+        .rounded(px(Theme::radius_row()))
         .map(|row| {
             subtake_ui::pressable(
                 row,
@@ -280,7 +280,7 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
             column()
                 .flex_1()
                 .min_w_0()
-                .gap(px(Theme::GAP_SMALL))
+                .gap(px(Theme::gap_small()))
                 .child(
                     div()
                         .font_weight(FontWeight::MEDIUM)
@@ -289,7 +289,7 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
                 )
                 .child(
                     mono(values)
-                        .text_size(px(Theme::FONT_SECONDARY))
+                        .text_size(px(Theme::font_secondary()))
                         .text_color(theme.muted)
                         .text_ellipsis(),
                 ),
@@ -298,7 +298,7 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         row = row
             .bg(theme.sunk)
             .child(icon("Check-regular", theme.accent))
-            .child(selection_ring(Theme::RADIUS_ROW, theme));
+            .child(selection_ring(Theme::radius_row(), theme));
     } else {
         // The hover wash fades, as every other row's does.
         row = row.bg(subtake_ui::motion::hover_blend(
@@ -327,10 +327,10 @@ fn motion_tile(
         .flex_col()
         .flex_1()
         .min_w_0()
-        .gap(px(Theme::GAP_SMALL))
-        .py(px(Theme::CONTROL_PADDING_SMALL))
-        .px(px(Theme::CONTROL_PADDING))
-        .rounded(px(Theme::RADIUS_MENU))
+        .gap(px(Theme::gap_small()))
+        .py(px(Theme::control_padding_small()))
+        .px(px(Theme::control_padding()))
+        .rounded(px(Theme::radius_menu()))
         .bg(subtake_ui::motion::hover_blend(
             &hover_key,
             theme.sunk,
@@ -347,11 +347,11 @@ fn motion_tile(
         )
         .child(
             mono(values)
-                .text_size(px(Theme::FONT_SECONDARY))
+                .text_size(px(Theme::font_secondary()))
                 .text_color(theme.muted),
         );
     if selected {
-        tile = tile.child(selection_ring(Theme::RADIUS_MENU, theme));
+        tile = tile.child(selection_ring(Theme::radius_menu(), theme));
     }
     tile
 }
@@ -359,7 +359,10 @@ fn motion_tile(
 /// The 1.5 accent inset a selected row or tile carries, as an `edge` over
 /// the fill: set on the row itself, it would draw under the row's own `sunk`.
 fn selection_ring(radius: f32, theme: Theme) -> impl IntoElement {
-    edge(radius, vec![hairline(theme.accent, Theme::SELECTED_WIDTH)])
+    edge(
+        radius,
+        vec![hairline(theme.accent, Theme::selected_width())],
+    )
 }
 
 fn parse_hex(value: &str) -> Hsla {

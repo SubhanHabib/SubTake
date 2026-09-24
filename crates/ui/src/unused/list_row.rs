@@ -52,14 +52,14 @@ pub fn list_row(
         .py(px(ROW_PADDING_Y))
         .px(px(ROW_PADDING_X))
         .gap(px(ROW_GAP))
-        .rounded(px(Theme::RADIUS_ROW))
+        .rounded(px(Theme::radius_row()))
         .hover(|s| s.bg(theme.hover));
     if selected {
         // Selected is a step up in material plus an accent edge — the same
         // rule every other selected thing in the kit follows, and never an
         // accent fill.
         el = el.bg(theme.card).shadow(
-            [hairline(theme.accent, Theme::SELECTED_WIDTH)]
+            [hairline(theme.accent, Theme::selected_width())]
                 .into_iter()
                 .chain(theme.panel_shadow())
                 .collect::<Vec<_>>(),
@@ -84,11 +84,11 @@ pub fn list_row(
         column()
             .flex_1()
             .min_w_0()
-            .gap(px(Theme::GAP_SMALL))
+            .gap(px(Theme::gap_small()))
             .child(
                 div()
                     .text_ellipsis()
-                    .text_size(px(Theme::FONT_CONTROL))
+                    .text_size(px(Theme::font_control()))
                     .text_color(theme.text)
                     .font_weight(if selected {
                         FontWeight::MEDIUM

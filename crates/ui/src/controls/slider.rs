@@ -135,7 +135,7 @@ impl Render for Slider {
         let scrub = div()
             .id("scrub")
             .relative()
-            .h(px(Theme::CONTROL_HEIGHT_LARGE))
+            .h(px(Theme::control_height_large()))
             .w_full()
             .rounded_full()
             // Track `sunk`, one step up to `sunk2` under the pointer. The row
@@ -149,7 +149,7 @@ impl Render for Slider {
                     .cursor(CursorStyle::ResizeLeftRight)
                     .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
             })
-            .when(!enabled, |el| el.opacity(Theme::DISABLED_OPACITY))
+            .when(!enabled, |el| el.opacity(Theme::disabled_opacity()))
             .on_key_down(cx.listener(|s, e: &KeyDownEvent, w, cx| {
                 if !s.enabled {
                     return;
@@ -209,17 +209,17 @@ impl Render for Slider {
             // nothing on the edge, so no line ever crosses the label.
             .child({
                 let inset = if self.dragging {
-                    Theme::SLIDER_THUMB_INSET_HELD
+                    Theme::slider_thumb_inset_held()
                 } else {
-                    Theme::SLIDER_THUMB_INSET
+                    Theme::slider_thumb_inset()
                 };
                 div()
                     .absolute()
                     .top(px(inset))
                     .bottom(px(inset))
                     .left(relative(fraction))
-                    .ml(px(-Theme::SLIDER_THUMB_WIDTH / 2.))
-                    .w(px(Theme::SLIDER_THUMB_WIDTH))
+                    .ml(px(-Theme::slider_thumb_width() / 2.))
+                    .w(px(Theme::slider_thumb_width()))
                     .rounded_full()
                     .bg(if self.dragging {
                         theme.text
@@ -233,8 +233,8 @@ impl Render for Slider {
                     .inset_0()
                     .flex()
                     .items_center()
-                    .gap(px(Theme::GAP))
-                    .px(px(Theme::CONTROL_PADDING_LARGE))
+                    .gap(px(Theme::gap()))
+                    .px(px(Theme::control_padding_large()))
                     .when(!self.glyph.is_empty(), |el| {
                         el.child(icon(&self.glyph, theme.text))
                     })
@@ -243,7 +243,7 @@ impl Render for Slider {
                             .flex_1()
                             .min_w_0()
                             .text_ellipsis()
-                            .text_size(px(Theme::FONT_CONTROL))
+                            .text_size(px(Theme::font_control()))
                             .text_color(theme.text)
                             .child(self.label.clone()),
                     )
@@ -254,9 +254,9 @@ impl Render for Slider {
                     .child(
                         crate::mono(display)
                             .flex_none()
-                            .w(px(Theme::SCRUB_VALUE_WIDTH))
+                            .w(px(Theme::scrub_value_width()))
                             .text_right()
-                            .text_size(px(Theme::FONT_CONTROL))
+                            .text_size(px(Theme::font_control()))
                             .text_color(if self.dragging {
                                 theme.text
                             } else {

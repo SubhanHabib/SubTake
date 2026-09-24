@@ -31,7 +31,7 @@ fn mark(round: bool, checked: bool, theme: Theme) -> Div {
         // Unchecked is a recess with an edge, not an empty square: on glass,
         // `sunk` alone is close enough to the surface behind it to vanish.
         el.bg(theme.sunk)
-            .shadow(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)])
+            .shadow(vec![hairline(theme.line, Theme::hairline_width())])
     }
 }
 
@@ -50,7 +50,7 @@ pub fn checkbox(
         }))
         .child(
             div()
-                .text_size(px(Theme::FONT_CONTROL))
+                .text_size(px(Theme::font_control()))
                 .text_color(theme.text)
                 .child(label.into()),
         )
@@ -70,14 +70,14 @@ pub fn radio(
         .child(mark(true, selected, theme).when(selected, |el| {
             el.child(
                 div()
-                    .size(px(Theme::DOT_SIZE))
+                    .size(px(Theme::dot_size()))
                     .rounded_full()
                     .bg(theme.on_accent),
             )
         }))
         .child(
             div()
-                .text_size(px(Theme::FONT_CONTROL))
+                .text_size(px(Theme::font_control()))
                 .text_color(theme.text)
                 .child(label.into()),
         )

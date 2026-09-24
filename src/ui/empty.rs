@@ -14,7 +14,7 @@ impl RootView {
         )
         .child(
             row()
-                .gap(px(Theme::GAP_LARGE))
+                .gap(px(Theme::gap_large()))
                 .child(
                     self.action(
                         "new-recording",
@@ -35,7 +35,7 @@ impl RootView {
 
         let recents = e.get_recents();
         if recents.row_count() > 0 {
-            let mut cards = row().w_full().gap(px(Theme::GAP_LARGE)).items_start();
+            let mut cards = row().w_full().gap(px(Theme::gap_large())).items_start();
             for recent in recents.iter().take(3) {
                 cards = cards.child(self.recent_card(recent, idle));
             }
@@ -50,8 +50,8 @@ impl RootView {
                     .flex()
                     .flex_col()
                     .w_full()
-                    .max_w(px(Theme::RECENT_WIDTH))
-                    .gap(px(Theme::GAP_LARGE))
+                    .max_w(px(Theme::recent_width()))
+                    .gap(px(Theme::gap_large()))
                     .child(caps_label("Recent", theme))
                     .child(cards),
             );
@@ -68,8 +68,8 @@ impl RootView {
         let thumbnail = match recent.thumbnail.0 {
             Some(image) => img(image)
                 .w_full()
-                .h(px(Theme::RECENT_THUMB_HEIGHT))
-                .rounded(px(Theme::RADIUS_INNER))
+                .h(px(Theme::recent_thumb_height()))
+                .rounded(px(Theme::radius_inner()))
                 .object_fit(ObjectFit::Cover)
                 .into_any_element(),
             None => div()
@@ -77,14 +77,14 @@ impl RootView {
                 .items_center()
                 .justify_center()
                 .w_full()
-                .h(px(Theme::RECENT_THUMB_HEIGHT))
-                .rounded(px(Theme::RADIUS_INNER))
+                .h(px(Theme::recent_thumb_height()))
+                .rounded(px(Theme::radius_inner()))
                 .bg(theme.sunk)
                 .child(icon("FilmStrip-regular", theme.muted))
                 .into_any_element(),
         };
         let mut shadows = theme.panel_shadow();
-        shadows.push(hairline(theme.line, Theme::BORDER_WIDTH));
+        shadows.push(hairline(theme.line, Theme::border_width()));
         let id = ElementId::from(SharedString::from(format!("recent-{}", recent.key)));
         let hover_key = subtake_ui::motion::tween_key(&id, "hover");
         // Not drawn by the design: the card's hover, a `hover` wash laid
@@ -93,7 +93,7 @@ impl RootView {
         let wash = div()
             .absolute()
             .inset_0()
-            .rounded(px(Theme::RADIUS_ROW))
+            .rounded(px(Theme::radius_row()))
             .bg(subtake_ui::motion::hover_blend(
                 &hover_key,
                 theme.sunk2.opacity(0.),
@@ -106,9 +106,9 @@ impl RootView {
             .flex_col()
             .flex_1()
             .min_w_0()
-            .gap(px(Theme::RECENT_CARD_PADDING))
-            .p(px(Theme::RECENT_CARD_PADDING))
-            .rounded(px(Theme::RADIUS_ROW))
+            .gap(px(Theme::recent_card_padding()))
+            .p(px(Theme::recent_card_padding()))
+            .rounded(px(Theme::radius_row()))
             .bg(theme.glass)
             .shadow(shadows.clone())
             .child(wash)
@@ -117,9 +117,9 @@ impl RootView {
                 div()
                     .flex()
                     .flex_col()
-                    .gap(px(Theme::GAP_SMALL))
-                    .px(px(Theme::GAP_SMALL))
-                    .pb(px(Theme::GAP_SMALL))
+                    .gap(px(Theme::gap_small()))
+                    .px(px(Theme::gap_small()))
+                    .pb(px(Theme::gap_small()))
                     .child(
                         div()
                             .min_w_0()
@@ -130,7 +130,7 @@ impl RootView {
                     )
                     .child(
                         mono(recent.meta)
-                            .text_size(px(Theme::FONT_SMALL))
+                            .text_size(px(Theme::font_small()))
                             .text_color(theme.muted)
                             .text_ellipsis(),
                     ),
@@ -145,7 +145,7 @@ impl RootView {
                 .cursor_pointer()
                 .tab_index(0)
                 .focus_visible(move |s| s.shadow(focused))
-                .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+                .active(|s| s.opacity(Theme::pressed_opacity()))
                 .on_hover(subtake_ui::motion::hover_listener(hover_key))
                 .on_click(self.command(&recent.key));
         }

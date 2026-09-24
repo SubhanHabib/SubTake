@@ -50,7 +50,7 @@ pub fn field(
                 .flex_1()
                 .min_w_0()
                 .text_ellipsis()
-                .text_size(px(Theme::FONT_CONTROL))
+                .text_size(px(Theme::font_control()))
                 .text_color(if empty { theme.muted } else { theme.text })
                 .child(if empty { placeholder.into() } else { value }),
         )
@@ -97,7 +97,7 @@ pub fn stepper(
                 .min_w_0()
                 .text_center()
                 .font_family(FONT_MONO)
-                .text_size(px(Theme::FONT_CONTROL))
+                .text_size(px(Theme::font_control()))
                 .text_color(theme.text)
                 .child(value.into()),
         )

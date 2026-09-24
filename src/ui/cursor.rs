@@ -35,7 +35,7 @@ impl RootView {
 
         let shown = value("showCursor") != "false";
         let editor = e.clone();
-        let mut content = column().gap(px(Theme::GAP_LARGE)).child(toggle(
+        let mut content = column().gap(px(Theme::gap_large())).child(toggle(
             "Cursor:showCursor",
             "Show cursor",
             shown,
@@ -46,7 +46,7 @@ impl RootView {
 
         // Everything under Show cursor is about a cursor that is drawn, so
         // with it off the rows dim and a sheet over them takes the pointer.
-        let mut rows = column().gap(px(Theme::GAP_LARGE));
+        let mut rows = column().gap(px(Theme::gap_large()));
 
         // Not drawn by the design: the style picker. The handoff's Arrow /
         // Hand / Dot are not styles the renderer has; its five are, each
@@ -174,10 +174,10 @@ impl RootView {
 pub(super) fn panel_heading(name: &'static str, e: &EditorWindow, theme: Theme) -> Div {
     let editor = e.clone();
     row()
-        .h(px(Theme::CONTROL_HEIGHT_SMALL))
+        .h(px(Theme::control_height_small()))
         .flex_none()
-        .gap(px(Theme::ICON_GAP_ROW))
-        .child(title(name, Theme::FONT_HEADING).flex_1())
+        .gap(px(Theme::icon_gap_row()))
+        .child(title(name, Theme::font_heading()).flex_1())
         .child(
             icon_button(
                 SharedString::from(format!("{name}-close")),
@@ -204,7 +204,7 @@ pub(super) fn inert(id: &'static str, rows: Div, enabled: bool) -> Div {
     let dim = motion::state_fade(&motion::tween_key(&id.into(), "dim"), !enabled);
     div()
         .relative()
-        .opacity(motion::lerp(1., Theme::DISABLED_OPACITY, dim))
+        .opacity(motion::lerp(1., Theme::disabled_opacity(), dim))
         .child(rows)
         .when(!enabled, |el| {
             el.child(div().absolute().inset_0().occlude())

@@ -262,6 +262,9 @@ decoder in `scripts/decoder.c`, is not native macOS code and stays C.
   in `ui_state.rs`. Add a property there, not by hand on one window.
 - Every control takes its colours from `Theme` and its sizes from
   `Theme::FONT_*` and `Theme::ICON_SIZE*`.
+- Read an `f32` metric through its generated reader, `Theme::gap_small()`
+  for `Theme::GAP_SMALL`, so the component catalogue can tune it live. The
+  constant is for const contexts, tests and `src/ui_runtime/window.rs` only.
 - The gallery (`--gallery` or `SUBTAKE_GALLERY=light|dark`) is the visual
   reference for every window and control. A presentation change is checked
   there in both appearances before it is called finished.

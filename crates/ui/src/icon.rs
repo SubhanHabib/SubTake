@@ -5,7 +5,7 @@ use subtake_theme::Theme;
 
 /// A themed glyph at the shared 16px icon size.
 pub fn icon(name: &str, color: Hsla) -> Svg {
-    icon_sized(name, Theme::ICON_SIZE, color)
+    icon_sized(name, Theme::icon_size(), color)
 }
 
 /// A glyph at a caller-chosen size (the record dot and play triangle run larger).

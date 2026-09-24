@@ -37,11 +37,11 @@ impl Surface {
     /// square corners behind round ones.
     pub fn radius(self) -> f32 {
         match self {
-            Self::Overlay => Theme::RADIUS_BAR,
-            Self::Pod => Theme::RADIUS_POD,
-            Self::Popup => Theme::RADIUS_MENU,
-            Self::Card => Theme::RADIUS_ROW,
-            Self::Panel | Self::Content => Theme::RADIUS_PANEL,
+            Self::Overlay => Theme::radius_bar(),
+            Self::Pod => Theme::radius_pod(),
+            Self::Popup => Theme::radius_menu(),
+            Self::Card => Theme::radius_row(),
+            Self::Panel | Self::Content => Theme::radius_panel(),
         }
     }
 
@@ -67,7 +67,7 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     let mut el = div()
         .flex()
         .flex_col()
-        .gap(px(Theme::GAP_BLOCK))
+        .gap(px(Theme::gap_block()))
         .rounded(px(radius))
         .bg(background);
     // Every edge in the redesign is an inset shadow, never a border: a border
@@ -90,7 +90,7 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     if variant != Surface::Card {
         el = el.child(edge(
             radius,
-            vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)],
+            vec![hairline(theme.line, Theme::hairline_width())],
         ));
         if variant != Surface::Overlay {
             el = el.shadow(theme.panel_shadow());
@@ -101,12 +101,12 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
 
 /// The default plane: a console-style panel holding controls.
 pub fn panel(theme: Theme) -> Div {
-    panel_variant(theme, Surface::Panel).p(px(Theme::PANEL_PADDING))
+    panel_variant(theme, Surface::Panel).p(px(Theme::panel_padding()))
 }
 
 /// A panel holding text rather than controls — the inspector, a dialog.
 pub fn content_panel(theme: Theme) -> Div {
-    panel_variant(theme, Surface::Content).p(px(Theme::PANEL_PADDING))
+    panel_variant(theme, Surface::Content).p(px(Theme::panel_padding()))
 }
 
 /// A pod: a small float carrying nothing but icons, over the stage. Tight
@@ -116,8 +116,8 @@ pub fn pod(theme: Theme) -> Div {
     panel_variant(theme, Surface::Pod)
         .flex_row()
         .items_center()
-        .p(px(Theme::POD_PADDING))
-        .gap(px(Theme::GAP_SMALL))
+        .p(px(Theme::pod_padding()))
+        .gap(px(Theme::gap_small()))
         .occlude()
 }
 
@@ -126,8 +126,8 @@ pub fn pod(theme: Theme) -> Div {
 /// the pod's own 30 would be clamped to the same thing.
 pub fn pod_small(theme: Theme) -> Div {
     pod(theme)
-        .p(px(Theme::POD_PADDING_SMALL))
-        .rounded(px(Theme::RADIUS_ROW))
+        .p(px(Theme::pod_padding_small()))
+        .rounded(px(Theme::radius_row()))
 }
 
 /// A hairline rule, one row of a stack.
@@ -137,7 +137,10 @@ pub fn pod_small(theme: Theme) -> Div {
 /// hairline into a filled block and starves whatever scrolls above it. A rule
 /// that has to run out along a row asks for the growth itself.
 pub fn divider(theme: Theme) -> Div {
-    div().h(px(Theme::BORDER_WIDTH)).flex_none().bg(theme.line)
+    div()
+        .h(px(Theme::border_width()))
+        .flex_none()
+        .bg(theme.line)
 }
 
 /// A small muted section caption ("Frame", "Padding", "Animation"), set in
@@ -146,7 +149,7 @@ pub fn divider(theme: Theme) -> Div {
 pub fn caps_label(text: impl Into<SharedString>, theme: Theme) -> Div {
     div()
         .flex_none()
-        .text_size(px(Theme::FONT_SMALL))
+        .text_size(px(Theme::font_small()))
         .font_weight(FontWeight::SEMIBOLD)
         .text_color(theme.muted)
         .child(SharedString::from(text.into().to_uppercase()))
@@ -156,8 +159,8 @@ pub fn caps_label(text: impl Into<SharedString>, theme: Theme) -> Div {
 /// puts on that line — a reset link, a master switch.
 pub fn panel_header(theme: Theme, title: impl Into<SharedString>) -> Div {
     row()
-        .h(px(Theme::CONTROL_HEIGHT))
+        .h(px(Theme::control_height()))
         .flex_none()
-        .gap(px(Theme::GAP))
+        .gap(px(Theme::gap()))
         .child(caps_label(title, theme))
 }

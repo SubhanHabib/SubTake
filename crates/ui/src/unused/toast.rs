@@ -47,7 +47,7 @@ pub fn toast(
                 .flex_1()
                 .min_w_0()
                 .text_ellipsis()
-                .text_size(px(Theme::FONT_CONTROL))
+                .text_size(px(Theme::font_control()))
                 .text_color(theme.text)
                 .child(message.into()),
         );
@@ -61,7 +61,7 @@ pub fn toast(
                 .rounded_full()
                 .bg(theme.raise)
                 .hover(|s| s.bg(theme.raise_hover()))
-                .text_size(px(Theme::FONT_CONTROL))
+                .text_size(px(Theme::font_control()))
                 .text_color(theme.text)
                 .cursor_pointer()
                 .child(label)

@@ -34,7 +34,7 @@ pub fn scrim(theme: Theme) -> Div {
 /// and the float shadow; only the radius and padding are its own.
 pub fn dialog(theme: Theme) -> Div {
     panel_variant(theme, Surface::Popup)
-        .rounded(px(Theme::RADIUS_ROW))
+        .rounded(px(Theme::radius_row()))
         .p(px(DIALOG_PADDING))
         .occlude()
 }

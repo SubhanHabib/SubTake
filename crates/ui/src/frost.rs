@@ -243,7 +243,7 @@ pub const FADE_BAND: f32 = Theme::FADE_BAND;
 /// being sliced in half.
 pub fn fade_edges(child: impl IntoElement) -> FadeEdges {
     FadeEdges {
-        band: FADE_BAND,
+        band: Theme::fade_band(),
         top: true,
         bottom: true,
         scroll: None,
@@ -379,21 +379,21 @@ impl Element for FadeEdges {
             let extent = f32::from(handle.max_offset().y);
             if extent > 0.5 {
                 let view = f32::from(bounds.size.height);
-                let track = view - 2. * Theme::SCROLL_THUMB_INSET;
+                let track = view - 2. * Theme::scroll_thumb_inset();
                 let length = (track * view / (view + extent))
-                    .max(Theme::SCROLL_THUMB_MIN)
+                    .max(Theme::scroll_thumb_min())
                     .min(track);
                 let along = (above / extent).clamp(0., 1.);
                 let origin = point(
-                    bounds.right() + px((gutter - Theme::SCROLL_THUMB_WIDTH) / 2.),
-                    bounds.top() + px(Theme::SCROLL_THUMB_INSET + (track - length) * along),
+                    bounds.right() + px((gutter - Theme::scroll_thumb_width()) / 2.),
+                    bounds.top() + px(Theme::scroll_thumb_inset() + (track - length) * along),
                 );
                 window.paint_quad(
                     fill(
-                        Bounds::new(origin, size(px(Theme::SCROLL_THUMB_WIDTH), px(length))),
+                        Bounds::new(origin, size(px(Theme::scroll_thumb_width()), px(length))),
                         color,
                     )
-                    .corner_radii(px(Theme::SCROLL_THUMB_WIDTH / 2.)),
+                    .corner_radii(px(Theme::scroll_thumb_width() / 2.)),
                 );
             }
         }

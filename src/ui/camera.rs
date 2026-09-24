@@ -40,7 +40,7 @@ impl RootView {
         // only once a clip is chosen and turned on, so those come first, and
         // the rest is dimmed until it is.
         let shown = value("webcam.enabled") == "true";
-        let mut content = column().gap(px(Theme::GAP_LARGE));
+        let mut content = column().gap(px(Theme::gap_large()));
         for key in ["choose-webcam", "webcam.enabled"] {
             if let Some(field) = find(key) {
                 content = content.child(self.field(e, field, window, cx));
@@ -48,7 +48,7 @@ impl RootView {
         }
 
         let preset = value("webcam.positionPreset");
-        let mut grid = div().grid().grid_cols(2).gap(px(Theme::CAMERA_TILE_GAP));
+        let mut grid = div().grid().grid_cols(2).gap(px(Theme::camera_tile_gap()));
         for (index, (corner, label, x, y)) in CORNERS.into_iter().enumerate() {
             let chosen = preset == corner;
             let editor = e.clone();
@@ -57,11 +57,11 @@ impl RootView {
                     .child(
                         div()
                             .absolute()
-                            .size(px(Theme::CAMERA_DOT_SIZE))
+                            .size(px(Theme::camera_dot_size()))
                             .rounded_full()
                             .bg(if chosen { theme.accent } else { theme.muted })
                             .map(|el| {
-                                let inset = px(Theme::CAMERA_DOT_INSET);
+                                let inset = px(Theme::camera_dot_inset());
                                 let el = if x > 0. {
                                     el.right(inset)
                                 } else {
@@ -93,12 +93,12 @@ impl RootView {
                 .flex()
                 .items_center()
                 .justify_center()
-                .gap(px(Theme::CAMERA_CUSTOM_GAP))
-                .text_size(px(Theme::FONT_SECONDARY))
+                .gap(px(Theme::camera_custom_gap()))
+                .text_size(px(Theme::font_secondary()))
                 .text_color(theme.muted)
                 .child(icon_sized(
                     "ArrowsOutSimple-regular",
-                    Theme::CAMERA_CUSTOM_ICON,
+                    Theme::camera_custom_icon(),
                     theme.muted,
                 ))
                 .child("Custom")
@@ -114,7 +114,7 @@ impl RootView {
         // (top left, the centres). They still place the overlay, and no tile
         // is ringed for them; picking one of these four replaces it.
         let mut rows = column()
-            .gap(px(Theme::GAP_LARGE))
+            .gap(px(Theme::gap_large()))
             .child(caps_label("Position", theme))
             .child(grid);
 
@@ -205,7 +205,7 @@ impl RootView {
 
 /// A 60-tall `sunk` tile, ringed in accent when it is the chosen position.
 fn position_tile(index: usize, label: &str, chosen: bool, theme: Theme) -> Stateful<Div> {
-    let radius = px(Theme::CAMERA_TILE_RADIUS);
+    let radius = px(Theme::camera_tile_radius());
     let id = ElementId::from(SharedString::from(format!("camera-position-{index}")));
     let hover_key = subtake_ui::motion::tween_key(&id, "hover");
     // Inside a frosted card an inset edge set on the tile would draw under
@@ -224,7 +224,7 @@ fn position_tile(index: usize, label: &str, chosen: bool, theme: Theme) -> State
         .inset_0()
         .rounded(radius)
         .when(chosen, |s| {
-            s.shadow(vec![hairline(theme.accent, Theme::SELECTED_WIDTH)])
+            s.shadow(vec![hairline(theme.accent, Theme::selected_width())])
         });
     // Palette churn: no `scale .98` under the press, since gpui has no
     // transform on an element; the wash goes to `press` instead.
@@ -232,7 +232,7 @@ fn position_tile(index: usize, label: &str, chosen: bool, theme: Theme) -> State
         .id(id)
         .on_hover(subtake_ui::motion::hover_listener(hover_key))
         .relative()
-        .h(px(Theme::CAMERA_TILE_HEIGHT))
+        .h(px(Theme::camera_tile_height()))
         .rounded(radius)
         .bg(theme.sunk)
         .cursor_pointer()

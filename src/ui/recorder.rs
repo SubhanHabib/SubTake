@@ -24,30 +24,30 @@ impl RootView {
             .font_weight(FontWeight::MEDIUM)
             .text_color(white)
             .line_height(relative(1.))
-            .text_size(px(Theme::FONT_COUNTDOWN))
+            .text_size(px(Theme::font_countdown()))
             // Palette churn: the design sets a soft shadow under the numeral;
             // gpui has no text shadow.
             .with_animation(
                 SharedString::from(format!("count-{count}")),
                 Animation::new(std::time::Duration::from_secs(1)),
                 |numeral, t| {
-                    let scale = 1. - (1. - Theme::COUNTDOWN_END_SCALE) * t;
+                    let scale = 1. - (1. - Theme::countdown_end_scale()) * t;
                     numeral
-                        .text_size(px(Theme::FONT_COUNTDOWN * scale))
-                        .opacity(1. - (1. - Theme::COUNTDOWN_END_OPACITY) * t)
+                        .text_size(px(Theme::font_countdown() * scale))
+                        .opacity(1. - (1. - Theme::countdown_end_opacity()) * t)
                 },
             );
         // Palette churn: the design blurs what is under the chip; a
         // click-through overlay has no material of its own, so it is only
         // the tint.
         let chip = row()
-            .h(px(Theme::COUNTDOWN_CHIP_HEIGHT))
-            .gap(px(Theme::COUNTDOWN_CHIP_GAP))
-            .px(px(Theme::COUNTDOWN_CHIP_PADDING))
+            .h(px(Theme::countdown_chip_height()))
+            .gap(px(Theme::countdown_chip_gap()))
+            .px(px(Theme::countdown_chip_padding()))
             .rounded_full()
             .bg(self.theme.scrim_chip())
             .text_color(white)
-            .text_size(px(Theme::FONT_SECONDARY))
+            .text_size(px(Theme::font_secondary()))
             .whitespace_nowrap()
             .child("Press")
             .child(mono("esc"))
@@ -61,18 +61,18 @@ impl RootView {
                     .size_full()
                     .items_center()
                     .justify_center()
-                    .gap(px(Theme::COUNTDOWN_GAP))
+                    .gap(px(Theme::countdown_gap()))
                     .child(numeral)
                     .child(chip),
             )
             .child(
                 div()
                     .absolute()
-                    .inset(px(Theme::COUNTDOWN_FRAME_INSET))
-                    .rounded(px(Theme::COUNTDOWN_FRAME_RADIUS))
+                    .inset(px(Theme::countdown_frame_inset()))
+                    .rounded(px(Theme::countdown_frame_radius()))
                     .shadow(vec![hairline(
                         hsla(0., 0., 1., 0.55),
-                        Theme::COUNTDOWN_FRAME_WIDTH,
+                        Theme::countdown_frame_width(),
                     )]),
             )
             .into_any_element()
@@ -99,8 +99,8 @@ impl RootView {
         let mut bar = row()
             .size_full()
             .min_w_0()
-            .p(px(Theme::RECORDER_PADDING))
-            .gap(px(Theme::GAP));
+            .p(px(Theme::recorder_padding()))
+            .gap(px(Theme::gap()));
         let phase = if state.get_recording() {
             "recording"
         } else if state.get_counting() > 0 {
@@ -134,8 +134,8 @@ impl RootView {
                     .flex_none()
                     .items_center()
                     .justify_center()
-                    .w(px(Theme::RECORDER_HANDLE))
-                    .h(px(Theme::RECORD_HEIGHT))
+                    .w(px(Theme::recorder_handle()))
+                    .h(px(Theme::record_height()))
                     .cursor(CursorStyle::ClosedHand)
                     .child(icon("DotsSixVertical-regular", theme.text))
                     .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
@@ -288,10 +288,13 @@ impl RootView {
         let theme = self.theme;
         let paused = state.get_paused();
         let enabled = !state.get_busy();
-        let dot = div().flex_none().size(px(Theme::RECORD_DOT)).rounded_full();
+        let dot = div()
+            .flex_none()
+            .size(px(Theme::record_dot()))
+            .rounded_full();
         let dot = if paused {
             dot.bg(theme.rec)
-                .opacity(Theme::PAUSED_DOT_OPACITY)
+                .opacity(Theme::paused_dot_opacity())
                 .into_any_element()
         } else {
             dot.bg(white())
@@ -309,15 +312,15 @@ impl RootView {
         let held = subtake_ui::motion::state_fade("clock-paused", paused);
         let mut clock = row()
             .flex_none()
-            .gap(px(Theme::ICON_GAP_RECORD))
-            .h(px(Theme::RECORD_HEIGHT))
-            .px(px(Theme::RECORDER_PILL_PADDING))
+            .gap(px(Theme::icon_gap_record()))
+            .h(px(Theme::record_height()))
+            .px(px(Theme::recorder_pill_padding()))
             .rounded_full()
             .whitespace_nowrap()
             .child(dot)
             .child(
                 mono(state.get_elapsed())
-                    .text_size(px(Theme::FONT_CLOCK))
+                    .text_size(px(Theme::font_clock()))
                     .font_weight(FontWeight::MEDIUM)
                     .opacity(subtake_ui::motion::lerp(1., PAUSED_CLOCK_OPACITY, held)),
             );
@@ -327,7 +330,7 @@ impl RootView {
             clock.child(fade_in(
                 "clock-paused-label",
                 div()
-                    .text_size(px(Theme::FONT_SMALL))
+                    .text_size(px(Theme::font_small()))
                     .text_color(theme.muted)
                     .child("PAUSED"),
             ))
@@ -345,9 +348,9 @@ impl RootView {
             row()
                 .id("pause")
                 .flex_none()
-                .gap(px(Theme::ICON_GAP_ROW))
-                .h(px(Theme::RECORD_HEIGHT))
-                .px(px(Theme::RECORDER_PILL_PADDING))
+                .gap(px(Theme::icon_gap_row()))
+                .h(px(Theme::record_height()))
+                .px(px(Theme::recorder_pill_padding()))
                 .rounded_full()
                 .bg(subtake_ui::motion::hover_blend(
                     &resume_hover,
@@ -360,8 +363,8 @@ impl RootView {
                 .when(enabled, |s| {
                     subtake_ui::pressable(s, theme, Some(theme.press), resume_hover)
                 })
-                .when(!enabled, |s| s.opacity(Theme::DISABLED_OPACITY))
-                .child(icon_sized("Play-fill", Theme::ICON_SIZE_POD, white()))
+                .when(!enabled, |s| s.opacity(Theme::disabled_opacity()))
+                .child(icon_sized("Play-fill", Theme::icon_size_pod(), white()))
                 .child("Resume")
                 .when(enabled, |s| s.on_click(self.command("pause-recording")))
                 .into_any_element()
@@ -459,7 +462,7 @@ impl RootView {
         bar.child(
             round_plate(theme).child(
                 mono(count.to_string())
-                    .text_size(px(Theme::FONT_COUNT))
+                    .text_size(px(Theme::font_count()))
                     .font_weight(FontWeight::MEDIUM),
             ),
         )
@@ -473,9 +476,9 @@ impl RootView {
             row()
                 .id("cancel")
                 .flex_none()
-                .gap(px(Theme::ICON_GAP_ROW))
-                .h(px(Theme::RECORD_HEIGHT))
-                .px(px(Theme::RECORDER_PLATE_PADDING))
+                .gap(px(Theme::icon_gap_row()))
+                .h(px(Theme::record_height()))
+                .px(px(Theme::recorder_plate_padding()))
                 .rounded_full()
                 .bg(subtake_ui::motion::hover_blend(
                     &cancel_hover,
@@ -487,7 +490,7 @@ impl RootView {
                 .child("Cancel")
                 .child(
                     mono("esc")
-                        .text_size(px(Theme::FONT_SMALL))
+                        .text_size(px(Theme::font_small()))
                         .text_color(theme.muted),
                 )
                 .on_click(self.command("cancel")),
@@ -500,7 +503,7 @@ impl RootView {
     /// button, because once capture has ended there is nothing to cancel.
     fn working_controls(&self, bar: Div, state: &RecordingLauncher) -> Div {
         let theme = self.theme;
-        let bar = bar.child(round_plate(theme).child(spinner(Theme::SPINNER_SIZE, theme)));
+        let bar = bar.child(round_plate(theme).child(spinner(Theme::spinner_size(), theme)));
         if state.get_stopping() {
             return bar
                 .child(
@@ -509,13 +512,13 @@ impl RootView {
                         format!("{} captured · writing to disk", state.get_elapsed()),
                         theme,
                     )
-                    .min_w(px(Theme::STOPPING_TEXT_WIDTH)),
+                    .min_w(px(Theme::stopping_text_width())),
                 )
                 .child(
                     row()
                         .flex_none()
-                        .h(px(Theme::RECORD_HEIGHT))
-                        .px(px(Theme::RECORDER_PLATE_PADDING))
+                        .h(px(Theme::record_height()))
+                        .px(px(Theme::recorder_plate_padding()))
                         .rounded_full()
                         .bg(theme.sunk)
                         .text_color(theme.muted)
@@ -563,17 +566,17 @@ impl RootView {
             .flex_none()
             .items_center()
             .justify_center()
-            .size(px(Theme::RECORD_HEIGHT))
+            .size(px(Theme::record_height()))
             .rounded_full()
             .bg(subtake_ui::motion::hover_blend(&hover_key, rest, hover))
             .when(enabled == Some(true), |s| {
                 subtake_ui::pressable(s, theme, Some(theme.press), hover_key)
             })
             .when(enabled == Some(false), |s| {
-                s.opacity(Theme::DISABLED_OPACITY)
+                s.opacity(Theme::disabled_opacity())
             })
             .tooltip(move |_, cx| tooltip(label, theme, cx))
-            .child(icon_sized(glyph, Theme::ICON_SIZE_LARGE, color))
+            .child(icon_sized(glyph, Theme::icon_size_large(), color))
     }
 
     /// A bar control that opens its panel, or closes it if it is the open one.
@@ -591,7 +594,7 @@ fn round_plate(theme: Theme) -> Div {
         .flex_none()
         .items_center()
         .justify_center()
-        .size(px(Theme::RECORD_HEIGHT))
+        .size(px(Theme::record_height()))
         .rounded_full()
         .bg(theme.sunk)
 }
@@ -603,9 +606,9 @@ fn message(title: impl Into<SharedString>, detail: impl Into<SharedString>, them
         .flex_1()
         .min_w_0()
         .justify_center()
-        .h(px(Theme::RECORD_HEIGHT))
-        .px(px(Theme::RECORDER_TEXT_INSET))
-        .line_height(relative(Theme::MESSAGE_LEADING))
+        .h(px(Theme::record_height()))
+        .px(px(Theme::recorder_text_inset()))
+        .line_height(relative(Theme::message_leading()))
         .whitespace_nowrap()
         .child(
             div()
@@ -616,7 +619,7 @@ fn message(title: impl Into<SharedString>, detail: impl Into<SharedString>, them
         .when(!detail.is_empty(), |s| {
             s.child(
                 div()
-                    .text_size(px(Theme::FONT_SMALL))
+                    .text_size(px(Theme::font_small()))
                     .text_color(theme.muted)
                     .text_ellipsis()
                     .child(detail),
@@ -631,7 +634,7 @@ pub(super) fn spinner(size: f32, theme: Theme) -> Div {
         .flex_none()
         .size(px(size))
         .rounded_full()
-        .shadow(vec![hairline(theme.sunk2, Theme::SPINNER_WIDTH)])
+        .shadow(vec![hairline(theme.sunk2, Theme::spinner_width())])
         .child(
             icon_sized("SpinnerArc", size, theme.accent)
                 .absolute()

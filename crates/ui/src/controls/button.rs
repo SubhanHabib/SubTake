@@ -37,10 +37,10 @@ impl ButtonVariant {
     /// never be hit by accident.
     fn height(self) -> f32 {
         match self {
-            Self::Primary | Self::Secondary | Self::Danger => Theme::CONTROL_HEIGHT_LARGE,
-            Self::Raised | Self::Ghost => Theme::CONTROL_HEIGHT,
-            Self::Transport => Theme::TRANSPORT_SIZE,
-            Self::Record => Theme::RECORD_HEIGHT,
+            Self::Primary | Self::Secondary | Self::Danger => Theme::control_height_large(),
+            Self::Raised | Self::Ghost => Theme::control_height(),
+            Self::Transport => Theme::transport_size(),
+            Self::Record => Theme::record_height(),
         }
     }
 
@@ -48,11 +48,11 @@ impl ButtonVariant {
     /// what gives it its width.
     fn padding(self) -> f32 {
         match self {
-            Self::Primary => Theme::CONTROL_PADDING_PRIMARY,
-            Self::Secondary | Self::Danger => Theme::CONTROL_PADDING_LARGE,
-            Self::Raised => Theme::CONTROL_PADDING,
-            Self::Ghost => Theme::CONTROL_PADDING_SMALL,
-            Self::Transport | Self::Record => Theme::CONTROL_PADDING_HERO,
+            Self::Primary => Theme::control_padding_primary(),
+            Self::Secondary | Self::Danger => Theme::control_padding_large(),
+            Self::Raised => Theme::control_padding(),
+            Self::Ghost => Theme::control_padding_small(),
+            Self::Transport | Self::Record => Theme::control_padding_hero(),
         }
     }
 }
@@ -62,14 +62,14 @@ impl ButtonVariant {
 /// transport asks for its own size, because it is the one control whose glyph
 /// is the whole control.
 fn glyph_for(height: f32) -> f32 {
-    if height <= Theme::CONTROL_HEIGHT_SMALL {
-        Theme::ICON_SIZE_SMALL
-    } else if height <= Theme::CONTROL_HEIGHT {
-        Theme::ICON_SIZE
-    } else if height <= Theme::CONTROL_HEIGHT_LARGE {
-        Theme::ICON_SIZE_MEDIUM
+    if height <= Theme::control_height_small() {
+        Theme::icon_size_small()
+    } else if height <= Theme::control_height() {
+        Theme::icon_size()
+    } else if height <= Theme::control_height_large() {
+        Theme::icon_size_medium()
     } else {
-        Theme::ICON_SIZE_LARGE
+        Theme::icon_size_large()
     }
 }
 
@@ -187,34 +187,34 @@ impl Button {
     /// controls, so its pills and its round buttons stand as tall as the
     /// Record button beside them.
     pub fn bar(mut self) -> Self {
-        self.height = Some(Theme::RECORD_HEIGHT);
+        self.height = Some(Theme::record_height());
         self
     }
 
     /// The 44 step: the height a Secondary control already takes, for a
     /// variant that would otherwise sit at 40.
     pub fn large(mut self) -> Self {
-        self.height = Some(Theme::CONTROL_HEIGHT_LARGE);
+        self.height = Some(Theme::control_height_large());
         self
     }
 
     /// The 40 step: the height a Raised or Ghost control already takes, for
     /// a variant that would otherwise sit at 44.
     pub fn standard(mut self) -> Self {
-        self.height = Some(Theme::CONTROL_HEIGHT);
+        self.height = Some(Theme::control_height());
         self
     }
 
     /// The 48 step a dialog's footer buttons take.
     pub fn dialog(mut self) -> Self {
-        self.height = Some(Theme::CONTROL_HEIGHT_DIALOG);
+        self.height = Some(Theme::control_height_dialog());
         self
     }
 
     /// The dense size — a control in a packed row, a menu item, a pill inside
     /// a pod.
     pub fn small(mut self) -> Self {
-        self.height = Some(Theme::CONTROL_HEIGHT_SMALL);
+        self.height = Some(Theme::control_height_small());
         self
     }
 
@@ -222,14 +222,14 @@ impl Button {
     /// pill on a thin pod, where a Secondary's 18 either side read as a
     /// second, wider button squeezed to the small height.
     pub fn compact(mut self) -> Self {
-        self.height = Some(Theme::CONTROL_HEIGHT_SMALL);
-        self.padding = Some(Theme::CONTROL_PADDING_SMALL);
+        self.height = Some(Theme::control_height_small());
+        self.padding = Some(Theme::control_padding_small());
         self
     }
 
     /// The hero size: the one action an otherwise empty screen is asking for.
     pub fn hero(mut self) -> Self {
-        self.height = Some(Theme::CONTROL_HEIGHT_HERO);
+        self.height = Some(Theme::control_height_hero());
         self
     }
 
@@ -305,7 +305,7 @@ pub fn focus_ring(theme: Theme) -> BoxShadow {
         color: theme.accent_soft,
         offset: point(px(0.), px(0.)),
         blur_radius: px(0.),
-        spread_radius: px(Theme::FOCUS_WIDTH),
+        spread_radius: px(Theme::focus_width()),
         inset: false,
     }
 }
@@ -332,7 +332,7 @@ pub fn pressable(
                 Some(press) => s.bg(press),
                 None => s,
             }
-            .opacity(Theme::PRESSED_OPACITY)
+            .opacity(Theme::pressed_opacity())
         })
         .on_hover(motion::hover_listener(hover_key))
 }
@@ -366,7 +366,7 @@ impl RenderOnce for Button {
         let tip = self.label.clone();
         let height = self.height.unwrap_or_else(|| self.variant.height());
         let glyph_size = self.glyph_size.unwrap_or_else(|| match self.variant {
-            ButtonVariant::Transport => Theme::ICON_SIZE_TRANSPORT,
+            ButtonVariant::Transport => Theme::icon_size_transport(),
             _ => glyph_for(height),
         });
 
@@ -458,18 +458,18 @@ impl RenderOnce for Button {
             .items_center()
             .justify_center()
             .gap(px(if self.variant == ButtonVariant::Record {
-                Theme::ICON_GAP_RECORD
+                Theme::icon_gap_record()
             } else {
-                Theme::ICON_GAP
+                Theme::icon_gap()
             }))
             .h(px(height))
             .rounded_full()
             .bg(background)
             .text_color(content)
             .text_size(px(if self.variant == ButtonVariant::Record {
-                Theme::FONT_ACTION
+                Theme::font_action()
             } else {
-                Theme::FONT_BODY
+                Theme::font_body()
             }))
             // 500 on a filled control and on Record, 400 elsewhere: weight is
             // the quiet half of what marks the primary action.
@@ -481,7 +481,7 @@ impl RenderOnce for Button {
             .opacity(if self.enabled {
                 1.
             } else {
-                Theme::DISABLED_OPACITY
+                Theme::disabled_opacity()
             });
 
         if self.icon_only {
@@ -503,12 +503,12 @@ impl RenderOnce for Button {
         // its ring at best.
         let mut edges = Vec::new();
         if self.variant == ButtonVariant::Raised {
-            edges.push(hairline(theme.raise_line, Theme::BORDER_WIDTH));
+            edges.push(hairline(theme.raise_line, Theme::border_width()));
         }
         // The mark a selected control carries: an inset edge, so gaining or
         // losing it cannot change what the control measures.
         if marked {
-            edges.push(hairline(theme.accent, Theme::SELECTED_WIDTH));
+            edges.push(hairline(theme.accent, Theme::selected_width()));
         }
         // Only the accent and Record glow. The transport is filled too, but
         // it is `ink` — a glow would make the quietest control in the player
@@ -521,7 +521,7 @@ impl RenderOnce for Button {
                 // A hero button glows one step wider than a primary one. It
                 // is the same accent saying the same thing, on a screen with
                 // nothing else on it to say it against.
-                _ if height >= Theme::CONTROL_HEIGHT_HERO => {
+                _ if height >= Theme::control_height_hero() => {
                     shadows.push(glow(theme.accent_soft, 28., 12.))
                 }
                 _ => shadows.push(glow(theme.accent_soft, 20., 8.)),
@@ -555,7 +555,7 @@ impl RenderOnce for Button {
             el = el.child(
                 div()
                     .flex_none()
-                    .size(px(Theme::RECORD_DOT))
+                    .size(px(Theme::record_dot()))
                     .rounded_full()
                     .bg(theme.thumb()),
             );
@@ -584,7 +584,7 @@ impl RenderOnce for Button {
                     .child(caption)
                     .child(
                         div()
-                            .text_size(px(Theme::FONT_SMALL))
+                            .text_size(px(Theme::font_small()))
                             .text_color(theme.muted)
                             .text_ellipsis()
                             .child(detail),
@@ -598,7 +598,7 @@ impl RenderOnce for Button {
         if self.caret {
             el = el.child(icon_sized(
                 "CaretDown-regular",
-                Theme::ICON_SIZE_CARET,
+                Theme::icon_size_caret(),
                 theme.muted,
             ));
         }
@@ -627,7 +627,7 @@ impl RenderOnce for Button {
                 // fill plus a dim. Both land immediately rather than through
                 // the tween store: the feedback has to arrive with the
                 // finger, and only the release fades back.
-                .active(move |s| s.bg(press).opacity(Theme::PRESSED_OPACITY))
+                .active(move |s| s.bg(press).opacity(Theme::pressed_opacity()))
                 .on_hover(motion::hover_listener(hover_key));
             if let Some(handler) = self.handler {
                 let id = click_id;

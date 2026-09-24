@@ -30,10 +30,10 @@ impl RootView {
         // shows a panel, so the close control goes back to Scene.
         let editor = e.clone();
         let heading = row()
-            .h(px(Theme::CONTROL_HEIGHT_SMALL))
+            .h(px(Theme::control_height_small()))
             .flex_none()
-            .gap(px(Theme::ICON_GAP_ROW))
-            .child(title("Export", Theme::FONT_HEADING).flex_1())
+            .gap(px(Theme::icon_gap_row()))
+            .child(title("Export", Theme::font_heading()).flex_1())
             .child(
                 icon_button("export-close", "X-regular", "Close", theme)
                     .small()
@@ -44,20 +44,22 @@ impl RootView {
             );
 
         let editor = e.clone();
-        let mut content = column().gap(px(Theme::GAP_LARGE)).child(segmented_control(
-            "export-format",
-            &["Video", "GIF", "Frame"],
-            match format.as_str() {
-                "gif" => 1,
-                "frame" => 2,
-                _ => 0,
-            },
-            theme,
-            move |index, _, _| {
-                let format = ["video", "gif", "frame"][index.min(2)];
-                editor.defer_field("export.format".into(), format.into());
-            },
-        ));
+        let mut content = column()
+            .gap(px(Theme::gap_large()))
+            .child(segmented_control(
+                "export-format",
+                &["Video", "GIF", "Frame"],
+                match format.as_str() {
+                    "gif" => 1,
+                    "frame" => 2,
+                    _ => 0,
+                },
+                theme,
+                move |index, _, _| {
+                    let format = ["video", "gif", "frame"][index.min(2)];
+                    editor.defer_field("export.format".into(), format.into());
+                },
+            ));
 
         content = content.child(caps_label("Output", theme));
         for (key, caption) in [
@@ -113,10 +115,10 @@ impl RootView {
 
         content = content.child(caps_label("Destination", theme)).child(
             row()
-                .h(px(Theme::CONTROL_HEIGHT_LARGE))
-                .gap(px(Theme::ICON_GAP_ROW))
-                .pl(px(Theme::CONTROL_PADDING_LARGE))
-                .pr(px(Theme::EXPORT_DESTINATION_INSET))
+                .h(px(Theme::control_height_large()))
+                .gap(px(Theme::icon_gap_row()))
+                .pl(px(Theme::control_padding_large()))
+                .pr(px(Theme::export_destination_inset()))
                 .rounded_full()
                 .bg(theme.sunk)
                 .child(
@@ -124,7 +126,7 @@ impl RootView {
                         .flex_1()
                         .min_w_0()
                         .text_ellipsis()
-                        .text_size(px(Theme::FONT_SECONDARY))
+                        .text_size(px(Theme::font_secondary()))
                         .text_color(theme.muted),
                 )
                 .child(
@@ -163,8 +165,8 @@ impl RootView {
         content = content.child(
             row()
                 .justify_between()
-                .px(px(Theme::GAP_SMALL))
-                .text_size(px(Theme::FONT_SECONDARY))
+                .px(px(Theme::gap_small()))
+                .text_size(px(Theme::font_secondary()))
                 .text_color(theme.muted)
                 .child("Estimated size")
                 .child(mono(value("export.estimate"))),
@@ -227,7 +229,7 @@ impl RootView {
         };
         let caption = |text: String| {
             div()
-                .text_size(px(Theme::FONT_SECONDARY))
+                .text_size(px(Theme::font_secondary()))
                 .font_weight(FontWeight::MEDIUM)
                 .whitespace_nowrap()
                 .text_ellipsis()
@@ -235,47 +237,50 @@ impl RootView {
         };
         let pill = row()
             .id("export-pill")
-            .w(px(Theme::EXPORT_PILL_WIDTH))
+            .w(px(Theme::export_pill_width()))
             .min_w_0()
             .flex_shrink_1()
-            .h(px(Theme::CONTROL_HEIGHT_LARGE))
-            .gap(px(Theme::EXPORT_PILL_GAP))
-            .pl(px(Theme::EXPORT_PILL_INSET_LEFT))
-            .pr(px(Theme::EXPORT_PILL_INSET_RIGHT))
+            .h(px(Theme::control_height_large()))
+            .gap(px(Theme::export_pill_gap()))
+            .pl(px(Theme::export_pill_inset_left()))
+            .pr(px(Theme::export_pill_inset_right()))
             .rounded_full()
             .text_color(theme.text);
         let pill = match state.as_str() {
             "exporting" => pill
-                .child(super::recorder::spinner(Theme::EXPORT_SPINNER_SIZE, theme))
+                .child(super::recorder::spinner(
+                    Theme::export_spinner_size(),
+                    theme,
+                ))
                 .child(
                     column()
                         .flex_1()
                         .min_w_0()
-                        .gap(px(Theme::EXPORT_TRACK_GAP))
+                        .gap(px(Theme::export_track_gap()))
                         .child(
                             row()
                                 .items_baseline()
-                                .line_height(relative(Theme::MESSAGE_LEADING))
-                                .gap(px(Theme::EXPORT_TITLE_GAP))
+                                .line_height(relative(Theme::message_leading()))
+                                .gap(px(Theme::export_title_gap()))
                                 .child(caption(format!("Exporting {name}")).min_w_0())
                                 .child(
                                     mono(e.get_export_detail())
                                         .flex_none()
-                                        .text_size(px(Theme::FONT_SMALL))
+                                        .text_size(px(Theme::font_small()))
                                         .text_color(theme.muted),
                                 ),
                         )
                         .child(
                             div()
-                                .h(px(Theme::EXPORT_TRACK_HEIGHT))
-                                .rounded(px(Theme::EXPORT_TRACK_RADIUS))
+                                .h(px(Theme::export_track_height()))
+                                .rounded(px(Theme::export_track_radius()))
                                 .overflow_hidden()
                                 .bg(theme.sunk2)
                                 .child(
                                     div()
                                         .h_full()
                                         .w(relative(e.get_export_progress().clamp(0., 1.)))
-                                        .rounded(px(Theme::EXPORT_TRACK_RADIUS))
+                                        .rounded(px(Theme::export_track_radius()))
                                         .bg(theme.accent),
                                 ),
                         ),
@@ -318,17 +323,20 @@ impl RootView {
                     }])
                 })
                 .child(
-                    div().flex_none().size(px(Theme::EXPORT_CHECK_SIZE)).child(
-                        div()
-                            .h_full()
-                            .w(px(Theme::EXPORT_CHECK_SIZE * tick))
-                            .overflow_hidden()
-                            .child(icon_sized(
-                                "Check-regular",
-                                Theme::EXPORT_CHECK_SIZE,
-                                theme.accent,
-                            )),
-                    ),
+                    div()
+                        .flex_none()
+                        .size(px(Theme::export_check_size()))
+                        .child(
+                            div()
+                                .h_full()
+                                .w(px(Theme::export_check_size() * tick))
+                                .overflow_hidden()
+                                .child(icon_sized(
+                                    "Check-regular",
+                                    Theme::export_check_size(),
+                                    theme.accent,
+                                )),
+                        ),
                 )
                 .child(
                     caption(format!("Exported {name}"))
@@ -345,11 +353,11 @@ impl RootView {
                 .child(dismiss)
             }
             "failed" => pill
-                .shadow(vec![hairline(theme.danger, Theme::BORDER_WIDTH)])
+                .shadow(vec![hairline(theme.danger, Theme::border_width())])
                 .child(
                     div()
                         .flex_none()
-                        .size(px(Theme::EXPORT_DOT_SIZE))
+                        .size(px(Theme::export_dot_size()))
                         .rounded_full()
                         .bg(theme.danger),
                 )
@@ -358,7 +366,7 @@ impl RootView {
                         .flex_1()
                         .min_w_0()
                         .gap_0()
-                        .line_height(relative(Theme::MESSAGE_LEADING))
+                        .line_height(relative(Theme::message_leading()))
                         .child(caption("Export failed".into()).text_color(theme.danger))
                         .child({
                             // The reason is often longer than the pill; the
@@ -366,7 +374,7 @@ impl RootView {
                             let detail = e.get_export_detail();
                             div()
                                 .id("export-error")
-                                .text_size(px(Theme::FONT_SMALL))
+                                .text_size(px(Theme::font_small()))
                                 .text_color(theme.muted)
                                 .whitespace_nowrap()
                                 .text_ellipsis()

@@ -33,16 +33,20 @@ pub fn switch(
     // is a lift of the thumb's white, which shows against it in both
     // appearances.
     let hover_key = motion::tween_key(&id, "hover");
-    let wash = motion::blend(t.hover, t.thumb().opacity(Theme::SWITCH_ON_HOVER), on);
+    let wash = motion::blend(t.hover, t.thumb().opacity(Theme::switch_on_hover()), on);
     let mut switch = div()
         .id(id)
         .relative()
         .flex_none()
-        .w(px(Theme::TOGGLE_WIDTH))
-        .h(px(Theme::TOGGLE_HEIGHT))
+        .w(px(Theme::toggle_width()))
+        .h(px(Theme::toggle_height()))
         .rounded_full()
         .bg(motion::blend(t.sunk2, t.switch_on, on))
-        .opacity(if enabled { 1. } else { Theme::DISABLED_OPACITY })
+        .opacity(if enabled {
+            1.
+        } else {
+            Theme::disabled_opacity()
+        })
         // The hover wash and the thumb on it are on a layer over the track,
         // or the thumb's drop shadow goes under the track's fill inside a
         // frosted float — at one draw order gpui draws every shadow before
@@ -56,13 +60,13 @@ pub fn switch(
                 .child(
                     div()
                         .absolute()
-                        .top(px(Theme::TOGGLE_INSET))
+                        .top(px(Theme::toggle_inset()))
                         .left(px(motion::lerp(
-                            Theme::TOGGLE_INSET,
-                            Theme::TOGGLE_INSET + Theme::TOGGLE_TRAVEL,
+                            Theme::toggle_inset(),
+                            Theme::toggle_inset() + Theme::toggle_travel(),
                             on,
                         )))
-                        .size(px(Theme::TOGGLE_THUMB))
+                        .size(px(Theme::toggle_thumb()))
                         .rounded_full()
                         // White in both states and both appearances: on and off are
                         // the track's tone and the thumb's side, never the thumb's
@@ -85,7 +89,7 @@ pub fn switch(
             .tab_index(0)
             .focus_visible(move |s| s.shadow(vec![ring]))
             .cursor_pointer()
-            .active(|s| s.opacity(Theme::PRESSED_OPACITY))
+            .active(|s| s.opacity(Theme::pressed_opacity()))
             .on_hover(motion::hover_listener(hover_key))
             .on_click(move |_, w, cx| {
                 perf::log(format_args!("click switch {click_id:?} -> {}", !checked));

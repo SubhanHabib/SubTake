@@ -24,13 +24,13 @@ impl RootView {
             .relative()
             .flex()
             .items_center()
-            .gap(px(Theme::GAP))
-            .h(px(Theme::TITLEBAR_HEIGHT))
-            .pl(px(Theme::GAP_LARGE))
-            .pr(px(Theme::TITLEBAR_PADDING))
+            .gap(px(Theme::gap()))
+            .h(px(Theme::titlebar_height()))
+            .pl(px(Theme::gap_large()))
+            .pr(px(Theme::titlebar_padding()))
             .flex_shrink_0();
         if e.get_mac_titlebar() {
-            header = header.pl(px(Theme::TITLEBAR_TRAFFIC_LIGHTS));
+            header = header.pl(px(Theme::titlebar_traffic_lights()));
         }
         // With nothing open the titlebar is empty, as the handoff draws it:
         // Record and Open are the empty state's own two buttons, and there is
@@ -44,7 +44,7 @@ impl RootView {
             header = header.child(div().flex_1());
             let mut cluster = row()
                 .relative()
-                .gap(px(Theme::GAP))
+                .gap(px(Theme::gap()))
                 .child(measure(self.titlebar_cluster.clone()));
             cluster = cluster.child(
                 button(
@@ -133,13 +133,13 @@ impl RootView {
                 .id("title-drag")
                 .on_hover(subtake_ui::motion::hover_listener(title_hover.clone()))
                 .relative()
-                .max_w(relative(Theme::TITLE_PILL_SHARE))
-                .h(px(Theme::TITLE_PILL_HEIGHT))
-                .px(px(Theme::CONTROL_PADDING_SMALL))
+                .max_w(relative(Theme::title_pill_share()))
+                .h(px(Theme::title_pill_height()))
+                .px(px(Theme::control_padding_small()))
                 .when(status.is_some(), |el| {
-                    el.pr(px(Theme::TITLE_PILL_CHIP_PADDING))
+                    el.pr(px(Theme::title_pill_chip_padding()))
                 })
-                .gap(px(Theme::GAP_SMALL))
+                .gap(px(Theme::gap_small()))
                 .rounded_full()
                 // The handoff's dot is decoration. This one says
                 // the document has unsaved work, which is the
@@ -150,7 +150,7 @@ impl RootView {
                     // At its cap the title is cut short, and the tooltip is
                     // the only place left to read the rest of it.
                     let title = e.get_document_title();
-                    let cap = f32::from(window.viewport_size().width) * Theme::TITLE_PILL_SHARE;
+                    let cap = f32::from(window.viewport_size().width) * Theme::title_pill_share();
                     let cut = f32::from(self.title_pill.get().size.width) + 0.5 >= cap;
                     div()
                         .id("document-title")
@@ -179,11 +179,11 @@ impl RootView {
             );
             let centre = f32::from(window.viewport_size().width) / 2.;
             let cluster = f32::from(self.titlebar_cluster.get().left());
-            let room = (cluster - centre - Theme::GAP) * 2.;
+            let room = (cluster - centre - Theme::gap()) * 2.;
             let export_width = if cluster > centre {
-                Theme::EXPORT_PILL_WIDTH.min(room)
+                Theme::export_pill_width().min(room)
             } else {
-                Theme::EXPORT_PILL_WIDTH
+                Theme::export_pill_width()
             };
             // Neither pill paints its own plate: mid-morph the one growing
             // around them does, and a plate of their own, clipped square by
@@ -193,7 +193,7 @@ impl RootView {
             // title unreadable. Not drawn by the design, whose pill is
             // `sunk` on the window's own ground.
             let edge = || {
-                let mut edge = vec![subtake_ui::hairline(theme.line, Theme::HAIRLINE_WIDTH)];
+                let mut edge = vec![subtake_ui::hairline(theme.line, Theme::hairline_width())];
                 edge.extend(theme.panel_shadow());
                 edge
             };
@@ -203,7 +203,7 @@ impl RootView {
                         .bg(theme.glass)
                         .shadow(edge())
                         .into_any_element(),
-                    Theme::CONTROL_HEIGHT_LARGE,
+                    Theme::control_height_large(),
                 ),
                 None if shown <= 0. => (
                     title_pill
@@ -214,7 +214,7 @@ impl RootView {
                         ))
                         .shadow(edge())
                         .into_any_element(),
-                    Theme::TITLE_PILL_HEIGHT,
+                    Theme::title_pill_height(),
                 ),
                 export => {
                     let title_width = f32::from(self.title_pill.get().size.width);
@@ -234,8 +234,8 @@ impl RootView {
                         _ => (div().into_any_element(), 0.),
                     };
                     let height = subtake_ui::motion::lerp(
-                        Theme::TITLE_PILL_HEIGHT,
-                        Theme::CONTROL_HEIGHT_LARGE,
+                        Theme::title_pill_height(),
+                        Theme::control_height_large(),
                         shown,
                     );
                     (
@@ -285,8 +285,8 @@ impl RootView {
             .flex()
             .flex_col()
             .items_center()
-            .gap(px(Theme::GAP_SMALL))
-            .p(px(Theme::POD_PADDING))
+            .gap(px(Theme::gap_small()))
+            .p(px(Theme::pod_padding()))
             .w_full()
             .min_h_0()
             .overflow_y_scroll();
@@ -317,7 +317,7 @@ impl RootView {
             .child(
                 div()
                     .w_full()
-                    .px(px(Theme::GAP_SMALL))
+                    .px(px(Theme::gap_small()))
                     .child(divider(theme)),
             )
             .child(self.rail_panel_button(e, "Settings", "Preferences", "Gear-regular"))
@@ -325,7 +325,7 @@ impl RootView {
         let rail = pod(theme)
             .p_0()
             .flex_col()
-            .w(px(Theme::POD_WIDTH))
+            .w(px(Theme::pod_width()))
             .max_h_full()
             .child(panels);
         // Centred on the stage's own height. gpui at the pinned revision has
@@ -333,10 +333,10 @@ impl RootView {
         // it rather than by a half-height offset.
         let rail = div()
             .absolute()
-            .left(px(Theme::INSET))
+            .left(px(Theme::inset()))
             .top_0()
             .bottom_0()
-            .py(px(Theme::INSET))
+            .py(px(Theme::inset()))
             .flex()
             .items_center()
             .child(frosted(
@@ -377,7 +377,7 @@ impl RootView {
         if e.get_has_video() {
             root = root.child(self.timeline(e, window, cx));
         } else if let Some(status) = self.status_strip(e, window) {
-            root = root.child(div().px(px(Theme::GAP_LARGE)).child(status));
+            root = root.child(div().px(px(Theme::gap_large())).child(status));
         }
         root.children(self.presets_dialog(e, window, cx))
             .child(self.menu_overlay(window, cx))
@@ -405,7 +405,7 @@ impl RootView {
             status_chip(theme)
                 // It stands off the title by the pill's own side padding,
                 // so the title has the same air on both sides.
-                .ml(px(Theme::TITLE_PILL_CHIP_GAP))
+                .ml(px(Theme::title_pill_chip_gap()))
                 .id("document-status")
                 .tooltip(move |_, cx| tooltip(tip.clone(), theme, cx))
                 .child(div().min_w_0().text_ellipsis().child(text))
@@ -419,7 +419,7 @@ impl RootView {
                             .on_click(move |_, _, _| surface.action("cancel"))
                             .child(subtake_ui::icon_sized(
                                 "X-regular",
-                                Theme::ICON_SIZE_SMALL,
+                                Theme::icon_size_small(),
                                 theme.muted,
                             )),
                     )
@@ -450,7 +450,7 @@ impl RootView {
         }
         let (text, busy, progress) = self.status_kept.clone();
         let mut line = row()
-            .text_size(px(Theme::FONT_SMALL))
+            .text_size(px(Theme::font_small()))
             .text_color(theme.muted)
             .child(div().flex_1().text_ellipsis().child(text));
         if busy && live {
@@ -459,7 +459,7 @@ impl RootView {
         let mut status = div()
             .flex()
             .flex_col()
-            .gap(px(Theme::GAP_SMALL))
+            .gap(px(Theme::gap_small()))
             .child(line);
         if busy {
             status = status.child(progress_bar(progress, theme));
@@ -469,7 +469,7 @@ impl RootView {
             .flex()
             .flex_col()
             .flex_none()
-            .pb(px(Theme::GAP))
+            .pb(px(Theme::gap()))
             .child(status)
             .child(measure(self.status_bounds.clone()));
         let full = f32::from(self.status_bounds.get().size.height);

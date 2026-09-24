@@ -297,7 +297,7 @@ impl UiHandle {
     /// measures itself (`set_options_height`): cards differ in height, and
     /// a list of windows differs with what is open on the Mac.
     pub fn get_options_width(&self) -> f32 {
-        subtake_theme::Theme::RECORDER_CARD_WIDTH
+        subtake_theme::Theme::recorder_card_width()
     }
 
     pub fn get_options_height(&self) -> f32 {

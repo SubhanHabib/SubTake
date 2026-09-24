@@ -143,7 +143,9 @@ impl Catalogue {
             dropdown("Caption (select row)", &["MP4", "GIF", "PNG frame"], |d| {
                 d.caption = Some("Format".into())
             }),
-            dropdown("Opens up", &["Low", "Medium", "High"], |d| d.opens_up = true),
+            dropdown("Opens up", &["Low", "Medium", "High"], |d| {
+                d.opens_up = true
+            }),
             dropdown("Disabled", &["Unavailable"], |d| d.enabled = false),
         ];
 
@@ -217,11 +219,13 @@ impl Catalogue {
                 .unwrap_or_default();
         icons.sort();
 
-        let jump = std::env::var("SUBTAKE_GALLERY_COMPONENTS").ok().and_then(|want| {
-            SECTIONS
-                .iter()
-                .position(|s| s.to_lowercase().starts_with(&want.to_lowercase()))
-        });
+        let jump = std::env::var("SUBTAKE_GALLERY_COMPONENTS")
+            .ok()
+            .and_then(|want| {
+                SECTIONS
+                    .iter()
+                    .position(|s| s.to_lowercase().starts_with(&want.to_lowercase()))
+            });
 
         Self {
             dark,
@@ -319,13 +323,13 @@ impl Catalogue {
             .flex()
             .flex_none()
             .items_center()
-            .gap(px(Theme::GAP_LARGE))
+            .gap(px(Theme::gap_large()))
             // The editor's titlebar: its height, clear of the traffic lights,
             // and the drag that moves the window, since the titlebar is
             // see-through and this is all of it there is.
-            .h(px(Theme::TITLEBAR_HEIGHT))
-            .pl(px(Theme::TITLEBAR_TRAFFIC_LIGHTS))
-            .pr(px(Theme::INSET))
+            .h(px(Theme::titlebar_height()))
+            .pl(px(Theme::titlebar_traffic_lights()))
+            .pr(px(Theme::inset()))
             .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move())
             .border_b_1()
             .border_color(theme.line)
@@ -333,7 +337,7 @@ impl Catalogue {
             .child(div().flex_1())
             .child(
                 div()
-                    .text_size(px(Theme::FONT_SECONDARY))
+                    .text_size(px(Theme::font_secondary()))
                     .text_color(theme.muted)
                     .child("Backdrop"),
             )
@@ -364,7 +368,7 @@ impl Catalogue {
             .relative()
             .w_full()
             .h(px(STAGE_HEIGHT))
-            .rounded(px(Theme::RADIUS_FRAME))
+            .rounded(px(Theme::radius_frame()))
             .overflow_hidden();
         match self.backdrop.checked_sub(1).and_then(|i| WALLPAPERS.get(i)) {
             Some(name) => stage.child(
@@ -387,9 +391,9 @@ impl Catalogue {
                         .absolute()
                         .inset_0()
                         .flex()
-                        .gap(px(Theme::INSET))
+                        .gap(px(Theme::inset()))
                         .children((0..24).map(|i| {
-                            div().w(px(Theme::GAP)).h_full().bg(if i % 2 == 0 {
+                            div().w(px(Theme::gap())).h_full().bg(if i % 2 == 0 {
                                 hsla(0., 0., 1., 0.55)
                             } else {
                                 hsla(0., 0., 0., 0.35)
@@ -428,10 +432,7 @@ impl Catalogue {
                     vec![
                         make("rest").into_any_element(),
                         make("glyph").glyph(glyph).into_any_element(),
-                        make("icon")
-                            .glyph(glyph)
-                            .icon_only()
-                            .into_any_element(),
+                        make("icon").glyph(glyph).icon_only().into_any_element(),
                         make("selected").selected(true).into_any_element(),
                         make("disabled").enabled(false).into_any_element(),
                         make("disabled-glyph")
@@ -463,8 +464,13 @@ impl Catalogue {
                         .glyph("Plus-regular")
                         .into_any_element(),
                     size(ui::button(id("primary"), "Primary", theme).primary()).into_any_element(),
-                    size(ui::icon_button(id("icon"), "Gear-regular", "Settings", theme))
-                        .into_any_element(),
+                    size(ui::icon_button(
+                        id("icon"),
+                        "Gear-regular",
+                        "Settings",
+                        theme,
+                    ))
+                    .into_any_element(),
                     size(ui::icon_button(id("ghost"), "Gear-regular", "Settings", theme).ghost())
                         .into_any_element(),
                 ],
@@ -489,7 +495,7 @@ impl Catalogue {
                         .into_any_element(),
                     ui::button("mod-glyph-size", "Big glyph", theme)
                         .glyph("Sparkle-regular")
-                        .glyph_size(Theme::ICON_SIZE_MEDIUM)
+                        .glyph_size(Theme::icon_size_medium())
                         .into_any_element(),
                 ],
             )
@@ -502,7 +508,7 @@ impl Catalogue {
                 vec![
                     div()
                         .flex()
-                        .gap(px(Theme::GAP))
+                        .gap(px(Theme::gap()))
                         .w(px(CONTROL_WIDTH))
                         .child(ui::button("stretch-a", "Cancel", theme).stretch())
                         .child(ui::button("stretch-b", "Apply", theme).primary().stretch())
@@ -541,8 +547,10 @@ impl Catalogue {
             ("Camera-regular", "Camera"),
             ("ClosedCaptioning-regular", "Captions"),
         ];
-        let pod = ui::pod(theme).flex_col().gap(px(Theme::GAP_SMALL)).children(
-            tools.iter().enumerate().map(|(i, (glyph, label))| {
+        let pod = ui::pod(theme)
+            .flex_col()
+            .gap(px(Theme::gap_small()))
+            .children(tools.iter().enumerate().map(|(i, (glyph, label))| {
                 ui::tool_button(
                     SharedString::from(format!("tool-{label}")),
                     glyph,
@@ -551,9 +559,8 @@ impl Catalogue {
                     theme,
                     Self::click(cx, move |s| s.tool = i),
                 )
-            }),
-        );
-        let row_pod = ui::pod_small(theme).gap(px(Theme::GAP_SMALL)).children(
+            }));
+        let row_pod = ui::pod_small(theme).gap(px(Theme::gap_small())).children(
             tools.iter().enumerate().map(|(i, (glyph, label))| {
                 ui::tool_button(
                     SharedString::from(format!("tool-row-{label}")),
@@ -577,7 +584,12 @@ impl Catalogue {
             )
             .into_any_element(),
         );
-        section(theme, 0, "Every variant at rest, with a glyph, icon-only, selected and disabled; every size; the modifiers.", rows)
+        section(
+            theme,
+            0,
+            "Every variant at rest, with a glyph, icon-only, selected and disabled; every size; the modifiers.",
+            rows,
+        )
     }
 
     fn pickers(&mut self, cx: &mut Context<Self>) -> Div {
@@ -659,12 +671,21 @@ impl Catalogue {
                 ],
             ),
         ];
-        rows.extend(
-            self.dropdowns
-                .iter()
-                .map(|(label, d)| specimen(theme, &format!("Dropdown, {}", label.to_lowercase()), vec![wide(d.clone())])),
-        );
-        section(theme, 1, "Segments, switches and dropdowns. Every one is live.", rows.into_iter().map(IntoElement::into_any_element).collect())
+        rows.extend(self.dropdowns.iter().map(|(label, d)| {
+            specimen(
+                theme,
+                &format!("Dropdown, {}", label.to_lowercase()),
+                vec![wide(d.clone())],
+            )
+        }));
+        section(
+            theme,
+            1,
+            "Segments, switches and dropdowns. Every one is live.",
+            rows.into_iter()
+                .map(IntoElement::into_any_element)
+                .collect(),
+        )
     }
 
     fn sliders_and_fields(&mut self, cx: &mut Context<Self>) -> Div {
@@ -673,17 +694,29 @@ impl Catalogue {
             .sliders
             .iter()
             .map(|(label, s)| {
-                specimen(theme, &format!("Slider, {}", label.to_lowercase()), vec![wide(s.clone())])
-                    .into_any_element()
+                specimen(
+                    theme,
+                    &format!("Slider, {}", label.to_lowercase()),
+                    vec![wide(s.clone())],
+                )
+                .into_any_element()
             })
             .collect();
         rows.extend(self.inputs.iter().map(|(label, i)| {
-            specimen(theme, &format!("Text input, {}", label.to_lowercase()), vec![wide(i.clone())])
-                .into_any_element()
+            specimen(
+                theme,
+                &format!("Text input, {}", label.to_lowercase()),
+                vec![wide(i.clone())],
+            )
+            .into_any_element()
         }));
         rows.extend(self.timecodes.iter().map(|(label, t)| {
-            specimen(theme, &format!("Timecode, {}", label.to_lowercase()), vec![wide(t.clone())])
-                .into_any_element()
+            specimen(
+                theme,
+                &format!("Timecode, {}", label.to_lowercase()),
+                vec![wide(t.clone())],
+            )
+            .into_any_element()
         }));
         let zoom = self.zoom;
         rows.push(
@@ -711,7 +744,12 @@ impl Catalogue {
             )
             .into_any_element(),
         );
-        section(theme, 2, "Retained controls: drag the sliders and scrub or type in the fields.", rows)
+        section(
+            theme,
+            2,
+            "Retained controls: drag the sliders and scrub or type in the fields.",
+            rows,
+        )
     }
 
     fn menus(&mut self, cx: &mut Context<Self>) -> Div {
@@ -748,36 +786,37 @@ impl Catalogue {
                 ui::menu_list("menu-scroll", SCROLL_MENU_HEIGHT)
                     .track_scroll(&self.menu_scroll)
                     .children(
-                        ["Zoom", "Text", "Arrow", "Blur", "Audio", "Caption", "Trim", "Speed", "Marker"]
-                            .iter()
-                            .enumerate()
-                            .map(|(i, label)| {
-                                ui::command_row(
-                                    SharedString::from(format!("command-{label}")),
-                                    *label,
-                                    i == 0,
-                                    theme,
-                                    |_, _, _| {},
-                                )
-                            }),
+                        [
+                            "Zoom", "Text", "Arrow", "Blur", "Audio", "Caption", "Trim", "Speed",
+                            "Marker",
+                        ]
+                        .iter()
+                        .enumerate()
+                        .map(|(i, label)| {
+                            ui::command_row(
+                                SharedString::from(format!("command-{label}")),
+                                *label,
+                                i == 0,
+                                theme,
+                                |_, _, _| {},
+                            )
+                        }),
                     ),
             )
             .tracking(&self.menu_scroll),
         );
-        let stage = self
-            .backdrop()
-            .child(
-                div()
-                    .absolute()
-                    .inset_0()
-                    .flex()
-                    .items_start()
-                    .justify_center()
-                    .gap(px(Theme::INSET))
-                    .p(px(Theme::INSET))
-                    .child(ui::frosted(Theme::RADIUS_MENU, ui::MENU_BLUR, menu))
-                    .child(ui::frosted(Theme::RADIUS_MENU, ui::MENU_BLUR, commands)),
-            );
+        let stage = self.backdrop().child(
+            div()
+                .absolute()
+                .inset_0()
+                .flex()
+                .items_start()
+                .justify_center()
+                .gap(px(Theme::inset()))
+                .p(px(Theme::inset()))
+                .child(ui::frosted(Theme::radius_menu(), ui::MENU_BLUR, menu))
+                .child(ui::frosted(Theme::radius_menu(), ui::MENU_BLUR, commands)),
+        );
         section(
             theme,
             3,
@@ -833,12 +872,12 @@ impl Catalogue {
                 )
                 .on_click(Self::click(cx, move |s| s.choice = i))
                 .child(ui::icon("Cursor-regular", theme.text))
-                .child(div().text_size(px(Theme::FONT_SMALL)).child(*label))
+                .child(div().text_size(px(Theme::font_small())).child(*label))
                 .into_any_element()
             })
             .chain([ui::choice_tile("choice-disabled", false, false, theme)
                 .child(ui::icon("Cursor-regular", theme.text))
-                .child(div().text_size(px(Theme::FONT_SMALL)).child("Disabled"))
+                .child(div().text_size(px(Theme::font_small())).child("Disabled"))
                 .into_any_element()])
             .collect();
         section(
@@ -848,17 +887,32 @@ impl Catalogue {
             vec![
                 specimen(theme, "Swatch", swatches).into_any_element(),
                 specimen(theme, "Media tile", media).into_any_element(),
-                specimen(theme, "Choice tile", vec![ui::tile_grid(4).w_full().children(choices).into_any_element()])
-                    .into_any_element(),
+                specimen(
+                    theme,
+                    "Choice tile",
+                    vec![
+                        ui::tile_grid(4)
+                            .w_full()
+                            .children(choices)
+                            .into_any_element(),
+                    ],
+                )
+                .into_any_element(),
                 specimen(
                     theme,
                     "Empty state",
-                    vec![div()
-                        .flex()
-                        .w_full()
-                        .h(px(EMPTY_HEIGHT))
-                        .child(ui::empty_state(theme, "Nothing open yet", "Record something new, or open a recording to edit it."))
-                        .into_any_element()],
+                    vec![
+                        div()
+                            .flex()
+                            .w_full()
+                            .h(px(EMPTY_HEIGHT))
+                            .child(ui::empty_state(
+                                theme,
+                                "Nothing open yet",
+                                "Record something new, or open a recording to edit it.",
+                            ))
+                            .into_any_element(),
+                    ],
                 )
                 .into_any_element(),
             ],
@@ -868,8 +922,18 @@ impl Catalogue {
     fn status(&mut self, cx: &mut Context<Self>) -> Div {
         let theme = self.theme;
         let footer = ui::composer_footer(theme)
-            .child(ui::icon_button("footer-a", "FolderOpen-regular", "File", theme).ghost().small().toggled(false))
-            .child(ui::icon_button("footer-b", "Plus-regular", "Add", theme).ghost().small().toggled(true))
+            .child(
+                ui::icon_button("footer-a", "FolderOpen-regular", "File", theme)
+                    .ghost()
+                    .small()
+                    .toggled(false),
+            )
+            .child(
+                ui::icon_button("footer-b", "Plus-regular", "Add", theme)
+                    .ghost()
+                    .small()
+                    .toggled(true),
+            )
             .child("A quiet hint");
         section(
             theme,
@@ -881,7 +945,9 @@ impl Catalogue {
                     "Status",
                     vec![
                         ui::status_dot(theme).into_any_element(),
-                        ui::status_chip(theme).child("Gallery mode").into_any_element(),
+                        ui::status_chip(theme)
+                            .child("Gallery mode")
+                            .into_any_element(),
                         ui::status_chip(theme)
                             .child(ui::status_dot(theme))
                             .child("Transcribing · 42%")
@@ -903,18 +969,28 @@ impl Catalogue {
                     "Progress",
                     [0., 0.35, 1.]
                         .iter()
-                        .map(|f| ui::progress_bar(*f, theme).w(px(PROGRESS_WIDTH)).into_any_element())
+                        .map(|f| {
+                            ui::progress_bar(*f, theme)
+                                .w(px(PROGRESS_WIDTH))
+                                .into_any_element()
+                        })
                         .collect(),
                 )
                 .into_any_element(),
-                specimen(theme, "Composer footer", vec![footer.into_any_element()]).into_any_element(),
+                specimen(theme, "Composer footer", vec![footer.into_any_element()])
+                    .into_any_element(),
                 specimen(
                     theme,
                     "Tooltip",
                     vec![
                         ui::tooltip("Split clip at playhead", theme, cx).into_any_element(),
-                        ui::tooltip_detail("Snap", "Regions snap to the playhead and each other", theme, cx)
-                            .into_any_element(),
+                        ui::tooltip_detail(
+                            "Snap",
+                            "Regions snap to the playhead and each other",
+                            theme,
+                            cx,
+                        )
+                        .into_any_element(),
                     ],
                 )
                 .into_any_element(),
@@ -944,30 +1020,46 @@ impl Catalogue {
                 specimen(
                     theme,
                     "Setting card",
-                    vec![wide(ui::setting_card(theme, "Suggest zooms", "Finds the clicks and typing in a take and zooms into them."))],
+                    vec![wide(ui::setting_card(
+                        theme,
+                        "Suggest zooms",
+                        "Finds the clicks and typing in a take and zooms into them.",
+                    ))],
                 )
                 .into_any_element(),
                 specimen(
                     theme,
                     "Group card",
-                    vec![wide(
-                        ui::group_card(theme, "Shadow")
-                            .child(ui::field_row(theme, "Enabled").child(ui::switch("group-switch", true, true, theme, |_, _, _| {}))),
-                    )],
+                    vec![wide(ui::group_card(theme, "Shadow").child(
+                        ui::field_row(theme, "Enabled").child(ui::switch(
+                            "group-switch",
+                            true,
+                            true,
+                            theme,
+                            |_, _, _| {},
+                        )),
+                    ))],
                 )
                 .into_any_element(),
-                specimen(theme, "Panel header", vec![wide(ui::panel_header(theme, "Background"))]).into_any_element(),
+                specimen(
+                    theme,
+                    "Panel header",
+                    vec![wide(ui::panel_header(theme, "Background"))],
+                )
+                .into_any_element(),
                 specimen(
                     theme,
                     "Caps label, divider",
-                    vec![div()
-                        .flex()
-                        .flex_col()
-                        .gap(px(Theme::GAP))
-                        .w(px(CONTROL_WIDTH))
-                        .child(ui::caps_label("Appearance", theme))
-                        .child(ui::divider(theme))
-                        .into_any_element()],
+                    vec![
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap(px(Theme::gap()))
+                            .w(px(CONTROL_WIDTH))
+                            .child(ui::caps_label("Appearance", theme))
+                            .child(ui::divider(theme))
+                            .into_any_element(),
+                    ],
                 )
                 .into_any_element(),
             ],
@@ -988,11 +1080,16 @@ impl Catalogue {
             let plane = plane
                 .w(px(SAMPLE_WIDTH))
                 .h(px(SAMPLE_HEIGHT))
-                .p(px(Theme::GAP_LARGE))
+                .p(px(Theme::gap_large()))
                 .flex()
                 .flex_col()
-                .gap(px(Theme::GAP_SMALL))
-                .child(div().text_size(px(Theme::FONT_BODY)).text_color(theme.text).child(name.to_owned()))
+                .gap(px(Theme::gap_small()))
+                .child(
+                    div()
+                        .text_size(px(Theme::font_body()))
+                        .text_color(theme.text)
+                        .child(name.to_owned()),
+                )
                 .child(ui::mono_small(
                     match blur {
                         Some(blur) => format!("radius {radius} · blur {blur}"),
@@ -1012,10 +1109,15 @@ impl Catalogue {
                 .flex()
                 .flex_wrap()
                 .content_start()
-                .gap(px(Theme::INSET))
-                .p(px(Theme::INSET))
+                .gap(px(Theme::inset()))
+                .p(px(Theme::inset()))
                 .children(surfaces.iter().map(|(name, s)| {
-                    sample(name, ui::panel_variant(theme, *s), s.radius(), Some(s.blur()))
+                    sample(
+                        name,
+                        ui::panel_variant(theme, *s),
+                        s.radius(),
+                        Some(s.blur()),
+                    )
                 })),
         );
         let blurs = [
@@ -1031,46 +1133,66 @@ impl Catalogue {
                 .flex()
                 .flex_wrap()
                 .content_start()
-                .gap(px(Theme::INSET))
-                .p(px(Theme::INSET))
+                .gap(px(Theme::inset()))
+                .p(px(Theme::inset()))
                 .children(blurs.iter().map(|(name, blur)| {
-                    sample(name, ui::panel_variant(theme, Surface::Panel), Surface::Panel.radius(), *blur)
+                    sample(
+                        name,
+                        ui::panel_variant(theme, Surface::Panel),
+                        Surface::Panel.radius(),
+                        *blur,
+                    )
                 }))
                 .child(ui::frosted(
                     Surface::Pod.radius(),
                     Surface::Pod.blur(),
                     ui::pod(theme)
                         .flex_col()
-                        .gap(px(Theme::GAP_SMALL))
-                        .child(ui::icon_button("frost-pod-a", "Sparkle-regular", "Scene", theme).ghost().selected(true))
-                        .child(ui::icon_button("frost-pod-b", "Cursor-regular", "Cursor", theme).ghost()),
+                        .gap(px(Theme::gap_small()))
+                        .child(
+                            ui::icon_button("frost-pod-a", "Sparkle-regular", "Scene", theme)
+                                .ghost()
+                                .selected(true),
+                        )
+                        .child(
+                            ui::icon_button("frost-pod-b", "Cursor-regular", "Cursor", theme)
+                                .ghost(),
+                        ),
                 ))
                 .child(ui::frosted(
                     Surface::Pod.radius(),
                     Surface::Pod.blur(),
                     ui::pod_small(theme)
-                        .gap(px(Theme::GAP_SMALL))
-                        .child(ui::button("frost-thin-a", "Native", theme).compact().caret())
+                        .gap(px(Theme::gap_small()))
+                        .child(
+                            ui::button("frost-thin-a", "Native", theme)
+                                .compact()
+                                .caret(),
+                        )
                         .child(ui::button("frost-thin-b", "Crop", theme).compact()),
                 )),
         );
-        let fading = ui::content_panel(theme).w(px(CONTROL_WIDTH)).p(px(Theme::GAP)).child(
-            ui::fade_edges(
-                div()
-                    .id("fade-list")
-                    .flex()
-                    .flex_col()
-                    .gap(px(Theme::GAP_SMALL))
-                    .h(px(SCROLL_MENU_HEIGHT))
-                    .overflow_y_scroll()
-                    .track_scroll(&self.fade_scroll)
-                    .children((1..=14).map(|i| {
-                        ui::field_row(theme, format!("Row {i}")).child(ui::mono_small("00:00", theme))
-                    })),
-            )
-            .tracking(&self.fade_scroll)
-            .thumb(theme.muted, Theme::GAP_SMALL),
-        );
+        let fading = ui::content_panel(theme)
+            .w(px(CONTROL_WIDTH))
+            .p(px(Theme::gap()))
+            .child(
+                ui::fade_edges(
+                    div()
+                        .id("fade-list")
+                        .flex()
+                        .flex_col()
+                        .gap(px(Theme::gap_small()))
+                        .h(px(SCROLL_MENU_HEIGHT))
+                        .overflow_y_scroll()
+                        .track_scroll(&self.fade_scroll)
+                        .children((1..=14).map(|i| {
+                            ui::field_row(theme, format!("Row {i}"))
+                                .child(ui::mono_small("00:00", theme))
+                        })),
+                )
+                .tracking(&self.fade_scroll)
+                .thumb(theme.muted, Theme::gap_small()),
+            );
         section(
             theme,
             7,
@@ -1078,7 +1200,8 @@ impl Catalogue {
             vec![
                 planes.into_any_element(),
                 strengths.into_any_element(),
-                specimen(theme, "Edge fades, thumb", vec![fading.into_any_element()]).into_any_element(),
+                specimen(theme, "Edge fades, thumb", vec![fading.into_any_element()])
+                    .into_any_element(),
             ],
         )
     }
@@ -1086,31 +1209,70 @@ impl Catalogue {
     fn type_and_icons(&mut self) -> Div {
         let theme = self.theme;
         let scale = [
-            ("Display 40", ui::title("Nothing open yet", Theme::FONT_DISPLAY)),
+            (
+                "Display 40",
+                ui::title("Nothing open yet", Theme::font_display()),
+            ),
             ("Panel 22", ui::panel_title("Background")),
             ("Heading 17", ui::heading("Shadow")),
-            ("Action 15", div().text_size(px(Theme::FONT_ACTION)).child("Start recording")),
-            ("Body 13", div().text_size(px(Theme::FONT_BODY)).child("Regions snap to the playhead.")),
-            ("Secondary 12", div().text_size(px(Theme::FONT_SECONDARY)).child("Finds the clicks in a take.")),
-            ("Small 11", div().text_size(px(Theme::FONT_SMALL)).child("Gallery mode")),
+            (
+                "Action 15",
+                div()
+                    .text_size(px(Theme::font_action()))
+                    .child("Start recording"),
+            ),
+            (
+                "Body 13",
+                div()
+                    .text_size(px(Theme::font_body()))
+                    .child("Regions snap to the playhead."),
+            ),
+            (
+                "Secondary 12",
+                div()
+                    .text_size(px(Theme::font_secondary()))
+                    .child("Finds the clicks in a take."),
+            ),
+            (
+                "Small 11",
+                div()
+                    .text_size(px(Theme::font_small()))
+                    .child("Gallery mode"),
+            ),
             ("Mono", ui::mono("00:37.50 / 02:28")),
             ("Mono small", ui::mono_small("3240 × 1820", theme)),
         ];
         let mut rows: Vec<AnyElement> = scale
             .into_iter()
             .map(|(label, specimen_text)| {
-                specimen(theme, label, vec![specimen_text.text_color(theme.text).into_any_element()])
-                    .into_any_element()
+                specimen(
+                    theme,
+                    label,
+                    vec![specimen_text.text_color(theme.text).into_any_element()],
+                )
+                .into_any_element()
             })
             .collect();
         let muted = specimen(
             theme,
             "Text colours",
             vec![
-                div().text_color(theme.text).child("text").into_any_element(),
-                div().text_color(theme.muted).child("muted").into_any_element(),
-                div().text_color(theme.accent).child("accent").into_any_element(),
-                div().text_color(theme.danger).child("danger").into_any_element(),
+                div()
+                    .text_color(theme.text)
+                    .child("text")
+                    .into_any_element(),
+                div()
+                    .text_color(theme.muted)
+                    .child("muted")
+                    .into_any_element(),
+                div()
+                    .text_color(theme.accent)
+                    .child("accent")
+                    .into_any_element(),
+                div()
+                    .text_color(theme.danger)
+                    .child("danger")
+                    .into_any_element(),
             ],
         );
         rows.push(muted.into_any_element());
@@ -1118,19 +1280,19 @@ impl Catalogue {
             div()
                 .flex()
                 .flex_wrap()
-                .gap(px(Theme::GAP))
+                .gap(px(Theme::gap()))
                 .children(self.icons.iter().map(|name| {
                     div()
                         .w(px(ICON_CELL))
                         .flex()
                         .items_center()
-                        .gap(px(Theme::GAP))
+                        .gap(px(Theme::gap()))
                         .child(ui::icon(name, theme.text))
                         .child(
                             div()
                                 .min_w_0()
                                 .text_ellipsis()
-                                .text_size(px(Theme::FONT_SMALL))
+                                .text_size(px(Theme::font_small()))
                                 .text_color(theme.muted)
                                 .child(name.clone()),
                         )
@@ -1142,7 +1304,12 @@ impl Catalogue {
 
     fn parked(&mut self, cx: &mut Context<Self>) -> Div {
         let theme = self.theme;
-        let thumb = |c: u32| div().size_full().rounded(px(Theme::RADIUS_LANE)).bg(rgb(c));
+        let thumb = |c: u32| {
+            div()
+                .size_full()
+                .rounded(px(Theme::radius_lane()))
+                .bg(rgb(c))
+        };
         let list = [
             ("Normal", false, RowState::Normal),
             ("Selected", true, RowState::Normal),
@@ -1153,25 +1320,35 @@ impl Catalogue {
             .relative()
             .w_full()
             .h(px(EMPTY_HEIGHT))
-            .rounded(px(Theme::RADIUS_FRAME))
+            .rounded(px(Theme::radius_frame()))
             .overflow_hidden()
             .child(unused::scrim(theme).absolute().inset_0())
             .child(
-                div().absolute().inset_0().flex().items_center().justify_center().child(
-                    unused::dialog(theme)
-                        .child(ui::heading("Discard changes?").text_color(theme.text))
-                        .child(
-                            div()
-                                .text_size(px(Theme::FONT_BODY))
-                                .text_color(theme.muted)
-                                .child("The take keeps its last saved edit."),
-                        )
-                        .child(
-                            unused::dialog_actions()
-                                .child(ui::button("dialog-cancel", "Cancel", theme).dialog())
-                                .child(ui::button("dialog-discard", "Discard", theme).danger().dialog()),
-                        ),
-                ),
+                div()
+                    .absolute()
+                    .inset_0()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .child(
+                        unused::dialog(theme)
+                            .child(ui::heading("Discard changes?").text_color(theme.text))
+                            .child(
+                                div()
+                                    .text_size(px(Theme::font_body()))
+                                    .text_color(theme.muted)
+                                    .child("The take keeps its last saved edit."),
+                            )
+                            .child(
+                                unused::dialog_actions()
+                                    .child(ui::button("dialog-cancel", "Cancel", theme).dialog())
+                                    .child(
+                                        ui::button("dialog-discard", "Discard", theme)
+                                            .danger()
+                                            .dialog(),
+                                    ),
+                            ),
+                    ),
             );
         section(
             theme,
@@ -1198,7 +1375,13 @@ impl Catalogue {
                     theme,
                     "Field, stepper",
                     vec![
-                        wide(unused::field("park-field", "MagnifyingGlassPlus-regular", "Search", "", theme)),
+                        wide(unused::field(
+                            "park-field",
+                            "MagnifyingGlassPlus-regular",
+                            "Search",
+                            "",
+                            theme,
+                        )),
                         unused::stepper("park-stepper", "24", theme).into_any_element(),
                     ],
                 )
@@ -1216,11 +1399,15 @@ impl Catalogue {
                     theme,
                     "Toast",
                     vec![
-                        unused::toast("Export finished", theme.accent, None, theme).into_any_element(),
+                        unused::toast("Export finished", theme.accent, None, theme)
+                            .into_any_element(),
                         unused::toast(
                             "Region deleted",
                             theme.danger,
-                            Some(("Undo".into(), Box::new(|_: &ClickEvent, _: &mut Window, _: &mut App| {}))),
+                            Some((
+                                "Undo".into(),
+                                Box::new(|_: &ClickEvent, _: &mut Window, _: &mut App| {}),
+                            )),
                             theme,
                         )
                         .into_any_element(),
@@ -1230,27 +1417,32 @@ impl Catalogue {
                 specimen(
                     theme,
                     "List row",
-                    vec![div()
-                        .flex()
-                        .flex_col()
-                        .gap(px(Theme::GAP_SMALL))
-                        .w_full()
-                        .children(list.iter().enumerate().map(|(i, (title, selected, state))| {
-                            unused::list_row(
-                                SharedString::from(format!("list-{i}")),
-                                *title,
-                                "Zoom · 2.0×",
-                                "00:12.40",
-                                thumb([0x5b8def, 0xa468e9, 0x28c840, 0xfebc2e][i]),
-                                *selected,
-                                *state,
-                                theme,
-                            )
-                        }))
-                        .into_any_element()],
+                    vec![
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap(px(Theme::gap_small()))
+                            .w_full()
+                            .children(list.iter().enumerate().map(
+                                |(i, (title, selected, state))| {
+                                    unused::list_row(
+                                        SharedString::from(format!("list-{i}")),
+                                        *title,
+                                        "Zoom · 2.0×",
+                                        "00:12.40",
+                                        thumb([0x5b8def, 0xa468e9, 0x28c840, 0xfebc2e][i]),
+                                        *selected,
+                                        *state,
+                                        theme,
+                                    )
+                                },
+                            ))
+                            .into_any_element(),
+                    ],
                 )
                 .into_any_element(),
-                specimen(theme, "Scrim, dialog", vec![dialog.into_any_element()]).into_any_element(),
+                specimen(theme, "Scrim, dialog", vec![dialog.into_any_element()])
+                    .into_any_element(),
             ],
         )
     }
@@ -1262,11 +1454,11 @@ fn section(theme: Theme, index: usize, note: &str, rows: Vec<AnyElement>) -> Div
     div()
         .flex()
         .flex_col()
-        .gap(px(Theme::GAP))
+        .gap(px(Theme::gap()))
         .child(ui::heading(SECTIONS[index]).text_color(theme.text))
         .child(
             div()
-                .text_size(px(Theme::FONT_SECONDARY))
+                .text_size(px(Theme::font_secondary()))
                 .text_color(theme.muted)
                 .child(note.to_owned()),
         )
@@ -1274,8 +1466,8 @@ fn section(theme: Theme, index: usize, note: &str, rows: Vec<AnyElement>) -> Div
             ui::content_panel(theme)
                 .flex()
                 .flex_col()
-                .gap(px(Theme::GAP_LARGE))
-                .p(px(Theme::INSET))
+                .gap(px(Theme::gap_large()))
+                .p(px(Theme::inset()))
                 .children(rows),
         )
 }
@@ -1285,12 +1477,12 @@ fn specimen(theme: Theme, label: &str, items: Vec<AnyElement>) -> Div {
     div()
         .flex()
         .items_center()
-        .gap(px(Theme::GAP_LARGE))
+        .gap(px(Theme::gap_large()))
         .child(
             div()
                 .w(px(LABEL_WIDTH))
                 .flex_none()
-                .text_size(px(Theme::FONT_SECONDARY))
+                .text_size(px(Theme::font_secondary()))
                 .text_color(theme.muted)
                 .child(label.to_owned()),
         )
@@ -1301,7 +1493,7 @@ fn specimen(theme: Theme, label: &str, items: Vec<AnyElement>) -> Div {
                 .min_w_0()
                 .flex_wrap()
                 .items_center()
-                .gap(px(Theme::GAP))
+                .gap(px(Theme::gap()))
                 .children(items),
         )
 }
@@ -1319,9 +1511,13 @@ impl Render for Catalogue {
         // the first one sits: `scroll_to_top_of_item` on the opening frame
         // landed past the heading, measured before the page had settled.
         if let Some(index) = self.jump {
-            match (self.scroll.bounds_for_item(0), self.scroll.bounds_for_item(index)) {
+            match (
+                self.scroll.bounds_for_item(0),
+                self.scroll.bounds_for_item(index),
+            ) {
                 (Some(first), Some(target)) if self.settled >= JUMP_SETTLE_FRAMES => {
-                    self.scroll.set_offset(point(px(0.), first.top() - target.top()));
+                    self.scroll
+                        .set_offset(point(px(0.), first.top() - target.top()));
                     self.jump = None;
                 }
                 _ => {
@@ -1350,13 +1546,13 @@ impl Render for Catalogue {
         // saturation, with `bg` tinting it, so every specimen sits on what it
         // sits on in the app.
         let saturation = if self.dark {
-            Theme::WINDOW_SATURATION_DARK
+            Theme::window_saturation_dark()
         } else {
-            Theme::WINDOW_SATURATION
+            Theme::window_saturation()
         };
         subtake_native::platform::set_gpui_window_glass(
             window,
-            Theme::WINDOW_BLUR,
+            Theme::window_blur(),
             saturation,
             theme.ground,
         );
@@ -1364,7 +1560,7 @@ impl Render for Catalogue {
             .size_full()
             .font_family(subtake_theme::FONT_SANS)
             .text_color(theme.text)
-            .text_size(px(Theme::FONT_BODY))
+            .text_size(px(Theme::font_body()))
             .child(
                 div()
                     .size_full()
@@ -1383,8 +1579,8 @@ impl Render for Catalogue {
                             // `scroll_to_item` can bring one to the top.
                             .flex()
                             .flex_col()
-                            .gap(px(Theme::INSET * 2.))
-                            .p(px(Theme::INSET))
+                            .gap(px(Theme::inset() * 2.))
+                            .p(px(Theme::inset()))
                             .children(sections),
                     ),
             )

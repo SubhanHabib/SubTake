@@ -39,7 +39,7 @@ pub fn segmented_control(
     // slot. The slots then divide the track exactly, so the pill can be
     // placed and sized as a fraction of it, and half a gap on each side of
     // neighbouring slots is the whole gap between them.
-    let half_gap = px(Theme::GAP_SMALL / 2.);
+    let half_gap = px(Theme::gap_small() / 2.);
     let pill = div()
         .absolute()
         .top_0()
@@ -59,13 +59,16 @@ pub fn segmented_control(
                     spread_radius: px(0.),
                     inset: false,
                 }])
-                .child(pill_edge(vec![hairline(theme.line, Theme::HAIRLINE_WIDTH)])),
+                .child(pill_edge(vec![hairline(
+                    theme.line,
+                    Theme::hairline_width(),
+                )])),
         );
     div()
         .flex()
         .flex_none()
-        .h(px(Theme::CONTROL_HEIGHT_LARGE))
-        .py(px(Theme::GAP_SMALL))
+        .h(px(Theme::control_height_large()))
+        .py(px(Theme::gap_small()))
         .px(half_gap)
         .rounded_full()
         .bg(theme.sunk)
@@ -106,7 +109,7 @@ pub fn segmented_control(
                                 // show as a grey pill over a white one.
                                 .active(move |s| {
                                     if active { s } else { s.bg(press) }
-                                        .opacity(Theme::PRESSED_OPACITY)
+                                        .opacity(Theme::pressed_opacity())
                                 })
                                 .tab_index(0)
                                 .focus_visible(move |s| s.shadow(vec![ring]))
@@ -122,9 +125,9 @@ pub fn segmented_control(
                                         .items_center()
                                         .justify_center()
                                         .min_w_0()
-                                        .px(px(Theme::CONTROL_PADDING))
+                                        .px(px(Theme::control_padding()))
                                         .text_color(if active { theme.text } else { idle })
-                                        .text_size(px(Theme::FONT_BODY))
+                                        .text_size(px(Theme::font_body()))
                                         .font_weight(if active {
                                             FontWeight::MEDIUM
                                         } else {

@@ -25,22 +25,22 @@ impl Render for Tooltip {
             div()
                 .flex()
                 .items_center()
-                .gap(px(Theme::GAP))
-                .max_w(px(Theme::TOOLTIP_MAX_WIDTH))
-                .min_h(px(Theme::TOOLTIP_HEIGHT))
-                .py(px(Theme::TOOLTIP_PADDING_Y))
-                .px(px(Theme::ICON_GAP_ROW))
-                .rounded(px(Theme::RADIUS_REGION))
+                .gap(px(Theme::gap()))
+                .max_w(px(Theme::tooltip_max_width()))
+                .min_h(px(Theme::tooltip_height()))
+                .py(px(Theme::tooltip_padding_y()))
+                .px(px(Theme::icon_gap_row()))
+                .rounded(px(Theme::radius_region()))
                 .bg(theme.ink)
-                .text_size(px(Theme::FONT_SECONDARY))
-                .line_height(relative(Theme::MESSAGE_LEADING))
+                .text_size(px(Theme::font_secondary()))
+                .line_height(relative(Theme::message_leading()))
                 .text_color(theme.on_ink)
                 .child(self.text.clone())
                 .when_some(self.detail.clone(), |el, detail| {
                     el.child(
                         crate::mono(detail)
                             .flex_none()
-                            .opacity(Theme::TOOLTIP_DETAIL_ALPHA),
+                            .opacity(Theme::tooltip_detail_alpha()),
                     )
                 }),
         )

@@ -33,7 +33,7 @@ pub fn key_cap(text: impl Into<SharedString>, theme: Theme) -> Div {
             inset: true,
         }])
         .font_family(FONT_MONO)
-        .text_size(px(Theme::FONT_SMALL))
+        .text_size(px(Theme::font_small()))
         .text_color(theme.muted)
         .child(text.into())
 }
