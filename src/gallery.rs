@@ -20,7 +20,7 @@
 //! `=selection` opens Selection on a zoom region, `=selection-empty` with
 //! nothing selected (clicking any region opens it too), `=selection-a1` to
 //! `-a4` on an annotation, `=stage-hover` with an annotation's outline under
-//! the pointer; `=cursor` and
+//! the pointer, `=add-empty` the Add panel with no video; `=cursor` and
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
 //! opens that recorder card (`=card-sources-busy` with its controls off);
@@ -169,6 +169,11 @@ pub fn run() -> Result<()> {
     }
     match std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() {
         Ok("empty") => editor.set_has_video(false),
+        // The Add panel with no video open, its tiles dimmed.
+        Ok("add-empty") => {
+            editor.set_has_video(false);
+            editor.set_panel("Add".into());
+        }
         Ok("presets") => editor.set_dialog("presets".into()),
         Ok("inspector-open") => editor.set_inspector_open(true),
         // The Selection panel over a zoom region, or with nothing selected.
