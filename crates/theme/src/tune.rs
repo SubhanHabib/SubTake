@@ -8,8 +8,14 @@
 //! [`record`] are collected, which is how the catalogue learns which metrics a
 //! component uses without a list kept by hand.
 //!
+//! The colour tokens are tunable too, per appearance: [`Theme::light`] and
+//! [`Theme::dark`] hand back their palette with any override laid over it
+//! (see [`tinted`]), so every window that builds its theme each frame follows.
+//! A field read is not a call, so colour reads are not recorded.
+//!
 //! Overrides are never saved. The constants in `metrics.rs` stay the source of
-//! truth; [`as_rust`] prints what changed so it can be pasted back there.
+//! truth, with `palette.rs` for the colours; [`as_rust`] prints what changed
+//! so it can be pasted back there.
 //!
 //! Not drawn by the design: this is a gallery tool.
 
@@ -19,11 +25,17 @@ use std::{
     rc::Rc,
     sync::{
         LazyLock, Mutex, MutexGuard,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
 };
 
-use super::Theme;
+use gpui::{Hsla, Rgba};
+
+use super::{
+    Appearance, Theme,
+    css::parse_css,
+    palette::{DARK, LIGHT},
+};
 
 include!(concat!(env!("OUT_DIR"), "/tuned.rs"));
 
@@ -52,11 +64,45 @@ impl Metric {
     }
 }
 
+/// One tunable colour token: a field of [`Theme`].
+#[derive(Debug)]
+pub struct Colour {
+    pub name: &'static str,
+    /// The `// ---- heading ----` it sits under in `struct Theme`.
+    pub group: &'static str,
+    /// The first sentence of its doc comment, or empty.
+    pub doc: &'static str,
+    get: fn(&Theme) -> Hsla,
+    set: fn(&mut Theme, Hsla),
+}
+
+impl Colour {
+    /// Its value in `palette.rs`.
+    pub fn default(&self, appearance: Appearance) -> Hsla {
+        (self.get)(palette(appearance))
+    }
+
+    /// Its value now: the override, or its value in `palette.rs`.
+    pub fn value(&self, appearance: Appearance) -> Hsla {
+        let pinned = tints().get(&(appearance.is_dark(), self.name)).copied();
+        pinned.unwrap_or_else(|| self.default(appearance))
+    }
+
+    pub fn overridden(&self, appearance: Appearance) -> bool {
+        tints().contains_key(&(appearance.is_dark(), self.name))
+    }
+}
+
 /// The set a [`record`] call collects into.
 pub type Reads = Rc<RefCell<BTreeSet<&'static str>>>;
 
 static ENABLED: AtomicBool = AtomicBool::new(false);
 static OVERRIDES: LazyLock<Mutex<HashMap<&'static str, f32>>> = LazyLock::new(Default::default);
+/// Colour overrides, keyed by whether they tint the dark palette.
+static TINTS: LazyLock<Mutex<HashMap<(bool, &'static str), Hsla>>> =
+    LazyLock::new(Default::default);
+/// Bumped by every change, so a view holding a built theme knows to rebuild.
+static GENERATION: AtomicU64 = AtomicU64::new(0);
 
 thread_local! {
     /// The innermost [`record`] or [`unrecorded`] call; `None` for the latter.
@@ -79,19 +125,91 @@ pub fn enable() {
 
 pub fn set(name: &'static str, value: f32) {
     overrides().insert(name, value);
+    bump();
 }
 
 pub fn reset(name: &str) {
     overrides().remove(name);
+    bump();
 }
 
+/// Every tunable colour, in `struct Theme` order.
+pub fn colours() -> &'static [Colour] {
+    COLOURS
+}
+
+pub fn colour(name: &str) -> Option<&'static Colour> {
+    COLOURS.iter().find(|colour| colour.name == name)
+}
+
+pub fn set_colour(appearance: Appearance, name: &'static str, value: Hsla) {
+    tints().insert((appearance.is_dark(), name), value);
+    bump();
+}
+
+pub fn reset_colour(appearance: Appearance, name: &str) {
+    tints().retain(|&(dark, key), _| dark != appearance.is_dark() || key != name);
+    bump();
+}
+
+/// Drop every override, sizes and colours alike.
 pub fn reset_all() {
     overrides().clear();
+    tints().clear();
+    bump();
 }
 
-/// How many metrics carry an override.
+/// How many metrics and colours carry an override.
 pub fn changed() -> usize {
-    overrides().len()
+    overrides().len() + tints().len()
+}
+
+/// A count that moves whenever an override does.
+pub fn generation() -> u64 {
+    GENERATION.load(Ordering::Relaxed)
+}
+
+/// A colour as CSS writes it — `hsla(…)`, `hsl(…)` or hex — or `None`.
+pub fn parse_colour(text: &str) -> Option<Hsla> {
+    parse_css(text)
+}
+
+/// `#rrggbb`, or `#rrggbbaa` when it is not opaque: how `palette.rs` writes it.
+pub fn hex(colour: Hsla) -> String {
+    let Rgba { r, g, b, a } = colour.into();
+    let byte = |v: f32| (v.clamp(0., 1.) * 255.).round() as u8;
+    let mut out = format!("#{:02x}{:02x}{:02x}", byte(r), byte(g), byte(b));
+    if byte(a) != 0xff {
+        out.push_str(&format!("{:02x}", byte(a)));
+    }
+    out
+}
+
+/// `theme` with the colour overrides for its appearance laid over it.
+pub(crate) fn tinted(mut theme: Theme) -> Theme {
+    if !ENABLED.load(Ordering::Relaxed) {
+        return theme;
+    }
+    let dark = theme.appearance.is_dark();
+    for (&(tint_dark, name), &value) in tints().iter() {
+        if tint_dark == dark
+            && let Some(colour) = colour(name)
+        {
+            (colour.set)(&mut theme, value);
+        }
+    }
+    theme
+}
+
+fn palette(appearance: Appearance) -> &'static Theme {
+    match appearance {
+        Appearance::Dark => &DARK,
+        Appearance::Light => &LIGHT,
+    }
+}
+
+fn bump() {
+    GENERATION.fetch_add(1, Ordering::Relaxed);
 }
 
 /// Run `f`, adding the name of every metric it reads to `reads`.
@@ -112,10 +230,25 @@ fn recording<R>(reads: Option<Reads>, f: impl FnOnce() -> R) -> R {
     result
 }
 
-/// The overrides as `metrics.rs` lines, in `metrics.rs` order.
+/// The overrides as `metrics.rs` lines, in `metrics.rs` order, then the
+/// colours as `palette.rs` lines under the palette each belongs to.
 pub fn as_rust() -> String {
     let overrides = overrides();
     let mut out = String::new();
+    let tints = tints();
+    for (dark, palette) in [(false, "build_light"), (true, "build_dark")] {
+        let lines: Vec<String> = COLOURS
+            .iter()
+            .filter_map(|colour| {
+                let value = tints.get(&(dark, colour.name))?;
+                Some(format!("{}: css(\"{}\"),\n", colour.name, hex(*value)))
+            })
+            .collect();
+        if !lines.is_empty() {
+            out.push_str(&format!("// palette.rs, Theme::{palette}\n"));
+            out.extend(lines);
+        }
+    }
     for metric in METRICS {
         let Some(value) = overrides.get(metric.name) else {
             continue;
@@ -141,6 +274,12 @@ pub(crate) fn read(name: &'static str, default: f32, formula: impl FnOnce() -> f
     });
     let pinned = overrides().get(name).copied();
     pinned.unwrap_or_else(formula)
+}
+
+fn tints() -> MutexGuard<'static, HashMap<(bool, &'static str), Hsla>> {
+    TINTS
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn overrides() -> MutexGuard<'static, HashMap<&'static str, f32>> {

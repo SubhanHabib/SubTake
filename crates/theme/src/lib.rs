@@ -127,12 +127,14 @@ impl Theme {
         }
     }
 
+    /// The light palette, with any colours the catalogue is tuning.
     pub fn light() -> Self {
-        *LIGHT
+        tune::tinted(*LIGHT)
     }
 
+    /// The dark palette, with any colours the catalogue is tuning.
     pub fn dark() -> Self {
-        *DARK
+        tune::tinted(*DARK)
     }
     // ---- derived ---------------------------------------------------------
 

@@ -5,6 +5,9 @@
 //! `src/tune.rs`). A metric written in terms of others keeps its formula, with
 //! each `Self::OTHER` read through `Self::other()`, so tuning a base size moves
 //! everything derived from it.
+//!
+//! Each `Hsla` field of `Theme` in `src/lib.rs` gets an entry in `COLOURS`,
+//! with a getter and a setter, so the catalogue can tint a palette by name.
 
 use std::{env, fs, path::Path};
 
@@ -17,6 +20,7 @@ struct Metric {
 
 fn main() {
     println!("cargo:rerun-if-changed=src/metrics.rs");
+    println!("cargo:rerun-if-changed=src/lib.rs");
     let source = fs::read_to_string("src/metrics.rs").expect("read src/metrics.rs");
     let metrics = parse(&source);
     let names: Vec<&str> = metrics.iter().map(|metric| metric.name.as_str()).collect();
@@ -48,8 +52,21 @@ fn main() {
     readers.push_str("}\n");
     table.push_str("];\n");
 
+    let lib = fs::read_to_string("src/lib.rs").expect("read src/lib.rs");
+    let mut colours = String::from("pub(crate) static COLOURS: &[Colour] = &[\n");
+    for colour in parse_colours(&lib) {
+        colours.push_str(&format!(
+            "    Colour {{ name: \"{name}\", group: {group:?}, doc: {doc:?}, \
+             get: |theme| theme.{name}, set: |theme, colour| theme.{name} = colour }},\n",
+            name = colour.name,
+            group = colour.group,
+            doc = colour.doc,
+        ));
+    }
+    colours.push_str("];\n");
+
     let out = Path::new(&env::var("OUT_DIR").unwrap()).join("tuned.rs");
-    fs::write(out, readers + &table).expect("write tuned.rs");
+    fs::write(out, readers + &table + &colours).expect("write tuned.rs");
 }
 
 /// The `f32` constants of the `impl Theme` block, with the doc comment and
@@ -97,6 +114,41 @@ fn parse(source: &str) -> Vec<Metric> {
         }
     }
     metrics
+}
+
+/// The `Hsla` fields of `struct Theme`, with the doc comment and section
+/// heading above each.
+fn parse_colours(source: &str) -> Vec<Metric> {
+    let mut colours = Vec::new();
+    let mut doc = Vec::<String>::new();
+    let mut group = String::new();
+    let mut inside = false;
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if !inside {
+            inside = line.starts_with("pub struct Theme {");
+            continue;
+        }
+        if line == "}" {
+            break;
+        }
+        if let Some(heading) = trimmed.strip_prefix("// ----") {
+            let heading = heading.trim_matches(|c: char| c == '-' || c.is_whitespace());
+            // `materials (alpha baked in — …)`: the name, not the aside.
+            group = heading.split(" (").next().unwrap_or(heading).to_string();
+            doc.clear();
+        } else if let Some(text) = trimmed.strip_prefix("///") {
+            doc.push(text.trim().to_string());
+        } else if let Some(name) = trimmed
+            .strip_prefix("pub ")
+            .and_then(|rest| rest.strip_suffix(": Hsla,"))
+        {
+            colours.push(finish(name.to_string(), String::new(), &mut doc, &group));
+        } else if !trimmed.starts_with("//") {
+            doc.clear();
+        }
+    }
+    colours
 }
 
 fn finish(name: String, expr: String, doc: &mut Vec<String>, group: &str) -> Metric {
