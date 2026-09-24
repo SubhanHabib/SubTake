@@ -391,6 +391,7 @@ impl App {
                 if let Some(options) = &self.launcher_options {
                     options.hide()?;
                 }
+                self.sync_mic_meter(ui);
             }
             "drag-launcher" => {
                 if let Some(launcher) = &self.launcher {

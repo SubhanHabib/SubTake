@@ -11,10 +11,12 @@ use std::{
 };
 
 mod companion;
+mod microphone;
 mod recording;
 mod windows;
 
 use companion::*;
+pub use microphone::meter_microphone;
 pub use recording::Recording;
 pub use windows::*;
 

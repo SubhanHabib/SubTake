@@ -65,6 +65,7 @@ impl App {
     }
 
     pub(super) fn sync_launcher_options(&self, ui: &EditorWindow) {
+        self.sync_mic_meter(ui);
         let (Some(launcher), Some(options)) = (&self.launcher, &self.launcher_options) else {
             return;
         };
@@ -90,6 +91,31 @@ impl App {
                 .map(|p| p.display().to_string())
                 .unwrap_or_default(),
         );
+    }
+
+    /// Meters the chosen microphone while the Audio card is open with it on,
+    /// and stops once the card closes, the microphone goes off or a
+    /// recording starts, which opens the microphone itself.
+    pub(super) fn sync_mic_meter(&self, ui: &EditorWindow) {
+        // Hiding the bar leaves its panel set, so a hidden bar counts as
+        // closed.
+        let open = self.launcher.as_ref().is_some_and(|launcher| {
+            launcher.get_panel() == "audio" && launcher.window().is_visible()
+        });
+        let device =
+            (open && ui.get_capture_mic() && !ui.get_busy() && !ui.get_recording()).then(|| {
+                self.devices["microphones"]
+                    .as_array()
+                    .and_then(|list| list.get((ui.get_microphone_index() - 1) as usize))
+                    .and_then(|microphone| microphone["id"].as_str())
+                    .unwrap_or_default()
+            });
+        platform::meter_microphone(device, mic_level);
+        if device.is_none()
+            && let Some(options) = &self.launcher_options
+        {
+            options.set_mic_level(f32::NEG_INFINITY);
+        }
     }
 
     pub(super) fn sync_launcher(&self, ui: &EditorWindow) {
@@ -268,6 +294,7 @@ impl App {
         if let Some(options) = &self.launcher_options {
             options.hide()?;
         }
+        self.sync_mic_meter(ui);
         platform::set_editor_active(true);
         if !self.editor_shown {
             ui.window()
@@ -412,6 +439,19 @@ impl App {
             platform::set_countdown_display(display)
         });
     }
+}
+
+/// The microphone meter's level, from its capture thread. A level that
+/// arrives after the meter has stopped is dropped.
+extern "C" fn mic_level(level: f32) {
+    post(move |app, ui| {
+        if let Some(options) = &app.launcher_options
+            && options.get_panel() == "audio"
+            && ui.get_capture_mic()
+        {
+            options.set_mic_level(level);
+        }
+    });
 }
 
 /// What the Source card draws for one platform source. The platform names a

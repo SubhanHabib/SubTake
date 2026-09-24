@@ -334,9 +334,9 @@ impl RootView {
                     .bg(fill),
             );
         }
-        // Not wired: the app does not meter the microphone yet, so outside
-        // the gallery the level stays at negative infinity and the peak
-        // reads as a dash rather than as a made-up number.
+        // Without microphone access, which the card never asks for, the
+        // level stays at negative infinity and the peak reads as a dash
+        // rather than as a made-up number.
         let peak = if level > floor {
             format!("−{:.0} dB", -level.min(0.))
         } else {
