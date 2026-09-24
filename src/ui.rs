@@ -101,6 +101,9 @@ enum Gesture {
         dx: f32,
         dy: f32,
     },
+    /// The timeline's scroll thumb being dragged: where the press was, and
+    /// the view's start then, in seconds.
+    Pan { origin: f32, start: f32 },
     /// A float's edge being dragged: where the press was along the drag's
     /// axis, and the size the float had then.
     Resize {

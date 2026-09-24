@@ -765,6 +765,13 @@ impl RootView {
                 let at = event.position.x - px(*grab);
                 self.seek_at(at)
             }
+            Some(Gesture::Pan { origin, start }) => {
+                let track = f32::from(self.timeline_bounds.get().size.width).max(1.);
+                let duration = e.get_duration();
+                let moved = (f32::from(event.position.x) - *origin) / track * duration;
+                let last = (duration - e.get_timeline_visible()).max(0.);
+                e.set_timeline_offset((*start + moved).clamp(0., last));
+            }
             Some(Gesture::Region { origin, delta, .. }) => {
                 *delta = f32::from(event.position.x - origin.x)
                     / f32::from(self.timeline_bounds.get().size.width).max(1.)
@@ -778,6 +785,70 @@ impl RootView {
             None => return,
         }
         cx.notify();
+    }
+
+    /// The scroll thumb under the ruler while zoomed in: where the view sits
+    /// in the whole take, and a handle to drag it along. Not drawn by the
+    /// design, which pans only by the wheel.
+    fn pan_bar(
+        &self,
+        window: &EditorWindow,
+        track_width: f32,
+        cx: &mut Context<Self>,
+    ) -> Option<AnyElement> {
+        let duration = window.get_duration();
+        let visible = window.get_timeline_visible();
+        if track_width <= 0. || visible >= duration {
+            return None;
+        }
+        let theme = self.theme;
+        let length = (track_width * visible / duration)
+            .max(Theme::scroll_thumb_min())
+            .min(track_width);
+        let along = window.get_timeline_offset() / (duration - visible);
+        let held = matches!(self.gesture, Some(Gesture::Pan { .. }));
+        let id = ElementId::from("timeline-pan");
+        let hover = subtake_ui::motion::tween_key(&id, "hover");
+        let rest = theme.muted.opacity(0.5);
+        let color = if held {
+            theme.text
+        } else {
+            subtake_ui::motion::hover_blend(&hover, rest, theme.muted)
+        };
+        Some(
+            div()
+                .id(id)
+                .absolute()
+                .top(px(Theme::bubble_zone() + Theme::ruler_height()))
+                .left(px((track_width - length) * along.clamp(0., 1.)))
+                .w(px(length))
+                .h(px(Theme::ruler_gap()))
+                .flex()
+                .items_center()
+                .cursor_pointer()
+                .child(
+                    div()
+                        .w_full()
+                        .h(px(Theme::scroll_thumb_width()))
+                        .rounded_full()
+                        .bg(color),
+                )
+                .on_hover(subtake_ui::motion::hover_listener(hover))
+                .on_mouse_down(
+                    MouseButton::Left,
+                    cx.listener(|s, event: &MouseDownEvent, _, cx| {
+                        if let Surface::Editor(e) = &s.surface {
+                            s.gesture = Some(Gesture::Pan {
+                                origin: f32::from(event.position.x),
+                                start: e.get_timeline_offset(),
+                            });
+                        }
+                        cx.stop_propagation();
+                        cx.notify();
+                    }),
+                )
+                .into_any_element(),
+        )
     }
 
     /// Hands the two dragged edges to the app, which keeps them for the
@@ -812,6 +883,7 @@ impl RootView {
                         }
                     }
                     Gesture::Resize { .. } => self.layout_changed(),
+                    Gesture::Pan { .. } => {}
                     Gesture::Canvas { origin, resize, .. } => {
                         let b = self.preview_bounds.get();
                         e.invoke_canvas_edit(
@@ -1485,6 +1557,7 @@ impl RootView {
             }
             tracks = tracks.child(block);
         }
+        let pan_bar = self.pan_bar(window, track_width, cx);
         let mut timeline = column()
             .id("timeline-content")
             .relative()
@@ -1495,6 +1568,7 @@ impl RootView {
             .child(measure(self.timeline_bounds.clone()))
             .child(ruler)
             .child(tracks)
+            .children(pan_bar)
             .on_mouse_down(
                 MouseButton::Left,
                 cx.listener(|s, event: &MouseDownEvent, w, cx| {
