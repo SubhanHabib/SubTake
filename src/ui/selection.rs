@@ -210,8 +210,8 @@ impl RootView {
                 .text_color(theme.danger)
                 .bg(subtake_ui::motion::hover_blend(
                     &delete_hover,
-                    theme.hover.opacity(0.),
-                    theme.hover,
+                    theme.sunk2.opacity(0.),
+                    theme.sunk2,
                 ))
                 .on_hover(subtake_ui::motion::hover_listener(delete_hover))
                 .active(|s| s.bg(theme.press).opacity(Theme::PRESSED_OPACITY))

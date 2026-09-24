@@ -303,8 +303,8 @@ fn preset_row(look: Look, selected: bool, theme: Theme) -> Stateful<Div> {
         // The hover wash fades, as every other row's does.
         row = row.bg(subtake_ui::motion::hover_blend(
             &hover_key,
-            theme.hover.opacity(0.),
-            theme.hover,
+            theme.sunk2.opacity(0.),
+            theme.sunk2,
         ));
     }
     row

@@ -452,8 +452,8 @@ impl RootView {
             } else {
                 choice = choice.bg(subtake_ui::motion::hover_blend(
                     &hover_key,
-                    theme.hover.opacity(0.),
-                    theme.hover,
+                    theme.sunk2.opacity(0.),
+                    theme.sunk2,
                 ));
             }
             choices = choices.child(choice);
@@ -566,8 +566,8 @@ impl RootView {
             }))
             .bg(subtake_ui::motion::hover_blend(
                 &hover_key,
-                theme.hover.opacity(0.),
-                theme.hover,
+                theme.sunk2.opacity(0.),
+                theme.sunk2,
             ))
             .when(enabled, |s| {
                 subtake_ui::pressable(s, theme, Some(theme.press), hover_key)
@@ -674,8 +674,8 @@ fn window_row(
             if enabled {
                 s.bg(subtake_ui::motion::hover_blend(
                     &hover_key,
-                    theme.hover.opacity(0.),
-                    theme.hover,
+                    theme.sunk2.opacity(0.),
+                    theme.sunk2,
                 ))
                 .map(|s| subtake_ui::pressable(s, theme, Some(theme.press), hover_key))
             } else {

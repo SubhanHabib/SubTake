@@ -178,7 +178,7 @@ on `sunk` with a hairline and the lane's glyph at 17 in `text`
 on again: the audio lane is muted and every other lane hidden. Off, the header
 loses its plate and its glyph goes `muted` with a 1.5 slash 22 long at −45°
 through it, and the lane's regions show at 40%, still selectable and editable.
-Under the pointer a header goes to `sunk2`, or `hover` when off; pressed, to
+Under the pointer a header goes to `sunk2`, off or on; pressed, to
 `press`; focused from the keyboard, it takes the 3 `accent_soft` ring. Its
 tooltip names the lane and its state, `Captions · hidden`.
 `SUBTAKE_GALLERY_SCREEN=lanes-off` has the captions hidden and the sound

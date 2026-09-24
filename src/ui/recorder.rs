@@ -555,7 +555,7 @@ impl RootView {
         let (rest, hover) = if plate {
             (theme.sunk, theme.sunk2)
         } else {
-            (theme.hover.opacity(0.), theme.hover)
+            (theme.sunk2.opacity(0.), theme.sunk2)
         };
         div()
             .id(id)

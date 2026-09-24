@@ -67,7 +67,8 @@ pub struct Theme {
     pub switch_on: Hsla,
 
     // ---- state washes ----
-    /// Hover overlay on transparent controls.
+    /// Hover overlay laid over a switch's track. Every other control and
+    /// row lifts to `sunk2` under the pointer instead.
     pub hover: Hsla,
     /// Pressed overlay.
     pub press: Hsla,

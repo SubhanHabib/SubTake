@@ -216,8 +216,8 @@ fn position_tile(index: usize, label: &str, chosen: bool, theme: Theme) -> State
         .rounded(radius)
         .bg(subtake_ui::motion::hover_blend(
             &hover_key,
-            theme.hover.opacity(0.),
-            theme.hover,
+            theme.sunk2.opacity(0.),
+            theme.sunk2,
         ));
     let ring = div()
         .absolute()

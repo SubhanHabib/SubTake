@@ -96,8 +96,8 @@ impl RootView {
             .rounded(px(Theme::RADIUS_ROW))
             .bg(subtake_ui::motion::hover_blend(
                 &hover_key,
-                theme.hover.opacity(0.),
-                theme.hover,
+                theme.sunk2.opacity(0.),
+                theme.sunk2,
             ));
         let mut card = div()
             .id(id)

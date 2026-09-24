@@ -128,7 +128,7 @@ div().flex().items_center().gap(px(9.))
 
 States — hover: fill `--hover` · active: fill `--press`, `scale .94` · focus:
 ring 3 px `--accent-soft` · disabled: `opacity .4` · active tool: fill
-`--accent`, text `--on-accent`.
+`--accent`, text `--on-accent`. *(Not drawn by the design: the app lifts to `--sunk2`, see §5.)*
 
 ```rust
 div().flex().items_center().justify_center()
@@ -340,7 +340,7 @@ div().absolute().h(px(28.)).px(px(10.))
 
 States — hover: fill `--hover` · selected: fill `--card`, inset 1.5 px
 `--accent`, `--shadow`, timecode `--accent` · cut: `opacity .5`, title
-strikethrough · dragging: `--shadow`, `scale 1.02`, source at `opacity .3`.
+strikethrough · dragging: `--shadow`, `scale 1.02`, source at `opacity .3`. *(Not drawn by the design: the app lifts to `--sunk2`, see §5.)*
 
 ```rust
 div().flex().items_center().gap(px(14.))
@@ -463,6 +463,10 @@ so nothing shifts under the pointer.
 
 - **Hover** — tinted variants go one step up the fill scale (`--sunk` →
   `--sunk2`); transparent ones gain `--hover`. Accent goes to `--accent-hover`.
+  *(Not drawn by the design: transparent controls and rows lift to `--sunk2`
+  too. `--hover` darkens where `--sunk2` brightens, so a bare icon beside a
+  plate read as a second kind of hover. The switch keeps its wash over the
+  track, which is already `--sunk2`; menu items keep §11's `--sunk`.)*
 - **Active** — `--press` fill plus `scale(.97)`, or `.94` on round icon
   buttons. Any glow drops to none while held.
 - **Focus** — `0 0 0 3px var(--accent-soft)`, with a 1.5px accent inset on
@@ -479,7 +483,7 @@ Non-button states:
 - **Menu item** — hover `--hover` at radius 12; active `--press`, no scale;
   checked keeps the fill and adds an accent tick; disabled `opacity: .4` with no
   hover at all. *(§11 supersedes: hover and checked are both `--sunk`.)*
-- **List row** — hover `--hover` at radius 22; selected swaps to `--card` +
+- **List row** — hover `--hover` (`--sunk2` in the app, see Hover above) at radius 22; selected swaps to `--card` +
   accent inset + `--shadow`, and the timecode turns accent.
 - **Timeline region** — hover lifts the fill from `22` to `2e`; selected `3d`
   fill with a solid border and both trim handles shown; dragging adds

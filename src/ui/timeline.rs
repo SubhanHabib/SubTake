@@ -493,7 +493,7 @@ fn lane_header(
     let id: ElementId = SharedString::from(format!("lane-{label}")).into();
     let hover_key = subtake_ui::motion::tween_key(&id, "hover");
     let (rest, hovered) = if off {
-        (gpui::transparent_black(), theme.hover)
+        (theme.sunk2.opacity(0.), theme.sunk2)
     } else {
         (theme.sunk, theme.sunk2)
     };

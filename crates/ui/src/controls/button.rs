@@ -400,19 +400,23 @@ impl RenderOnce for Button {
             // on glass reads as text rather than as the thing that deletes.
             // Kept, and noted here so it is a decision rather than a drift.
             ButtonVariant::Danger => (theme.danger.opacity(0.10), theme.danger.opacity(0.22)),
-            ButtonVariant::Ghost => (theme.hover.opacity(0.0), theme.hover),
+            // Not drawn by the design, which washes a bare control with
+            // `--hover`, a darkening, while a plate lifts to `--sunk2`. Side
+            // by side in one toolbar the two read as two hovers, so a bare
+            // control lifts to the same `sunk2` a plate does.
+            ButtonVariant::Ghost => (theme.sunk2.opacity(0.), theme.sunk2),
             ButtonVariant::Raised => (theme.raise, theme.raise_hover()),
             _ => (theme.sunk, theme.sunk2),
         };
-        // A toggled control fades between two plates: none, washing to
-        // `hover`, while off; `sunk`, stepping to `sunk2`, while on.
+        // A toggled control fades between two plates: none, lifting to
+        // `sunk2`, while off; `sunk`, stepping to `sunk2`, while on.
         let on = self
             .toggled
             .map(|on| motion::state_fade(&motion::tween_key(&self.id, "toggled"), on));
         let (fill_rest, fill_hover) = match on {
             Some(on) => (
-                motion::blend(theme.hover.opacity(0.), theme.sunk, on),
-                motion::blend(theme.hover, theme.sunk2, on),
+                motion::blend(theme.sunk2.opacity(0.), theme.sunk, on),
+                theme.sunk2,
             ),
             None => (fill_rest, fill_hover),
         };
