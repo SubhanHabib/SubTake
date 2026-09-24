@@ -63,6 +63,7 @@ mod actions;
 mod documents;
 mod fields;
 mod playback;
+mod presets;
 mod recorder;
 mod run;
 mod smoke;

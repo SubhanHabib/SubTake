@@ -97,6 +97,9 @@ struct Properties {
     wallpapers: ModelRc<Wallpaper>,
     recents: ModelRc<Recent>,
     saved_presets: ModelRc<String>,
+    saved_preset_parts: ModelRc<String>,
+    default_preset: String,
+    selected_preset: String,
     dialog: String,
     inspector_open: bool,
     aspect_index: i32,
@@ -190,6 +193,9 @@ impl Default for Properties {
             wallpapers: ModelRc::default(),
             recents: ModelRc::default(),
             saved_presets: ModelRc::default(),
+            saved_preset_parts: ModelRc::default(),
+            default_preset: String::new(),
+            selected_preset: String::new(),
             dialog: String::new(),
             inspector_open: false,
             aspect_index: 0,
@@ -605,6 +611,47 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.saved_presets != value {
             props.saved_presets = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// Each saved preset's parts, as `presets::GROUPS` keys joined by
+    /// commas, in `saved_presets` order.
+    pub fn get_saved_preset_parts(&self) -> ModelRc<String> {
+        self.0.props.borrow().saved_preset_parts.clone()
+    }
+
+    pub fn set_saved_preset_parts(&self, value: ModelRc<String>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.saved_preset_parts != value {
+            props.saved_preset_parts = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The saved preset new videos start from, by name, or empty for none.
+    pub fn get_default_preset(&self) -> String {
+        self.0.props.borrow().default_preset.clone()
+    }
+
+    pub fn set_default_preset(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.default_preset != value {
+            props.default_preset = value;
+            self.window().invalidate();
+        }
+    }
+
+    /// The saved preset the Presets dialog is showing, by name. The app
+    /// sets it to a preset it has just made, copied or renamed.
+    pub fn get_selected_preset(&self) -> String {
+        self.0.props.borrow().selected_preset.clone()
+    }
+
+    pub fn set_selected_preset(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.selected_preset != value {
+            props.selected_preset = value;
             self.window().invalidate();
         }
     }

@@ -12,6 +12,9 @@ impl App {
                 ),
             "Wait for the current operation or cancel it first"
         );
+        if self.preset_action(ui, action)? {
+            return Ok(());
+        }
         if let Some(index) = action.strip_prefix("apply-preset-") {
             let path = self
                 .presets
@@ -36,7 +39,12 @@ impl App {
                 .presets
                 .get(index.parse::<usize>()?)
                 .context("Preset no longer exists")?;
+            let name = subtake_native::presets::name(path);
             let retained = subtake_native::presets::remove(path)?;
+            if self.preferences.default_preset.as_ref() == Some(&name) {
+                self.preferences.default_preset = None;
+                self.preferences.save()?;
+            }
             self.presets = subtake_native::presets::list();
             self.refresh(ui);
             ui.set_status(format!(

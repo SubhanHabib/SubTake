@@ -927,6 +927,13 @@ impl App {
                 subtake_native::caption_editing::edit_word(p, &id, index, field, value)
             });
         }
+        // `preset.{index}.name`, the Presets dialog renaming a saved one.
+        if let Some(index) = key
+            .strip_prefix("preset.")
+            .and_then(|k| k.strip_suffix(".name"))
+        {
+            return self.rename_preset(ui, index, value);
+        }
         if let Some(action) = key.strip_prefix("shortcut.") {
             subtake_native::shortcuts::validate(action, value, &self.preferences.editor_shortcuts)?;
             self.preferences

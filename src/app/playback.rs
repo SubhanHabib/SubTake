@@ -445,6 +445,17 @@ impl App {
                 })
                 .collect::<Vec<_>>(),
         )));
+        ui.set_saved_preset_parts(ModelRc::new(VecModel::from(
+            self.presets
+                .iter()
+                .map(|p| {
+                    subtake_native::presets::load(p)
+                        .map(|data| subtake_native::presets::groups(&data).join(","))
+                        .unwrap_or_default()
+                })
+                .collect::<Vec<_>>(),
+        )));
+        ui.set_default_preset(self.preferences.default_preset.clone().unwrap_or_default());
         if self.history.is_none() {
             ui.set_recents(ModelRc::new(VecModel::from(self.recents())));
             ui.set_dirty(false);
