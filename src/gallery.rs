@@ -13,7 +13,9 @@
 //!
 //! ⌘⇧E swaps the editor for the empty state ("Nothing open yet") and back;
 //! the titlebar's Presets button, or ⌘⇧P, opens the Presets dialog.
-//! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either; `=export`,
+//! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either,
+//! `=presets-saved` on the dialog's Saved tab; `=settings` opens the
+//! Settings dialog, `=settings-Shortcuts` on one section; `=export`,
 //! `=export-gif` or `=export-frame` opens the Export panel, whose button runs
 //! a fake eight-second export in the titlebar pill; `=export-progress`,
 //! `=export-done` or `=export-failed` holds the pill in one state;
@@ -175,6 +177,18 @@ pub fn run() -> Result<()> {
             editor.set_panel("Add".into());
         }
         Ok("presets") => editor.set_dialog("presets".into()),
+        // The Presets dialog on its Saved tab, the second preset open.
+        Ok("presets-saved") => {
+            editor.set_selected_preset("Launch keynote".into());
+            editor.set_dialog("presets".into());
+        }
+        // The Settings dialog, `=settings-Shortcuts` on that section.
+        Ok(screen) if screen.starts_with("settings") => {
+            if let Some(section) = screen.strip_prefix("settings-") {
+                editor.set_settings_section(section.into());
+            }
+            editor.set_dialog("settings".into());
+        }
         Ok("inspector-open") => editor.set_inspector_open(true),
         // The Selection panel over a zoom region, or with nothing selected.
         Ok("selection") => {
@@ -382,8 +396,12 @@ pub fn run() -> Result<()> {
             g.apply_appearance();
         }
         if key == "prefs.language" {
-            g.editor.set_language(value);
+            g.editor.set_language(value.clone());
         }
+        if key == "prefs.auto_apply_zooms" {
+            g.editor.set_auto_apply_zooms(value == "true");
+        }
+        g.rename_preset(&key, &value);
         g.push_fields();
     });
     let g = gallery.clone();
@@ -510,7 +528,11 @@ pub fn run() -> Result<()> {
 
 impl Gallery {
     fn action(&mut self, action: &str) {
+        if self.preset_action(action) {
+            return;
+        }
         match action {
+            "open-settings" => self.editor.set_dialog("settings".into()),
             "toggle-appearance" => {
                 self.appearance = if self.appearance == "dark" {
                     "light"
@@ -810,6 +832,131 @@ impl Gallery {
         let panel = self.editor.get_panel();
         let fields = fixture_fields(self, &panel);
         self.editor.set_fields(ModelRc::new(VecModel::from(fields)));
+        self.editor
+            .set_settings_fields(ModelRc::new(VecModel::from(settings_fields(self))));
+    }
+
+    /// The saved presets' names and parts, as the dialog reads them.
+    fn saved_presets(&self) -> (Vec<String>, Vec<String>) {
+        (
+            self.editor
+                .get_saved_presets()
+                .iter()
+                .map(Into::into)
+                .collect(),
+            self.editor
+                .get_saved_preset_parts()
+                .iter()
+                .map(Into::into)
+                .collect(),
+        )
+    }
+
+    fn set_saved_presets(&self, names: Vec<String>, parts: Vec<String>) {
+        self.editor
+            .set_saved_presets(ModelRc::new(VecModel::from(names)));
+        self.editor
+            .set_saved_preset_parts(ModelRc::new(VecModel::from(parts)));
+    }
+
+    /// The saved-preset commands, acted out on the fixture list: nothing
+    /// is written, and import and export only say what they would do.
+    fn preset_action(&mut self, action: &str) -> bool {
+        let (mut names, mut parts) = self.saved_presets();
+        let index = |prefix: &str| {
+            action
+                .strip_prefix(prefix)
+                .and_then(|i| i.parse::<usize>().ok())
+                .filter(|i| *i < names.len())
+        };
+        let unused = |names: &[String], base: &str| {
+            std::iter::once(base.to_owned())
+                .chain((2..).map(|n| format!("{base} {n}")))
+                .find(|n| !names.contains(n))
+                .unwrap_or_default()
+        };
+        if action == "new-preset" {
+            let name = unused(&names, "Preset");
+            names.push(name.clone());
+            parts.push("look,motion,cursor,camera,captions,export".into());
+            self.set_saved_presets(names, parts);
+            self.editor.set_selected_preset(name);
+        } else if let Some(i) = index("duplicate-preset-") {
+            let name = unused(&names, &format!("{} copy", names[i]));
+            let p = parts[i].clone();
+            names.push(name.clone());
+            parts.push(p);
+            self.set_saved_presets(names, parts);
+            self.editor.set_selected_preset(name);
+        } else if let Some(i) = index("remove-preset-") {
+            if self.editor.get_default_preset() == names[i] {
+                self.editor.set_default_preset(String::new());
+            }
+            names.remove(i);
+            parts.remove(i);
+            self.set_saved_presets(names, parts);
+        } else if let Some(i) = index("default-preset-") {
+            let chosen = self.editor.get_default_preset() == names[i];
+            self.editor.set_default_preset(if chosen {
+                String::new()
+            } else {
+                names[i].clone()
+            });
+        } else if let Some(rest) = action.strip_prefix("preset-part-") {
+            let Some((i, part)) = rest.split_once('-') else {
+                return true;
+            };
+            let Some(i) = i.parse::<usize>().ok().filter(|i| *i < names.len()) else {
+                return true;
+            };
+            let mut on: Vec<&str> = parts[i].split(',').filter(|p| !p.is_empty()).collect();
+            if on.contains(&part) {
+                if on.len() > 1 {
+                    on.retain(|p| *p != part);
+                }
+            } else {
+                on.push(part);
+            }
+            let order = |p: &&str| {
+                subtake_native::presets::GROUPS
+                    .iter()
+                    .position(|(g, _, _)| g == p)
+            };
+            on.sort_by_key(order);
+            parts[i] = on.join(",");
+            self.set_saved_presets(names, parts);
+        } else if action == "import-preset"
+            || action.starts_with("share-preset-")
+            || action.starts_with("update-preset-")
+            || action.starts_with("apply-preset-")
+        {
+            self.editor.set_status(format!("Gallery: {action}"));
+        } else {
+            return false;
+        }
+        true
+    }
+
+    /// `preset.{index}.name`, renaming a fixture preset.
+    fn rename_preset(&mut self, key: &str, to: &str) {
+        let Some(i) = key
+            .strip_prefix("preset.")
+            .and_then(|k| k.strip_suffix(".name"))
+            .and_then(|i| i.parse::<usize>().ok())
+        else {
+            return;
+        };
+        let (mut names, parts) = self.saved_presets();
+        let to = to.trim();
+        if i >= names.len() || to.is_empty() || names.iter().any(|n| n == to) {
+            return;
+        }
+        if self.editor.get_default_preset() == names[i] {
+            self.editor.set_default_preset(to.into());
+        }
+        names[i] = to.into();
+        self.set_saved_presets(names, parts);
+        self.editor.set_selected_preset(to.into());
     }
 
     fn position_options(&self) {

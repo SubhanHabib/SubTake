@@ -112,7 +112,17 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
         })
         .collect::<Vec<_>>(),
     )));
-    ui.set_saved_presets(ModelRc::new(VecModel::from(vec!["Client demo".to_owned()])));
+    ui.set_saved_presets(ModelRc::new(VecModel::from(vec![
+        "Client demo".to_owned(),
+        "Launch keynote".to_owned(),
+        "Tutorial cursor".to_owned(),
+    ])));
+    ui.set_saved_preset_parts(ModelRc::new(VecModel::from(vec![
+        "look,motion,cursor,camera,captions,export".to_owned(),
+        "look,motion".to_owned(),
+        "cursor".to_owned(),
+    ])));
+    ui.set_default_preset("Client demo".into());
     ui.set_source_names(ModelRc::new(VecModel::from(source_names())));
     ui.set_camera_names(ModelRc::new(VecModel::from(camera_names())));
     ui.set_microphone_names(ModelRc::new(VecModel::from(microphone_names())));
@@ -419,6 +429,62 @@ fn annotation_fields(r: &Region) -> Vec<Field> {
         })
         .collect();
     crate::inspector::present(fields, "Selection", "en")
+}
+
+/// The Settings dialog's rows, as the app builds them and run through the
+/// app's own presentation, so its dropdowns offer what the app's do.
+pub(super) fn settings_fields(fixture: &Gallery) -> Vec<Field> {
+    let v = |key: &str, default: &str| fixture.value(key, default).to_owned();
+    let row = |key: &str, label: &str, value: String, kind: i32| Field {
+        key: key.into(),
+        label: label.into(),
+        value,
+        kind,
+        ..Default::default()
+    };
+    let mut raw = vec![
+        row("prefs.language", "Language", v("prefs.language", "en"), 0),
+        row(
+            "prefs.record_shortcut",
+            "Record / stop",
+            v("prefs.record_shortcut", "Super+Shift+R"),
+            0,
+        ),
+        row(
+            "prefs.pause_shortcut",
+            "Pause / resume",
+            v("prefs.pause_shortcut", "Super+Shift+P"),
+            0,
+        ),
+        row(
+            "prefs.countdown_seconds",
+            "Countdown",
+            v("prefs.countdown_seconds", "3"),
+            0,
+        ),
+    ];
+    for (action, label, default) in subtake_native::shortcuts::ACTIONS {
+        let key = format!("shortcut.{action}");
+        let value = v(&key, default);
+        raw.push(row(&key, label, value, 0));
+    }
+    raw.extend([
+        row(
+            "choose-library",
+            "Project folder",
+            "/Users/you/Movies/SubTake".into(),
+            3,
+        ),
+        row(
+            "recording-folder",
+            "Recordings folder",
+            "/Users/you/Movies/SubTake/Recordings".into(),
+            3,
+        ),
+        // No model yet, so the Captions section offers the download.
+        row("choose-model", "Transcription model", String::new(), 3),
+    ]);
+    crate::inspector::present(raw, "Settings", "en")
 }
 
 pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
@@ -737,48 +803,6 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
             slider("prefs.countdown_seconds", "Countdown", "3", 0., 10.),
             text("recording.directory", "Save to", "~/Movies/SubTake"),
             action("show-launcher", "Open recorder"),
-        ],
-        "Preferences" => vec![
-            section("Appearance"),
-            dropdown(
-                "prefs.appearance",
-                "Appearance",
-                &[("dark", "Dark"), ("light", "Light")],
-                fixture.appearance,
-            ),
-            dropdown(
-                "prefs.language",
-                "Language",
-                &[
-                    ("en", "English"),
-                    ("de", "Deutsch"),
-                    ("fr", "Français"),
-                    ("ja", "日本語"),
-                ],
-                "en",
-            ),
-            section("Editing"),
-            toggle("prefs.auto_apply_zooms", "Auto-apply zooms", true),
-            toggle("prefs.snap", "Snap to regions", true),
-            slider("prefs.countdown_seconds", "Countdown", "3", 0., 10.),
-            section("Storage"),
-            text(
-                "prefs.library_directory",
-                "Library folder",
-                "~/Movies/SubTake",
-            ),
-            action("prefs.reveal", "Reveal in Finder"),
-        ],
-        "Shortcuts" => vec![
-            section("Recording"),
-            text("prefs.record_shortcut", "Start / stop", "⌘⇧R"),
-            text("prefs.pause_shortcut", "Pause", "⌘⇧P"),
-            section("Editor"),
-            text("shortcut.play", "Play / pause", "Space"),
-            text("shortcut.split", "Split clip", "S"),
-            text("shortcut.zoom-in", "Zoom in", "⌘="),
-            text("shortcut.zoom-out", "Zoom out", "⌘-"),
-            text("shortcut.appearance", "Toggle light / dark", "⌘⇧D"),
         ],
         "Recent" => vec![
             section("Recent projects"),

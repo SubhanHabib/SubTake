@@ -43,7 +43,10 @@ impl RootView {
             .get_or_insert_with(|| PresetsDraft {
                 look: e.get_look_choice(),
                 motion: e.get_motion_choice(),
-                tab: 0,
+                // The gallery's `=presets-saved` opens on Saved.
+                tab: usize::from(
+                    std::env::var("SUBTAKE_GALLERY_SCREEN").is_ok_and(|s| s == "presets-saved"),
+                ),
             })
             .clone();
         let theme = self.theme;
