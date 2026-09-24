@@ -25,7 +25,8 @@ fn main() {
     let metrics = parse(&source);
     let names: Vec<&str> = metrics.iter().map(|metric| metric.name.as_str()).collect();
 
-    let mut readers = String::from("impl Theme {\n");
+    // A metric that is another metric outright reads as `|| Self::other()`.
+    let mut readers = String::from("#[allow(clippy::redundant_closure)]\nimpl Theme {\n");
     let mut table = String::from("pub(crate) static METRICS: &[Metric] = &[\n");
     for metric in &metrics {
         let reader = metric.name.to_lowercase();
