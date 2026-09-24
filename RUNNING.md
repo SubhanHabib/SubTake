@@ -40,6 +40,15 @@ skip watching. Without dev.py, any built binary opens the gallery with
 `--gallery` as its first argument or `SUBTAKE_GALLERY=dark|light` in the
 environment.
 
+A second window, "SubTake components", opens beside the gallery. It lists every
+primitive in `subtake_ui` in every state on one scrolling page: buttons,
+pickers, sliders and fields, menus, tiles, status, rows and cards, the frosted
+surfaces over a backdrop you pick in its header, the type scale and icons, and
+the parked controls. Its header also has its own Light / Dark switch. Every
+control is live. `SUBTAKE_GALLERY_COMPONENTS=off` leaves the window closed, and
+`SUBTAKE_GALLERY_COMPONENTS=frost` (or any section name) opens it scrolled to
+that section.
+
 ## Real-app walkthrough
 
 The walkthrough is the gallery tour on the real app. It records the built-in

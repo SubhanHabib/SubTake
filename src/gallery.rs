@@ -39,6 +39,10 @@
 //! `SUBTAKE_GALLERY_OPEN=aspect` opens the inspector dropdown with that id
 //! (the aspect pod's menu), as a click on its trigger would; `=menu-Add`
 //! (or `-File`, `-Edit`, `-Help`) opens that command palette.
+//! A second window, "SubTake components" (`gallery/catalogue.rs`), lays out
+//! every primitive in every state on one scrolling page with its own Light /
+//! Dark switch; `SUBTAKE_GALLERY_COMPONENTS=off` leaves it closed and
+//! `=frost` (or any section's name) opens it scrolled to that section.
 //! `SUBTAKE_HOVER_PIN=switch,look` holds every control whose tween key
 //! contains one of those words hovered, since the gallery's unfocused windows
 //! never receive the pointer's hover.
@@ -57,6 +61,7 @@ use subtake_native::ui_runtime::{
     self, Color, Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, Timer, TimerMode, VecModel,
 };
 
+mod catalogue;
 mod fixtures;
 mod images;
 mod tour;
@@ -457,6 +462,9 @@ pub fn run() -> Result<()> {
         .set_size(ui_runtime::LogicalSize::new(width, height));
     editor.show()?;
     show_recorder(&launcher, &options);
+    // The component catalogue opens beside them once the app is running:
+    // it is a plain gpui view, opened from a timer outside the app borrow.
+    Timer::single_shot(Duration::from_millis(200), catalogue::open);
 
     // The dev supervisor asks for a restart by touching this file. The gallery
     // holds no project, so there is nothing to save: quit as soon as it appears.

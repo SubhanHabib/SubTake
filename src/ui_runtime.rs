@@ -51,3 +51,43 @@ use dispatch::*;
 use menus::*;
 use timer::*;
 use window::*;
+
+/// Open a plain window around a view of the caller's own — the gallery's
+/// component catalogue — outside the surface registry, so `sync_windows`
+/// never titles, sizes or hides it. It opens opaque, unfocused and flush
+/// with the right of the main display. Call it from a timer, not from inside
+/// a render: it takes the app borrow.
+pub fn open_view_window<V: gpui::Render + 'static>(
+    title: &str,
+    width: f32,
+    height: f32,
+    build: impl FnOnce(&mut gpui::Window, &mut gpui::Context<V>) -> V + 'static,
+) -> Result<()> {
+    let cx = CONTEXT
+        .with(|c| c.borrow().clone())
+        .context("the gpui app has not started")?;
+    let title = gpui::SharedString::from(title.to_owned());
+    cx.update(|cx| {
+        let screen = cx
+            .primary_display()
+            .map(|display| display.bounds())
+            .unwrap_or_default();
+        let height = px(height).min(screen.size.height);
+        let origin = gpui::point(screen.right() - px(width), screen.top());
+        let options = WindowOptions {
+            window_bounds: Some(WindowBounds::Windowed(Bounds::new(
+                origin,
+                size(px(width), height),
+            ))),
+            titlebar: Some(gpui::TitlebarOptions {
+                title: Some(title),
+                ..Default::default()
+            }),
+            window_background: gpui::WindowBackgroundAppearance::Opaque,
+            focus: false,
+            ..Default::default()
+        };
+        cx.open_window(options, |window, cx| cx.new(|cx| build(window, cx)))
+            .map(|_| ())
+    })
+}

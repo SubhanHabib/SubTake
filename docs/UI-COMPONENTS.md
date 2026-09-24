@@ -110,3 +110,7 @@ python3 scripts/check-ui-primitives.py
 
 The gallery is live: toggles flip, dropdowns pick, sliders move and the playhead
 drags. It is the fastest way to see a control in every state at once.
+Beside it, the "SubTake components" window (`src/gallery/catalogue.rs`) sets
+every primitive out on its own, variation by variation, with a Light / Dark
+switch and the frosted surfaces over a choice of backdrop. Add a new control or
+state there when you add it to `subtake_ui`.
