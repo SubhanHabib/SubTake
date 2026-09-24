@@ -30,6 +30,7 @@ use subtake_ui::{
     toggle, tool_button, tooltip, zoom_control,
 };
 
+mod add;
 mod camera;
 mod cursor;
 mod editor;

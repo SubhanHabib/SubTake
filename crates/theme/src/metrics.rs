@@ -615,6 +615,10 @@ impl Theme {
     pub const CURSOR_TILE_HEIGHT: f32 = 68.0;
     pub const CURSOR_TILE_COLUMNS: f32 = 3.0;
 
+    /// An Add panel tile: a glyph over its name, three across.
+    pub const ADD_TILE_HEIGHT: f32 = 68.0;
+    pub const ADD_TILE_COLUMNS: f32 = 3.0;
+
     // ---- camera panel ------------------------------------------------------
 
     /// A position tile: 60 tall at radius 20, 8 apart, two across.

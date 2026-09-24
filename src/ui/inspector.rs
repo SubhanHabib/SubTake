@@ -930,7 +930,10 @@ impl RootView {
                         )),
                 );
         }
-        if !matches!(name.as_str(), "Export" | "Selection" | "Cursor" | "Webcam") {
+        if !matches!(
+            name.as_str(),
+            "Export" | "Selection" | "Cursor" | "Webcam" | "Add"
+        ) {
             for field in e.get_fields().iter() {
                 // A section named after the panel only repeats its title.
                 if field.kind == 5 && field.label.eq_ignore_ascii_case(shown) {
@@ -981,6 +984,7 @@ impl RootView {
             "Selection" => (heading, content) = self.selection_panel(e, window, cx),
             "Cursor" => (heading, content) = self.cursor_panel(e, window, cx),
             "Webcam" => (heading, content) = self.camera_panel(e, window, cx),
+            "Add" => (heading, content) = self.add_panel(e),
             "Export" => {
                 let (h, c, f) = self.export_panel(e, cx);
                 heading = h;

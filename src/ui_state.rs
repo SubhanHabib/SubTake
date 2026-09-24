@@ -1105,7 +1105,8 @@ impl UiHandle {
                 "Wallpapers" => 10,
                 "Crop" => 11,
                 "Shortcuts" => 12,
-                _ => 13,
+                "Add" => 13,
+                _ => 14,
             };
             props.panel = value;
             self.window().invalidate();

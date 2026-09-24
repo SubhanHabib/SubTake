@@ -667,6 +667,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                             "Wallpapers",
                             "Crop",
                             "Shortcuts",
+                            "Add",
                         ]
                         .iter()
                         .position(|p| *p == panel)

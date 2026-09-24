@@ -273,6 +273,7 @@ impl App {
                 "Wallpapers",  // drawn
                 "Crop",        // not drawn
                 "Shortcuts",   // not drawn
+                "Add",         // not drawn
             ]
             .iter()
             .position(|p| *p == ui.get_panel().as_str())

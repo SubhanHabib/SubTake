@@ -291,9 +291,13 @@ impl RootView {
             .min_h_0()
             .overflow_y_scroll();
         // Icons only; the active panel takes the accent fill. The pod offers
-        // tools — modes that change what the stage does — and stays at six:
-        // Selection is not one (it follows the timeline's selection), and
-        // Presets and Export are the titlebar's.
+        // tools — modes that change what the stage does: Selection is not
+        // one (it follows the timeline's selection), and Presets and Export
+        // are the titlebar's.
+        //
+        // Not drawn by the design: Add. The round-2 pod stops at six, and
+        // the timeline's Add menu is its only way to put things on the
+        // picture; the tool gives each annotation kind a tile.
         //
         // Not drawn by the design: the Zoom tool. The round-2 handoff puts a
         // Sparkle "Zoom" first and moves Scene onto the aspect pod, but draws
@@ -304,6 +308,7 @@ impl RootView {
             ("Cursor", "Cursor", "Cursor-regular"),
             ("Camera", "Webcam", "Camera-regular"),
             ("Captions", "Captions", "ClosedCaptioning-regular"),
+            ("Add", "Add", "PlusSquare-regular"),
             ("Audio", "Audio", "SpeakerHigh-regular"),
         ] {
             panels = panels.child(self.rail_panel_button(e, label, name, glyph));
