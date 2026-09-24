@@ -55,8 +55,17 @@ with a slider, nudges and a reset. A change is live in every window, the
 editor's included, since a metric is one value app-wide, and a derived metric
 follows the ones it is built from. **Copy changes** puts the tuned values on
 the clipboard as `metrics.rs` lines; nothing is saved otherwise.
-`SUBTAKE_GALLERY_COMPONENTS=buttons+tune` opens with the dock up, and
-`SUBTAKE_GALLERY_TUNED=GAP=12,RADIUS_MENU=8` starts with those values tuned.
+
+The dock's **Colours** view does the same for the palette on show: every colour
+token as a chip, and the chosen one on hue, saturation, lightness and alpha
+sliders and a field that takes any CSS colour. It lists the whole palette rather
+than the section's tokens, since colour reads are not recorded. The copy carries
+tuned colours as `palette.rs` lines.
+
+`SUBTAKE_GALLERY_COMPONENTS=buttons+tune` opens with the dock up (`+colours` in
+its Colours view), and
+`SUBTAKE_GALLERY_TUNED=GAP=12,RADIUS_MENU=8,dark.accent=#ff7a3d` starts with
+those values tuned.
 
 ## Real-app walkthrough
 

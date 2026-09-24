@@ -17,17 +17,23 @@
 //! since a metric is one value app-wide; the header copies the changes as
 //! `metrics.rs` lines. Nothing is saved (see `subtake_theme::tune`).
 //!
+//! The dock's Colours view tunes the palette the page is showing: every
+//! token, since a colour is a field read and cannot be recorded per section,
+//! each as a chip, and the chosen one on H, S, L and A sliders and a CSS
+//! field. The copy carries them as `palette.rs` lines.
+//!
 //! `SUBTAKE_GALLERY_COMPONENTS=off` leaves the window closed;
 //! `SUBTAKE_GALLERY_COMPONENTS=frost` (or any section's name, lowercased)
 //! opens it scrolled to that section, and `=frost+tune` with its Tune list
-//! open. `SUBTAKE_GALLERY_TUNED=GAP=12,RADIUS_MENU=8` starts with those
-//! metrics tuned.
+//! open (`+colours` for its Colours view).
+//! `SUBTAKE_GALLERY_TUNED=GAP=12,RADIUS_MENU=8,dark.accent=#ff6a00` starts
+//! with those metrics and colours tuned.
 
 use gpui::{prelude::*, *};
 use std::{collections::HashMap, path::PathBuf};
 use subtake_theme::{
-    Theme,
-    tune::{self, Metric, Reads},
+    Appearance, Theme,
+    tune::{self, Colour, Metric, Reads},
 };
 use subtake_ui::{
     self as ui, Dropdown, Slider, Surface, TextInput, TimecodeField,
@@ -55,6 +61,20 @@ const TUNE_ROW_WIDTH: f32 = 404.;
 /// The tuning dock under the page, which scrolls on its own so the section
 /// stays in view above it.
 const TUNE_DOCK_HEIGHT: f32 = 400.;
+/// A colour token's chip: three to a line beside the colour editor.
+const CHIP_WIDTH: f32 = 160.;
+const CHIP_SWATCH: f32 = 20.;
+/// The chosen colour, large, at the head of the editor.
+const PICKED_SWATCH: f32 = 44.;
+const SWATCH_RADIUS: f32 = 6.;
+/// The editor's sliders, in `Hsla` order, with the scale and unit each
+/// shows its 0–1 channel in.
+const CHANNELS: [(&str, f32, &str); 4] = [
+    ("Hue", 360., "°"),
+    ("Saturation", 100., "%"),
+    ("Lightness", 100., "%"),
+    ("Alpha", 100., "%"),
+];
 /// Frames a section jump waits before it measures where to scroll.
 const JUMP_SETTLE_FRAMES: u32 = 3;
 
@@ -135,6 +155,16 @@ pub struct Catalogue {
     tuning: Option<usize>,
     /// A slider per metric shown in a tuning list, made the first time.
     tuners: HashMap<&'static str, Entity<Slider>>,
+    /// Whether the dock tunes the palette rather than the section's sizes.
+    tuning_colours: bool,
+    /// The colour token the dock's editor holds.
+    picked: &'static str,
+    /// The editor's [`CHANNELS`] sliders.
+    channels: Vec<Entity<Slider>>,
+    /// The editor's field, which takes the colour as CSS writes it.
+    colour_field: Entity<TextInput>,
+    /// [`tune::generation`] when `theme` was last built.
+    generation: u64,
 }
 
 impl Catalogue {
@@ -242,10 +272,36 @@ impl Catalogue {
                 .unwrap_or_default();
         icons.sort();
 
+        let this = cx.weak_entity();
+        let channels = (0..CHANNELS.len())
+            .map(|index| {
+                let this = this.clone();
+                let (label, scale, unit) = CHANNELS[index];
+                cx.new(|_| {
+                    let mut s = Slider::new(0., 1., 0., theme, move |value, _, _, cx| {
+                        this.update(cx, |s, cx| s.set_channel(index, value, cx))
+                            .ok();
+                    });
+                    s.set_caption(label, "");
+                    s.set_unit(scale, unit);
+                    s
+                })
+            })
+            .collect();
+        let colour_field = cx.new(|cx| {
+            TextInput::new(cx, String::new(), theme, move |text, _, cx| {
+                this.update(cx, |s, cx| s.type_colour(&text, cx)).ok();
+            })
+        });
+
         let wanted = std::env::var("SUBTAKE_GALLERY_COMPONENTS").unwrap_or_default();
-        let (wanted, tune_wanted) = match wanted.strip_suffix("+tune") {
-            Some(section) => (section.to_owned(), true),
-            None => (wanted, false),
+        let (wanted, tune_wanted, colours_wanted) = match (
+            wanted.strip_suffix("+tune"),
+            wanted.strip_suffix("+colours"),
+        ) {
+            (Some(section), _) => (section.to_owned(), true, false),
+            (_, Some(section)) => (section.to_owned(), true, true),
+            _ => (wanted, false, false),
         };
         let jump = (!wanted.is_empty())
             .then(|| {
@@ -259,13 +315,28 @@ impl Catalogue {
             .unwrap_or_default()
             .split(',')
         {
-            let parsed = pair.split_once('=').and_then(|(name, value)| {
-                Some((tune::metric(name.trim())?, value.trim().parse().ok()?))
+            let Some((name, value)) = pair.split_once('=') else {
+                if !pair.is_empty() {
+                    eprintln!("SUBTAKE_GALLERY_TUNED: no metric to tune in {pair:?}");
+                }
+                continue;
+            };
+            let (name, value) = (name.trim(), value.trim());
+            let colour = name.split_once('.').and_then(|(palette, name)| {
+                let appearance = match palette {
+                    "light" => Appearance::Light,
+                    "dark" => Appearance::Dark,
+                    _ => return None,
+                };
+                Some((appearance, tune::colour(name)?, tune::parse_colour(value)?))
             });
-            match parsed {
-                Some((metric, value)) => tune::set(metric.name, value),
-                None if pair.is_empty() => {}
-                None => eprintln!("SUBTAKE_GALLERY_TUNED: no metric to tune in {pair:?}"),
+            if let Some((appearance, colour, value)) = colour {
+                tune::set_colour(appearance, colour.name, value);
+            } else if let Some((metric, value)) = tune::metric(name).zip(value.parse::<f32>().ok())
+            {
+                tune::set(metric.name, value);
+            } else {
+                eprintln!("SUBTAKE_GALLERY_TUNED: no metric or colour to tune in {pair:?}");
             }
         }
         // The editor drew before tuning was on.
@@ -303,13 +374,31 @@ impl Catalogue {
             reads: SECTIONS.iter().map(|_| Reads::default()).collect(),
             tuning,
             tuners: HashMap::new(),
+            tuning_colours: colours_wanted,
+            picked: "accent",
+            channels,
+            colour_field,
+            // `theme` was built before the presets were applied; the first
+            // frame rebuilds it.
+            generation: u64::MAX,
         }
     }
 
-    /// Retint the page and every retained control on it.
     fn set_dark(&mut self, dark: bool, cx: &mut Context<Self>) {
         self.dark = dark;
-        self.theme = if dark { Theme::dark() } else { Theme::light() };
+        self.retint(cx);
+        cx.notify();
+    }
+
+    /// Rebuild the page's theme, tuned colours and all, and hand it to every
+    /// retained control on the page.
+    fn retint(&mut self, cx: &mut Context<Self>) {
+        self.generation = tune::generation();
+        self.theme = if self.dark {
+            Theme::dark()
+        } else {
+            Theme::light()
+        };
         let theme = self.theme;
         for (_, d) in &self.dropdowns {
             d.update(cx, |d, cx| {
@@ -335,13 +424,51 @@ impl Catalogue {
                 cx.notify();
             });
         }
-        for s in self.tuners.values() {
+        for s in self.tuners.values().chain(&self.channels) {
             s.update(cx, |s, cx| {
                 s.theme = theme;
                 cx.notify();
             });
         }
-        cx.notify();
+        self.colour_field.update(cx, |i, cx| {
+            i.theme = theme;
+            cx.notify();
+        });
+    }
+
+    fn appearance(&self) -> Appearance {
+        if self.dark {
+            Appearance::Dark
+        } else {
+            Appearance::Light
+        }
+    }
+
+    /// Move one channel of the chosen colour, from its slider.
+    fn set_channel(&mut self, index: usize, value: f32, cx: &mut Context<Self>) {
+        let Some(colour) = tune::colour(self.picked) else {
+            return;
+        };
+        let appearance = self.appearance();
+        let mut hsla = colour.value(appearance);
+        match index {
+            0 => hsla.h = value,
+            1 => hsla.s = value,
+            2 => hsla.l = value,
+            _ => hsla.a = value,
+        }
+        tune::set_colour(appearance, colour.name, hsla);
+        cx.refresh_windows();
+    }
+
+    /// Set the chosen colour from what was typed into its field. Anything
+    /// that is not a CSS colour is dropped, and the field goes back to the
+    /// colour's value on the next frame.
+    fn type_colour(&mut self, text: &str, cx: &mut Context<Self>) {
+        if let (Some(colour), Some(value)) = (tune::colour(self.picked), tune::parse_colour(text)) {
+            tune::set_colour(self.appearance(), colour.name, value);
+        }
+        cx.refresh_windows();
     }
 
     /// A control callback that edits the catalogue and repaints it.
@@ -1558,9 +1685,22 @@ impl Catalogue {
     /// The tuning dock: every metric a section's specimens read, grouped as
     /// `metrics.rs` groups them, each with a slider, a nudge either way and
     /// a reset.
-    fn tuner(&mut self, cx: &mut Context<Self>, index: usize) -> Div {
+    fn tuner(&mut self, window: &Window, cx: &mut Context<Self>, index: usize) -> Div {
         let theme = self.theme;
         let reads = self.reads[index].borrow().clone();
+        let colours = self.tuning_colours;
+        let (title, note) = if colours {
+            let palette = if self.dark { "dark" } else { "light" };
+            (
+                format!("Tuning the {palette} palette"),
+                "Every token: a colour is not recorded per section.",
+            )
+        } else {
+            (
+                format!("Tuning {}", SECTIONS[index]),
+                "Live in every window. A metric is one value app-wide.",
+            )
+        };
         // `metrics.rs` order keeps a group's metrics together.
         let mut groups: Vec<(&str, Vec<AnyElement>)> = Vec::new();
         for metric in tune::metrics().iter().filter(|m| reads.contains(m.name)) {
@@ -1593,15 +1733,14 @@ impl Catalogue {
                     .items_center()
                     .gap(px(Theme::gap_large()))
                     .p(px(Theme::inset()))
-                    .child(
-                        ui::heading(format!("Tuning {}", SECTIONS[index])).text_color(theme.text),
-                    )
+                    .child(ui::heading(title).text_color(theme.text))
                     .child(
                         div()
                             .flex_1()
+                            .min_w_0()
                             .text_size(px(Theme::font_secondary()))
                             .text_color(theme.muted)
-                            .child("Live in every window. A metric is one value app-wide."),
+                            .child(note),
                     )
                     .when(tune::changed() > 0, |header| {
                         header
@@ -1630,12 +1769,27 @@ impl Catalogue {
                             )
                     })
                     .child(
+                        div()
+                            .w(px(SAMPLE_WIDTH))
+                            .flex_none()
+                            .child(ui::segmented_control(
+                                "tune-view",
+                                &["Sizes", "Colours"],
+                                usize::from(colours),
+                                theme,
+                                Self::with(cx, |s, i| s.tuning_colours = i == 1),
+                            )),
+                    )
+                    .child(
                         ui::icon_button("tune-close", "X-regular", "Close", theme)
                             .small()
                             .ghost()
                             .on_click(Self::click(cx, |s| s.tuning = None)),
                     ),
             );
+        if colours {
+            return dock.child(self.colour_tuner(window, cx));
+        }
         if groups.is_empty() {
             return dock.child(
                 list.child(
@@ -1693,6 +1847,206 @@ impl Catalogue {
         slider.update(cx, |s, _| s.sync(value));
         slider
     }
+
+    /// The dock's Colours view: the chosen token's editor, and every token
+    /// of the palette on show as a chip that chooses it.
+    fn colour_tuner(&mut self, window: &Window, cx: &mut Context<Self>) -> Div {
+        let theme = self.theme;
+        let appearance = self.appearance();
+        let picked = tune::colour(self.picked).unwrap_or(&tune::colours()[0]);
+        let value = picked.value(appearance);
+        for (slider, channel) in self
+            .channels
+            .iter()
+            .zip([value.h, value.s, value.l, value.a])
+        {
+            slider.update(cx, |s, _| s.sync(channel));
+        }
+        let written = tune::hex(value);
+        self.colour_field
+            .update(cx, |i, _| i.sync(&written, window));
+
+        let overridden = picked.overridden(appearance);
+        let mut detail = String::new();
+        if overridden {
+            detail.push_str(&format!(
+                "Default {}. ",
+                tune::hex(picked.default(appearance))
+            ));
+        }
+        detail.push_str(picked.doc);
+        let editor = div()
+            .w(px(CONTROL_WIDTH))
+            .flex_none()
+            .flex()
+            .flex_col()
+            .gap(px(Theme::gap()))
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(px(Theme::gap()))
+                    .child(colour_swatch(value, PICKED_SWATCH, theme))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .text_size(px(Theme::font_heading()))
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .text_color(theme.text)
+                            .child(picked.name),
+                    )
+                    .child(
+                        ui::icon_button(
+                            SharedString::from(format!("tune-reset-colour-{}", picked.name)),
+                            "ArrowCounterClockwise-regular",
+                            "Reset",
+                            theme,
+                        )
+                        .small()
+                        .ghost()
+                        .enabled(overridden)
+                        .on_click(move |_, _, cx| {
+                            tune::reset_colour(appearance, picked.name);
+                            cx.refresh_windows();
+                        }),
+                    ),
+            )
+            .children(self.channels.iter().cloned())
+            .child(self.colour_field.clone())
+            .child(
+                div()
+                    .text_size(px(Theme::font_small()))
+                    .text_color(if overridden {
+                        theme.accent
+                    } else {
+                        theme.muted
+                    })
+                    .child(detail),
+            );
+
+        // `struct Theme` order keeps a group's tokens together.
+        let mut groups: Vec<(&str, Vec<AnyElement>)> = Vec::new();
+        for colour in tune::colours() {
+            let chip = self.colour_chip(cx, colour, colour.name == picked.name);
+            match groups.last_mut() {
+                Some((group, chips)) if *group == colour.group => chips.push(chip),
+                _ => groups.push((colour.group, vec![chip])),
+            }
+        }
+        let chips = div()
+            .id("tune-colours")
+            .flex_1()
+            .min_w_0()
+            .h_full()
+            .overflow_y_scroll()
+            .flex()
+            .flex_col()
+            .gap(px(Theme::gap_block()))
+            .children(groups.into_iter().map(|(group, chips)| {
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(Theme::gap()))
+                    .child(ui::caps_label(group.to_owned(), theme))
+                    .child(
+                        div()
+                            .flex()
+                            .flex_wrap()
+                            .gap(px(Theme::gap_small()))
+                            .children(chips),
+                    )
+            }));
+        div()
+            .flex_1()
+            .min_h_0()
+            .flex()
+            .gap(px(Theme::gap_block()))
+            .px(px(Theme::inset()))
+            .pb(px(Theme::inset()))
+            .child(editor)
+            .child(chips)
+    }
+
+    /// One colour token: its swatch, its name, and its value, in the accent
+    /// once it is tuned. Choosing it puts it in the editor.
+    fn colour_chip(
+        &mut self,
+        cx: &mut Context<Self>,
+        colour: &'static Colour,
+        chosen: bool,
+    ) -> AnyElement {
+        let theme = self.theme;
+        let appearance = self.appearance();
+        let value = colour.value(appearance);
+        div()
+            .id(SharedString::from(format!("tune-colour-{}", colour.name)))
+            .w(px(CHIP_WIDTH))
+            .flex()
+            .items_center()
+            .gap(px(Theme::gap_small()))
+            .p(px(Theme::gap_small()))
+            .rounded(px(Theme::radius_region()))
+            .border_1()
+            .border_color(if chosen {
+                theme.accent
+            } else {
+                gpui::transparent_black()
+            })
+            .when(chosen, |chip| chip.bg(theme.sunk))
+            .hover(|chip| chip.bg(theme.sunk2))
+            .on_click(Self::click(cx, move |s| s.picked = colour.name))
+            .child(colour_swatch(value, CHIP_SWATCH, theme))
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .flex()
+                    .flex_col()
+                    .child(
+                        div()
+                            .text_ellipsis()
+                            .overflow_hidden()
+                            .whitespace_nowrap()
+                            .text_size(px(Theme::font_secondary()))
+                            .text_color(theme.text)
+                            .child(colour.name),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(Theme::font_small()))
+                            .text_color(if colour.overridden(appearance) {
+                                theme.accent
+                            } else {
+                                theme.muted
+                            })
+                            .child(tune::hex(value)),
+                    ),
+            )
+            .into_any_element()
+    }
+}
+
+/// A colour on a ground half white and half black, so a translucent token
+/// shows what it does to either.
+fn colour_swatch(colour: Hsla, size: f32, theme: Theme) -> Div {
+    div()
+        .size(px(size))
+        .flex_none()
+        .relative()
+        .overflow_hidden()
+        .rounded(px(SWATCH_RADIUS))
+        .border_1()
+        .border_color(theme.line)
+        .child(
+            div()
+                .absolute()
+                .inset_0()
+                .flex()
+                .child(div().flex_1().bg(gpui::white()))
+                .child(div().flex_1().bg(gpui::black())),
+        )
+        .child(div().absolute().inset_0().bg(colour))
 }
 
 /// What a section method builds: which section, the line on what it
@@ -1934,6 +2288,11 @@ impl Render for Catalogue {
                 }
             }
         }
+        // A tuned colour changes what `Theme::light()` and `dark()` return;
+        // rebuild the page's copy, and its retained controls', to match.
+        if self.generation != tune::generation() {
+            self.retint(cx);
+        }
         let header = self.header(cx);
         // Each section is built with its reads recorded, for its Tune list:
         // a builder that sizes itself as it is called reads here, and the
@@ -1961,7 +2320,7 @@ impl Render for Catalogue {
             .collect();
         let dock = self
             .tuning
-            .map(|index| tune::unrecorded(|| self.tuner(cx, index)));
+            .map(|index| tune::unrecorded(|| self.tuner(window, cx, index)));
         if ui::tick_hover_fades() {
             window.request_animation_frame();
         }

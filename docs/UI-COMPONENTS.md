@@ -123,3 +123,11 @@ so a new control is tunable too; the catalogue finds which ones a section uses
 by recording the reads as it draws, so there is no list to keep. Not drawn by
 the design: this is a gallery tool. Metrics read inside the native window code
 (`src/ui_runtime/window.rs`) and in const contexts are not tunable.
+
+The dock tunes colours too. `Theme::light()` and `Theme::dark()` return their
+palette with any tuned colour laid over it, so any view that builds its theme
+each frame follows; a view that keeps a built theme rebuilds it when
+`tune::generation()` moves, as the catalogue does. The colour table is generated
+from the `Hsla` fields of `struct Theme`, so a new token is tunable with nothing
+else to add. A colour is a field read rather than a call, so the Colours view
+cannot say which tokens a section uses and shows every one.
