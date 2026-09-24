@@ -202,6 +202,19 @@ impl RootView {
                     },
                 ));
         }
+        // Not drawn by the design: an annotation's Position folding away.
+        // Where it sits is set on the stage by dragging, so its four rows
+        // start folded, with where it is shown on the fold, and the style
+        // rows above them fit without scrolling.
+        let percent = |key: &str| value(key).parse::<f32>().unwrap_or(0.).round();
+        let position = format!(
+            "{}, {} · {} × {}%",
+            percent("region.position.x"),
+            percent("region.position.y"),
+            percent("region.size.width"),
+            percent("region.size.height"),
+        );
+        let mut folded = false;
         // Not drawn by the design: every row but timing for the other kinds,
         // and a zoom's focus point. The handoff draws a zoom region only;
         // the rest keep the rows they had, on the new tokens.
@@ -209,7 +222,17 @@ impl RootView {
             if drawn.contains(&field.key.as_str()) {
                 continue;
             }
-            content = content.child(self.field(e, field, window, cx));
+            if field.kind == 5 {
+                folded = false;
+                if region.kind == "annotationRegions" && field.label.as_str() == "Position" {
+                    content = content.child(self.position_fold(&position, cx));
+                    folded = !self.position_open;
+                    continue;
+                }
+            }
+            if !folded {
+                content = content.child(self.field(e, field, window, cx));
+            }
         }
 
         let delete_hover = subtake_ui::motion::tween_key(&"delete-region".into(), "hover");
@@ -243,6 +266,44 @@ impl RootView {
                 .on_click(self.command("delete")),
         );
         (heading, content)
+    }
+}
+
+impl RootView {
+    /// The Position fold's caption: a caret, the name, and while folded
+    /// where the annotation sits.
+    fn position_fold(&self, position: &str, cx: &mut Context<Self>) -> Stateful<Div> {
+        let theme = self.theme;
+        let open = self.position_open;
+        row()
+            .id("position-fold")
+            .tab_index(0)
+            .h(px(Theme::control_height_small()))
+            .flex_none()
+            .gap(px(Theme::icon_gap_row()))
+            .cursor_pointer()
+            .focus_visible(move |s| s.shadow(vec![focus_ring(theme)]))
+            .child(caps_label("Position", theme).flex_1())
+            .when(!open, |row| {
+                row.child(
+                    mono(position.to_owned())
+                        .text_size(px(Theme::font_small()))
+                        .text_color(theme.muted),
+                )
+            })
+            .child(icon_sized(
+                if open {
+                    "CaretDown-regular"
+                } else {
+                    "CaretRight-regular"
+                },
+                Theme::icon_size_small(),
+                theme.muted,
+            ))
+            .on_click(cx.listener(|s, _, _, cx| {
+                s.position_open = !s.position_open;
+                cx.notify();
+            }))
     }
 }
 

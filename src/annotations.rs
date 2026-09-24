@@ -239,7 +239,7 @@ pub fn rows(annotation: &Value) -> Vec<Row> {
             add("style.padding", "Box padding", 1, (0., 80.), json!(8));
         }
     }
-    add("", "Placement", 5, none, json!(""));
+    add("", "Position", 5, none, json!(""));
     let percent = (0., 100.);
     add("position.x", "Left", 1, percent, json!(50));
     add("position.y", "Top", 1, percent, json!(50));

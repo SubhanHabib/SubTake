@@ -257,6 +257,8 @@ pub struct RootView {
     dropdowns: HashMap<String, Entity<Dropdown>>,
     sliders: HashMap<String, Entity<Slider>>,
     timecodes: HashMap<String, Entity<subtake_ui::TimecodeField>>,
+    /// Whether an annotation's Position rows are unfolded in Selection.
+    position_open: bool,
     timeline_bounds: Rc<Cell<Bounds<Pixels>>>,
     lane_scroll: ScrollHandle,
     /// The thumbnail strip, cut into its frames for the clip lane's tiles,
@@ -370,6 +372,7 @@ impl RootView {
             dropdowns: HashMap::new(),
             sliders: HashMap::new(),
             timecodes: HashMap::new(),
+            position_open: false,
             timeline_bounds: Rc::new(Cell::new(Bounds::default())),
             lane_scroll: ScrollHandle::new(),
             clip_frames: None,
