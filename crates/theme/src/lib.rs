@@ -23,6 +23,7 @@ mod metrics;
 mod palette;
 #[cfg(test)]
 mod tests;
+pub mod tune;
 
 pub use appearance::Appearance;
 #[cfg(test)]
