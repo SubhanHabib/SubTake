@@ -73,18 +73,35 @@ impl RootView {
             );
         };
 
+        // An annotation is named by its own kind, with the glyph its lane
+        // plate carries, in the lane's tint; every other kind by its swatch.
+        let annotation = (region.kind == "annotationRegions").then(|| {
+            crate::annotations::KINDS
+                .iter()
+                .find(|(_, _, glyph)| !region.glyph.is_empty() && *glyph == region.glyph)
+                .map_or(("Text", "TextT-regular"), |(_, name, glyph)| {
+                    (*name, *glyph)
+                })
+        });
+        let marker = match annotation {
+            Some((_, glyph)) => div().flex_none().child(icon_sized(
+                glyph,
+                Theme::icon_size(),
+                region.tint.to_gpui(),
+            )),
+            None => div()
+                .flex_none()
+                .size(px(Theme::selection_swatch()))
+                .rounded(px(Theme::selection_swatch_radius()))
+                .bg(region.tint.to_gpui()),
+        };
+        let name = annotation.map_or(kind_title(&region.kind), |(name, _)| name);
         let heading = row()
             .h(px(Theme::control_height_small()))
             .flex_none()
             .gap(px(Theme::icon_gap_row()))
-            .child(
-                div()
-                    .flex_none()
-                    .size(px(Theme::selection_swatch()))
-                    .rounded(px(Theme::selection_swatch_radius()))
-                    .bg(region.tint.to_gpui()),
-            )
-            .child(title(kind_title(&region.kind), Theme::font_heading()).flex_1())
+            .child(marker)
+            .child(title(name, Theme::font_heading()).flex_1())
             .child(
                 icon_button("selection-close", "X-regular", "Deselect", theme)
                     .small()

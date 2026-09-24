@@ -162,7 +162,7 @@ pub fn rows(annotation: &Value) -> Vec<Row> {
     let none = (0., 0.);
     let corners = (0., 120.);
     let thickness = (1., 24.);
-    add("", name, 5, none, json!(""));
+    add("", "Style", 5, none, json!(""));
     match annotation["type"].as_str().unwrap_or("text") {
         "figure" => {
             add(

@@ -23,7 +23,7 @@ fn steps_count_up_and_stack_on_top() {
 fn rows_follow_the_kind_and_read_its_values() {
     let blur = new("add-pixelate", &[], 16. / 9.).unwrap();
     let rows = rows(&blur);
-    assert_eq!(rows[0].label, "Pixelate");
+    assert_eq!(rows[0].label, "Style");
     let amount = rows
         .iter()
         .find(|r| r.key == "region.blurIntensity")
