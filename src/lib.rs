@@ -25,6 +25,8 @@ pub mod file_group;
 
 pub mod editing;
 
+pub mod annotations;
+
 pub mod autozoom;
 
 pub mod shortcuts;

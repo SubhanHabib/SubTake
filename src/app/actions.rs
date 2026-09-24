@@ -1150,11 +1150,20 @@ impl App {
                 ("audioRegions", json!({"audioPath":path,"volume":1.}))
             }
             _ => {
-                let kind = action.trim_start_matches("add-");
-                let mut r = json!({"type":kind,"content":"Your text","textContent":"Your text","position":{"x":35.,"y":40.},"size":{"width":30.,"height":20.},"style":{"fontSize":64.,"fontFamily":"Helvetica","fontWeight":"bold","color":"#ffffff","backgroundColor":"transparent","textAlign":"center","borderRadius":8},"figureData":{"arrowDirection":"right","color":"#2563eb","strokeWidth":5},"zIndex":1,"blurIntensity":20});
-                if kind == "image" {
+                let project = self.project()?;
+                let aspect = self
+                    .info
+                    .as_ref()
+                    .map_or(16. / 9., |info| aspect_ratio(project, info));
+                let mut r = subtake_native::annotations::new(
+                    action,
+                    project.regions("annotationRegions"),
+                    aspect,
+                )
+                .with_context(|| format!("Nothing to add for {action}"))?;
+                if r["type"] == "image" {
                     let Some(path) = rfd::FileDialog::new()
-                        .add_filter("Image", &["png", "jpg", "jpeg", "webp"])
+                        .add_filter("Image", &["png", "jpg", "jpeg", "webp", "svg"])
                         .pick_file()
                     else {
                         return Ok(());
