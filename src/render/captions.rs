@@ -146,7 +146,14 @@ impl Scene {
         let mut builder = ParagraphBuilder::new(&paragraph_style, self.fonts.clone());
         builder.add_text(content);
         let mut paragraph = builder.build();
-        paragraph.layout((rect.width() - 16. * unit).max(1.));
+        // The inset from the box's sides: a caption's is fixed, an
+        // annotation's is its style's `padding` (1080p px).
+        let inset = if caption {
+            8.
+        } else {
+            n(settings, "padding", 8.) as f32
+        } * unit;
+        paragraph.layout((rect.width() - 2. * inset).max(1.));
         let height = if caption {
             paragraph.height() + 16. * unit
         } else {
@@ -185,10 +192,7 @@ impl Scene {
         );
         paragraph.paint(
             canvas,
-            (
-                rect.left + 8. * unit,
-                y + (height - paragraph.height()) / 2.,
-            ),
+            (rect.left + inset, y + (height - paragraph.height()) / 2.),
         );
         canvas.restore();
     }

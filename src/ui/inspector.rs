@@ -14,6 +14,9 @@ pub(super) fn field_unit(key: &str) -> (f32, &'static str) {
     if key.starts_with("region.position.") || key.starts_with("region.size.") {
         return (1.0, "%");
     }
+    if key == "region.style.padding" {
+        return (1.0, " px");
+    }
     match key.rsplit('.').next().unwrap_or(key) {
         "fontSize" | "strokeWidth" => (1.0, " px"),
         "dimOpacity" => (1.0, "%"),

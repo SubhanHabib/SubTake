@@ -71,7 +71,7 @@ pub fn new(action: &str, existing: &[Value], aspect: f64) -> Option<Value> {
         ),
         "add-lower-third" => text(
             "Name · Role",
-            json!({"fontSize":44.,"fontFamily":"Helvetica","fontWeight":"bold","color":"#ffffff","backgroundColor":"#0f0f14c8","textAlign":"left","borderRadius":12.}),
+            json!({"fontSize":44.,"fontFamily":"Helvetica","fontWeight":"bold","color":"#ffffff","backgroundColor":"#0f0f14c8","textAlign":"left","borderRadius":12.,"padding":28.}),
         ),
         "add-label" => text(
             "Label",
@@ -234,6 +234,7 @@ pub fn rows(annotation: &Value) -> Vec<Row> {
                 json!("transparent"),
             );
             add("style.borderRadius", "Box corners", 1, corners, json!(8));
+            add("style.padding", "Box padding", 1, (0., 80.), json!(8));
         }
     }
     add("", "Placement", 5, none, json!(""));
