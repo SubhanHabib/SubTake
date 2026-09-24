@@ -469,8 +469,10 @@ impl RootView {
                 let input = self.input(&id, &field.value, window, cx, move |v, _, _| {
                     editor.defer_field(key.clone(), v)
                 });
-                return body
-                    .child(caps_label(label, theme))
+                // One setting, so one plate under its own quiet label, as a
+                // group of related controls is drawn, not a caps caption
+                // that reads as a new section.
+                return group_card(theme, label)
                     .child(swatches)
                     .child(input)
                     .into_any_element();
