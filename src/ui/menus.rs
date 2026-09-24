@@ -72,7 +72,6 @@ pub fn menu_commands(name: &str) -> &'static [&'static [(&'static str, &'static 
                 ("Highlight", "add-highlight"),
                 ("Step", "add-step"),
                 ("Blur", "add-blur"),
-                ("Pixelate", "add-pixelate"),
                 ("Spotlight", "add-spotlight"),
                 ("Image", "add-image"),
             ],

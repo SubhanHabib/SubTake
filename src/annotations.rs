@@ -5,7 +5,9 @@
 use crate::timeline::n;
 use serde_json::{Value, json};
 
-/// Every annotation the Add panel and menu offer, as (action, label, glyph).
+/// Every annotation kind, as (action, label, glyph). Pixelate is a blur's
+/// mode, named for the lane and the Selection heading; the Add panel and
+/// menu offer Blur alone, and its Effect menu switches.
 pub const KINDS: [(&str, &str, &str); 11] = [
     ("add-title", "Title", "TextAa-regular"),
     ("add-lower-third", "Lower third", "TextAlignLeft-regular"),

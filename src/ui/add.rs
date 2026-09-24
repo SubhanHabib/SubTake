@@ -11,14 +11,16 @@ use subtake_ui::icon_sized;
 
 /// The kinds by what they are for, each an add action in
 /// `crate::annotations::KINDS`.
-const GROUPS: [(&str, &[&str]); 4] = [
-    ("Text", &["add-title", "add-lower-third", "add-label"]),
-    ("Point out", &["add-figure", "add-highlight", "add-step"]),
+const GROUPS: [(&str, &[&str]); 3] = [
     (
-        "Hide or focus",
-        &["add-blur", "add-pixelate", "add-spotlight"],
+        "Text",
+        &["add-title", "add-lower-third", "add-label", "add-text"],
     ),
-    ("More", &["add-text", "add-image"]),
+    (
+        "Point out",
+        &["add-figure", "add-highlight", "add-step", "add-spotlight"],
+    ),
+    ("More", &["add-blur", "add-image"]),
 ];
 
 impl RootView {
