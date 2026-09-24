@@ -114,3 +114,12 @@ Beside it, the "SubTake components" window (`src/gallery/catalogue.rs`) sets
 every primitive out on its own, variation by variation, with a Light / Dark
 switch and the frosted surfaces over a choice of backdrop. Add a new control or
 state there when you add it to `subtake_ui`.
+
+Its Tune dock sets metrics live. It works because every `f32` metric has a
+generated reader, `Theme::gap_small()` for `Theme::GAP_SMALL`
+(`crates/theme/build.rs`, `crates/theme/src/tune.rs`). A reader is the
+constant until the catalogue turns tuning on. Read metrics through the reader
+so a new control is tunable too; the catalogue finds which ones a section uses
+by recording the reads as it draws, so there is no list to keep. Not drawn by
+the design: this is a gallery tool. Metrics read inside the native window code
+(`src/ui_runtime/window.rs`) and in const contexts are not tunable.

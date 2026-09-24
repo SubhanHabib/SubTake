@@ -11,13 +11,24 @@
 //! shows nothing. The window itself is frosted as the editor's is, the
 //! desktop blurred through it and `bg` over that.
 //!
+//! Every section has a Tune button. It lists each metric the section's
+//! components read, found by recording the reads as they draw, with a slider
+//! per metric. A change is live everywhere, the editor's window included,
+//! since a metric is one value app-wide; the header copies the changes as
+//! `metrics.rs` lines. Nothing is saved (see `subtake_theme::tune`).
+//!
 //! `SUBTAKE_GALLERY_COMPONENTS=off` leaves the window closed;
 //! `SUBTAKE_GALLERY_COMPONENTS=frost` (or any section's name, lowercased)
-//! opens it scrolled to that section.
+//! opens it scrolled to that section, and `=frost+tune` with its Tune list
+//! open. `SUBTAKE_GALLERY_TUNED=GAP=12,RADIUS_MENU=8` starts with those
+//! metrics tuned.
 
 use gpui::{prelude::*, *};
-use std::path::PathBuf;
-use subtake_theme::Theme;
+use std::{collections::HashMap, path::PathBuf};
+use subtake_theme::{
+    Theme,
+    tune::{self, Metric, Reads},
+};
 use subtake_ui::{
     self as ui, Dropdown, Slider, Surface, TextInput, TimecodeField,
     unused::{self, RowState},
@@ -39,6 +50,11 @@ const MENU_WIDTH: f32 = 240.;
 const PROGRESS_WIDTH: f32 = 160.;
 const EMPTY_HEIGHT: f32 = 260.;
 const ICON_CELL: f32 = 124.;
+/// A tuning row: two to a line across the dock.
+const TUNE_ROW_WIDTH: f32 = 404.;
+/// The tuning dock under the page, which scrolls on its own so the section
+/// stays in view above it.
+const TUNE_DOCK_HEIGHT: f32 = 400.;
 /// Frames a section jump waits before it measures where to scroll.
 const JUMP_SETTLE_FRAMES: u32 = 3;
 
@@ -113,11 +129,18 @@ pub struct Catalogue {
     sliders: Vec<(&'static str, Entity<Slider>)>,
     inputs: Vec<(&'static str, Entity<TextInput>)>,
     timecodes: Vec<(&'static str, Entity<TimecodeField>)>,
+    /// The metrics each section's components read, as they draw.
+    reads: Vec<Reads>,
+    /// The section whose metrics the dock is tuning.
+    tuning: Option<usize>,
+    /// A slider per metric shown in a tuning list, made the first time.
+    tuners: HashMap<&'static str, Entity<Slider>>,
 }
 
 impl Catalogue {
     fn new(_: &mut Window, cx: &mut Context<Self>) -> Self {
         ui::init(cx);
+        tune::enable();
         // The gallery's own choice: `SUBTAKE_GALLERY=light` starts light.
         let dark = std::env::var("SUBTAKE_GALLERY").as_deref() != Ok("light");
         let theme = if dark { Theme::dark() } else { Theme::light() };
@@ -219,13 +242,34 @@ impl Catalogue {
                 .unwrap_or_default();
         icons.sort();
 
-        let jump = std::env::var("SUBTAKE_GALLERY_COMPONENTS")
-            .ok()
-            .and_then(|want| {
+        let wanted = std::env::var("SUBTAKE_GALLERY_COMPONENTS").unwrap_or_default();
+        let (wanted, tune_wanted) = match wanted.strip_suffix("+tune") {
+            Some(section) => (section.to_owned(), true),
+            None => (wanted, false),
+        };
+        let jump = (!wanted.is_empty())
+            .then(|| {
                 SECTIONS
                     .iter()
-                    .position(|s| s.to_lowercase().starts_with(&want.to_lowercase()))
+                    .position(|s| s.to_lowercase().starts_with(&wanted.to_lowercase()))
+            })
+            .flatten();
+        let tuning = jump.filter(|_| tune_wanted);
+        for pair in std::env::var("SUBTAKE_GALLERY_TUNED")
+            .unwrap_or_default()
+            .split(',')
+        {
+            let parsed = pair.split_once('=').and_then(|(name, value)| {
+                Some((tune::metric(name.trim())?, value.trim().parse().ok()?))
             });
+            match parsed {
+                Some((metric, value)) => tune::set(metric.name, value),
+                None if pair.is_empty() => {}
+                None => eprintln!("SUBTAKE_GALLERY_TUNED: no metric to tune in {pair:?}"),
+            }
+        }
+        // The editor drew before tuning was on.
+        cx.refresh_windows();
 
         Self {
             dark,
@@ -256,6 +300,9 @@ impl Catalogue {
             sliders,
             inputs,
             timecodes,
+            reads: SECTIONS.iter().map(|_| Reads::default()).collect(),
+            tuning,
+            tuners: HashMap::new(),
         }
     }
 
@@ -285,6 +332,12 @@ impl Catalogue {
         for (_, t) in &self.timecodes {
             t.update(cx, |t, cx| {
                 t.theme = theme;
+                cx.notify();
+            });
+        }
+        for s in self.tuners.values() {
+            s.update(cx, |s, cx| {
+                s.theme = theme;
                 cx.notify();
             });
         }
@@ -364,6 +417,10 @@ impl Catalogue {
 
     /// The picture a frosted plane blurs: a gradient, or a wallpaper.
     fn backdrop(&self) -> Div {
+        tune::unrecorded(|| self.backdrop_stage())
+    }
+
+    fn backdrop_stage(&self) -> Div {
         let stage = div()
             .relative()
             .w_full()
@@ -403,7 +460,7 @@ impl Catalogue {
         }
     }
 
-    fn buttons(&mut self, cx: &mut Context<Self>) -> Div {
+    fn buttons(&mut self, cx: &mut Context<Self>) -> Section {
         let theme = self.theme;
         type Variant = fn(ui::Button) -> ui::Button;
         let variants: [(&str, Variant); 7] = [
@@ -585,14 +642,13 @@ impl Catalogue {
             .into_any_element(),
         );
         section(
-            theme,
             0,
             "Every variant at rest, with a glyph, icon-only, selected and disabled; every size; the modifiers.",
             rows,
         )
     }
 
-    fn pickers(&mut self, cx: &mut Context<Self>) -> Div {
+    fn pickers(&mut self, cx: &mut Context<Self>) -> Section {
         let theme = self.theme;
         let mut rows = vec![
             specimen(
@@ -679,7 +735,6 @@ impl Catalogue {
             )
         }));
         section(
-            theme,
             1,
             "Segments, switches and dropdowns. Every one is live.",
             rows.into_iter()
@@ -688,7 +743,7 @@ impl Catalogue {
         )
     }
 
-    fn sliders_and_fields(&mut self, cx: &mut Context<Self>) -> Div {
+    fn sliders_and_fields(&mut self, cx: &mut Context<Self>) -> Section {
         let theme = self.theme;
         let mut rows: Vec<AnyElement> = self
             .sliders
@@ -745,14 +800,13 @@ impl Catalogue {
             .into_any_element(),
         );
         section(
-            theme,
             2,
             "Retained controls: drag the sliders and scrub or type in the fields.",
             rows,
         )
     }
 
-    fn menus(&mut self, cx: &mut Context<Self>) -> Div {
+    fn menus(&mut self, cx: &mut Context<Self>) -> Section {
         let theme = self.theme;
         let highlighted = self.highlighted;
         let rows = ["Undo", "Redo", "Split clip at playhead"];
@@ -818,14 +872,13 @@ impl Catalogue {
                 .child(ui::frosted(Theme::radius_menu(), ui::MENU_BLUR, commands)),
         );
         section(
-            theme,
             3,
             "Left: a checked row, the highlighted row (click one to move it), a shortcut, a submenu, a destructive row. Right: the palette's rows, which have no tick gutter, scrolling under the edge fades.",
             vec![stage.into_any_element()],
         )
     }
 
-    fn tiles(&mut self, cx: &mut Context<Self>) -> Div {
+    fn tiles(&mut self, cx: &mut Context<Self>) -> Section {
         let theme = self.theme;
         let colours = [0xff5f57, 0xfebc2e, 0x28c840, 0x5b8def, 0xa468e9, 0x1d1d1f];
         let swatches = colours
@@ -881,7 +934,6 @@ impl Catalogue {
                 .into_any_element()])
             .collect();
         section(
-            theme,
             4,
             "Click to pick. The empty state is the editor's with nothing open.",
             vec![
@@ -919,7 +971,7 @@ impl Catalogue {
         )
     }
 
-    fn status(&mut self, cx: &mut Context<Self>) -> Div {
+    fn status(&mut self, cx: &mut Context<Self>) -> Section {
         let theme = self.theme;
         let footer = ui::composer_footer(theme)
             .child(
@@ -936,7 +988,6 @@ impl Catalogue {
             )
             .child("A quiet hint");
         section(
-            theme,
             5,
             "Chips, progress and the tooltips a hover brings up, drawn in place.",
             vec![
@@ -998,10 +1049,9 @@ impl Catalogue {
         )
     }
 
-    fn rows_and_cards(&mut self, cx: &mut Context<Self>) -> Div {
+    fn rows_and_cards(&mut self, cx: &mut Context<Self>) -> Section {
         let theme = self.theme;
         section(
-            theme,
             6,
             "The inspector's building blocks.",
             vec![
@@ -1066,7 +1116,7 @@ impl Catalogue {
         )
     }
 
-    fn frost(&mut self) -> Div {
+    fn frost(&mut self, _: &mut Context<Self>) -> Section {
         let theme = self.theme;
         let surfaces = [
             ("Panel", Surface::Panel),
@@ -1194,7 +1244,6 @@ impl Catalogue {
                 .thumb(theme.muted, Theme::gap_small()),
             );
         section(
-            theme,
             7,
             "Each plane frosted at its own radius and blur over the backdrop (the header picks it), the four blur strengths side by side with one left unfrosted, the two pods, and a scroll's edge fades and thumb.",
             vec![
@@ -1206,7 +1255,7 @@ impl Catalogue {
         )
     }
 
-    fn type_and_icons(&mut self) -> Div {
+    fn type_and_icons(&mut self, _: &mut Context<Self>) -> Section {
         let theme = self.theme;
         let scale = [
             (
@@ -1299,10 +1348,10 @@ impl Catalogue {
                 }))
                 .into_any_element(),
         );
-        section(theme, 8, "The type scale and every bundled glyph.", rows)
+        section(8, "The type scale and every bundled glyph.", rows)
     }
 
-    fn parked(&mut self, cx: &mut Context<Self>) -> Div {
+    fn parked(&mut self, cx: &mut Context<Self>) -> Section {
         let theme = self.theme;
         let thumb = |c: u32| {
             div()
@@ -1351,7 +1400,6 @@ impl Catalogue {
                     ),
             );
         section(
-            theme,
             9,
             "Built to the handoff and parked in `subtake_ui::unused`: nothing in the app draws them yet.",
             vec![
@@ -1448,32 +1496,392 @@ impl Catalogue {
     }
 }
 
-/// A section: its caps label, a line on what it shows, and its specimens on
-/// the inspector's own plane, which is what the controls are drawn to sit on.
-fn section(theme: Theme, index: usize, note: &str, rows: Vec<AnyElement>) -> Div {
-    div()
-        .flex()
-        .flex_col()
-        .gap(px(Theme::gap()))
-        .child(ui::heading(SECTIONS[index]).text_color(theme.text))
-        .child(
+impl Catalogue {
+    /// A section: its heading, a line on what it shows, its Tune button and
+    /// list, and its specimens on the inspector's own plane, which is what
+    /// the controls are drawn to sit on. The heading and plane are the
+    /// catalogue's, so only the specimens' reads are recorded.
+    fn section(&mut self, cx: &mut Context<Self>, section: Section) -> Div {
+        let Section { index, note, rows } = section;
+        let theme = self.theme;
+        tune::unrecorded(|| {
+            let open = self.tuning == Some(index);
+            let count = self.reads[index].borrow().len();
             div()
-                .text_size(px(Theme::font_secondary()))
-                .text_color(theme.muted)
-                .child(note.to_owned()),
-        )
-        .child(
-            ui::content_panel(theme)
                 .flex()
                 .flex_col()
-                .gap(px(Theme::gap_large()))
-                .p(px(Theme::inset()))
-                .children(rows),
+                .gap(px(Theme::gap()))
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap(px(Theme::gap_large()))
+                        .child(ui::heading(SECTIONS[index]).text_color(theme.text))
+                        .child(div().flex_1())
+                        .child(
+                            ui::button(
+                                SharedString::from(format!("tune-{index}")),
+                                format!("Tune · {count}"),
+                                theme,
+                            )
+                            .compact()
+                            .glyph("SlidersHorizontal-regular")
+                            .toggled(open)
+                            .on_click(Self::click(cx, move |s| {
+                                s.tuning = if s.tuning == Some(index) {
+                                    None
+                                } else {
+                                    Some(index)
+                                }
+                            })),
+                        ),
+                )
+                .child(
+                    div()
+                        .text_size(px(Theme::font_secondary()))
+                        .text_color(theme.muted)
+                        .child(note.to_owned()),
+                )
+                .child(Recorded {
+                    reads: self.reads[index].clone(),
+                    child: ui::content_panel(theme)
+                        .flex()
+                        .flex_col()
+                        .gap(px(Theme::gap_large()))
+                        .p(px(Theme::inset()))
+                        .children(rows)
+                        .into_any_element(),
+                })
+        })
+    }
+
+    /// The tuning dock: every metric a section's specimens read, grouped as
+    /// `metrics.rs` groups them, each with a slider, a nudge either way and
+    /// a reset.
+    fn tuner(&mut self, cx: &mut Context<Self>, index: usize) -> Div {
+        let theme = self.theme;
+        let reads = self.reads[index].borrow().clone();
+        // `metrics.rs` order keeps a group's metrics together.
+        let mut groups: Vec<(&str, Vec<AnyElement>)> = Vec::new();
+        for metric in tune::metrics().iter().filter(|m| reads.contains(m.name)) {
+            let row = tuner_row(metric, self.tuner_slider(cx, metric), theme).into_any_element();
+            match groups.last_mut() {
+                Some((group, rows)) if *group == metric.group => rows.push(row),
+                _ => groups.push((metric.group, vec![row])),
+            }
+        }
+        let list = div()
+            .id("tune-dock")
+            .flex_1()
+            .min_h_0()
+            .overflow_y_scroll()
+            .flex()
+            .flex_col()
+            .gap(px(Theme::gap_block()))
+            .px(px(Theme::inset()))
+            .pb(px(Theme::inset()));
+        let dock = div()
+            .flex()
+            .flex_col()
+            .flex_none()
+            .h(px(TUNE_DOCK_HEIGHT))
+            .border_t_1()
+            .border_color(theme.line)
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(px(Theme::gap_large()))
+                    .p(px(Theme::inset()))
+                    .child(
+                        ui::heading(format!("Tuning {}", SECTIONS[index])).text_color(theme.text),
+                    )
+                    .child(
+                        div()
+                            .flex_1()
+                            .text_size(px(Theme::font_secondary()))
+                            .text_color(theme.muted)
+                            .child("Live in every window. A metric is one value app-wide."),
+                    )
+                    .when(tune::changed() > 0, |header| {
+                        header
+                            .child(
+                                div()
+                                    .text_size(px(Theme::font_secondary()))
+                                    .text_color(theme.accent)
+                                    .child(format!("{} tuned", tune::changed())),
+                            )
+                            .child(
+                                ui::button("tune-copy", "Copy changes", theme)
+                                    .compact()
+                                    .on_click(|_, _, cx| {
+                                        cx.write_to_clipboard(ClipboardItem::new_string(
+                                            tune::as_rust(),
+                                        ))
+                                    }),
+                            )
+                            .child(
+                                ui::button("tune-reset", "Reset all", theme)
+                                    .compact()
+                                    .on_click(|_, _, cx| {
+                                        tune::reset_all();
+                                        cx.refresh_windows();
+                                    }),
+                            )
+                    })
+                    .child(
+                        ui::icon_button("tune-close", "X-regular", "Close", theme)
+                            .small()
+                            .ghost()
+                            .on_click(Self::click(cx, |s| s.tuning = None)),
+                    ),
+            );
+        if groups.is_empty() {
+            return dock.child(
+                list.child(
+                    div()
+                        .text_size(px(Theme::font_secondary()))
+                        .text_color(theme.muted)
+                        .child("Nothing read yet: scroll the section into view."),
+                ),
+            );
+        }
+        dock.child(list.children(groups.into_iter().map(|(group, rows)| {
+            div()
+                .flex()
+                .flex_col()
+                .gap(px(Theme::gap()))
+                .child(ui::caps_label(group.to_owned(), theme))
+                .child(
+                    div()
+                        .flex()
+                        .flex_wrap()
+                        .gap_x(px(Theme::gap_large()))
+                        .gap_y(px(Theme::gap()))
+                        .children(rows),
+                )
+        })))
+    }
+
+    /// The slider for one metric, made the first time it is shown and
+    /// brought to the metric's current value every frame after, so a
+    /// derived metric follows the ones it is built from.
+    fn tuner_slider(&mut self, cx: &mut Context<Self>, metric: &'static Metric) -> Entity<Slider> {
+        let theme = self.theme;
+        let slider = self
+            .tuners
+            .entry(metric.name)
+            .or_insert_with(|| {
+                let (minimum, maximum) = tune_range(metric.default);
+                cx.new(|_| {
+                    let mut s = Slider::new(
+                        minimum,
+                        maximum,
+                        metric.value(),
+                        theme,
+                        move |value, _, _, cx| {
+                            tune::set(metric.name, snap(metric.default, value));
+                            cx.refresh_windows();
+                        },
+                    );
+                    s.set_caption(metric.name, "");
+                    s
+                })
+            })
+            .clone();
+        let value = metric.value();
+        slider.update(cx, |s, _| s.sync(value));
+        slider
+    }
+}
+
+/// What a section method builds: which section, the line on what it
+/// shows, and its specimens. [`Catalogue::section`] frames it.
+struct Section {
+    index: usize,
+    note: &'static str,
+    rows: Vec<AnyElement>,
+}
+
+fn section(index: usize, note: &'static str, rows: Vec<AnyElement>) -> Section {
+    Section { index, note, rows }
+}
+
+/// Draws its child with every metric read in layout, prepaint and paint
+/// added to `reads`: the components' renders run there, not when the
+/// section is built.
+struct Recorded {
+    reads: Reads,
+    child: AnyElement,
+}
+
+impl IntoElement for Recorded {
+    type Element = Self;
+
+    fn into_element(self) -> Self {
+        self
+    }
+}
+
+impl Element for Recorded {
+    type RequestLayoutState = ();
+    type PrepaintState = ();
+
+    fn id(&self) -> Option<ElementId> {
+        None
+    }
+
+    fn source_location(&self) -> Option<&'static core::panic::Location<'static>> {
+        None
+    }
+
+    fn request_layout(
+        &mut self,
+        _id: Option<&GlobalElementId>,
+        _inspector_id: Option<&InspectorElementId>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> (LayoutId, ()) {
+        let child = &mut self.child;
+        (
+            tune::record(&self.reads, || child.request_layout(window, cx)),
+            (),
+        )
+    }
+
+    fn prepaint(
+        &mut self,
+        _id: Option<&GlobalElementId>,
+        _inspector_id: Option<&InspectorElementId>,
+        _bounds: Bounds<Pixels>,
+        _request_layout: &mut (),
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        let child = &mut self.child;
+        tune::record(&self.reads, || child.prepaint(window, cx));
+    }
+
+    fn paint(
+        &mut self,
+        _id: Option<&GlobalElementId>,
+        _inspector_id: Option<&InspectorElementId>,
+        _bounds: Bounds<Pixels>,
+        _request_layout: &mut (),
+        _prepaint: &mut (),
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        let child = &mut self.child;
+        tune::record(&self.reads, || child.paint(window, cx));
+    }
+}
+
+/// How far a metric's slider runs: to double its default, with room to
+/// grow a small one, and as far below zero as above for a negative one.
+fn tune_range(default: f32) -> (f32, f32) {
+    let size = default.abs();
+    let maximum = if size < 2. {
+        (size * 2.).max(2.)
+    } else {
+        (size * 2.).max(size + 24.)
+    };
+    (if default < 0. { -maximum } else { 0. }, maximum)
+}
+
+/// The step a metric moves in: whole points for a whole size, halves for
+/// a half, and hundredths for a factor.
+fn tune_step(default: f32) -> f32 {
+    if default.abs() < 2. {
+        0.01
+    } else if default.fract() == 0. {
+        1.
+    } else {
+        0.5
+    }
+}
+
+fn snap(default: f32, value: f32) -> f32 {
+    let step = tune_step(default);
+    (value / step).round() * step
+}
+
+/// One metric: its slider, nudges and reset, and the first line of its doc.
+fn tuner_row(metric: &'static Metric, slider: Entity<Slider>, theme: Theme) -> Div {
+    let step = tune_step(metric.default);
+    let nudge = if step < 1. { step * 5. } else { step };
+    let overridden = metric.overridden();
+    let nudge_button = |id: &str, label: &str, by: f32| {
+        ui::button(
+            SharedString::from(format!("tune-{id}-{}", metric.name)),
+            label.to_owned(),
+            theme,
+        )
+        .small()
+        .ghost()
+        .on_click(move |_, _, cx| {
+            tune::set(metric.name, snap(metric.default, metric.value() + by));
+            cx.refresh_windows();
+        })
+    };
+    let mut detail = String::new();
+    if metric.derived {
+        detail.push_str("Derived. ");
+    }
+    if overridden {
+        detail.push_str(&format!("Default {}. ", metric.default));
+    }
+    detail.push_str(metric.doc);
+    div()
+        .w(px(TUNE_ROW_WIDTH))
+        .flex()
+        .flex_col()
+        .gap(px(Theme::gap_small()))
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .gap(px(Theme::gap_small()))
+                .child(div().flex_1().min_w_0().child(slider))
+                .child(nudge_button("less", "−", -nudge))
+                .child(nudge_button("more", "+", nudge))
+                .child(
+                    ui::icon_button(
+                        SharedString::from(format!("tune-reset-{}", metric.name)),
+                        "ArrowCounterClockwise-regular",
+                        "Reset",
+                        theme,
+                    )
+                    .small()
+                    .ghost()
+                    .enabled(overridden)
+                    .on_click(move |_, _, cx| {
+                        tune::reset(metric.name);
+                        cx.refresh_windows();
+                    }),
+                ),
+        )
+        .child(
+            div()
+                .text_ellipsis()
+                .overflow_hidden()
+                .whitespace_nowrap()
+                .text_size(px(Theme::font_small()))
+                .text_color(if overridden {
+                    theme.accent
+                } else {
+                    theme.muted
+                })
+                .child(detail),
         )
 }
 
 /// One row of a section: what it is on the left, the specimens on the right.
 fn specimen(theme: Theme, label: &str, items: Vec<AnyElement>) -> Div {
+    tune::unrecorded(|| specimen_row(theme, label, items))
+}
+
+fn specimen_row(theme: Theme, label: &str, items: Vec<AnyElement>) -> Div {
     div()
         .flex()
         .items_center()
@@ -1527,18 +1935,33 @@ impl Render for Catalogue {
             }
         }
         let header = self.header(cx);
-        let sections = [
-            self.buttons(cx),
-            self.pickers(cx),
-            self.sliders_and_fields(cx),
-            self.menus(cx),
-            self.tiles(cx),
-            self.status(cx),
-            self.rows_and_cards(cx),
-            self.frost(),
-            self.type_and_icons(),
-            self.parked(cx),
+        // Each section is built with its reads recorded, for its Tune list:
+        // a builder that sizes itself as it is called reads here, and the
+        // rest read as they draw, inside `Recorded`.
+        let builders: [fn(&mut Self, &mut Context<Self>) -> Section; SECTIONS.len()] = [
+            Self::buttons,
+            Self::pickers,
+            Self::sliders_and_fields,
+            Self::menus,
+            Self::tiles,
+            Self::status,
+            Self::rows_and_cards,
+            Self::frost,
+            Self::type_and_icons,
+            Self::parked,
         ];
+        let sections: Vec<Div> = builders
+            .iter()
+            .enumerate()
+            .map(|(i, build)| {
+                let reads = self.reads[i].clone();
+                let built = tune::record(&reads, || build(self, cx));
+                self.section(cx, built)
+            })
+            .collect();
+        let dock = self
+            .tuning
+            .map(|index| tune::unrecorded(|| self.tuner(cx, index)));
         if ui::tick_hover_fades() {
             window.request_animation_frame();
         }
@@ -1582,7 +2005,8 @@ impl Render for Catalogue {
                             .gap(px(Theme::inset() * 2.))
                             .p(px(Theme::inset()))
                             .children(sections),
-                    ),
+                    )
+                    .children(dock),
             )
     }
 }

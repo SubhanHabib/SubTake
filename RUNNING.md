@@ -49,6 +49,15 @@ control is live. `SUBTAKE_GALLERY_COMPONENTS=off` leaves the window closed, and
 `SUBTAKE_GALLERY_COMPONENTS=frost` (or any section name) opens it scrolled to
 that section.
 
+Each section's **Tune** button opens a dock listing every metric its
+components read (padding, gaps, heights, radii, type and icon sizes), each
+with a slider, nudges and a reset. A change is live in every window, the
+editor's included, since a metric is one value app-wide, and a derived metric
+follows the ones it is built from. **Copy changes** puts the tuned values on
+the clipboard as `metrics.rs` lines; nothing is saved otherwise.
+`SUBTAKE_GALLERY_COMPONENTS=buttons+tune` opens with the dock up, and
+`SUBTAKE_GALLERY_TUNED=GAP=12,RADIUS_MENU=8` starts with those values tuned.
+
 ## Real-app walkthrough
 
 The walkthrough is the gallery tour on the real app. It records the built-in

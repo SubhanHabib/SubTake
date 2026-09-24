@@ -59,7 +59,8 @@ static ENABLED: AtomicBool = AtomicBool::new(false);
 static OVERRIDES: LazyLock<Mutex<HashMap<&'static str, f32>>> = LazyLock::new(Default::default);
 
 thread_local! {
-    static RECORDING: RefCell<Vec<Reads>> = const { RefCell::new(Vec::new()) };
+    /// The innermost [`record`] or [`unrecorded`] call; `None` for the latter.
+    static RECORDING: RefCell<Vec<Option<Reads>>> = const { RefCell::new(Vec::new()) };
 }
 
 /// Every tunable metric, in `metrics.rs` order.
@@ -95,7 +96,17 @@ pub fn changed() -> usize {
 
 /// Run `f`, adding the name of every metric it reads to `reads`.
 pub fn record<R>(reads: &Reads, f: impl FnOnce() -> R) -> R {
-    RECORDING.with(|stack| stack.borrow_mut().push(reads.clone()));
+    recording(Some(reads.clone()), f)
+}
+
+/// Run `f` without adding its reads to the [`record`] call around it: the
+/// catalogue's own chrome, which is not the component being tuned.
+pub fn unrecorded<R>(f: impl FnOnce() -> R) -> R {
+    recording(None, f)
+}
+
+fn recording<R>(reads: Option<Reads>, f: impl FnOnce() -> R) -> R {
+    RECORDING.with(|stack| stack.borrow_mut().push(reads));
     let result = f();
     RECORDING.with(|stack| stack.borrow_mut().pop());
     result
@@ -124,7 +135,7 @@ pub(crate) fn read(name: &'static str, default: f32, formula: impl FnOnce() -> f
         return default;
     }
     RECORDING.with(|stack| {
-        if let Some(reads) = stack.borrow().last() {
+        if let Some(Some(reads)) = stack.borrow().last() {
             reads.borrow_mut().insert(name);
         }
     });
