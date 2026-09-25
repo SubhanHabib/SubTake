@@ -32,7 +32,8 @@
 //! `=card-audio-none` or `=card-camera-none` with no device found,
 //! `=card-audio-unplugged` or `=card-camera-unplugged` just after the chosen
 //! one is taken away, `=card-audio-listening` and `=card-audio-playing`
-//! with its Test running,
+//! with its Test running, `=card-camera-starting` before the camera's
+//! first frame,
 //! `=card-sources-window` and `=card-sources-area` on those tabs,
 //! `=card-sources-cycle` with its list emptied and refilled on a timer);
 //! `=panel-<name>` opens any other panel by its
@@ -371,7 +372,8 @@ pub fn run() -> Result<()> {
         // refuse what the card captures, and `-none` (`card-audio-none`)
         // finds no microphone or camera; `-unplugged`
         // (`card-audio-unplugged`) has just lost the one chosen;
-        // `card-audio-listening` and `card-audio-playing` hold the Test.
+        // `card-audio-listening` and `card-audio-playing` hold the Test;
+        // `card-camera-starting` waits on the camera's first frame.
         // The Capture source card with its list emptied and refilled on a
         // timer, for the card easing between the two heights.
         Ok("card-sources-cycle") => {
@@ -413,6 +415,9 @@ pub fn run() -> Result<()> {
             let panel = panel
                 .trim_end_matches("-listening")
                 .trim_end_matches("-playing");
+            // The Camera card before its first frame, the camera starting.
+            let starting = panel.ends_with("-starting");
+            let panel = panel.trim_end_matches("-starting");
             // On the Window tab, a window is the source: Code, as the
             // handoff draws it.
             let window_chosen = panel.ends_with("-window");
@@ -427,6 +432,9 @@ pub fn run() -> Result<()> {
                 show_recorder(&g.launcher, &g.options);
                 g.options.set_busy(busy);
                 g.options.set_mic_test(test);
+                if starting {
+                    g.options.set_camera_preview(Default::default());
+                }
                 for surface in [&*g.launcher, &*g.options] {
                     match panel.as_str() {
                         "sources" if denied => surface.set_screen_access(false),

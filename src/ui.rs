@@ -643,8 +643,10 @@ impl Render for RootView {
                 self.theme.ground,
             );
         }
-        if let Surface::Editor(e) = &surface {
-            self.stream("preview", e.get_preview(), window);
+        match &surface {
+            Surface::Editor(e) => self.stream("preview", e.get_preview(), window),
+            Surface::Options(o) => self.stream("camera", o.get_camera_preview(), window),
+            _ => {}
         }
         let content = match &surface {
             Surface::Editor(e) => self.editor(e, window, cx),

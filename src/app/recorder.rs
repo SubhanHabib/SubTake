@@ -70,6 +70,7 @@ impl App {
 
     pub(super) fn sync_launcher_options(&self, ui: &EditorWindow) {
         self.sync_mic_meter(ui);
+        self.sync_camera_preview(ui);
         let (Some(launcher), Some(options)) = (&self.launcher, &self.launcher_options) else {
             return;
         };
@@ -138,6 +139,41 @@ impl App {
             && let Some(options) = &self.launcher_options
         {
             options.set_mic_level(f32::NEG_INFINITY);
+        }
+    }
+
+    /// Streams the chosen camera into the Camera card while it is open with
+    /// the camera on, and stops once the card closes, the camera goes off or
+    /// a recording starts. The first time, the card opening is what asks
+    /// the system for the camera; its answer syncs the card again. A camera
+    /// starting clears the picture to its spinner; one stopping leaves its
+    /// last frame, for the card to fade out on.
+    pub(super) fn sync_camera_preview(&self, ui: &EditorWindow) {
+        let open = self.launcher.as_ref().is_some_and(|launcher| {
+            launcher.get_panel() == "camera" && launcher.window().is_visible()
+        });
+        let cameras = self.devices["cameras"].as_array();
+        let wanted = open
+            && ui.get_capture_camera()
+            && !ui.get_busy()
+            && !ui.get_recording()
+            && cameras.is_some_and(|list| !list.is_empty())
+            && platform::has_access(platform::Access::Camera);
+        let device = wanted.then(|| {
+            cameras
+                .and_then(|list| list.get((ui.get_camera_index() - 1) as usize))
+                .and_then(|camera| camera["id"].as_str())
+                .unwrap_or_default()
+        });
+        let preview = platform::preview_camera(device, camera_frame);
+        if preview == platform::CameraPreview::Off && device.is_some() {
+            platform::request_camera_access(camera_answer);
+        }
+        if preview != platform::CameraPreview::Streaming
+            && device.is_some()
+            && let Some(options) = &self.launcher_options
+        {
+            options.set_camera_preview(Default::default());
         }
     }
 
@@ -404,6 +440,7 @@ impl App {
             options.hide()?;
         }
         self.sync_mic_meter(ui);
+        self.sync_camera_preview(ui);
         platform::set_editor_active(true);
         if !self.editor_shown {
             ui.window()
@@ -571,6 +608,51 @@ extern "C" fn mic_level(level: f32) {
             options.set_mic_level(level + 20. * gain.log10());
         }
     });
+}
+
+/// A frame is on its way to the card; until it lands, those after it are
+/// dropped rather than queued behind it.
+static CAMERA_FRAME_PENDING: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// One frame of the camera's picture, from its capture thread. A frame that
+/// arrives after the picture has stopped is dropped.
+extern "C" fn camera_frame(rows: *const u8, width: i32, height: i32, stride: i32) {
+    use std::sync::atomic::Ordering;
+    let (Ok(width), Ok(height), Ok(stride)) = (
+        u32::try_from(width),
+        u32::try_from(height),
+        usize::try_from(stride),
+    ) else {
+        return;
+    };
+    if rows.is_null() || CAMERA_FRAME_PENDING.swap(true, Ordering::AcqRel) {
+        return;
+    }
+    let row = width as usize * 4;
+    // SAFETY: the platform hands over `height` rows of `stride` bytes, valid
+    // for this call.
+    let all = unsafe { std::slice::from_raw_parts(rows, stride * height as usize) };
+    let bytes: Vec<u8> = all
+        .chunks(stride)
+        .flat_map(|line| &line[..row])
+        .copied()
+        .collect();
+    post(move |app, ui| {
+        CAMERA_FRAME_PENDING.store(false, Ordering::Release);
+        if let Some(options) = &app.launcher_options
+            && options.get_panel() == "camera"
+            && ui.get_capture_camera()
+        {
+            options.set_camera_preview(ui_runtime::Image::from_bgra8(bytes, width, height));
+        }
+    });
+}
+
+/// The system's answer on the camera: the card syncs again, streaming, or
+/// showing that access is off.
+extern "C" fn camera_answer(_granted: bool) {
+    post(|app, ui| app.sync_launcher_options(ui));
 }
 
 /// The Microphone card's Test moving on: listening, playing, over.

@@ -65,6 +65,18 @@ impl Image {
         ]))))
     }
 
+    /// Rows already in GPUI's BGRA, as a camera hands them over; nothing
+    /// for bytes that are not `width` × `height` pixels.
+    pub fn from_bgra8(bytes: Vec<u8>, width: u32, height: u32) -> Self {
+        Self(
+            image::RgbaImage::from_raw(width, height, bytes).map(|image| {
+                Arc::new(gpui::RenderImage::new(smallvec::smallvec![
+                    image::Frame::new(image)
+                ]))
+            }),
+        )
+    }
+
     pub fn load_from_path(path: &Path) -> Result<Self> {
         let image = image::open(path)?.into_rgba8();
         Ok(Self::from_rgba8(SharedPixelBuffer::clone_from_slice(

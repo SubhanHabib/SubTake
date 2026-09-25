@@ -870,6 +870,8 @@ impl Theme {
     pub const CAMERA_PREVIEW_ASPECT: f32 = 16.0 / 10.0;
     pub const CAMERA_CHIP_INSET: f32 = 10.0;
     pub const CAMERA_OFF_ICON: f32 = 28.0;
+    /// The spinner on the picture while the camera starts.
+    pub const CAMERA_SPINNER_SIZE: f32 = 16.0;
     /// The Live chip: 24 tall, 10 in, a 6 `rec` dot 6 before its word.
     pub const LIVE_CHIP_HEIGHT: f32 = 24.0;
     pub const LIVE_CHIP_PADDING: f32 = 10.0;

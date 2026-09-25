@@ -421,6 +421,7 @@ impl App {
                     options.hide()?;
                 }
                 self.sync_mic_meter(ui);
+                self.sync_camera_preview(ui);
             }
             "drag-launcher" => {
                 if let Some(launcher) = &self.launcher {

@@ -87,11 +87,9 @@ impl RootView {
     }
 }
 
-/// The camera's picture at 16:10, Live on it while the camera is on. Off,
-/// the picture gives way to the camera struck through.
-///
-/// Not carried: the mirroring. gpui at the pinned revision cannot flip an
-/// image, so the picture shows the way the camera sees.
+/// The camera's picture at 16:10, mirrored as a mirror would show it, with
+/// Live on it once it comes in; before then, a spinner while the camera
+/// starts. Off, the picture gives way to the camera struck through.
 fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Div {
     let radius = Theme::radius_menu();
     let plate = div()
@@ -101,6 +99,7 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
         .rounded(px(radius))
         .overflow_hidden()
         .bg(theme.sunk);
+    let live = on && image.0.is_some();
     let plate = match (on, image.0) {
         (false, _) => plate
             .flex()
@@ -119,25 +118,22 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
                 .rounded(px(radius))
                 .object_fit(ObjectFit::Cover),
         ),
-        // Not wired: the app does not stream the camera into this card yet,
-        // so outside the gallery the picture shows the camera's glyph where
-        // the handoff draws the feed, and never the spinner it draws while
-        // a camera starts.
-        (true, None) => plate
-            .flex()
-            .items_center()
-            .justify_center()
-            .child(icon_sized(
-                "VideoCamera-regular",
-                Theme::camera_off_icon(),
-                theme.muted,
-            )),
+        (true, None) => {
+            plate
+                .flex()
+                .items_center()
+                .justify_center()
+                .child(super::super::recorder::spinner(
+                    Theme::camera_spinner_size(),
+                    theme,
+                ))
+        }
     };
     let plate = plate.child(edge(
         radius,
         vec![hairline(theme.line, Theme::hairline_width())],
     ));
-    if !on {
+    if !live {
         return plate;
     }
     // Palette churn: the handoff blurs what is under the chips by 16. A
