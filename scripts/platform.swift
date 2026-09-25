@@ -134,7 +134,10 @@ if command == "sources" || command == "sources-passive" {
 } else if command == "devices" {
     let cameras=AVCaptureDevice.devices(for: .video).map { ["id":$0.uniqueID,"name":$0.localizedName] }
     let microphones=AVCaptureDevice.devices(for: .audio).map { ["id":$0.uniqueID,"name":$0.localizedName,"transport":transportName($0.transportType)] }
-    FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject:["cameras":cameras,"microphones":microphones]))
+    // The system default of each, by id: what a recording takes when the
+    // one chosen is taken away.
+    let value: [String: Any] = ["cameras": cameras, "microphones": microphones, "defaultCamera": AVCaptureDevice.default(for: .video)?.uniqueID ?? "", "defaultMicrophone": AVCaptureDevice.default(for: .audio)?.uniqueID ?? ""]
+    FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject: value))
 } else if command == "permission-status" {
     let value: [String: Any] = ["screen": CGPreflightScreenCaptureAccess(), "microphone": AVCaptureDevice.authorizationStatus(for: .audio).rawValue, "camera": AVCaptureDevice.authorizationStatus(for: .video).rawValue]
     FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject: value))

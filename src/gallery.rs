@@ -30,6 +30,8 @@
 //! opens that recorder card (`=card-sources-busy` with its controls off,
 //! `=card-audio-denied` with the system refusing what it captures,
 //! `=card-audio-none` or `=card-camera-none` with no device found,
+//! `=card-audio-unplugged` or `=card-camera-unplugged` just after the chosen
+//! one is taken away,
 //! `=card-sources-window` and `=card-sources-area` on those tabs,
 //! `=card-sources-cycle` with its list emptied and refilled on a timer);
 //! `=panel-<name>` opens any other panel by its
@@ -366,7 +368,8 @@ pub fn run() -> Result<()> {
         // A `-busy` suffix (`card-sources-busy`) holds the card mid-change,
         // its controls off; `-denied` (`card-audio-denied`) has the system
         // refuse what the card captures, and `-none` (`card-audio-none`)
-        // finds no microphone or camera.
+        // finds no microphone or camera; `-unplugged`
+        // (`card-audio-unplugged`) has just lost the one chosen.
         // The Capture source card with its list emptied and refilled on a
         // timer, for the card easing between the two heights.
         Ok("card-sources-cycle") => {
@@ -394,6 +397,8 @@ pub fn run() -> Result<()> {
             let panel = panel.trim_end_matches("-denied");
             let none = panel.ends_with("-none");
             let panel = panel.trim_end_matches("-none");
+            let unplugged = panel.ends_with("-unplugged");
+            let panel = panel.trim_end_matches("-unplugged");
             // On the Window tab, a window is the source: Code, as the
             // handoff draws it.
             let window_chosen = panel.ends_with("-window");
@@ -413,6 +418,25 @@ pub fn run() -> Result<()> {
                         "audio" if denied => surface.set_microphone_access(false),
                         "camera" if denied => surface.set_camera_access(false),
                         _ => {}
+                    }
+                    // The last in the list taken away, the first standing in.
+                    if unplugged {
+                        let without_last = |names: ModelRc<String>| {
+                            let mut names: Vec<String> = names.iter().collect();
+                            names.pop();
+                            ModelRc::new(VecModel::from(names))
+                        };
+                        surface.set_microphone_names(without_last(surface.get_microphone_names()));
+                        surface.set_camera_names(without_last(surface.get_camera_names()));
+                        surface.set_microphone_index(0);
+                        surface.set_camera_index(0);
+                        surface.set_microphone_notice(
+                            "Shure MV7 disconnected · using MacBook Pro Microphone".into(),
+                        );
+                        surface.set_camera_notice(
+                            "iPhone Continuity Camera disconnected · using FaceTime HD Camera"
+                                .into(),
+                        );
                     }
                     // The system default alone, as the platform lists a Mac
                     // with nothing plugged in.

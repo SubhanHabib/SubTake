@@ -189,6 +189,8 @@ impl RootView {
                 .unwrap_or_else(|| "Nothing to capture yet".into()),
             "audio" if !state.get_microphone_access() => "Not allowed".into(),
             "camera" if !state.get_camera_access() => "Not allowed".into(),
+            "audio" if !state.get_microphone_notice().is_empty() => state.get_microphone_notice(),
+            "camera" if !state.get_camera_notice().is_empty() => state.get_camera_notice(),
             "audio" if !microphone_usable(state) => "None found".into(),
             "camera" if !camera_usable(state) => "None found".into(),
             "audio" => pick(state.get_microphone_names(), state.get_microphone_index()),

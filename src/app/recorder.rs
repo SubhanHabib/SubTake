@@ -94,6 +94,8 @@ impl App {
         options.set_source_index(ui.get_source_index());
         options.set_camera_names(ui.get_camera_names());
         options.set_camera_index(ui.get_camera_index());
+        options.set_camera_notice(ui.get_camera_notice());
+        options.set_microphone_notice(ui.get_microphone_notice());
         options.set_microphone_names(ui.get_microphone_names());
         options.set_microphone_kinds(ui.get_microphone_kinds());
         options.set_microphone_index(ui.get_microphone_index());
@@ -137,6 +139,86 @@ impl App {
         {
             options.set_mic_level(f32::NEG_INFINITY);
         }
+    }
+
+    /// Takes a fresh list of microphones and cameras. The one chosen is kept
+    /// by its id, wherever it now sits in the list; one that has been taken
+    /// away gives way to the system default, and for `DEVICE_NOTICE` its
+    /// card's header says so.
+    pub(super) fn take_devices(&mut self, ui: &EditorWindow, devices: Value) {
+        let lists = [
+            (
+                "microphones",
+                "defaultMicrophone",
+                ui.get_microphone_index(),
+            ),
+            ("cameras", "defaultCamera", ui.get_camera_index()),
+        ];
+        for (key, default_key, index) in lists {
+            let list = devices[key].as_array().cloned().unwrap_or_default();
+            // Index 0 is the system default, which is no device of its own.
+            let chosen = usize::try_from(index - 1)
+                .ok()
+                .and_then(|i| self.devices[key].as_array()?.get(i).cloned());
+            let found = chosen
+                .as_ref()
+                .and_then(|chosen| list.iter().position(|device| device["id"] == chosen["id"]));
+            let index = found.map_or(0, |i| i as i32 + 1);
+            let notice = match (&chosen, found) {
+                (Some(gone), None) => {
+                    let default = list
+                        .iter()
+                        .find(|device| device["id"] == devices[default_key])
+                        .and_then(|device| device["name"].as_str())
+                        .unwrap_or("the system default");
+                    Some(format!(
+                        "{} disconnected · using {default}",
+                        gone["name"].as_str().unwrap_or("Device")
+                    ))
+                }
+                _ => None,
+            };
+            let mut names = vec![SharedString::from("System default")];
+            names.extend(
+                list.iter()
+                    .map(|v| SharedString::from(v["name"].as_str().unwrap_or("Device"))),
+            );
+            let names = ModelRc::new(VecModel::from(names));
+            if key == "microphones" {
+                ui.set_microphone_names(names);
+                ui.set_microphone_index(index);
+                // Beside each name, how it connects; the system default
+                // first, which is no device of its own.
+                let mut kinds = vec![SharedString::default()];
+                kinds.extend(
+                    list.iter()
+                        .map(|v| SharedString::from(v["transport"].as_str().unwrap_or(""))),
+                );
+                ui.set_microphone_kinds(ModelRc::new(VecModel::from(kinds)));
+            } else {
+                ui.set_camera_names(names);
+                ui.set_camera_index(index);
+            }
+            if let Some(notice) = notice {
+                let camera = key == "cameras";
+                if camera {
+                    ui.set_camera_notice(notice.clone());
+                } else {
+                    ui.set_microphone_notice(notice.clone());
+                }
+                Timer::single_shot(DEVICE_NOTICE, move || {
+                    with_app(|_, ui| {
+                        // A later notice keeps its own time.
+                        if camera && ui.get_camera_notice() == notice {
+                            ui.set_camera_notice(String::new());
+                        } else if !camera && ui.get_microphone_notice() == notice {
+                            ui.set_microphone_notice(String::new());
+                        }
+                    })
+                });
+            }
+        }
+        self.devices = devices;
     }
 
     pub(super) fn sync_launcher(&self, ui: &EditorWindow) {
@@ -466,6 +548,14 @@ impl App {
             platform::set_countdown_display(display)
         });
     }
+}
+
+/// How long a card's header says its device was taken away.
+const DEVICE_NOTICE: Duration = Duration::from_secs(4);
+
+/// A microphone or camera plugged in or taken away: the lists again.
+pub(super) extern "C" fn devices_changed() {
+    post(|app, ui| report(ui, app.action(ui, "devices")));
 }
 
 /// The microphone meter's level, from its capture thread. A level that

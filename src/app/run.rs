@@ -70,6 +70,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             )));
         });
     });
+    platform::watch_devices(recorder::devices_changed);
     if let Err(e) = state.borrow_mut().register_hotkeys() {
         ui.set_status(format!("Global shortcuts: {e}"));
     }

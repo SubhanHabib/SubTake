@@ -822,29 +822,7 @@ impl App {
                 std::thread::spawn(|| {
                     let result = platform::devices();
                     post(move |app, ui| match result {
-                        Ok(devices) => {
-                            let names = |key: &str| {
-                                let mut names = vec![SharedString::from("System default")];
-                                if let Some(list) = devices[key].as_array() {
-                                    names.extend(list.iter().map(|v| {
-                                        SharedString::from(v["name"].as_str().unwrap_or("Device"))
-                                    }));
-                                }
-                                ModelRc::new(VecModel::from(names))
-                            };
-                            ui.set_camera_names(names("cameras"));
-                            ui.set_microphone_names(names("microphones"));
-                            // Beside each name, how it connects; the system
-                            // default first, which is no device of its own.
-                            let mut kinds = vec![SharedString::default()];
-                            if let Some(list) = devices["microphones"].as_array() {
-                                kinds.extend(list.iter().map(|v| {
-                                    SharedString::from(v["transport"].as_str().unwrap_or(""))
-                                }));
-                            }
-                            ui.set_microphone_kinds(ModelRc::new(VecModel::from(kinds)));
-                            app.devices = devices;
-                        }
+                        Ok(devices) => app.take_devices(ui, devices),
                         Err(e) => ui.set_status(format!("Devices: {e:#}")),
                     });
                 });

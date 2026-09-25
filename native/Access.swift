@@ -22,3 +22,30 @@ public func captureAccess(_ kind: Int32) -> Bool {
 public func requestScreenAccess() {
     _ = CGRequestScreenCaptureAccess()
 }
+
+/// Told when a microphone or camera is plugged in or taken away.
+public typealias DevicesChanged = @convention(c) () -> Void
+
+/// The observers and the discovery session that keep device changes coming.
+private var deviceWatch: (AVCaptureDevice.DiscoverySession, [NSObjectProtocol])?
+
+/// Calls `callback` on the main thread whenever a microphone or camera is
+/// connected or disconnected, from now on. Watching again replaces the
+/// watch. It asks for no access: listing devices needs none.
+@_cdecl("subtake_devices_watch")
+public func devicesWatch(_ callback: DevicesChanged?) {
+    guard let callback else { return }
+    if let (_, observers) = deviceWatch {
+        observers.forEach(NotificationCenter.default.removeObserver)
+    }
+    // A live discovery session is what has AVFoundation post the changes
+    // to a process that is not capturing.
+    let session = AVCaptureDevice.DiscoverySession(
+        deviceTypes: [.microphone, .external, .builtInWideAngleCamera, .continuityCamera, .deskViewCamera],
+        mediaType: nil,
+        position: .unspecified)
+    let observers = [AVCaptureDevice.wasConnectedNotification, AVCaptureDevice.wasDisconnectedNotification].map {
+        NotificationCenter.default.addObserver(forName: $0, object: nil, queue: .main) { _ in callback() }
+    }
+    deviceWatch = (session, observers)
+}

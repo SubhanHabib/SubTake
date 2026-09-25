@@ -12,12 +12,14 @@ use std::{
 
 mod access;
 mod companion;
+mod devices;
 mod microphone;
 mod recording;
 mod windows;
 
 pub use access::{Access, has_access, open_access_settings};
 use companion::*;
+pub use devices::watch_devices;
 pub use microphone::meter_microphone;
 pub use recording::Recording;
 pub use windows::*;

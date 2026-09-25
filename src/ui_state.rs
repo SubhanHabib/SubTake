@@ -175,6 +175,11 @@ struct Properties {
     screen_access: bool,
     microphone_access: bool,
     camera_access: bool,
+    /// For a few seconds after the chosen microphone or camera is taken
+    /// away, what its card's header says instead: "Shure MV7 disconnected ·
+    /// using MacBook Pro Microphone". Empty otherwise.
+    microphone_notice: String,
+    camera_notice: String,
     cancellable: bool,
     elapsed: String,
     directory: String,
@@ -287,6 +292,8 @@ impl Default for Properties {
             screen_access: true,
             microphone_access: true,
             camera_access: true,
+            microphone_notice: String::new(),
+            camera_notice: String::new(),
             cancellable: false,
             elapsed: "00:00".into(),
             directory: String::new(),
@@ -1423,6 +1430,30 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.camera_access != value {
             props.camera_access = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_microphone_notice(&self) -> String {
+        self.0.props.borrow().microphone_notice.clone()
+    }
+
+    pub fn set_microphone_notice(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.microphone_notice != value {
+            props.microphone_notice = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_camera_notice(&self) -> String {
+        self.0.props.borrow().camera_notice.clone()
+    }
+
+    pub fn set_camera_notice(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.camera_notice != value {
+            props.camera_notice = value;
             self.window().invalidate();
         }
     }
