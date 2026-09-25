@@ -7,9 +7,11 @@
 //! unbuilt until somebody re-reads a spec that has already proved easy to
 //! misread, they are built here, to the numbers the cards give, and parked.
 //!
-//! Nothing outside this module calls them, but for `key_cap`, which the Add
-//! popup (`src/ui/add_popup.rs`) borrows while it is compared with the Add
-//! panel; it moves out of here if the popup stays. `unused` is public so the
+//! Nothing outside this module calls them, but for `key_cap` (a text
+//! field's trailing cap, and the Add popup's shortcuts) and
+//! `menu_section_header` (the Add popup's groups), which the Add popup
+//! (`src/ui/add_popup.rs`) brought into use while it is compared with the
+//! Add panel; they move out of here if the popup stays. `unused` is public so the
 //! compiler does not warn about that, and so a gallery can render them to
 //! check they still look right.
 //!

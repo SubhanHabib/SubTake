@@ -18,7 +18,10 @@
 
 use super::*;
 use subtake_theme::FONT_MONO;
-use subtake_ui::{icon_sized, layered, unused::key_cap};
+use subtake_ui::{
+    glyph_row, icon_sized, layered,
+    unused::{key_cap, menu_section_header},
+};
 
 /// How much of the lane the strip shows, centred on the playhead.
 const STRIP_SECONDS: f32 = 16.;
@@ -279,13 +282,16 @@ const GROUPS: [(&str, &[Kind]); 3] = [
     ),
 ];
 
-/// The popup's height, for deciding which way it opens.
-fn popup_height() -> f32 {
+/// The popup's height with a body `body` tall, for deciding which way it
+/// opens.
+fn popup_height(body: f32) -> f32 {
     2. * Theme::add_popup_padding()
-        + Theme::control_height_large()
-        + Theme::add_popup_body_height()
+        + Theme::control_height()
+        + 2. * Theme::focus_width()
+        + body
+        + Theme::border_width()
         + Theme::footer_height()
-        + 2. * Theme::add_popup_gap()
+        + 3. * Theme::add_popup_gap()
 }
 
 /// The preview card's inner width: what the list leaves of the popup.
@@ -474,14 +480,24 @@ impl RootView {
 
         let anchor = self.menu_anchor.get();
         let viewport = window.viewport_size();
-        let height = popup_height();
         let width = Theme::add_popup_width();
+        let mut body = Theme::add_popup_body_height();
         let (left, top) = if anchor.size.width > px(0.) {
             let left = f32::from(anchor.origin.x)
                 .min(f32::from(viewport.width) - width - Theme::gap())
                 .max(Theme::gap());
             let below = f32::from(anchor.origin.y + anchor.size.height) + Theme::gap();
-            let top = if below + height <= f32::from(viewport.height) - Theme::gap() {
+            let room_below = f32::from(viewport.height) - Theme::gap() - below;
+            let room_above = f32::from(anchor.origin.y) - 2. * Theme::gap();
+            // Shorter rather than over the button that opened it, where
+            // the window leaves no room for the whole body either way.
+            let chrome = popup_height(0.);
+            body = (room_below.max(room_above) - chrome).clamp(
+                Theme::add_popup_body_min_height(),
+                Theme::add_popup_body_height(),
+            );
+            let height = popup_height(body);
+            let top = if height <= room_below {
                 below
             } else {
                 (f32::from(anchor.origin.y) - Theme::gap() - height).max(Theme::gap())
@@ -492,7 +508,8 @@ impl RootView {
             // trigger. Centred over where the console would be.
             (
                 ((f32::from(viewport.width) - width) / 2.).max(Theme::gap()),
-                (f32::from(viewport.height) - height - Theme::inset()).max(Theme::gap()),
+                (f32::from(viewport.height) - popup_height(body) - Theme::inset())
+                    .max(Theme::gap()),
             )
         };
 
@@ -502,7 +519,8 @@ impl RootView {
         // row is not the child to scroll to.
         let mut children_of_rows = Vec::with_capacity(count);
         search.update(cx, |input, _| {
-            input.set_bare(true);
+            input.set_leading("Plus-regular");
+            input.set_trailing("esc");
             // With nothing open there is no playhead to add at.
             input.set_placeholder(if has_video {
                 format!("Add at {elapsed}")
@@ -546,22 +564,14 @@ impl RootView {
                 input.focus(window, cx);
             });
         }
-        let focused = search.read(cx).is_focused(window);
-
-        let field = row()
+        // The palette's field, its ring's own width either side keeping it
+        // off the popup's edge and the first caption.
+        let field = div()
             .flex_none()
-            .h(px(Theme::control_height_large()))
-            .pl(px(Theme::control_padding()))
-            .pr(px(Theme::gap()))
-            .gap(px(Theme::icon_gap_row()))
-            .rounded_full()
-            .bg(theme.sunk)
-            .when(focused, |el| el.shadow(vec![subtake_ui::focus_ring(theme)]))
-            .child(icon_sized("Plus-regular", Theme::icon_size(), theme.muted))
-            .child(search.clone())
-            .child(key_cap("esc", theme));
+            .py(px(Theme::focus_width()))
+            .child(search.clone());
 
-        let mut list = menu_list("add-popup-list", Theme::add_popup_body_height())
+        let mut list = menu_list("add-popup-list", body)
             .w(px(Theme::add_popup_list_width()))
             .flex_none()
             .track_scroll(&self.menu_scroll)
@@ -571,12 +581,7 @@ impl RootView {
         for (i, (group, kind)) in shown.iter().enumerate() {
             if *group != last_group {
                 last_group = group;
-                list = list.child(
-                    caps_label(*group, theme)
-                        .pt(px(Theme::add_popup_group_top()))
-                        .pb(px(Theme::add_popup_group_bottom()))
-                        .px(px(Theme::menu_item_padding())),
-                );
+                list = list.child(menu_section_header(*group, theme));
                 child += 1;
             }
             children_of_rows.push(child);
@@ -621,9 +626,12 @@ impl RootView {
             });
         });
 
+        // The body's full height, so its button sits level with the list's
+        // foot whatever the hint's length.
         let card = column()
             .flex_1()
             .min_w_0()
+            .h_full()
             .p(px(Theme::add_popup_card_padding()))
             .gap(px(Theme::add_popup_card_gap()))
             .rounded(px(Theme::add_popup_card_radius()))
@@ -726,16 +734,26 @@ impl RootView {
                         row()
                             .items_start()
                             .gap(px(Theme::gap()))
-                            .h(px(Theme::add_popup_body_height()))
-                            .child(fade_edges(list).tracking(&self.menu_scroll))
+                            .h(px(body))
+                            .child(
+                                div()
+                                    .relative()
+                                    .flex_none()
+                                    .child(fade_edges(list).tracking(&self.menu_scroll))
+                                    // With nothing open the rows are only a
+                                    // picture of what could be added: no
+                                    // hover, no press.
+                                    .when(!has_video, |el| {
+                                        el.child(div().absolute().inset_0().occlude())
+                                    }),
+                            )
                             .child(card),
                     )
-                    .child(
-                        footer
-                            .flex_none()
-                            .border_t(px(Theme::border_width()))
-                            .border_color(theme.line),
-                    ),
+                    // A rule with the popup's gap either side: the switcher's
+                    // toggled plate is the footer's full height, and a rule
+                    // on the footer's own edge ran into it.
+                    .child(divider(theme))
+                    .child(footer.flex_none()),
             ),
         ))
         .with_priority(30)
@@ -772,35 +790,27 @@ impl RootView {
             )
         }));
         let action = kind.action;
-        row()
-            .id(SharedString::from(format!("add-popup-{action}")))
-            .flex_none()
-            .h(px(Theme::add_popup_row_height()))
-            .pl(px(Theme::menu_item_padding()))
-            .pr(px(Theme::gap()))
-            .gap(px(Theme::icon_gap_row()))
-            .rounded(px(Theme::add_popup_row_radius()))
-            .when(highlighted, |el| el.bg(theme.sunk))
-            .child(icon_sized(
-                kind.glyph(),
-                Theme::icon_size(),
-                if highlighted {
-                    theme.accent
-                } else {
-                    theme.text
-                },
-            ))
-            .child(div().flex_1().min_w_0().overflow_hidden().child(name))
-            .children(shortcut.map(|key| key_cap(key, theme)))
-            .when(enabled, |el| {
-                el.on_click(cx.listener(move |s, _, _, cx| s.run_command(action, cx)))
-                    .on_mouse_move(cx.listener(move |s, _: &MouseMoveEvent, _, cx| {
-                        if s.menu_highlight != index {
-                            s.menu_highlight = index;
-                            cx.notify();
-                        }
-                    }))
-            })
+        glyph_row(
+            SharedString::from(format!("add-popup-{action}")),
+            kind.glyph(),
+            name,
+            highlighted,
+            theme,
+            cx.listener(move |s, _, _, cx| {
+                if enabled {
+                    s.run_command(action, cx);
+                }
+            }),
+        )
+        .children(shortcut.map(|key| key_cap(key, theme)))
+        .when(enabled, |el| {
+            el.on_mouse_move(cx.listener(move |s, _: &MouseMoveEvent, _, cx| {
+                if s.menu_highlight != index {
+                    s.menu_highlight = index;
+                    cx.notify();
+                }
+            }))
+        })
     }
 
     /// The card for `kind`: the picture with it on, the lane it lands on,
@@ -925,7 +935,8 @@ impl RootView {
                                 Theme::icon_size_caret(),
                                 theme.muted,
                             ))
-                            .child(kind.lane.name()),
+                            .child(div().flex_1().child(kind.lane.name()))
+                            .child(div().font_family(FONT_MONO).child(elapsed.to_owned())),
                     )
                     .child(strip),
             )
@@ -945,24 +956,20 @@ impl RootView {
                             .child(kind.hint),
                     ),
             )
-            .child(div().flex_1())
+            // Down at the card's foot, level with the list's. The column
+            // stretches the button across; `stretch` would grow its caption
+            // too and set the words at its left.
             .child(
-                div()
-                    .font_family(FONT_MONO)
-                    .text_size(px(Theme::font_small()))
-                    .text_color(theme.muted)
-                    .child(format!("{elapsed} · {}", kind.lane.name().to_lowercase())),
-            )
-            .child(
-                button(
-                    "add-popup-add",
-                    format!("Add {}  ↵", kind.label.to_lowercase()),
-                    theme,
-                )
-                .primary()
-                .small()
-                .stretch()
-                .on_click(cx.listener(move |s, _, _, cx| s.run_command(action, cx))),
+                column().mt_auto().child(
+                    button(
+                        "add-popup-add",
+                        format!("Add {} ↵", kind.label.to_lowercase()),
+                        theme,
+                    )
+                    .primary()
+                    .small()
+                    .on_click(cx.listener(move |s, _, _, cx| s.run_command(action, cx))),
+                ),
             )
     }
 }

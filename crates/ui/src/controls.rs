@@ -22,7 +22,7 @@ pub use dropdown::Dropdown;
 pub use field_row::{field_row, group_card, setting_card, tile_grid};
 pub use glide::{Glide, glide, glide_mark};
 pub use input::{TextInput, init};
-pub use menu::{command_row, menu_list, menu_row, menu_separator, menu_surface};
+pub use menu::{command_row, glyph_row, menu_list, menu_row, menu_separator, menu_surface};
 pub use panel::{
     Surface, caps_label, content_panel, divider, panel, panel_header, panel_variant, pod, pod_small,
 };

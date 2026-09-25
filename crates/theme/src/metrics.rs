@@ -644,21 +644,19 @@ impl Theme {
 
     /// The Add popup: a filter field over a list beside a preview card, the
     /// card a fixed height so moving through the list never resizes it.
-    pub const ADD_POPUP_WIDTH: f32 = 472.0;
+    /// Wide enough that the card beside the list holds a 16:9 picture
+    /// 280 across and its hint on one or two lines.
+    pub const ADD_POPUP_WIDTH: f32 = 560.0;
     pub const ADD_POPUP_PADDING: f32 = Self::GAP;
     pub const ADD_POPUP_GAP: f32 = Self::MENU_PADDING;
     pub const ADD_POPUP_BODY_HEIGHT: f32 = 360.0;
+    /// As short as the body goes to keep off the Add button where the
+    /// window is short: the card's picture, lane, words and button with
+    /// nothing spare between them.
+    pub const ADD_POPUP_BODY_MIN_HEIGHT: f32 = 316.0;
     pub const ADD_POPUP_LIST_WIDTH: f32 = 236.0;
-    /// A list row: taller than a menu item, since it carries a glyph and a
-    /// key cap.
-    pub const ADD_POPUP_ROW_HEIGHT: f32 = Self::CONTROL_HEIGHT_SMALL;
-    pub const ADD_POPUP_ROW_RADIUS: f32 = Self::RADIUS_LANE;
-    /// A group's caption: more air above it than below, so it belongs to
-    /// the rows under it.
-    pub const ADD_POPUP_GROUP_TOP: f32 = 10.0;
-    pub const ADD_POPUP_GROUP_BOTTOM: f32 = Self::GAP_SMALL;
     pub const ADD_POPUP_CARD_PADDING: f32 = 10.0;
-    pub const ADD_POPUP_CARD_GAP: f32 = 10.0;
+    pub const ADD_POPUP_CARD_GAP: f32 = Self::GAP;
     pub const ADD_POPUP_CARD_RADIUS: f32 = Self::RADIUS_INNER;
     pub const ADD_POPUP_PICTURE_RADIUS: f32 = 7.0;
     /// The strip of the lane the kind lands on, a stretch of it either side

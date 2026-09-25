@@ -62,7 +62,15 @@ pub fn menu_row(
     theme: Theme,
     on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 ) -> Stateful<Div> {
-    menu_row_in(id, label, Some(selected), highlighted, theme, on_click)
+    menu_row_in(
+        id,
+        None,
+        label.into().into_any_element(),
+        Some(selected),
+        highlighted,
+        theme,
+        on_click,
+    )
 }
 
 /// A row of a list of actions, which has no current item: the command
@@ -75,13 +83,45 @@ pub fn command_row(
     theme: Theme,
     on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 ) -> Stateful<Div> {
-    menu_row_in(id, label, None, highlighted, theme, on_click)
+    menu_row_in(
+        id,
+        None,
+        label.into().into_any_element(),
+        None,
+        highlighted,
+        theme,
+        on_click,
+    )
+}
+
+/// A command row that leads with the glyph `glyph`: the Add popup's, where
+/// every kind has one. `label` is an element rather than a string so a
+/// filter's match can be picked out in it. The glyph takes the accent on
+/// the highlighted row, the one Enter adds.
+pub fn glyph_row(
+    id: impl Into<ElementId>,
+    glyph: &str,
+    label: impl IntoElement,
+    highlighted: bool,
+    theme: Theme,
+    on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+) -> Stateful<Div> {
+    menu_row_in(
+        id,
+        Some(glyph),
+        label.into_any_element(),
+        None,
+        highlighted,
+        theme,
+        on_click,
+    )
 }
 
 /// `selected` is `None` for a row with no tick gutter at all.
 fn menu_row_in(
     id: impl Into<ElementId>,
-    label: impl Into<SharedString>,
+    glyph: Option<&str>,
+    label: AnyElement,
     selected: Option<bool>,
     highlighted: bool,
     theme: Theme,
@@ -141,7 +181,18 @@ fn menu_row_in(
                     }),
             )
         })
-        .child(div().flex_1().min_w_0().text_ellipsis().child(label.into()))
+        .children(glyph.map(|name| {
+            icon_sized(
+                name,
+                Theme::icon_size(),
+                if highlighted {
+                    theme.accent
+                } else {
+                    theme.text
+                },
+            )
+        }))
+        .child(div().flex_1().min_w_0().text_ellipsis().child(label))
         .on_click(move |e, w, cx| {
             perf::log(format_args!("click menu row {click_id:?}"));
             on_click(e, w, cx)

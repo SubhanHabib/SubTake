@@ -401,14 +401,17 @@ state.
 ## The Add popup
 
 Kept beside the Add panel for now, so the two can be compared; the Add
-button opens the popup. A 472-wide frosted card over the button (above it
-when there is no room below): a 44 field, "Add at" the playhead's time, that
-filters as it is typed, its match in the accent and semibold; the kinds in
-three captioned groups, Timeline, Picture and Sound and words, each row's
-shortcut key cap at its end while nothing is typed; and beside them a card for
-the highlighted kind — the picture with it on, the lane it lands on with the
-regions already there ±8 s and the new one at the playhead, what it is for,
-the time and lane in Geist Mono, and "Add zoom ↵". ↑↓ move, Return adds, Esc
+button opens the popup. A 560-wide frosted card over the button (above it
+when there is no room below, its body shortening from 360 to 316 rather than
+covering the button): the palette's field, led by + and ended by an esc cap,
+"Add at" the playhead's time, that filters as it is typed, its match in the
+accent and semibold; the kinds as glyph-led command rows in three menu
+sections, Timeline, Picture and Sound and words, each row's shortcut key cap
+at its end while nothing is typed; and beside them a card for the highlighted
+kind — the picture with it on, the lane it lands on with the time in Geist
+Mono and a strip of the regions already there ±8 s with the new one at the
+playhead, what it is for, and "Add zoom ↵" at its foot, level with the
+list's. ↑↓ move, Return adds, Esc
 closes; the footer says so beside the section switcher. With no video the
 list is dimmed and the card offers Open….
 
