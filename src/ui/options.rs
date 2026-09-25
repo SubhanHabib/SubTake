@@ -230,7 +230,7 @@ impl RootView {
         let active = window.is_window_active();
         let was = self.card_active.replace(active);
         let panel = state.get_panel();
-        if was && !active && !panel.is_empty() {
+        if was && !active && !panel.is_empty() && !self.gallery_card {
             let (options, focused) = (state.clone(), self.card_active.clone());
             crate::ui_runtime::Timer::single_shot(
                 std::time::Duration::from_millis(subtake_theme::CARD_BLUR_GRACE_MS),

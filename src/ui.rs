@@ -287,6 +287,11 @@ pub struct RootView {
     /// `SUBTAKE_GALLERY_GESTURE=move`, `trim`, `snap` or `scrub`. Taken on the first
     /// frame that has the regions to hold.
     gallery_gesture: Option<String>,
+    /// A gallery screen that opens a recorder card (`card-…`) holds it open
+    /// when its window loses focus. The gallery runs beside whatever the
+    /// user is doing, and a card that closed as soon as another app came
+    /// forward could not be looked at.
+    gallery_card: bool,
     menu: Option<String>,
     /// The command menu last open, and its way out, so a dismissed menu
     /// fades where it was.
@@ -418,6 +423,8 @@ impl RootView {
             pinch: None,
             gesture: None,
             gallery_gesture: std::env::var("SUBTAKE_GALLERY_GESTURE").ok(),
+            gallery_card: std::env::var("SUBTAKE_GALLERY_SCREEN")
+                .is_ok_and(|screen| screen.starts_with("card-")),
             menu: None,
             menu_last: String::new(),
             menu_leave: subtake_ui::Leave::default(),
