@@ -270,8 +270,6 @@ fn display_settings(state: &RecordingOptions, theme: Theme) -> Div {
     };
     group(
         vec![
-            // Not wired: the setting is kept, but the capture does not hide
-            // the desktop's icons yet.
             CardRow::new("hide-desktop-icons", "Hide desktop icons")
                 .plate("EyeSlash-regular")
                 .subtitle("While recording")

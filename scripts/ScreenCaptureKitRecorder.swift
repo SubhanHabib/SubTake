@@ -24,6 +24,9 @@ struct CaptureConfig: Codable {
 	/// The More card's Resolution: the most lines the video keeps, the
 	/// width following. Nil records at the source's own size.
 	let maxHeight: Int?
+	/// The Source card's Hide desktop icons: a display's capture leaves out
+	/// Finder's desktop, the icons on it, and keeps the wallpaper.
+	let hidesDesktopIcons: Bool?
 }
 
 /// Fits a size under `maxHeight` lines, keeping its aspect and both sides
@@ -81,6 +84,8 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 	private var outputURL: URL?
 	private var microphoneOutputURL: URL?
 	private var trackedWindowId: UInt32?
+	private var hidesDesktopIcons = false
+	private var displayFilterTask: Task<Void, Never>?
 	private var windowValidationTask: Task<Void, Never>?
 	private var isFinalizing = false
 	private var interactiveStopParticipated = false
@@ -142,9 +147,7 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 		let outputWidth: Int
 		let outputHeight: Int
 		excludedProcessIds = Set(config.excludedProcessIds ?? [])
-		let excludedApplications = availableContent.applications.filter {
-			excludedProcessIds.contains($0.processID)
-		}
+		var excludedWindows = Set<CGWindowID>()
 
 		if let windowId = config.windowId {
 			trackedWindowId = windowId
@@ -195,10 +198,12 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 				throw NSError(domain: "RecordlyCapture", code: 4, userInfo: [NSLocalizedDescriptionKey: "Display not found"])
 			}
 
-			filter = SCContentFilter(
+			hidesDesktopIcons = config.hidesDesktopIcons ?? false
+			(filter, excludedWindows) = Self.displayFilter(
 				display: display,
-				excludingApplications: excludedApplications,
-				exceptingWindows: []
+				content: availableContent,
+				excludedProcessIds: excludedProcessIds,
+				hidesDesktopIcons: hidesDesktopIcons
 			)
 			let displayBounds = CGDisplayBounds(display.displayID)
 			let scaleFactor = ScreenCaptureRecorder.scaleFactor(for: display.displayID)
@@ -376,6 +381,60 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 		// The writer must be ready before the stream can deliver that frame.
 		try await stream.startCapture()
 		startWindowValidationIfNeeded()
+		startDisplayFilterRefreshIfNeeded(displayId: config.displayId ?? CGMainDisplayID(), excluded: excludedWindows)
+	}
+
+	/// A display's filter. Leaving out whole applications keeps out the
+	/// windows they open later; hiding the desktop's icons leaves out
+	/// windows instead, those applications' and Finder's below the normal
+	/// layer, so `startDisplayFilterRefreshIfNeeded` keeps the list current.
+	private static func displayFilter(
+		display: SCDisplay,
+		content: SCShareableContent,
+		excludedProcessIds: Set<Int32>,
+		hidesDesktopIcons: Bool
+	) -> (filter: SCContentFilter, windows: Set<CGWindowID>) {
+		guard hidesDesktopIcons else {
+			let applications = content.applications.filter { excludedProcessIds.contains($0.processID) }
+			return (SCContentFilter(display: display, excludingApplications: applications, exceptingWindows: []), [])
+		}
+		let windows = content.windows.filter { window in
+			guard let application = window.owningApplication else { return false }
+			return excludedProcessIds.contains(application.processID)
+				|| (application.bundleIdentifier == "com.apple.finder" && window.windowLayer < 0)
+		}
+		return (SCContentFilter(display: display, excludingWindows: windows), Set(windows.map(\.windowID)))
+	}
+
+	/// With the desktop's icons hidden, looks again every half second for
+	/// windows to leave out — a card SubTake opens, Finder's desktop drawn
+	/// anew — and hands the stream the new filter when they change.
+	private func startDisplayFilterRefreshIfNeeded(displayId: CGDirectDisplayID, excluded: Set<CGWindowID>) {
+		displayFilterTask?.cancel()
+		displayFilterTask = nil
+		guard hidesDesktopIcons, trackedWindowId == nil else { return }
+		let excludedProcessIds = self.excludedProcessIds
+		displayFilterTask = Task.detached(priority: .utility) { [weak self] in
+			var excluded = excluded
+			while !Task.isCancelled {
+				guard let self, self.isRecording, let activeStream = self.stream else { return }
+				guard let content = try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true),
+				      let display = content.displays.first(where: { $0.displayID == displayId }) else {
+					try? await Task.sleep(nanoseconds: 500_000_000)
+					continue
+				}
+				let next = Self.displayFilter(
+					display: display,
+					content: content,
+					excludedProcessIds: excludedProcessIds,
+					hidesDesktopIcons: true
+				)
+				if next.windows != excluded, (try? await activeStream.updateContentFilter(next.filter)) != nil {
+					excluded = next.windows
+				}
+				try? await Task.sleep(nanoseconds: 500_000_000)
+			}
+		}
 	}
 
 	func stopCapture() async throws -> String {
@@ -567,6 +626,8 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 				self.interactiveStopParticipated = interactive
 				self.isRecording = false
 				self.windowValidationTask = nil
+				self.displayFilterTask?.cancel()
+				self.displayFilterTask = nil
 				self.trackedWindowId = nil
 				self.finalizationWaiters.append(continuation)
 

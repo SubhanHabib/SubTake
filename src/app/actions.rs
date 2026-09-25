@@ -897,6 +897,9 @@ impl App {
                     .recorder_setting("frame-rate")
                     .parse::<u32>()
                     .map_or(Value::Null, Value::from);
+                // The Source card's Hide desktop icons, for a display.
+                source["hidesDesktopIcons"] =
+                    Value::Bool(self.preferences.recorder_setting("hide-desktop-icons") == "true");
                 // The More card's Resolution: the most lines the video
                 // keeps; Native, or a source already under it, keeps its own.
                 source["maxHeight"] = self
