@@ -18,8 +18,8 @@ use subtake_theme::{
     EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS, FONT_SANS, INSPECTOR_COLLAPSE_WIDTH,
     INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT, PANEL_ENTER_MS, PANEL_ENTER_RISE,
     PANEL_WIDTH, PANEL_WIDTH_MAX, PANEL_WIDTH_MIN, PAUSED_CLOCK_OPACITY, PILL_MORPH_MS,
-    PREVIEW_ZOOM_MS, STAGE_RESERVE_BOTTOM, STAGE_RESERVE_LEFT, STAGE_RESERVE_RIGHT_COLLAPSED,
-    STATUS_SLIDE_MS, Theme,
+    PREVIEW_ZOOM_MS, RESIZE_MS, STAGE_RESERVE_BOTTOM, STAGE_RESERVE_LEFT,
+    STAGE_RESERVE_RIGHT_COLLAPSED, STATUS_SLIDE_MS, Theme,
 };
 use subtake_ui::{
     Button, Dropdown, MENU_BLUR, Slider, Surface as UiSurface, TextInput, button, caps_label,
@@ -341,6 +341,12 @@ pub struct RootView {
     /// The card's height as its content last laid out, read back the same
     /// frame, before the options window's own copy catches up.
     card_measured: Rc<Cell<f32>>,
+    /// The shown card easing to a new height when its content changes:
+    /// from, to, and when it began.
+    card_resize: Option<(f32, f32, Instant)>,
+    /// The least the options window may shrink to while the card eases
+    /// smaller inside it, so the card is never cut by its own window.
+    card_floor: Rc<Cell<f32>>,
     /// The card drawn, which a closing or replaced card keeps showing as it
     /// fades out, and the window's `opens` it was opened under.
     card_last: (String, u32),
@@ -422,6 +428,8 @@ impl RootView {
             inspector_slide: None,
             card_fade: CardFade::Gone,
             card_measured: Rc::new(Cell::new(0.)),
+            card_resize: None,
+            card_floor: Rc::new(Cell::new(0.)),
             card_last: (String::new(), 0),
             status_slide: None,
             status_kept: (SharedString::default(), false, 0.),

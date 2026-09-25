@@ -78,7 +78,11 @@ impl RootView {
                     .right_0()
                     .p(px(Theme::panel_padding()))
                     .child(content)
-                    .child(options_fit(state.clone(), self.card_measured.clone())),
+                    .child(options_fit(
+                        state.clone(),
+                        self.card_measured.clone(),
+                        self.card_floor.clone(),
+                    )),
             )
             .into_any_element()
     }
@@ -166,11 +170,49 @@ impl RootView {
             }
             _ => {}
         }
+        let height = self.card_resize(natural, window);
         // The frosted material under the card is the card's height, not the
         // window's: the window is resized a moment before its paint catches
         // up, and glass that filled it would show past the card's edge.
-        crate::platform::set_recorder_glass_height(state.window(), natural.max(0.01));
-        natural
+        crate::platform::set_recorder_glass_height(state.window(), height.max(0.01));
+        height
+    }
+
+    /// The height to draw a shown card at as its content changes — a
+    /// source list arriving, an error line, the refresh row turning into
+    /// its spinner: it eases there over `RESIZE_MS`, card and glass
+    /// together, rather than snapping. Growing, the window takes the new
+    /// height at once and the card grows up into it; shrinking, the window
+    /// holds at least the card's drawn height (`card_floor`) until the card
+    /// is down, then drops the clear space above it. A card that is not in view is simply its
+    /// content's height, since its window is clear while that changes.
+    fn card_resize(&mut self, natural: f32, window: &mut Window) -> f32 {
+        let measured = self.card_measured.get();
+        if self.card_fade != CardFade::Shown || measured <= 0. {
+            self.card_resize = None;
+            self.card_floor.set(0.);
+            return natural;
+        }
+        let now = Instant::now();
+        let (from, to, started) = *self.card_resize.get_or_insert((measured, measured, now));
+        let mut height = subtake_ui::motion::ease_toward(from, to, started, RESIZE_MS, now);
+        if (measured - to).abs() >= 1. {
+            if subtake_ui::motion::reduced_motion() {
+                height = measured;
+            }
+            self.card_resize = Some((height, measured, now));
+        }
+        // The floor is set before the content under it is measured, so a
+        // card that has just got shorter keeps its window for the frame
+        // before its move begins, too.
+        let (from, to, _) = self.card_resize.unwrap_or((height, height, now));
+        if height == to {
+            self.card_floor.set(height);
+        } else {
+            self.card_floor.set(from.max(to));
+            window.request_animation_frame();
+        }
+        height
     }
 
     /// Displays as pictures, then windows as rows: you are choosing a
@@ -849,12 +891,21 @@ fn selection_ring(radius: Option<f32>, theme: Theme) -> impl IntoElement {
 
 /// Sizes the options window to the card: the card lays out at its natural
 /// height, this reads it back, and the window follows — so a card never
-/// clips and never floats in an empty frame, whatever it holds.
-fn options_fit(state: RecordingOptions, measured: Rc<Cell<f32>>) -> impl IntoElement {
+/// clips and never floats in an empty frame, whatever it holds. While the
+/// card eases smaller the window holds at `floor`.
+fn options_fit(
+    state: RecordingOptions,
+    measured: Rc<Cell<f32>>,
+    floor: Rc<Cell<f32>>,
+) -> impl IntoElement {
     canvas(
-        move |bounds, _, _| {
-            let height = f32::from(bounds.size.height).ceil();
-            measured.set(height);
+        move |bounds, window, _| {
+            let content = f32::from(bounds.size.height).ceil();
+            if (measured.replace(content) - content).abs() > 0.5 {
+                // The card eases toward it from the next frame.
+                window.request_animation_frame();
+            }
+            let height = content.max(floor.get());
             if (state.get_options_height() - height).abs() > 0.5 {
                 let state = state.clone();
                 crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {

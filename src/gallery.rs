@@ -27,7 +27,8 @@
 //! Projects view, `=projects-recovery` with a recovery waiting; `=cursor` and
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
-//! opens that recorder card (`=card-sources-busy` with its controls off);
+//! opens that recorder card (`=card-sources-busy` with its controls off,
+//! `=card-sources-cycle` with its list emptied and refilled on a timer);
 //! `=panel-<name>` opens any other panel by its
 //! model name (`=panel-Preferences`); `=inspector-open` slides the folded
 //! inspector in, with `SUBTAKE_GALLERY_WIDTH=1100` (any width under 1280)
@@ -125,6 +126,17 @@ fn cycle_presets(editor: EditorWindow, names: Vec<String>, parts: Vec<String>, o
     editor.set_saved_preset_parts(ModelRc::new(VecModel::from(shown_parts)));
     Timer::single_shot(Duration::from_millis(1500), move || {
         cycle_presets(editor, names, parts, !on)
+    });
+}
+
+fn cycle_sources(options: RecordingOptions, sources: Vec<CaptureSource>, on: bool) {
+    options.set_capture_sources(ModelRc::new(VecModel::from(if on {
+        sources.clone()
+    } else {
+        vec![]
+    })));
+    Timer::single_shot(Duration::from_millis(1500), move || {
+        cycle_sources(options, sources, !on)
     });
 }
 
@@ -347,6 +359,23 @@ pub fn run() -> Result<()> {
         // A recorder card open over the bar: `card-sources`, `card-audio`,
         // `card-camera`, `card-countdown` or `card-more`. A `-busy` suffix
         // (`card-sources-busy`) holds the card mid-change, its controls off.
+        // The Capture source card with its list emptied and refilled on a
+        // timer, for the card easing between the two heights.
+        Ok("card-sources-cycle") => {
+            let g = gallery.clone();
+            Timer::single_shot(Duration::from_millis(400), move || {
+                {
+                    let g = g.borrow();
+                    show_recorder(&g.launcher, &g.options);
+                    g.launcher.set_panel("sources".into());
+                    g.options.set_panel("sources".into());
+                    g.position_options();
+                }
+                let options = g.borrow().options.clone();
+                let sources: Vec<_> = options.get_capture_sources().iter().collect();
+                cycle_sources(options, sources, false);
+            });
+        }
         Ok(screen) if screen.starts_with("card-") => {
             let panel = screen.trim_start_matches("card-");
             let busy = panel.ends_with("-busy");

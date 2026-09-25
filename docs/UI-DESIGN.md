@@ -639,8 +639,13 @@ setting and land in place when it is on.
   fades the open one out and the new one in over `CARD_SWAP_MS` (120)
   between them; the window moves and resizes while it is clear, so a card
   never slides, grows or shows at the old card's size. A card shows only
-  once its rows are measured and its window is their height, and it is
-  always drawn at that height, the frost matching it. The open card holds
+  once its rows are measured and its window is their height. When its
+  content changes while it is in view (the source list arriving, an error
+  line, the refresh row's spinner) it eases to the new height over
+  `RESIZE_MS`, card and frost together: growing, its window takes the new
+  height at once and the card rises into it; shrinking, the window holds
+  until the card is down. `SUBTAKE_GALLERY_SCREEN=card-sources-cycle`
+  empties and refills the Capture source list on a timer. The open card holds
   keyboard focus and hands it back to the bar as it hides. The frost takes
   the app's light or dark theme, not the Mac's. Under Reduce motion every
   fade is a cut. Not drawn by the design: the handoff cross-fades one card
