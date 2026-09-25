@@ -26,7 +26,7 @@ pub use menu::{command_row, glyph_row, menu_list, menu_row, menu_separator, menu
 pub use panel::{
     Surface, caps_label, content_panel, divider, panel, panel_header, panel_variant, pod, pod_small,
 };
-pub use segmented_control::segmented_control;
+pub use segmented_control::{segmented, segmented_control};
 pub use slider::Slider;
 pub use status::{composer_footer, context_chip, progress_bar, status_chip, status_dot};
 pub use switch::{switch, toggle};

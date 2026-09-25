@@ -22,14 +22,49 @@ pub fn segmented_control(
     theme: Theme,
     on_select: impl Fn(usize, &mut Window, &mut App) + 'static,
 ) -> impl IntoElement {
+    let labels: Vec<SharedString> = options.iter().map(|s| s.to_string().into()).collect();
+    segmented(
+        id,
+        labels.len(),
+        selected,
+        Theme::control_height_large(),
+        theme,
+        on_select,
+        move |index, _| {
+            div()
+                .px(px(Theme::control_padding()))
+                .text_ellipsis()
+                .child(labels[index].clone())
+                .into_any_element()
+        },
+    )
+}
+
+/// [`segmented_control`] at any height, drawing each segment's content
+/// itself: `content(index, color)` returns what segment `index` shows, in
+/// `color` — `text` on the current segment, `muted` easing to `text` on
+/// hover on the rest. The segment already sets that colour, the body size
+/// and the weight, so plain text needs no styling of its own; a glyph is
+/// the one thing that has to be handed the colour.
+pub fn segmented(
+    id: &str,
+    count: usize,
+    selected: usize,
+    height: f32,
+    theme: Theme,
+    on_select: impl Fn(usize, &mut Window, &mut App) + 'static,
+    content: impl Fn(usize, Hsla) -> AnyElement,
+) -> impl IntoElement {
     let on_select = Rc::new(on_select);
     let id = SharedString::from(id.to_owned());
-    let count = options.len().max(1) as f32;
+    let options = 0..count;
+    let count = count.max(1) as f32;
     // Each segment runs a 0..1 tween toward being the current one. Summing
     // index × progress gives the pill's position along the track: while it
     // moves, the old segment's progress falls as the new one's rises on the
     // same curve, so the sum slides from one index to the other.
-    let position: f32 = (0..options.len())
+    let position: f32 = options
+        .clone()
         .map(|index| {
             let key = motion::tween_key(&ElementId::from((id.clone(), index)), "segment");
             index as f32 * motion::state_fade(&key, index == selected)
@@ -61,7 +96,7 @@ pub fn segmented_control(
     div()
         .flex()
         .flex_none()
-        .h(px(Theme::control_height_large()))
+        .h(px(height))
         .py(px(Theme::gap_small()))
         .px(half_gap)
         .rounded_full()
@@ -75,17 +110,16 @@ pub fn segmented_control(
                 .child(layered(pill))
                 .children(
                     options
-                        .iter()
-                        .map(|s| s.to_string())
-                        .collect::<Vec<_>>()
-                        .into_iter()
-                        .enumerate()
-                        .map(|(index, label)| {
+                        .map(|index| {
                             let pick = on_select.clone();
                             let element_id = ElementId::from((id.clone(), index));
                             let active = index == selected;
                             let hover_key = motion::tween_key(&element_id, "hover");
-                            let idle = motion::hover_blend(&hover_key, theme.muted, theme.text);
+                            let color = if active {
+                                theme.text
+                            } else {
+                                motion::hover_blend(&hover_key, theme.muted, theme.text)
+                            };
                             let ring = focus_ring(theme);
                             let press = theme.press;
                             let click_id = element_id.clone();
@@ -119,15 +153,14 @@ pub fn segmented_control(
                                         .items_center()
                                         .justify_center()
                                         .min_w_0()
-                                        .px(px(Theme::control_padding()))
-                                        .text_color(if active { theme.text } else { idle })
+                                        .text_color(color)
                                         .text_size(px(Theme::font_body()))
                                         .font_weight(if active {
                                             FontWeight::MEDIUM
                                         } else {
                                             FontWeight::NORMAL
                                         })
-                                        .child(div().text_ellipsis().child(label)),
+                                        .child(content(index, color)),
                                 )
                         })
                         // Each segment on a layer over the pill and the
