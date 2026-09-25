@@ -19,7 +19,7 @@ impl RootView {
         let theme = self.theme;
         // Closing or replaced, the card keeps what it last showed while it
         // fades out.
-        let height = self.card_fade(state, window);
+        let (height, opacity, rise) = self.card_fade(state, window);
         let name = self.card_last.0.clone();
         let title = match name.as_str() {
             "sources" => "Capture source",
@@ -59,14 +59,16 @@ impl RootView {
         // shadow the handoff gives is the window server's to draw.
         //
         // The content lays out at its own height and is measured there, and
-        // the card and its window take that height in one step; the window
-        // is clear whenever it moves or resizes (`card_fade`).
+        // the card and its window take that height in one step; the card is
+        // clear whenever its window moves or resizes (`card_fade`). It rests
+        // `MENU_IN_RISE` up its window, the room it rises through.
         panel_variant(theme, UiSurface::Overlay)
             .absolute()
-            .bottom_0()
+            .bottom(px(rise))
             .left_0()
             .right_0()
             .h(px(height))
+            .opacity(opacity)
             .overflow_hidden()
             .rounded(px(Theme::radius_panel()))
             .bg(theme.card)
@@ -87,95 +89,110 @@ impl RootView {
             .into_any_element()
     }
 
-    /// Steps the card's window through its fade (`CardFade`) and gives the
-    /// height to draw the card at: what its content last measured.
+    /// Steps the card through its fade (`CardFade`) and gives the height to
+    /// draw it at, what its content last measured, with its opacity and how
+    /// far up its window it stands.
     ///
-    /// The window's alpha carries the fade, not the card's paint: the paint
-    /// and the frosted material under it reach the screen by different
-    /// routes, and a card that grew or faded on its own showed its glass a
-    /// frame early or late, and its rows sliding through a plate still
-    /// growing to meet them. The window moves and resizes only while clear.
-    fn card_fade(&mut self, state: &RecordingOptions, window: &mut Window) -> f32 {
-        let natural = state.get_options_height();
+    /// It comes and goes as a menu does: the entrance `menu_in_above` draws,
+    /// fading in and rising onto its place, then `Leave`'s fade out, and the
+    /// window hides once it is clear. The frosted material under it is the
+    /// window server's, not GPUI's, and is given the same opacity and place
+    /// each frame. The window itself stays opaque: the window server blurs
+    /// what is behind a window at its own pace rather than at the window's
+    /// alpha, and a card faded by its window showed an empty pane of frost
+    /// before its rows came in and after they had gone.
+    fn card_fade(&mut self, state: &RecordingOptions, window: &mut Window) -> (f32, f32, f32) {
+        let rise = subtake_ui::motion::MENU_IN_RISE;
+        let natural = state.get_options_height() - rise;
         let now = Instant::now();
-        let still = subtake_ui::motion::reduced_motion();
-        let length = |ms: u64| if still { 0 } else { ms };
-        let fade = |alpha: f64, ms: u64| {
-            if let Some(view) = state.window().native_view() {
-                unsafe { crate::platform::ui_fade_launcher_options(view, alpha, ms as f64 / 1000.) }
-            }
+        let swap = if subtake_ui::motion::reduced_motion() {
+            0
+        } else {
+            CARD_SWAP_MS
         };
         let panel = state.get_panel();
         let open = !panel.is_empty();
         let wanted = (panel, state.window().opens());
-        if !open {
-            if !matches!(self.card_fade, CardFade::Gone | CardFade::Closing) {
-                let out = length(CARD_OUT_MS);
-                fade(0., out);
-                self.card_fade = CardFade::Closing;
+        let leave = self.card_leave.shown(open);
+        if leave.is_none() {
+            if self.card_fade != CardFade::Gone {
+                self.card_fade = CardFade::Gone;
                 let state = state.clone();
-                crate::ui_runtime::Timer::single_shot(
-                    std::time::Duration::from_millis(out),
-                    move || {
-                        if state.get_panel().is_empty() {
-                            let _ = state.hide();
-                        }
-                    },
-                );
+                crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
+                    if state.get_panel().is_empty() {
+                        let _ = state.hide();
+                    }
+                });
             }
-        } else if self.card_last != wanted {
+        } else if open && self.card_last != wanted {
             self.card_fade = match self.card_fade {
                 // Replaced while in view: this card fades out first, still
                 // drawn, and the window moves once it is clear.
-                CardFade::Shown if self.card_last.1 == wanted.1 => {
-                    let out = length(CARD_SWAP_MS / 2);
-                    fade(0., out);
-                    CardFade::Leaving(now + std::time::Duration::from_millis(out))
+                CardFade::Shown(_) if self.card_last.1 == wanted.1 => {
+                    CardFade::Leaving(now, self.card_opacity)
                 }
-                CardFade::Leaving(until) if now < until => CardFade::Leaving(until),
-                before => {
+                CardFade::Leaving(since, from)
+                    if subtake_ui::motion::progress(since, swap.max(1), now) < 1. =>
+                {
+                    CardFade::Leaving(since, from)
+                }
+                _ => {
                     self.card_last = wanted;
-                    CardFade::Waiting(
-                        false,
-                        match before {
-                            CardFade::Leaving(_) => CARD_SWAP_MS / 2,
-                            CardFade::Waiting(_, ms) => ms,
-                            _ => CARD_IN_MS,
-                        },
-                    )
+                    CardFade::Waiting(0)
                 }
             };
         }
-        match self.card_fade {
-            CardFade::Leaving(_) if open => window.request_animation_frame(),
-            // Not on the card's first frame, whose rows have yet to be
-            // measured, and not before the window has taken their height.
-            CardFade::Waiting(drawn, ms) if open => {
-                let fits = |height: f32| (height - natural).abs() < 0.5;
-                if drawn
-                    && fits(self.card_measured.get())
-                    && fits(f32::from(window.viewport_size().height))
-                {
-                    fade(1., length(ms));
-                    self.card_fade = CardFade::Shown;
-                } else {
-                    self.card_fade = CardFade::Waiting(true, ms);
-                    window.request_animation_frame();
-                }
+        // Reopened as it faded out, it comes in afresh, as a menu does.
+        if open
+            && std::mem::replace(&mut self.card_opens, self.card_leave.opens)
+                != self.card_leave.opens
+        {
+            if let CardFade::Shown(_) = self.card_fade {
+                self.card_fade = CardFade::Shown(now);
             }
-            // Reopened as it faded out: it comes back from where it was.
-            CardFade::Closing if open => {
-                fade(1., length(CARD_IN_MS));
-                self.card_fade = CardFade::Shown;
-            }
-            _ => {}
         }
+        // Not before the window has taken the height of the card's measured
+        // rows, and then not for a few frames more: a resized window's first
+        // frames reach the screen late, and the frost under a card that set
+        // off at once showed empty until they came.
+        if let CardFade::Waiting(frames) = self.card_fade {
+            let fits = |height: f32| (height - natural).abs() < 0.5;
+            let fitted = fits(self.card_measured.get())
+                && fits(f32::from(window.viewport_size().height) - rise);
+            if fitted && frames >= CARD_SETTLE_FRAMES {
+                // The window shows clear (`ui_runtime::Window::show`); the
+                // card is clear too until its entrance begins.
+                if let Some(view) = state.window().native_view() {
+                    unsafe { crate::platform::ui_fade_launcher_options(view, 1., 0.) }
+                }
+                self.card_fade = CardFade::Shown(now);
+            } else {
+                self.card_fade = CardFade::Waiting(if fitted { frames + 1 } else { 0 });
+            }
+        }
+        let (opacity, lift) = match self.card_fade {
+            CardFade::Gone | CardFade::Waiting(_) => (0., 0.),
+            CardFade::Shown(started) => {
+                let t = subtake_ui::motion::menu_entrance(started, now);
+                (t * leave.unwrap_or(0.), t)
+            }
+            CardFade::Leaving(since, from) => (
+                subtake_ui::motion::ease_toward(from, 0., since, swap, now),
+                1.,
+            ),
+        };
+        if !matches!(self.card_fade, CardFade::Gone) && (opacity < 1. || lift < 1. || !open) {
+            window.request_animation_frame();
+        }
+        self.card_opacity = opacity;
         let height = self.card_resize(natural, window);
         // The frosted material under the card is the card's height, not the
         // window's: the window is resized a moment before its paint catches
         // up, and glass that filled it would show past the card's edge.
+        let bottom = rise * lift;
+        crate::platform::set_recorder_glass_fade(state.window(), bottom, opacity);
         crate::platform::set_recorder_glass_height(state.window(), height.max(0.01));
-        height
+        (height, opacity, bottom)
     }
 
     /// The height to draw a shown card at as its content changes — a
@@ -188,7 +205,7 @@ impl RootView {
     /// content's height, since its window is clear while that changes.
     fn card_resize(&mut self, natural: f32, window: &mut Window) -> f32 {
         let measured = self.card_measured.get();
-        if self.card_fade != CardFade::Shown || measured <= 0. {
+        if !matches!(self.card_fade, CardFade::Shown(_)) || measured <= 0. {
             self.card_resize = None;
             self.card_floor.set(0.);
             return natural;
@@ -905,7 +922,8 @@ fn options_fit(
                 // The card eases toward it from the next frame.
                 window.request_animation_frame();
             }
-            let height = content.max(floor.get());
+            // With the room under the card it rises through.
+            let height = content.max(floor.get()) + subtake_ui::motion::MENU_IN_RISE;
             if (state.get_options_height() - height).abs() > 0.5 {
                 let state = state.clone();
                 crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {

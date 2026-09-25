@@ -22,6 +22,15 @@ final class RecorderGlass: NSVisualEffectView {
     /// redrawn, and the material has to follow the card, not the window.
     var plateHeight: CGFloat = 0
 
+    /// How far above `anchor`'s bottom edge a partial plate sits, and how
+    /// opaque it is: the options card rises and fades in as a menu does,
+    /// drawn by GPUI, and its material follows it frame by frame. A window
+    /// fade would not do: the window server blurs what is behind a window
+    /// at its own pace, not at the window's alpha, so the frost led the card
+    /// in and trailed it out.
+    var plateBottom: CGFloat = 0
+    var plateAlpha: CGFloat = 1
+
     /// The frame of the GPUI view the material sits under.
     var anchor: NSRect = .zero
 
@@ -56,7 +65,7 @@ final class RecorderGlass: NSVisualEffectView {
         let partial = plateHeight > 0 && plateHeight < frame.height
         let flipped = superview?.isFlipped ?? false
         if partial {
-            if flipped { frame.origin.y += frame.height - plateHeight }
+            frame.origin.y += flipped ? frame.height - plateHeight - plateBottom : plateBottom
             frame.size.height = plateHeight
         }
 
@@ -73,6 +82,7 @@ final class RecorderGlass: NSVisualEffectView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         self.frame = frame
+        alphaValue = plateAlpha
         CATransaction.commit()
         CATransaction.flush()
     }
@@ -180,6 +190,20 @@ public func setRecorderGlassHeight(_ pointer: UnsafeMutableRawPointer?, _ height
           plate.plateHeight != CGFloat(height)
     else { return }
     plate.plateHeight = CGFloat(height)
+    plate.anchor = view.frame
+    plate.place()
+}
+
+/// Lifts the plate `bottom` points off its window's bottom edge and sets its
+/// opacity, for the options card's entrance and exit (`plateBottom`).
+@_cdecl("subtake_set_recorder_glass_fade")
+public func setRecorderGlassFade(_ pointer: UnsafeMutableRawPointer?, _ bottom: Double, _ alpha: Double) {
+    assert(Thread.isMainThread, "Recorder material must run on the UI thread")
+    guard let view = borrowedView(pointer), let plate = glass(for: view, key: glassKey),
+          plate.plateBottom != CGFloat(bottom) || plate.plateAlpha != CGFloat(alpha)
+    else { return }
+    plate.plateBottom = CGFloat(bottom)
+    plate.plateAlpha = CGFloat(alpha)
     plate.anchor = view.frame
     plate.place()
 }

@@ -648,14 +648,20 @@ setting and land in place when it is on.
 - A picked inspector panel fades in and rises 6 (`PANEL_ENTER_*`, 180 ms).
   Into a sub-panel (Crop, Background, Shortcuts) it slides in from 24 to the
   right instead, and back out to its parent from the left (`PANEL_DRILL_*`).
-- A recorder card fades in place, its whole window at once, so the card's
-  paint and the frosted material under it can never land apart: in over
-  `CARD_IN_MS` (140) as it opens, out over `CARD_OUT_MS` (100) as it
-  closes, and the window hides once it is clear. Opening another card
-  fades the open one out and the new one in over `CARD_SWAP_MS` (120)
-  between them; the window moves and resizes while it is clear, so a card
-  never slides, grows or shows at the old card's size. A card shows only
-  once its rows are measured and its window is their height. When its
+- A recorder card opens and closes as the app's menus do, on the same
+  timing (`motion::menu_entrance`, `motion::Leave`): it fades in and rises
+  `MENU_IN_RISE` (4) up from the bar over `MENU_IN_MS` (140), fades out in
+  place over `MENU_OUT_MS` (100) and stays over its control until it has
+  gone, and then its window hides. GPUI draws the fade; the frosted
+  material under the card is the window server's and takes the same
+  opacity and place each frame. Fading the whole window instead let the
+  frost lead the card in and trail it out. Opening another card fades the
+  open one out over `CARD_SWAP_MS` (60) before the new one comes in; the
+  window moves and resizes while nothing shows, so a card never slides,
+  grows or shows at the old card's size. A card sets off only once its
+  rows are measured, its window is their height and it has been drawn
+  there for `CARD_SETTLE_FRAMES` (3), since a resized window's first frames
+  reach the screen late and the frost would come in without them. When its
   content changes while it is in view (the source list arriving, an error
   line, the refresh row's spinner) it eases to the new height over
   `RESIZE_MS`, card and frost together: growing, its window takes the new

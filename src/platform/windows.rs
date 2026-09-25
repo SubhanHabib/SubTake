@@ -428,6 +428,23 @@ pub fn set_recorder_glass_height(window: &crate::ui_runtime::Window, height: f32
     let _ = (window, height);
 }
 
+/// Lift a recorder window's partial material `bottom` points off the
+/// window's bottom edge and set its opacity, so it rises and fades with the
+/// options card drawn over it.
+pub fn set_recorder_glass_fade(window: &crate::ui_runtime::Window, bottom: f32, alpha: f32) {
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(view) = native_view(window) {
+            unsafe {
+                subtake_set_recorder_glass_fade(view, bottom as f64, alpha as f64);
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, bottom, alpha);
+}
+
 /// Frosts the editor window behind its paint, standing on `ground` where
 /// macOS draws it without the blur (see `Theme::ground`). Installs the
 /// material on the first call and only retunes it, so it is safe to call
@@ -508,4 +525,9 @@ unsafe extern "C" {
     pub(super) fn subtake_set_recorder_glass_dark(view: *mut std::ffi::c_void, dark: bool);
     pub(super) fn subtake_update_recorder_glass(view: *mut std::ffi::c_void, radius: f64);
     pub(super) fn subtake_set_recorder_glass_height(view: *mut std::ffi::c_void, height: f64);
+    pub(super) fn subtake_set_recorder_glass_fade(
+        view: *mut std::ffi::c_void,
+        bottom: f64,
+        alpha: f64,
+    );
 }

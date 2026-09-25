@@ -472,7 +472,7 @@ pub fn hover_listener(
 pub const MENU_IN_MS: u64 = 140;
 
 /// The distance a menu travels as it settles, in pixels.
-const MENU_IN_RISE: f32 = 4.0;
+pub const MENU_IN_RISE: f32 = 4.0;
 
 /// How long a floating surface takes to fade once dismissed: quicker than
 /// it arrives, since by then the eye has moved on.
@@ -559,6 +559,17 @@ where
         el.opacity(t * leave)
             .top(px(top + MENU_IN_RISE * (1.0 - t)))
     })
+}
+
+/// How far a menu's entrance has come at `now`, 0 to 1, for a surface that
+/// draws [`menu_in_above`]'s fade and rise itself: the recorder card, whose
+/// frosted material outside GPUI has to follow it frame by frame. At once
+/// under reduce motion, as gpui's own animations are.
+pub fn menu_entrance(started: Instant, now: Instant) -> f32 {
+    if reduced_motion() {
+        return 1.;
+    }
+    ease_out_quint()(progress(started, MENU_IN_MS, now))
 }
 
 /// Menus alone settle on a quint rather than [`EASE_OUT`]: nearly all of

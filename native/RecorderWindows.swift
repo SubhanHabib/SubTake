@@ -92,11 +92,16 @@ private var optionsResizeObserver: NSObjectProtocol?
 /// the bar.
 private var optionsAnchor: CGFloat = -1
 
+/// The clear margin under the card in its window, for it to rise out of as
+/// it opens (`MENU_IN_RISE`); the window sits that much lower to keep the
+/// card's resting place.
+private let optionsRise: CGFloat = 4
+
 private func optionsOrigin(for size: NSSize, above launcher: NSWindow) -> NSPoint {
     let bar = launcher.frame
     let screen = (launcher.screen ?? NSScreen.main)?.visibleFrame ?? .zero
 
-    var y = bar.maxY + 14
+    var y = bar.maxY + 14 - optionsRise
     if y + size.height > screen.maxY {
         y = bar.minY - size.height - 14
     }

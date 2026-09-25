@@ -14,7 +14,7 @@ use std::{
     time::Instant,
 };
 use subtake_theme::{
-    BAR_SWAP_MS, CARD_IN_MS, CARD_OUT_MS, CARD_SWAP_MS, DIALOG_IN_MS, DIALOG_OUT_MS, DIALOG_RISE,
+    BAR_SWAP_MS, CARD_SETTLE_FRAMES, CARD_SWAP_MS, DIALOG_IN_MS, DIALOG_OUT_MS, DIALOG_RISE,
     EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS, FONT_SANS, INSPECTOR_COLLAPSE_WIDTH,
     INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT, PANEL_ENTER_MS, PANEL_ENTER_RISE,
     PANEL_WIDTH, PANEL_WIDTH_MAX, PANEL_WIDTH_MIN, PAUSED_CLOCK_OPACITY, PILL_MORPH_MS,
@@ -133,23 +133,22 @@ enum ResizeEdge {
     Inspector,
 }
 
-/// The recorder card's window fades rather than being drawn in and out, so
-/// its paint and its frosted material move as one. It shows clear, waits
-/// until the card is drawn and the window fits it, then fades in; a card
-/// replaced by another fades out first, and a closed one fades out and hides.
+/// The recorder card comes and goes as a menu does (`motion::menu_entrance`,
+/// `motion::Leave`), drawn by GPUI with its frosted material following it
+/// each frame. Replaced by another, it fades out first; its window moves
+/// and resizes while there is nothing to see.
 #[derive(Clone, Copy, PartialEq)]
 enum CardFade {
     /// Hidden, or not yet opened.
     Gone,
-    /// Clear, until the card has been drawn once (the flag) and the window
-    /// is its height; then it fades in over the duration.
-    Waiting(bool, u64),
-    /// In, or fading in.
-    Shown,
-    /// Fading out until then, for another card to take its place.
-    Leaving(Instant),
-    /// Fading out to hide.
-    Closing,
+    /// Drawn clear, until its window is its height and it has been drawn
+    /// there for `CARD_SETTLE_FRAMES` (the count so far).
+    Waiting(u32),
+    /// Coming in since then, or in.
+    Shown(Instant),
+    /// Fading out from that opacity since then, for another card to take
+    /// its place.
+    Leaving(Instant, f32),
 }
 
 // Kept independent of GPUI so geometry regressions can be tested without a window.
@@ -339,8 +338,15 @@ pub struct RootView {
     /// it set off from (0 out, 1 in) and when. `None` until first drawn, so
     /// a window that opens narrow starts folded rather than sliding shut.
     inspector_slide: Option<(bool, f32, Instant)>,
-    /// Where the recorder card's window is in its fade.
+    /// Where the recorder card is in its fade.
     card_fade: CardFade,
+    /// The card's way out when it closes, and the opening it last came in
+    /// for, so a card reopened as it fades comes in afresh.
+    card_leave: subtake_ui::motion::Leave,
+    card_opens: usize,
+    /// The opacity the card was last drawn at, which a replaced card fades
+    /// out from.
+    card_opacity: f32,
     /// The card's height as its content last laid out, read back the same
     /// frame, before the options window's own copy catches up.
     card_measured: Rc<Cell<f32>>,
@@ -430,6 +436,9 @@ impl RootView {
             panel_drill: (String::new(), 0.),
             inspector_slide: None,
             card_fade: CardFade::Gone,
+            card_leave: Default::default(),
+            card_opens: 0,
+            card_opacity: 0.,
             card_measured: Rc::new(Cell::new(0.)),
             card_resize: None,
             card_floor: Rc::new(Cell::new(0.)),

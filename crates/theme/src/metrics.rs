@@ -900,13 +900,14 @@ pub const STATUS_SLIDE_MS: u64 = 180;
 /// left, over a little longer than a plain switch.
 pub const PANEL_DRILL_MS: u64 = 220;
 pub const PANEL_DRILL_SHIFT: f32 = 24.0;
-/// A recorder card fades in place, its whole window at once: in over
-/// `CARD_IN_MS` as it opens, out over `CARD_OUT_MS` as it closes. Replaced
-/// by another, it fades out and the new one in over `CARD_SWAP_MS` between
-/// them, moving and resizing while there is nothing to see.
-pub const CARD_IN_MS: u64 = 140;
-pub const CARD_OUT_MS: u64 = 100;
-pub const CARD_SWAP_MS: u64 = 120;
+/// A recorder card opens and closes as a menu does (`MENU_IN_MS`,
+/// `MENU_OUT_MS`). Replaced by another, it fades out over this long first,
+/// and its window moves and resizes while there is nothing to see.
+pub const CARD_SWAP_MS: u64 = 60;
+/// A card sets off only once it has been drawn this many frames at its
+/// window's new size, since those first frames reach the screen late and
+/// its frost, which is the window server's, would come in without it.
+pub const CARD_SETTLE_FRAMES: u32 = 3;
 /// A dialog, palette or menu whose content changes size (a tab, a filter,
 /// an error line) eases to its new height over this long rather than
 /// snapping to it.
