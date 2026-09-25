@@ -433,11 +433,9 @@ fn a_moved_region_snaps_whichever_edge_lands_nearest_an_anchor() {
 fn a_region_out_of_reach_of_every_anchor_snaps_to_the_ruler_ticks() {
     use subtake_native::editing::snap;
     // Moved 1.4375 on, a 2–4.75 region's start lands at 3.4375 and its end
-    // at 6.1875, with no anchor in reach. The start is nearer a tick, 3.5.
-    assert_eq!(
-        snap(&[2., 4.75], 1.4375, &[10.], 0.5, 0.25),
-        (1.5, Some(3.5))
-    );
+    // at 6.1875, with no anchor in reach. The start is nearer a tick, 3.5,
+    // and a tick is not reported as an anchor.
+    assert_eq!(snap(&[2., 4.75], 1.4375, &[10.], 0.5, 0.25), (1.5, None));
     // An anchor in reach wins over a nearer tick.
     assert_eq!(
         snap(&[2., 4.75], 1.4375, &[6.3125], 0.5, 0.25),

@@ -625,9 +625,15 @@ pub(super) fn lane_stack_range(window: &Window) -> (f32, f32) {
 /// reach, they catch the ruler's marks, labels and dots alike, so a drag
 /// lands on whole seconds zoomed out and on finer steps zoomed in. Not drawn
 /// by the design.
-fn snapped(e: &EditorWindow, dragged: &Region, mode: i32, delta: f32, track: f32) -> f32 {
+fn snapped(
+    e: &EditorWindow,
+    dragged: &Region,
+    mode: i32,
+    delta: f32,
+    track: f32,
+) -> (f32, Option<f32>) {
     if !e.get_snap() {
-        return delta;
+        return (delta, None);
     }
     let moving =
         |r: &Region| (r.kind == dragged.kind && r.id == dragged.id) || (mode == 0 && r.selected);
@@ -643,14 +649,14 @@ fn snapped(e: &EditorWindow, dragged: &Region, mode: i32, delta: f32, track: f32
     let edges: Vec<f64> = edges.into_iter().map(f64::from).collect();
     let reach = Theme::snap_reach() / track * e.get_timeline_visible();
     let (_, step) = ruler_steps(e.get_timeline_visible(), track);
-    crate::editing::snap(
+    let (delta, caught) = crate::editing::snap(
         &edges,
         f64::from(delta),
         &anchors,
         f64::from(step),
         f64::from(reach),
-    )
-    .0 as f32
+    );
+    (delta as f32, caught.map(|at| at as f32))
 }
 
 impl RootView {
@@ -823,11 +829,12 @@ impl RootView {
                 origin,
                 mode,
                 delta,
+                guide,
             }) => {
                 let track = f32::from(self.timeline_bounds.get().size.width).max(1.);
                 let dragged =
                     f32::from(event.position.x - origin.x) / track * e.get_timeline_visible();
-                *delta = snapped(e, region, *mode, dragged, track);
+                (*delta, *guide) = snapped(e, region, *mode, dragged, track);
             }
             Some(Gesture::Canvas { origin, dx, dy, .. }) => {
                 let b = self.preview_bounds.get();
@@ -1113,7 +1120,26 @@ impl RootView {
                     origin: point(px(0.), px(0.)),
                     mode: i32::from(hold == "trim"),
                     delta: GALLERY_HOLD_SECONDS,
+                    guide: None,
                 }),
+                // Moved so its end lands on the next edge after it, the
+                // guide showing where it caught.
+                ("snap", Some(region)) => {
+                    let at = regions
+                        .iter()
+                        .filter(|r| !(r.kind == region.kind && r.id == region.id))
+                        .flat_map(|r| [r.start, r.end])
+                        .filter(|t| *t > region.end)
+                        .min_by(f32::total_cmp)
+                        .unwrap_or(window.get_duration());
+                    Some(Gesture::Region {
+                        delta: at - region.end,
+                        region,
+                        origin: point(px(0.), px(0.)),
+                        mode: 0,
+                        guide: Some(at),
+                    })
+                }
                 _ => None,
             };
         }
@@ -1507,6 +1533,7 @@ impl RootView {
                         origin: event.position,
                         mode: 0,
                         delta: 0.,
+                        guide: None,
                     });
                     cx.stop_propagation();
                     cx.notify();
@@ -1596,6 +1623,7 @@ impl RootView {
                             origin: event.position,
                             mode,
                             delta: 0.,
+                            guide: None,
                         });
                         cx.stop_propagation();
                         cx.notify();
@@ -1625,6 +1653,27 @@ impl RootView {
                     cx.stop_propagation();
                 }),
             );
+        // The snap guide: a line down the ruler and the lanes where a dragged
+        // edge has caught another region's edge, the playhead or an end of
+        // the take, under the playhead so the playhead stays readable when
+        // it is the one caught. Not drawn by the design.
+        if let Some(Gesture::Region {
+            guide: Some(at), ..
+        }) = &self.gesture
+            && (offset..=offset + visible).contains(at)
+        {
+            let x = (at - offset) / visible * track_width;
+            timeline = timeline.child(layered(
+                div()
+                    .absolute()
+                    .left(px(x - Theme::snap_guide_width() / 2.))
+                    .top(px(Theme::bubble_zone()))
+                    .bottom_0()
+                    .w(px(Theme::snap_guide_width()))
+                    .rounded(px(Theme::playhead_line_radius()))
+                    .bg(theme.text.opacity(Theme::snap_guide_alpha())),
+            ));
+        }
         if playhead_shown {
             let x = playhead * track_width;
             // Where the grab handle rides: centred on the clip lane, or on

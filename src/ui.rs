@@ -94,11 +94,14 @@ enum Gesture {
     /// A scrub. `grab` is how far right of the playhead the press landed,
     /// so a playhead picked up off-centre does not jump to the pointer.
     Seek { grab: f32 },
+    /// A region being moved or trimmed: how far, snapped, and the time a
+    /// dragged edge has caught, which the snap guide marks.
     Region {
         region: Region,
         origin: Point<Pixels>,
         mode: i32,
         delta: f32,
+        guide: Option<f32>,
     },
     Canvas {
         origin: Point<Pixels>,
@@ -282,7 +285,7 @@ pub struct RootView {
     pinch: Option<(bool, f32, f32, Point<Pixels>)>,
     gesture: Option<Gesture>,
     /// A held state the gallery starts in, since it cannot drag:
-    /// `SUBTAKE_GALLERY_GESTURE=move`, `trim` or `scrub`. Taken on the first
+    /// `SUBTAKE_GALLERY_GESTURE=move`, `trim`, `snap` or `scrub`. Taken on the first
     /// frame that has the regions to hold.
     gallery_gesture: Option<String>,
     menu: Option<String>,

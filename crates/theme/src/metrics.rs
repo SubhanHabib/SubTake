@@ -449,6 +449,10 @@ impl Theme {
     /// edge, the playhead or either end of the take lands on it. Not drawn by
     /// the design.
     pub const SNAP_REACH: f32 = 6.0;
+    /// The guide where a dragged edge has caught: a 1 line in `text` at 50%
+    /// down the ruler and the lanes, under the playhead.
+    pub const SNAP_GUIDE_WIDTH: f32 = 1.0;
+    pub const SNAP_GUIDE_ALPHA: f32 = 0.5;
     /// The ruler's labels: at least 80 apart, each 4 in either side of its
     /// text. Between two labels, a 3 dot at every fifth of the interval, in
     /// `text` at 70% behind the playhead and `muted` at 40% ahead of it.

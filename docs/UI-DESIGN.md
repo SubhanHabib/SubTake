@@ -269,7 +269,11 @@ edges and the nearer catches; a trim drags one. Regions moving with it, the
 rest of the selection, are not caught. With none of those in reach, the edge
 catches the ruler's marks, labels and dots alike, so a drag lands on whole
 seconds zoomed out and on finer steps zoomed in; an edge in reach always wins
-over a mark. Not drawn by the design, which has
+over a mark. Where an edge has caught, a 1 guide in `text` at 50% runs down the
+ruler and the lanes, under the playhead; a mark caught shows none, since the
+dots already mark it. `SUBTAKE_GALLERY_SCREEN=selection
+SUBTAKE_GALLERY_GESTURE=snap` holds the selected zoom moved so its end has
+caught the next edge after it. Not drawn by the design, which has
 the magnet and no behaviour for it.
 
 A clip shows the recording's frames rather than its tint: tiles 88 wide and

@@ -41,7 +41,7 @@ pub fn move_region(
 /// one for a trim. Whichever lands nearest an anchor, within `reach`, lands
 /// on it; with no anchor in reach, whichever lands nearest a multiple of
 /// `step` does, so the anchors always win over the grid. Returns the delta
-/// and the time caught, if one was.
+/// and the anchor caught, if one was; a tick caught is not an anchor.
 pub fn snap(
     edges: &[f64],
     delta: f64,
@@ -63,9 +63,10 @@ pub fn snap(
             .min_by(|a, b| (a - target).abs().total_cmp(&(b - target).abs()))
     };
     let tick = |target: f64| (step > 0.).then(|| (target / step).round() * step);
-    nearest(&anchor)
-        .or_else(|| nearest(&tick))
-        .map_or((delta, None), |(shift, at)| (delta + shift, Some(at)))
+    match nearest(&anchor) {
+        Some((shift, at)) => (delta + shift, Some(at)),
+        None => (delta + nearest(&tick).map_or(0., |(shift, _)| shift), None),
+    }
 }
 
 pub fn source_end(kind: &str, region: &Value) -> f64 {
