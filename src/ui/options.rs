@@ -13,6 +13,7 @@ mod audio;
 mod camera;
 mod countdown;
 mod more;
+mod parts;
 mod source;
 
 impl RootView {
@@ -491,9 +492,11 @@ fn studio_button(
     )
 }
 
-/// The muted sentence a card ends on.
+/// The muted sentence a card ends on, 6 in and 2 under what it follows.
 fn helper(text: impl Into<SharedString>, theme: Theme) -> Div {
     div()
+        .pt(px(Theme::card_helper_top()))
+        .px(px(Theme::card_text_inset()))
         .text_size(px(Theme::font_secondary()))
         .line_height(relative(Theme::helper_leading()))
         .text_color(theme.muted)

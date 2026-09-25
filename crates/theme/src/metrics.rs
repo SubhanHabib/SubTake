@@ -775,6 +775,45 @@ impl Theme {
     /// The camera card's live picture and the shape swatch set in it.
     pub const CAMERA_PREVIEW_HEIGHT: f32 = 132.0;
     pub const CAMERA_SWATCH: f32 = 44.0;
+    /// The parts the recorder cards are built from. A section label: 18
+    /// tall, 6 in from the card's edge — the inset a helper line takes too,
+    /// 2 under what it follows.
+    pub const CARD_LABEL_HEIGHT: f32 = 18.0;
+    pub const CARD_TEXT_INSET: f32 = 6.0;
+    pub const CARD_HELPER_TOP: f32 = 2.0;
+    /// A group of rows on one recess, and the divider between two of its
+    /// rows: 56 in past a row's plate, 16 in on a row without one.
+    pub const CARD_GROUP_RADIUS: f32 = Self::RADIUS_MENU;
+    pub const CARD_DIVIDER_INSET_PLATE: f32 = 56.0;
+    pub const CARD_DIVIDER_INSET: f32 = 16.0;
+    /// A group's row: 48, or 52 with a subtitle, 12 between its parts, 8 in
+    /// to its plate or 16 to its title, and 12 in at its right.
+    pub const CARD_ROW_HEIGHT: f32 = 48.0;
+    pub const CARD_ROW_HEIGHT_TALL: f32 = 52.0;
+    pub const CARD_ROW_GAP: f32 = 12.0;
+    pub const CARD_ROW_INSET_PLATE: f32 = 8.0;
+    pub const CARD_ROW_INSET: f32 = 16.0;
+    pub const CARD_ROW_INSET_END: f32 = 12.0;
+    pub const CARD_ROW_SUBTITLE_GAP: f32 = 1.0;
+    /// The 36 plate a row's glyph sits on, at 17.
+    pub const CARD_ROW_PLATE: f32 = 36.0;
+    pub const CARD_ROW_ICON: f32 = 17.0;
+    /// A key cap: 22 square at least, 6 in, radius 7, 3 from the next cap,
+    /// 6 from the words around it.
+    pub const KEY_CAP_SIZE: f32 = 22.0;
+    pub const KEY_CAP_PADDING: f32 = 6.0;
+    pub const KEY_CAP_RADIUS: f32 = 7.0;
+    pub const KEY_CAP_GAP: f32 = 3.0;
+    pub const KEY_HINT_GAP: f32 = 6.0;
+    /// The segmented control inside a row, a step under the card's own.
+    pub const CARD_SEGMENTED_HEIGHT: f32 = Self::CONTROL_HEIGHT_SMALL;
+    /// The Countdown's tiles: four across, 8 apart, 76 tall at radius 22,
+    /// the numeral at 28 with "sec" under it and Off at 16.
+    pub const COUNTDOWN_TILE_HEIGHT: f32 = 76.0;
+    pub const COUNTDOWN_TILE_RADIUS: f32 = Self::RADIUS_ROW;
+    pub const COUNTDOWN_TILE_GAP: f32 = 8.0;
+    pub const FONT_COUNTDOWN_TILE: f32 = 28.0;
+    pub const COUNTDOWN_TILE_LEADING: f32 = 1.05;
 
     /// The ruler: a recessed band the width of the track, radius 16.
     pub const RULER_HEIGHT: f32 = 32.0;
