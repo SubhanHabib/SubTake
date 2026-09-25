@@ -771,17 +771,18 @@ impl Theme {
     /// How far the thumb's track stops short of the region's top and bottom.
     pub const SCROLL_THUMB_INSET: f32 = 6.0;
 
-    /// The lane region's height: the stack the handoff draws — the bubble's
-    /// band, the ruler and five lanes, the clip lane among them. A project
-    /// with more lanes than that scrolls inside the region rather than
-    /// growing the console into the stage.
+    /// The lane region's height: the bubble's band, the ruler, the clip lane,
+    /// one lane and half of a third, the half showing there is more below.
+    /// A project with more lanes than that scrolls inside the region rather
+    /// than growing the console into the stage. Not drawn by the design,
+    /// whose stack shows five lanes and leaves the stage the smaller share.
     ///
     /// The figure is the region's, not the console's. The console is that
     /// region plus its own padding, its transport row, and whatever else it
     /// is carrying at the time — so a line it only sometimes shows adds to
     /// its height instead of being taken out of the lanes.
     pub const LANE_STACK_HEIGHT: f32 =
-        Self::LANE_STACK_TOP + Self::CLIP_LANE_HEIGHT + 4.0 * (Self::LANE_HEIGHT + Self::LANE_GAP);
+        Self::LANE_STACK_TOP + Self::CLIP_LANE_HEIGHT + 2.0 * Self::LANE_GAP + 1.5 * Self::LANE_HEIGHT;
     /// The shortest the console's top edge can drag the lane region to: the
     /// ruler and two lanes.
     pub const LANE_STACK_MIN: f32 =

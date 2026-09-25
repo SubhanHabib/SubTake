@@ -133,7 +133,7 @@ The inspector's left edge and the console's top edge each take a drag: the
 inspector from 300 to 520 wide, and the lane region from the ruler and two
 lanes up to half the window, whatever lanes the project has. The stage
 gives or takes the difference, and a double click puts either back at rest
-(340, and five lanes). A 36×4 grip fades in on the edge under the pointer and
+(340, and the clip lane, one lane and half of a third, the half telling there is more below). A 36×4 grip fades in on the edge under the pointer and
 stays while it is dragged. The drag follows the pointer over the floats as
 well as the stage, so it runs both ways. Not drawn by the design: the handoff's floats
 are fixed. The sizes are remembered between launches, and Settings →
