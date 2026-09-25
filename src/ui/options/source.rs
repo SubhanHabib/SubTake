@@ -1,7 +1,7 @@
 //! The Source card: what the recorder captures, as three tabs — a whole
 //! display, one window, or an area drawn on the screen.
 
-use super::parts::{CardRow, group, section_label};
+use super::parts::{CardRow, access_off, group, section_label};
 use super::*;
 use subtake_theme::FONT_MONO;
 use subtake_ui::{edge, fade_edges, pill_edge, segmented};
@@ -53,6 +53,11 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> Vec<AnyElement> {
         let theme = self.theme;
+        if !state.get_screen_access() {
+            return vec![
+                access_off("Screen", self.command("access-screen"), theme).into_any_element(),
+            ];
+        }
         let sources: Vec<CaptureSource> = state.get_capture_sources().iter().collect();
         let chosen = usize::try_from(state.get_source_index()).ok();
         let tab =

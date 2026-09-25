@@ -28,6 +28,8 @@
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
 //! opens that recorder card (`=card-sources-busy` with its controls off,
+//! `=card-audio-denied` with the system refusing what it captures,
+//! `=card-audio-none` or `=card-camera-none` with no device found,
 //! `=card-sources-window` and `=card-sources-area` on those tabs,
 //! `=card-sources-cycle` with its list emptied and refilled on a timer);
 //! `=panel-<name>` opens any other panel by its
@@ -362,7 +364,9 @@ pub fn run() -> Result<()> {
         // `card-camera`, `card-countdown` or `card-more`, or the Source card
         // on its other tabs, `card-sources-window` and `card-sources-area`.
         // A `-busy` suffix (`card-sources-busy`) holds the card mid-change,
-        // its controls off.
+        // its controls off; `-denied` (`card-audio-denied`) has the system
+        // refuse what the card captures, and `-none` (`card-audio-none`)
+        // finds no microphone or camera.
         // The Capture source card with its list emptied and refilled on a
         // timer, for the card easing between the two heights.
         Ok("card-sources-cycle") => {
@@ -386,6 +390,10 @@ pub fn run() -> Result<()> {
             // `card-sources-window` and `card-sources-area` open the Source
             // card on those tabs, which the card reads for itself.
             let panel = panel.trim_end_matches("-busy");
+            let denied = panel.ends_with("-denied");
+            let panel = panel.trim_end_matches("-denied");
+            let none = panel.ends_with("-none");
+            let panel = panel.trim_end_matches("-none");
             // On the Window tab, a window is the source: Code, as the
             // handoff draws it.
             let window_chosen = panel.ends_with("-window");
@@ -399,6 +407,24 @@ pub fn run() -> Result<()> {
                 let g = g.borrow();
                 show_recorder(&g.launcher, &g.options);
                 g.options.set_busy(busy);
+                for surface in [&*g.launcher, &*g.options] {
+                    match panel.as_str() {
+                        "sources" if denied => surface.set_screen_access(false),
+                        "audio" if denied => surface.set_microphone_access(false),
+                        "camera" if denied => surface.set_camera_access(false),
+                        _ => {}
+                    }
+                    // The system default alone, as the platform lists a Mac
+                    // with nothing plugged in.
+                    if none {
+                        let default =
+                            || ModelRc::new(VecModel::from(vec!["System default".to_owned()]));
+                        surface.set_microphone_names(default());
+                        surface.set_camera_names(default());
+                        surface.set_microphone_index(0);
+                        surface.set_camera_index(0);
+                    }
+                }
                 if window_chosen {
                     g.options.set_source_index(3);
                     g.launcher.set_source_index(3);

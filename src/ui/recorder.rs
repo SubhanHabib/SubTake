@@ -173,8 +173,11 @@ impl RootView {
             // on no plate is off, a microphone in `text` on `sunk` is on. The
             // accent has four jobs in this design and "the mic is live" is
             // not one of them.
-            let mic = state.get_microphone() || state.get_system_audio();
-            let camera = state.get_camera();
+            // One the system refuses, or none plugged in, reads as off, as
+            // its card says.
+            let mic = (state.get_microphone() && super::options::microphone_usable(state))
+                || state.get_system_audio();
+            let camera = state.get_camera() && super::options::camera_usable(state);
             for (id, glyph, label, on) in [
                 (
                     "audio",
@@ -391,8 +394,9 @@ impl RootView {
         // when it starts, so these say it rather than change it, by the rule
         // the idle bar uses: on is a `sunk` plate and a `text` glyph, off no
         // plate, the struck-through glyph and `muted`.
-        let mic = state.get_microphone() || state.get_system_audio();
-        let camera = state.get_camera();
+        let mic = (state.get_microphone() && super::options::microphone_usable(state))
+            || state.get_system_audio();
+        let camera = state.get_camera() && super::options::camera_usable(state);
         bar.child(clock)
             .child(pause)
             .child(
@@ -455,7 +459,7 @@ impl RootView {
             .row_data(state.get_source_index().max(0) as usize)
             .map(|name| name.split(" · ").next().unwrap_or_default().to_owned())
             .unwrap_or_default();
-        let mic = if state.get_microphone() {
+        let mic = if state.get_microphone() && super::options::microphone_usable(state) {
             "mic on"
         } else {
             "mic off"

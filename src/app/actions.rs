@@ -427,6 +427,9 @@ impl App {
                     launcher.window().drag_window()?;
                 }
             }
+            "access-screen" => platform::open_access_settings(platform::Access::Screen)?,
+            "access-microphone" => platform::open_access_settings(platform::Access::Microphone)?,
+            "access-camera" => platform::open_access_settings(platform::Access::Camera)?,
             "recording-folder" => {
                 if let Some(directory) = rfd::FileDialog::new()
                     .set_directory(self.recording_directory()?)
@@ -916,8 +919,20 @@ impl App {
                     .recorder_setting("frame-rate")
                     .parse::<u32>()
                     .map_or(Value::Null, Value::from);
-                let camera = ui.get_capture_camera();
-                let mic = ui.get_capture_mic();
+                // A microphone or camera the system has refused, or that
+                // the platform found none of, reads as off on the bar and
+                // its card, so it records as off too.
+                let found = |key: &str| {
+                    self.devices[key]
+                        .as_array()
+                        .is_none_or(|list| !list.is_empty())
+                };
+                let camera = ui.get_capture_camera()
+                    && platform::has_access(platform::Access::Camera)
+                    && found("cameras");
+                let mic = ui.get_capture_mic()
+                    && platform::has_access(platform::Access::Microphone)
+                    && found("microphones");
                 let system = ui.get_capture_system();
                 self.stop(ui);
                 self.show_launcher(ui)?;

@@ -1,7 +1,7 @@
 //! The Microphone card: the meter, the input to record from, and the
 //! system's sound.
 
-use super::parts::{CardRow, group, section_label};
+use super::parts::{CardRow, access_off, group, none_found, section_label};
 use super::*;
 use std::time::Duration;
 use subtake_theme::{METER_CLIP_HOLD_MS, METER_SAMPLE_MS};
@@ -14,10 +14,16 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> Vec<AnyElement> {
         let theme = self.theme;
+        if !state.get_microphone_access() {
+            return vec![
+                access_off("Microphone", self.command("access-microphone"), theme)
+                    .into_any_element(),
+            ];
+        }
         let busy = state.get_busy();
         // Off, the meter and the inputs stay where they are, dimmed and
         // still, so turning the microphone back on changes nothing else.
-        let on = state.get_microphone();
+        let on = state.get_microphone() && microphone_usable(state);
         let dim = if on { 1. } else { Theme::disabled_opacity() };
 
         let meter = self.meter_block(state, on, cx).opacity(dim);
@@ -78,9 +84,14 @@ impl RootView {
             meter.into_any_element(),
             column()
                 .gap(px(Theme::gap()))
-                .opacity(dim)
+                // "No microphones found" is the message, so it keeps its ink.
+                .opacity(if microphone_usable(state) { dim } else { 1. })
                 .child(section_label("Input", theme))
-                .child(group(inputs, theme))
+                .child(if microphone_usable(state) {
+                    group(inputs, theme)
+                } else {
+                    none_found("microphones", theme)
+                })
                 .into_any_element(),
             system_audio.into_any_element(),
             helper("Mic and system audio record to separate tracks.", theme).into_any_element(),

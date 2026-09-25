@@ -6,7 +6,7 @@
 //! another replaces it in place with a short cross-fade.
 
 use super::*;
-use crate::ui_state::CaptureSource;
+use crate::ui_state::{CaptureSource, UiHandle};
 use subtake_ui::{icon_sized, layered};
 
 mod audio;
@@ -92,11 +92,14 @@ impl RootView {
             "sources" => Some(self.refresh_button(state).into_any_element()),
             "audio" => {
                 let options = state.clone();
+                // Refused by the system or with none plugged in, the
+                // microphone reads as off and cannot be turned on here.
+                let allowed = microphone_usable(state);
                 Some(
                     switch(
                         "mic-toggle",
-                        state.get_microphone(),
-                        !busy,
+                        state.get_microphone() && allowed,
+                        !busy && allowed,
                         theme,
                         move |v, _, _| options.defer_option("microphone".into(), v.to_string()),
                     )
@@ -105,11 +108,12 @@ impl RootView {
             }
             "camera" => {
                 let options = state.clone();
+                let allowed = camera_usable(state);
                 Some(
                     switch(
                         "camera-toggle",
-                        state.get_camera(),
-                        !busy,
+                        state.get_camera() && allowed,
+                        !busy && allowed,
                         theme,
                         move |v, _, _| options.defer_option("camera".into(), v.to_string()),
                     )
@@ -183,6 +187,10 @@ impl RootView {
                         .join(" · ")
                 })
                 .unwrap_or_else(|| "Nothing to capture yet".into()),
+            "audio" if !state.get_microphone_access() => "Not allowed".into(),
+            "camera" if !state.get_camera_access() => "Not allowed".into(),
+            "audio" if !microphone_usable(state) => "None found".into(),
+            "camera" if !camera_usable(state) => "None found".into(),
             "audio" => pick(state.get_microphone_names(), state.get_microphone_index()),
             "camera" => pick(state.get_camera_names(), state.get_camera_index()),
             "countdown" => match state.get_countdown() {
@@ -487,6 +495,18 @@ impl CardFace {
 }
 
 /// More's way back to the editor: "Studio" and an arrow out, on a 34 pill.
+/// Whether the recording can take a microphone: the system allows it and
+/// one is plugged in. The platform lists the system default first, which
+/// alone is no microphone at all.
+pub(in crate::ui) fn microphone_usable(state: &UiHandle) -> bool {
+    state.get_microphone_access() && state.get_microphone_names().row_count() > 1
+}
+
+/// Whether the recording can take a camera, as [`microphone_usable`] asks.
+pub(in crate::ui) fn camera_usable(state: &UiHandle) -> bool {
+    state.get_camera_access() && state.get_camera_names().row_count() > 1
+}
+
 fn studio_button(
     open: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
     theme: Theme,

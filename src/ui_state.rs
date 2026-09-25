@@ -169,6 +169,12 @@ struct Properties {
     system_audio: bool,
     paused: bool,
     has_project: bool,
+    /// Whether the system lets SubTake capture the screen, the microphone
+    /// and the camera (`platform::has_access`). Off, the card for it says
+    /// so and offers the way to System Settings.
+    screen_access: bool,
+    microphone_access: bool,
+    camera_access: bool,
     cancellable: bool,
     elapsed: String,
     directory: String,
@@ -278,6 +284,9 @@ impl Default for Properties {
             system_audio: false,
             paused: false,
             has_project: false,
+            screen_access: true,
+            microphone_access: true,
+            camera_access: true,
             cancellable: false,
             elapsed: "00:00".into(),
             directory: String::new(),
@@ -1378,6 +1387,42 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.has_project != value {
             props.has_project = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_screen_access(&self) -> bool {
+        self.0.props.borrow().screen_access
+    }
+
+    pub fn set_screen_access(&self, value: bool) {
+        let mut props = self.0.props.borrow_mut();
+        if props.screen_access != value {
+            props.screen_access = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_microphone_access(&self) -> bool {
+        self.0.props.borrow().microphone_access
+    }
+
+    pub fn set_microphone_access(&self, value: bool) {
+        let mut props = self.0.props.borrow_mut();
+        if props.microphone_access != value {
+            props.microphone_access = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_camera_access(&self) -> bool {
+        self.0.props.borrow().camera_access
+    }
+
+    pub fn set_camera_access(&self, value: bool) {
+        let mut props = self.0.props.borrow_mut();
+        if props.camera_access != value {
+            props.camera_access = value;
             self.window().invalidate();
         }
     }

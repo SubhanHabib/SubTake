@@ -915,6 +915,10 @@ impl Theme {
     pub const CARD_ROW_INSET: f32 = 16.0;
     pub const CARD_ROW_INSET_END: f32 = 12.0;
     pub const CARD_ROW_SUBTITLE_GAP: f32 = 1.0;
+    /// A card whose capture the system has refused: its notice on a recess
+    /// 12 in all round, and Open Settings 10 under the words.
+    pub const ACCESS_PADDING: f32 = 12.0;
+    pub const ACCESS_BUTTON_GAP: f32 = 10.0;
     /// The 36 plate a row's glyph sits on, at 17.
     pub const CARD_ROW_PLATE: f32 = 36.0;
     pub const CARD_ROW_ICON: f32 = 17.0;

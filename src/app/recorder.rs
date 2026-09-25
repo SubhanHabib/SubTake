@@ -75,6 +75,18 @@ impl App {
         };
         options.set_panel(launcher.get_panel());
         options.set_appearance(self.preferences.appearance.as_str().into());
+        // Asked again on every sync, so coming back from System Settings
+        // shows what was allowed there. Screen access that has just come on
+        // lists the sources it kept from the Source card.
+        let screen = platform::has_access(platform::Access::Screen);
+        if screen && !options.get_screen_access() && !ui.get_busy() {
+            post(|app, ui| report(ui, app.action(ui, "sources-passive")));
+        }
+        for surface in [&**launcher, &**options] {
+            surface.set_screen_access(screen);
+            surface.set_microphone_access(platform::has_access(platform::Access::Microphone));
+            surface.set_camera_access(platform::has_access(platform::Access::Camera));
+        }
         options.set_source_names(ui.get_source_names());
         options.set_capture_sources(ui.get_capture_sources());
         options.set_sources_loading(ui.get_sources_loading());

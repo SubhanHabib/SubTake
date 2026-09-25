@@ -169,6 +169,92 @@ impl CardRow {
     }
 }
 
+/// In place of all a card holds when the system has refused what it
+/// captures: the warning on its plate, what is off and why, and the way to
+/// System Settings.
+///
+/// Not drawn by the design: the handoff sets Open Settings at the row's
+/// end. On a 340 card that leaves the words a third of the row, three lines
+/// deep, so the button sits under them.
+pub(super) fn access_off(
+    what: &str,
+    open: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    theme: Theme,
+) -> Div {
+    let radius = Theme::card_group_radius();
+    div()
+        .relative()
+        .flex()
+        .flex_none()
+        .items_start()
+        .gap(px(Theme::card_row_gap()))
+        .p(px(Theme::access_padding()))
+        .rounded(px(radius))
+        .bg(theme.sunk)
+        .child(row_plate("Warning-regular", theme))
+        .child(
+            column()
+                .flex_1()
+                .min_w_0()
+                .gap(px(Theme::access_button_gap()))
+                .child(
+                    column()
+                        .gap(px(Theme::card_row_subtitle_gap()))
+                        .child(
+                            div()
+                                .text_size(px(Theme::font_body()))
+                                .font_weight(FontWeight::MEDIUM)
+                                .text_color(theme.text)
+                                .child(format!("{what} access is off")),
+                        )
+                        // In two phrases that wrap whole, so a card too
+                        // narrow for the line breaks it at "in" rather than
+                        // leaving "Settings" alone under it.
+                        .child(
+                            div()
+                                .flex()
+                                .flex_wrap()
+                                .text_size(px(Theme::font_secondary()))
+                                .text_color(theme.muted)
+                                .child("SubTake needs permission\u{a0}")
+                                .child("in System Settings"),
+                        ),
+                )
+                .child(
+                    row().child(
+                        button("open-settings", "Open Settings", theme)
+                            .small()
+                            .edged()
+                            .on_click(open),
+                    ),
+                ),
+        )
+        .child(edge(
+            radius,
+            vec![hairline(theme.line, Theme::hairline_width())],
+        ))
+}
+
+/// The one row a device list shows with nothing in it: "No microphones
+/// found", in `muted` and with no check.
+pub(super) fn none_found(what: &str, theme: Theme) -> Div {
+    let radius = Theme::card_group_radius();
+    row()
+        .relative()
+        .flex_none()
+        .h(px(Theme::card_row_height()))
+        .px(px(Theme::card_row_inset()))
+        .rounded(px(radius))
+        .bg(theme.sunk)
+        .text_size(px(Theme::font_body()))
+        .text_color(theme.muted)
+        .child(format!("No {what} found"))
+        .child(edge(
+            radius,
+            vec![hairline(theme.line, Theme::hairline_width())],
+        ))
+}
+
 /// A row's glyph on its 36 plate.
 pub(super) fn row_plate(glyph: &str, theme: Theme) -> Div {
     div()

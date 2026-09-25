@@ -1,7 +1,7 @@
 //! The Camera card: the live picture with the device on it, and where the
 //! camera sits in the recording, its shape and its size.
 
-use super::parts::section_label;
+use super::parts::{access_off, section_label};
 use super::*;
 use subtake_ui::{edge, segmented};
 
@@ -23,13 +23,18 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> Vec<AnyElement> {
         let theme = self.theme;
+        if !state.get_camera_access() {
+            return vec![
+                access_off("Camera", self.command("access-camera"), theme).into_any_element(),
+            ];
+        }
         let busy = state.get_busy();
         let on = state.get_camera();
         let names: Vec<String> = state.get_camera_names().iter().collect();
         let mut body = Vec::new();
-        if names.is_empty() {
-            // Not drawn by the design: a Mac with no camera. The plate keeps
-            // the picture's shape so the card does not jump when one appears.
+        if !camera_usable(state) {
+            // A Mac with no camera, as round 2 draws it: the plate keeps the
+            // picture's shape so the card does not jump when one appears.
             body.push(
                 row()
                     .w_full()

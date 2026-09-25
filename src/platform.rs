@@ -10,11 +10,13 @@ use std::{
     time::Duration,
 };
 
+mod access;
 mod companion;
 mod microphone;
 mod recording;
 mod windows;
 
+pub use access::{Access, has_access, open_access_settings};
 use companion::*;
 pub use microphone::meter_microphone;
 pub use recording::Recording;
