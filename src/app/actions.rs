@@ -35,6 +35,12 @@ impl App {
                 Ok(())
             });
         }
+        // A Recent tile on the recorder's More card: opened as the library
+        // opens it, then the editor comes forward over the bar.
+        if let Some(index) = action.strip_prefix("recent-open-") {
+            self.action(ui, &format!("library-open-{index}"))?;
+            return self.show_editor(ui);
+        }
         if let Some(index) = action.strip_prefix("library-open-") {
             let path = self
                 .library

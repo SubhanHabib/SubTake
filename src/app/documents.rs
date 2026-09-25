@@ -60,6 +60,20 @@ impl App {
             .collect()
     }
 
+    /// The More card's Recent row: the library's first three, each opening
+    /// in the editor and bringing it forward (`recent-open-`).
+    pub(super) fn recorder_recents(&self) -> Vec<Recent> {
+        self.recents()
+            .into_iter()
+            .take(3)
+            .enumerate()
+            .map(|(index, recent)| Recent {
+                key: format!("recent-open-{index}"),
+                ..recent
+            })
+            .collect()
+    }
+
     /// Makes the still of each of `paths` not yet asked for, one worker for
     /// them all, and redraws the Recent cards as each arrives.
     pub(super) fn request_stills(&mut self, paths: Vec<PathBuf>) {
@@ -88,6 +102,9 @@ impl App {
                     app.stills.insert(path, Some(image));
                     if app.history.is_none() || ui.get_panel() == "Recent" {
                         ui.set_recents(ModelRc::new(VecModel::from(app.recents())));
+                    }
+                    if let Some(options) = &app.launcher_options {
+                        options.set_recents(ModelRc::new(VecModel::from(app.recorder_recents())));
                     }
                 });
             }

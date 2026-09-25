@@ -172,6 +172,12 @@ struct Properties {
     cancellable: bool,
     elapsed: String,
     directory: String,
+    /// How many projects and videos the library holds: the More card's All
+    /// projects.
+    project_count: i32,
+    /// The global record / stop binding, as the keymap spells it
+    /// ("Super+Shift+R"); empty when there is none.
+    record_shortcut: String,
     countdown: i32,
     counting: i32,
     stopping: bool,
@@ -275,6 +281,8 @@ impl Default for Properties {
             cancellable: false,
             elapsed: "00:00".into(),
             directory: String::new(),
+            project_count: 0,
+            record_shortcut: String::new(),
             countdown: 3,
             counting: 0,
             stopping: false,
@@ -1406,6 +1414,30 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.directory != value {
             props.directory = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_project_count(&self) -> i32 {
+        self.0.props.borrow().project_count
+    }
+
+    pub fn set_project_count(&self, value: i32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.project_count != value {
+            props.project_count = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_record_shortcut(&self) -> String {
+        self.0.props.borrow().record_shortcut.clone()
+    }
+
+    pub fn set_record_shortcut(&self, value: String) {
+        let mut props = self.0.props.borrow_mut();
+        if props.record_shortcut != value {
+            props.record_shortcut = value;
             self.window().invalidate();
         }
     }

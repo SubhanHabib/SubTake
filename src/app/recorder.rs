@@ -90,6 +90,9 @@ impl App {
         options.set_system_audio(ui.get_capture_system());
         options.set_busy(ui.get_busy());
         options.set_has_project(self.history.is_some());
+        options.set_recents(ModelRc::new(VecModel::from(self.recorder_recents())));
+        options.set_project_count(self.library.len() as i32);
+        options.set_record_shortcut(self.preferences.record_shortcut.clone());
         options.set_countdown(self.preferences.countdown_seconds as i32);
         options.set_recorder_settings(self.preferences.recorder_settings());
         options.set_directory(
