@@ -266,7 +266,10 @@ With the magnet on, a region snaps as it is dragged, so it shows where it
 will land: whichever edge being dragged comes within 6 of another region's
 edge, the playhead or either end of the take lands on it. A move drags both
 edges and the nearer catches; a trim drags one. Regions moving with it, the
-rest of the selection, are not caught. Not drawn by the design, which has
+rest of the selection, are not caught. With none of those in reach, the edge
+catches the ruler's marks, labels and dots alike, so a drag lands on whole
+seconds zoomed out and on finer steps zoomed in; an edge in reach always wins
+over a mark. Not drawn by the design, which has
 the magnet and no behaviour for it.
 
 A clip shows the recording's frames rather than its tint: tiles 88 wide and

@@ -39,22 +39,33 @@ pub fn move_region(
 /// Where a dragged region lands with the timeline's magnet on. `edges` are
 /// the edges being dragged, where they sat before the drag: both for a move,
 /// one for a trim. Whichever lands nearest an anchor, within `reach`, lands
-/// on it. Returns the delta and the anchor caught, if one was.
-pub fn snap(edges: &[f64], delta: f64, anchors: &[f64], reach: f64) -> (f64, Option<f64>) {
-    edges
-        .iter()
-        .filter_map(|edge| {
-            let target = edge + delta;
-            anchors
-                .iter()
-                .map(|anchor| (anchor - target, *anchor))
-                .min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
-        })
-        .filter(|(shift, _)| shift.abs() < reach)
-        .min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
-        .map_or((delta, None), |(shift, anchor)| {
-            (delta + shift, Some(anchor))
-        })
+/// on it; with no anchor in reach, whichever lands nearest a multiple of
+/// `step` does, so the anchors always win over the grid. Returns the delta
+/// and the time caught, if one was.
+pub fn snap(
+    edges: &[f64],
+    delta: f64,
+    anchors: &[f64],
+    step: f64,
+    reach: f64,
+) -> (f64, Option<f64>) {
+    let nearest = |to: &dyn Fn(f64) -> Option<f64>| {
+        edges
+            .iter()
+            .filter_map(|edge| to(edge + delta).map(|at| (at - edge - delta, at)))
+            .filter(|(shift, _)| shift.abs() < reach)
+            .min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
+    };
+    let anchor = |target: f64| {
+        anchors
+            .iter()
+            .copied()
+            .min_by(|a, b| (a - target).abs().total_cmp(&(b - target).abs()))
+    };
+    let tick = |target: f64| (step > 0.).then(|| (target / step).round() * step);
+    nearest(&anchor)
+        .or_else(|| nearest(&tick))
+        .map_or((delta, None), |(shift, at)| (delta + shift, Some(at)))
 }
 
 pub fn source_end(kind: &str, region: &Value) -> f64 {

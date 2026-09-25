@@ -15,6 +15,17 @@ const GALLERY_HOLD_SECONDS: f32 = 4.;
 /// its labels `RULER_LABEL_SPACING` apart at the current zoom.
 const RULER_INTERVALS: [f32; 9] = [1., 2., 5., 10., 15., 30., 60., 120., 300.];
 
+/// The ruler's label interval and its dot interval, in seconds, for this
+/// much of the take across a track this wide. The label interval is the
+/// smallest that keeps its labels `RULER_LABEL_SPACING` apart.
+fn ruler_steps(visible: f32, track_width: f32) -> (f32, f32) {
+    let interval = RULER_INTERVALS
+        .into_iter()
+        .find(|seconds| seconds / visible * track_width >= Theme::ruler_label_spacing())
+        .unwrap_or(RULER_INTERVALS[RULER_INTERVALS.len() - 1]);
+    (interval, interval / Theme::ruler_minor_steps())
+}
+
 /// A time as the ruler and the playhead chip write it: `m:ss`, or `m:ss.cc`
 /// with hundredths — the transport's own format, so the two agree.
 fn ruler_clock(seconds: f32, hundredths: bool) -> String {
@@ -610,7 +621,10 @@ pub(super) fn lane_stack_range(window: &Window) -> (f32, f32) {
 /// Where a region dragged `delta` seconds on lands. With the magnet on, the
 /// edges being dragged, both for a move and one for a trim, catch the edges
 /// of every region that is not moving with it, the playhead and either end
-/// of the take, from `SNAP_REACH` away on the track.
+/// of the take, from `SNAP_REACH` away on the track. With none of those in
+/// reach, they catch the ruler's marks, labels and dots alike, so a drag
+/// lands on whole seconds zoomed out and on finer steps zoomed in. Not drawn
+/// by the design.
 fn snapped(e: &EditorWindow, dragged: &Region, mode: i32, delta: f32, track: f32) -> f32 {
     if !e.get_snap() {
         return delta;
@@ -628,7 +642,15 @@ fn snapped(e: &EditorWindow, dragged: &Region, mode: i32, delta: f32, track: f32
     };
     let edges: Vec<f64> = edges.into_iter().map(f64::from).collect();
     let reach = Theme::snap_reach() / track * e.get_timeline_visible();
-    crate::editing::snap(&edges, f64::from(delta), &anchors, f64::from(reach)).0 as f32
+    let (_, step) = ruler_steps(e.get_timeline_visible(), track);
+    crate::editing::snap(
+        &edges,
+        f64::from(delta),
+        &anchors,
+        f64::from(step),
+        f64::from(reach),
+    )
+    .0 as f32
 }
 
 impl RootView {
@@ -1107,11 +1129,7 @@ impl RootView {
         // what is ahead of it muted, every frame. The playhead's bubble sits
         // above the band, so no label needs hiding for it. A label that
         // would run off either end of the band is left out.
-        let interval = RULER_INTERVALS
-            .into_iter()
-            .find(|seconds| seconds / visible * track_width >= Theme::ruler_label_spacing())
-            .unwrap_or(RULER_INTERVALS[RULER_INTERVALS.len() - 1]);
-        let minor = interval / Theme::ruler_minor_steps();
+        let (interval, minor) = ruler_steps(visible, track_width);
         let mut ruler = div()
             .id("ruler")
             .relative()

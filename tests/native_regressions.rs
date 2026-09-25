@@ -422,9 +422,27 @@ fn a_moved_region_snaps_whichever_edge_lands_nearest_an_anchor() {
     use subtake_native::editing::snap;
     // A 2–5 region moved 2.75 on: its start would land at 4.75, its end at
     // 7.75. The end is nearer an anchor, 8, so it is the end that catches.
-    assert_eq!(snap(&[2., 5.], 2.75, &[5.5, 8.], 0.5), (3., Some(8.)));
+    assert_eq!(snap(&[2., 5.], 2.75, &[5.5, 8.], 0., 0.5), (3., Some(8.)));
     // Out of reach of every anchor, the drag is left as it is.
-    assert_eq!(snap(&[2., 5.], 1.5, &[5.5, 8.], 0.5), (1.5, None));
+    assert_eq!(snap(&[2., 5.], 1.5, &[5.5, 8.], 0., 0.5), (1.5, None));
     // A trim drags one edge, and only that edge snaps.
-    assert_eq!(snap(&[5.], 2.75, &[5.5, 8.], 0.5), (3., Some(8.)));
+    assert_eq!(snap(&[5.], 2.75, &[5.5, 8.], 0., 0.5), (3., Some(8.)));
+}
+
+#[test]
+fn a_region_out_of_reach_of_every_anchor_snaps_to_the_ruler_ticks() {
+    use subtake_native::editing::snap;
+    // Moved 1.4375 on, a 2–4.75 region's start lands at 3.4375 and its end
+    // at 6.1875, with no anchor in reach. The start is nearer a tick, 3.5.
+    assert_eq!(
+        snap(&[2., 4.75], 1.4375, &[10.], 0.5, 0.25),
+        (1.5, Some(3.5))
+    );
+    // An anchor in reach wins over a nearer tick.
+    assert_eq!(
+        snap(&[2., 4.75], 1.4375, &[6.3125], 0.5, 0.25),
+        (1.5625, Some(6.3125))
+    );
+    // Out of reach of a tick as well, the drag is left as it is.
+    assert_eq!(snap(&[2.], 1.25, &[10.], 0.5, 0.2), (1.25, None));
 }
