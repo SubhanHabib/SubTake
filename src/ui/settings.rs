@@ -194,10 +194,11 @@ impl RootView {
     /// button that picks another through the field's own action.
     fn path_card(&self, f: Field, detail: &str) -> Div {
         let theme = self.theme;
+        // A path reads in mono; nothing chosen yet reads as plain words.
         let path = if f.value.is_empty() {
-            "Not chosen".to_owned()
+            div().text_color(theme.muted).child("Not chosen")
         } else {
-            f.value.clone()
+            mono(f.value.clone()).text_color(theme.text)
         };
         group_card(theme, f.label.clone())
             .child(
@@ -210,11 +211,9 @@ impl RootView {
                 row()
                     .gap(px(Theme::gap()))
                     .child(
-                        mono(path)
-                            .flex_1()
+                        path.flex_1()
                             .min_w_0()
                             .text_size(px(Theme::font_secondary()))
-                            .text_color(theme.text)
                             .text_ellipsis(),
                     )
                     .child(
