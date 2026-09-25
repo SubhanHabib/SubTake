@@ -127,7 +127,9 @@ impl RootView {
                     .child(icon_sized(face.glyph, Theme::card_header_icon(), theme.text)),
             )
             .child(
-                column()
+                div()
+                    .flex()
+                    .flex_col()
                     .flex_1()
                     .min_w_0()
                     // Set close, so the two lines sit inside the plate's 40.

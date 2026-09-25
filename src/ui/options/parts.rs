@@ -168,7 +168,13 @@ pub(super) fn group(rows: Vec<CardRow>, theme: Theme) -> Div {
     };
     let radius = px(Theme::card_group_radius());
     let last = rows.len().saturating_sub(1);
-    let mut el = column().relative().flex_none().rounded(radius).bg(theme.sunk);
+    let mut el = div()
+        .flex()
+        .flex_col()
+        .relative()
+        .flex_none()
+        .rounded(radius)
+        .bg(theme.sunk);
     for (index, card_row) in rows.into_iter().enumerate() {
         if index > 0 {
             el = el.child(

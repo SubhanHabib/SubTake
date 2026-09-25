@@ -74,7 +74,9 @@ fn countdown_tile(value: i32, state: &RecordingOptions, theme: Theme) -> impl In
     let face = if value == 0 {
         div().child(title("Off", Theme::font_card_title()).text_color(ink))
     } else {
-        column()
+        div()
+            .flex()
+            .flex_col()
             .items_center()
             .child(
                 title(value.to_string(), Theme::font_countdown_tile())
