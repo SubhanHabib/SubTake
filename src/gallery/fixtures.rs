@@ -260,6 +260,22 @@ pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOpt
         [0x2a, 0x2f, 0x4a],
         Style::Preview,
     ));
+    // The More card's Recent row and All projects, as `sync_launcher_options`
+    // hands them over.
+    let library = library();
+    options.set_project_count(library.len() as i32);
+    options.set_recents(ModelRc::new(VecModel::from(
+        library
+            .into_iter()
+            .take(3)
+            .enumerate()
+            .map(|(i, recent)| Recent {
+                key: format!("recent-open-{i}"),
+                ..recent
+            })
+            .collect::<Vec<_>>(),
+    )));
+    options.set_record_shortcut("Super+Shift+R".into());
     for w in [launcher as &dyn Recorder, options] {
         w.seed();
     }

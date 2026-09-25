@@ -38,7 +38,7 @@ impl RootView {
             "audio" => self.audio_card(state, cx),
             "camera" => self.camera_card(state, cx),
             "countdown" => self.countdown_card(state),
-            _ => self.more_card(state),
+            _ => self.more_card(state, cx),
         };
         let content = column()
             .gap(px(Theme::recorder_card_gap()))

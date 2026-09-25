@@ -39,6 +39,9 @@ impl Theme {
     // three above it are title sizes and belong to `FONT_TITLE`, never to a
     // control.
 
+    /// The smallest Geist Mono: a recent project's running time and age,
+    /// the bar's source size.
+    pub const FONT_TINY: f32 = 10.0;
     /// Section labels, and Geist Mono metadata.
     pub const FONT_SMALL: f32 = 11.0;
     /// Descriptions and metadata — the step below body, always `muted`.
@@ -793,6 +796,15 @@ impl Theme {
     pub const AREA_DRAW_ICON: f32 = 18.0;
     pub const AREA_DRAW_GAP: f32 = 9.0;
     pub const FONT_AREA_DRAW: f32 = 14.0;
+    /// More: the recent projects three across, 10 apart, each picture at
+    /// radius 12 with its two lines 6 under it; Frame rate's control 112
+    /// wide; the Save to path cut in the middle past 38 characters, about
+    /// what its line holds in Geist Mono at 11.
+    pub const RECENT_GRID_GAP: f32 = 10.0;
+    pub const RECENT_PICTURE_RADIUS: f32 = 12.0;
+    pub const RECENT_TILE_GAP: f32 = 6.0;
+    pub const FRAME_RATE_WIDTH: f32 = 112.0;
+    pub const SAVE_PATH_CHARS: f32 = 38.0;
     /// The microphone meter: thirty bars spread across a 32 row, 3 apart,
     /// each as tall as the level was when it came in — the newest at the
     /// left — and lit from the left as far as the level now reaches. Lit

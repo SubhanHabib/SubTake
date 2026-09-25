@@ -35,6 +35,7 @@ pub(super) struct CardRow {
     id: ElementId,
     title: SharedString,
     subtitle: Option<SharedString>,
+    subtitle_mono: bool,
     glyph: Option<&'static str>,
     trailing: Option<AnyElement>,
     selected: bool,
@@ -48,6 +49,7 @@ impl CardRow {
             id: id.into(),
             title: title.into(),
             subtitle: None,
+            subtitle_mono: false,
             glyph: None,
             trailing: None,
             selected: false,
@@ -58,6 +60,12 @@ impl CardRow {
 
     pub(super) fn subtitle(mut self, text: impl Into<SharedString>) -> Self {
         self.subtitle = Some(text.into());
+        self
+    }
+
+    /// The subtitle in Geist Mono at the small size: a path.
+    pub(super) fn subtitle_mono(mut self) -> Self {
+        self.subtitle_mono = true;
         self
     }
 
@@ -101,6 +109,7 @@ impl CardRow {
             Theme::card_row_height()
         });
         let hover_key = subtake_ui::motion::tween_key(&self.id, "hover");
+        let subtitle_mono = self.subtitle_mono;
         let mut el = div()
             .id(self.id)
             .flex()
@@ -144,7 +153,13 @@ impl CardRow {
                     )
                     .children(self.subtitle.map(|text| {
                         div()
-                            .text_size(px(Theme::font_secondary()))
+                            .map(|s| {
+                                if subtitle_mono {
+                                    s.font_family(FONT_MONO).text_size(px(Theme::font_small()))
+                                } else {
+                                    s.text_size(px(Theme::font_secondary()))
+                                }
+                            })
                             .text_color(theme.muted)
                             .text_ellipsis()
                             .child(text)
