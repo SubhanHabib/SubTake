@@ -151,6 +151,28 @@ impl RootView {
                 if let Some(f) = field("prefs.language") {
                     body = body.child(self.field(e, f, window, cx));
                 }
+                // Not drawn by the design: the handoff's Settings has no way
+                // back from a dragged layout but each edge's double-click.
+                let customised = self.lane_height != Theme::lane_stack_height()
+                    || self.inspector_width != PANEL_WIDTH;
+                body = body.child(
+                    setting_card(
+                        theme,
+                        "Editor layout",
+                        "Put the timeline and the inspector back at their original sizes.",
+                    )
+                    .child(
+                        button("settings-reset-layout", "Reset", theme)
+                            .small()
+                            .enabled(customised)
+                            .on_click(cx.listener(|s, _, _, cx| {
+                                s.lane_height = Theme::lane_stack_height();
+                                s.inspector_width = PANEL_WIDTH;
+                                s.layout_changed();
+                                cx.notify();
+                            })),
+                    ),
+                );
             }
             "Recording" => {
                 if let Some(f) = field("prefs.countdown_seconds") {

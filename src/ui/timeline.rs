@@ -853,7 +853,7 @@ impl RootView {
 
     /// Hands the two dragged edges to the app, which keeps them for the
     /// next launch.
-    fn layout_changed(&self) {
+    pub(super) fn layout_changed(&self) {
         if let Surface::Editor(e) = &self.surface {
             e.invoke_layout_change(self.lane_height, self.inspector_width);
         }

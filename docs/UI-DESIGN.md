@@ -136,7 +136,9 @@ gives or takes the difference, and a double click puts either back at rest
 (340, and five lanes). A 36×4 grip fades in on the edge under the pointer and
 stays while it is dragged. The drag follows the pointer over the floats as
 well as the stage, so it runs both ways. Not drawn by the design: the handoff's floats
-are fixed. Not wired: remembering the sizes between launches.
+are fixed. The sizes are remembered between launches, and Settings →
+General → Editor layout puts both back at rest at once (its Reset is off
+while they already are).
 `SUBTAKE_GALLERY_LANES=100 SUBTAKE_GALLERY_INSPECTOR=460` starts the gallery
 resized, and `SUBTAKE_HOVER_PIN=resize` shows the grips.
 
