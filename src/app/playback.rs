@@ -14,7 +14,15 @@ pub(super) struct FrameRequest {
     panel: String,
     width: u32,
     height: u32,
+    /// Playing, the picture comes from the take's proxy once it has one;
+    /// paused, from the take itself, so a still is as sharp as the export.
+    playing: bool,
+    proxy: Option<PathBuf>,
 }
+
+/// The take, output size and source revision a preview scene is built for,
+/// and the proxy it decodes from, if any.
+type SceneKey = (PathBuf, u32, u32, u64, Option<PathBuf>);
 
 pub(super) struct Preview {
     slot: Arc<(Mutex<Option<FrameRequest>>, Condvar)>,
@@ -26,7 +34,9 @@ impl Preview {
             Arc::new((Mutex::new(None), Condvar::new()));
         let worker = slot.clone();
         std::thread::spawn(move || {
-            let mut scene: Option<(PathBuf, u32, u32, u64, Scene)> = None;
+            // One scene on the take and one on its proxy, so a pause does
+            // not reopen either.
+            let mut scenes: [Option<(SceneKey, Scene)>; 2] = [None, None];
             loop {
                 let request = {
                     let (lock, wake) = &*worker;
@@ -38,26 +48,28 @@ impl Preview {
                 };
                 type Shown = Vec<(String, [f32; 4])>;
                 let result = (|| -> Result<(Vec<u8>, Option<[f32; 5]>, Shown)> {
-                    if scene.as_ref().is_none_or(|(path, w, h, revision, _)| {
-                        *path != request.path
-                            || *w != request.width
-                            || *h != request.height
-                            || *revision != request.source_revision
-                    }) {
-                        scene = Some((
+                    let proxy = request.proxy.clone().filter(|_| request.playing);
+                    let key: SceneKey = (
+                        request.path.clone(),
+                        request.width,
+                        request.height,
+                        request.source_revision,
+                        proxy.clone(),
+                    );
+                    let slot = &mut scenes[proxy.is_some() as usize];
+                    if slot.as_ref().is_none_or(|(held, _)| *held != key) {
+                        let mut scene = Scene::new(
                             request.path.clone(),
+                            request.info.clone(),
                             request.width,
                             request.height,
-                            request.source_revision,
-                            Scene::new(
-                                request.path.clone(),
-                                request.info.clone(),
-                                request.width,
-                                request.height,
-                            )?,
-                        ));
+                        )?;
+                        if let Some(proxy) = proxy {
+                            scene = scene.decoding(proxy, media::PROXY_EDGE);
+                        }
+                        *slot = Some((key, scene));
                     }
-                    let scene = &mut scene.as_mut().unwrap().4;
+                    let scene = &mut slot.as_mut().unwrap().1;
                     let mut drawing = request.project.clone();
                     if request.panel == "Crop" {
                         drawing.set("cropRegion", json!({"x":0,"y":0,"width":1,"height":1}));
@@ -163,15 +175,22 @@ impl App {
                 panel,
                 width,
                 height,
+                playing: self.started.is_some(),
+                proxy: self.proxy.clone(),
             });
         }
     }
 
     pub(super) fn stop(&mut self, ui: &EditorWindow) {
         self.playback.stop();
-        self.started = None;
+        let was_playing = self.started.take().is_some();
         self.audio_cancel.store(true, Ordering::Relaxed);
         ui.set_playing(false);
+        // The frame it stops on was drawn from the proxy; a still is drawn
+        // again from the take.
+        if was_playing {
+            self.request();
+        }
     }
 
     pub(super) fn seek(&mut self, ui: &EditorWindow, time: f64) {

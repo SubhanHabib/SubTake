@@ -80,6 +80,10 @@ pub struct App {
     history: Option<History>,
     document: Option<PathBuf>,
     source: Option<PathBuf>,
+    /// The source's preview proxy once it is made (`media::proxy`), and the
+    /// stop for the one being made.
+    proxy: Option<PathBuf>,
+    proxy_cancel: Arc<AtomicBool>,
     info: Option<MediaInfo>,
     selected: Option<(String, String)>,
     /// The annotations on the last preview frame, bottom first, with their
@@ -150,6 +154,8 @@ impl App {
             history: None,
             document: None,
             source: None,
+            proxy: None,
+            proxy_cancel: Arc::new(AtomicBool::new(false)),
             info: None,
             selected: None,
             shown_annotations: vec![],

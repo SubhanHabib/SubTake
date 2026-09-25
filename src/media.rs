@@ -5,7 +5,7 @@ use std::{
     io::Read,
     path::{Path, PathBuf},
     process::{Child, ChildStdout, Command, Stdio},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, atomic::AtomicBool},
     thread,
     time::{Duration, Instant},
 };
@@ -385,15 +385,7 @@ pub const TIMELINE_FRAMES: u32 = 10;
 /// Source thumbnails and waveform are cached outside the document. Cache identity
 /// includes file metadata so replacing media cannot reuse the previous artwork.
 pub fn timeline_artwork(source: &Path, info: &MediaInfo) -> Result<(PathBuf, Option<PathBuf>)> {
-    use std::hash::{Hash, Hasher};
-    let metadata = std::fs::metadata(source)?;
-    let mut key = std::collections::hash_map::DefaultHasher::new();
-    source.hash(&mut key);
-    metadata.len().hash(&mut key);
-    metadata.modified()?.hash(&mut key);
-    let directory = crate::preferences::Preferences::directory()?.join("timeline-cache");
-    std::fs::create_dir_all(&directory)?;
-    let name = format!("{:016x}", key.finish());
+    let (directory, name) = cache_entry(source)?;
     let thumbs = directory.join(format!("{name}-thumbs.png"));
     let waveform = directory.join(format!("{name}-wave.png"));
     if !thumbs.exists() {
@@ -452,6 +444,110 @@ pub fn timeline_artwork(source: &Path, info: &MediaInfo) -> Result<(PathBuf, Opt
         None
     };
     Ok((thumbs, waveform))
+}
+
+/// The timeline cache and the name a take's artwork goes under there, from
+/// its path, size and last change.
+fn cache_entry(source: &Path) -> Result<(PathBuf, String)> {
+    use std::hash::{Hash, Hasher};
+    let metadata = std::fs::metadata(source)?;
+    let mut key = std::collections::hash_map::DefaultHasher::new();
+    source.hash(&mut key);
+    metadata.len().hash(&mut key);
+    metadata.modified()?.hash(&mut key);
+    let directory = crate::preferences::Preferences::directory()?.join("timeline-cache");
+    std::fs::create_dir_all(&directory)?;
+    Ok((directory, format!("{:016x}", key.finish())))
+}
+
+/// The longest edge of a preview proxy. A take larger than this plays in the
+/// preview from a copy this size, so playback decodes a fraction of the
+/// pixels. A paused frame and the export still read the take itself.
+pub const PROXY_EDGE: u32 = 1920;
+
+/// How many proxies the cache keeps, newest first. Each is a whole take, so
+/// older ones go as new ones are made.
+const PROXIES_KEPT: usize = 3;
+
+/// A size scaled to fit `edge` on its longest side, never up, in even pixels.
+pub fn fit(width: u32, height: u32, edge: u32) -> (u32, u32) {
+    let ratio = (edge as f64 / width.max(height) as f64).min(1.);
+    let even = |side: u32| ((side as f64 * ratio / 2.).round() as u32 * 2).max(2);
+    (even(width), even(height))
+}
+
+/// The preview proxy for a take larger than `PROXY_EDGE`: an H.264 copy at
+/// that size with a keyframe every quarter second, so a seek decodes little,
+/// and the take's own timestamps. Made on first ask and kept in the timeline
+/// cache; `None` for a take small enough to play itself.
+pub fn proxy(source: &Path, info: &MediaInfo, cancel: &AtomicBool) -> Result<Option<PathBuf>> {
+    if info.width.max(info.height) <= PROXY_EDGE {
+        return Ok(None);
+    }
+    let (directory, name) = cache_entry(source)?;
+    let proxy = directory.join(format!("{name}-proxy.mp4"));
+    if proxy.is_file() {
+        return Ok(Some(proxy));
+    }
+    let (width, height) = fit(info.width, info.height, PROXY_EDGE);
+    let keyframes = (info.fps / 4.).round().max(1.).to_string();
+    let temp = tempfile::Builder::new()
+        .suffix(".mp4")
+        .tempfile_in(&directory)?;
+    let encoders: &[&[&str]] = if cfg!(target_os = "macos") {
+        &[
+            &["-c:v", "h264_videotoolbox", "-b:v", "6M"],
+            &["-c:v", "libx264", "-preset", "veryfast", "-crf", "20"],
+        ]
+    } else {
+        &[&["-c:v", "libx264", "-preset", "veryfast", "-crf", "20"]]
+    };
+    let mut failure = None;
+    for encoder in encoders {
+        let mut process = ManagedChild::spawn(
+            Command::new(binary("ffmpeg")?)
+                .args(["-v", "error", "-nostdin", "-y", "-i"])
+                .arg(source)
+                .args(["-map", "0:v:0", "-an", "-sn", "-vf"])
+                .arg(format!("scale={width}:{height}:flags=bicubic"))
+                .args(["-fps_mode", "passthrough", "-pix_fmt", "yuv420p", "-g"])
+                .arg(&keyframes)
+                .args(*encoder)
+                .args(["-f", "mp4"])
+                .arg(temp.path())
+                .stdout(Stdio::null()),
+        )?;
+        match process.finish_cancellable(Duration::from_secs(6 * 3600), cancel) {
+            Ok(()) => {
+                failure = None;
+                break;
+            }
+            Err(error) if cancel.load(std::sync::atomic::Ordering::Relaxed) => return Err(error),
+            Err(error) => failure = Some(error),
+        }
+    }
+    if let Some(error) = failure {
+        return Err(error.context("Make the preview proxy"));
+    }
+    temp.persist(&proxy).map_err(|e| e.error)?;
+    prune_proxies(&directory);
+    Ok(Some(proxy))
+}
+
+/// Removes all but the newest `PROXIES_KEPT` proxies.
+fn prune_proxies(directory: &Path) {
+    let Ok(entries) = std::fs::read_dir(directory) else {
+        return;
+    };
+    let mut proxies: Vec<_> = entries
+        .flatten()
+        .filter(|e| e.file_name().to_string_lossy().ends_with("-proxy.mp4"))
+        .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
+        .collect();
+    proxies.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
+    for (_, path) in proxies.into_iter().skip(PROXIES_KEPT) {
+        let _ = std::fs::remove_file(path);
+    }
 }
 
 /// Discover bundled wallpapers at runtime so asset additions require no Rust changes.

@@ -245,6 +245,54 @@ fn muted_audio_lane_mixes_silence() {
 }
 
 #[test]
+fn preview_proxy_matches_the_take_frame_for_frame() {
+    // The proxy goes in a throwaway cache, not the user's.
+    unsafe { std::env::set_var("SUBTAKE_UI_SNAPSHOT", "1") };
+    let dir = tempfile::tempdir().unwrap();
+    let source = dir.path().join("large.mp4");
+    let made = Command::new(media::binary("ffmpeg").unwrap())
+        .args(["-v", "error", "-y", "-f", "lavfi", "-i"])
+        .arg("testsrc2=size=2560x1440:rate=30:duration=2")
+        .args(["-c:v", "libx264", "-g", "60", "-pix_fmt", "yuv420p"])
+        .arg(&source)
+        .status()
+        .unwrap();
+    assert!(made.success());
+    let info = media::probe(&source).unwrap();
+    let cancel = AtomicBool::new(false);
+    let proxy = media::proxy(&source, &info, &cancel).unwrap().unwrap();
+    let proxied = media::probe(&proxy).unwrap();
+    assert_eq!((proxied.width, proxied.height), (1920, 1080));
+    assert!((proxied.duration - info.duration).abs() < 0.05);
+    // Cached: asked again, it is the same file.
+    assert_eq!(
+        media::proxy(&source, &info, &cancel).unwrap().unwrap(),
+        proxy
+    );
+    let mut take = media::Decoder::new(source.clone(), 320, 180).with_rate(30.);
+    let mut copy = media::Decoder::new(proxy, 320, 180).with_rate(30.);
+    for time in [0.1, 0.97, 1.53] {
+        let (a, b) = (take.frame(time).unwrap(), copy.frame(time).unwrap());
+        // A frame out would move the pattern by thousands of these.
+        let off = a
+            .iter()
+            .zip(&b)
+            .filter(|(x, y)| x.abs_diff(**y) > 48)
+            .count();
+        assert!(off < 100, "{time}s: {off} bytes differ");
+    }
+    // A take no larger than the proxy plays itself.
+    let small = dir.path().join("small.mp4");
+    fixture(&small);
+    let small_info = media::probe(&small).unwrap();
+    assert!(
+        media::proxy(&small, &small_info, &cancel)
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
 #[ignore = "requires a real audio output device; sends silence only"]
 fn silent_output_device_clock_and_cancel() {
     use std::{

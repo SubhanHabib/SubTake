@@ -281,6 +281,17 @@ impl Scene {
         "Skia CPU"
     }
 
+    /// Decodes the picture from `path`, the take itself or its preview
+    /// proxy, at no more than `edge` on its longest side. The scene still
+    /// reads the take's cursor, assets and size as its own.
+    pub fn decoding(mut self, path: PathBuf, edge: u32) -> Self {
+        let (width, height) = crate::media::fit(self.info.width, self.info.height, edge.min(8192));
+        self.source = Decoder::new(path, width, height).with_rate(self.info.fps);
+        self.source_width = width;
+        self.source_height = height;
+        self
+    }
+
     pub fn with_frame_rate(mut self, rate: f64) -> Self {
         self.frame_rate = rate.clamp(1., 120.);
         self

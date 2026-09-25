@@ -229,6 +229,27 @@ impl App {
                             eprintln!("Recent projects: {e}");
                         }
                         app.document = document;
+                        app.proxy_cancel.store(true, Ordering::Relaxed);
+                        app.proxy = None;
+                        if info.width.max(info.height) > media::PROXY_EDGE {
+                            let cancel = Arc::new(AtomicBool::new(false));
+                            app.proxy_cancel = cancel.clone();
+                            let (take, take_info) = (source.clone(), info.clone());
+                            std::thread::spawn(move || {
+                                let made = media::proxy(&take, &take_info, &cancel);
+                                post(move |app, _| match made {
+                                    Ok(proxy) if app.source.as_ref() == Some(&take) => {
+                                        app.proxy = proxy
+                                    }
+                                    Ok(_) => {}
+                                    // The preview goes on decoding the take itself.
+                                    Err(e) if !cancel.load(Ordering::Relaxed) => {
+                                        eprintln!("Preview proxy: {e:#}")
+                                    }
+                                    Err(_) => {}
+                                });
+                            });
+                        }
                         app.source = Some(source);
                         app.info = Some(info);
                         app.source_time = 0.;

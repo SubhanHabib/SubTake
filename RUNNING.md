@@ -130,6 +130,13 @@ open dist/SubTake.app
 Developer ID signing and notarization are separate distribution steps; pass
 `--identity "Developer ID Application: …"` to sign with a real identity.
 
+A take larger than 1920 px on its longest edge plays in the preview from a
+proxy made in the background after it opens: a paused frame and the export
+still read the take. The newest three proxies are kept, beside the timeline
+artwork, in
+`~/Library/Application Support/com.SubTake.SubTake-Native/timeline-cache`
+(`*-proxy.mp4`). Delete one there to have it made again.
+
 ## Plain Cargo
 
 For a compile check or to run the binary against a file without any bundle:

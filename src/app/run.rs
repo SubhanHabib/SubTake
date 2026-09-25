@@ -660,6 +660,8 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                         app.history = None;
                         app.info = None;
                         app.source = None;
+                        app.proxy = None;
+                        app.proxy_cancel.store(true, Ordering::Relaxed);
                         app.document = None;
                         app.selected = None;
                         app.refresh(ui);
