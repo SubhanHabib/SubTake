@@ -122,3 +122,30 @@ fn missing_media_is_not_silently_rewritten() {
         Path::new("/projects/clips/a.mp4")
     );
 }
+
+#[test]
+fn lanes_turned_off_are_saved_and_leave_the_picture() {
+    let mut p = project();
+    p.set(
+        "annotationRegions",
+        json!([{"id":"a","startMs":0,"endMs":1000}]),
+    );
+    p.set("zoomRegions", json!([{"id":"z","startMs":0,"endMs":1000}]));
+    assert!(matches!(p.played(), std::borrow::Cow::Borrowed(_)));
+    p.toggle_lane("Annotation");
+    p.toggle_lane("Audio");
+    assert!(p.lane_off("Annotation") && p.lane_off("Audio") && !p.lane_off("Zoom"));
+    let played = p.played();
+    assert!(played.regions("annotationRegions").is_empty());
+    assert_eq!(played.regions("zoomRegions").len(), 1);
+    assert_eq!(p.regions("annotationRegions").len(), 1);
+
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("project.recordly");
+    p.save(&file).unwrap();
+    let mut loaded = Project::load(&file).unwrap();
+    assert!(loaded.lane_off("Annotation") && loaded.lane_off("Audio"));
+    loaded.toggle_lane("Annotation");
+    loaded.toggle_lane("Audio");
+    assert!(!loaded.editor.contains_key("lanesOff"));
+}

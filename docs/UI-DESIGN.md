@@ -202,9 +202,12 @@ Under the pointer a header goes to `sunk2`, off or on; pressed, to
 tooltip names the lane and its state, `Captions · hidden`.
 `SUBTAKE_GALLERY_SCREEN=lanes-off` has the captions hidden and the sound
 muted. Not drawn by the design: the press's 0.94 scale; and an off header does
-not blur a lane running under it. Not wired: the preview and the export still
-show a hidden lane and play a muted one, and the state is not saved; the
-right-click menu (Lock, Solo, Remove lane).
+not blur a lane running under it. Off is an edit, undone like any other, and
+the project saves it in `lanesOff`. The preview and the export leave a hidden
+lane out: no zooms, annotations or captions, and a hidden clip lane takes the
+recording, its shadow and the cursor off the wallpaper. A muted audio lane
+plays and exports silence. Not wired: the right-click menu (Lock, Solo, Remove
+lane).
 
 A lane with nothing on it is not drawn, header included; adding a region of
 its kind brings it back. `SUBTAKE_GALLERY_SCREEN=lanes-sparse` has only zooms

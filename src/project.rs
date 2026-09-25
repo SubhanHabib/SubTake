@@ -28,6 +28,9 @@ pub struct Project {
 /// A new project and the built-in looks set them; the Scene panel cannot.
 pub const DEFAULT_WALLPAPER: &str = "linear-gradient(135deg, #f7dcc2, #eda88f, #d27b86)";
 
+/// The editor field listing the timeline lanes turned off, by label.
+pub const LANES_OFF: &str = "lanesOff";
+
 impl Project {
     pub fn new(video: &Path) -> Self {
         let editor = json!({
@@ -233,6 +236,53 @@ impl Project {
 
     pub fn set(&mut self, key: &str, value: Value) {
         self.editor.insert(key.into(), value);
+    }
+
+    /// Whether the timeline lane with this label (`Zoom`, `Clip`,
+    /// `Annotation`, `Caption` or `Audio`) is turned off from its header:
+    /// the audio lane muted, any other hidden. Saved in `lanesOff`.
+    pub fn lane_off(&self, label: &str) -> bool {
+        self.regions(LANES_OFF)
+            .iter()
+            .any(|lane| lane.as_str() == Some(label))
+    }
+
+    /// Turns a lane off, or on again.
+    pub fn toggle_lane(&mut self, label: &str) {
+        let mut lanes: Vec<Value> = self.regions(LANES_OFF).to_vec();
+        if self.lane_off(label) {
+            lanes.retain(|lane| lane.as_str() != Some(label));
+        } else {
+            lanes.push(json!(label));
+        }
+        if lanes.is_empty() {
+            self.editor.remove(LANES_OFF);
+        } else {
+            self.set(LANES_OFF, Value::Array(lanes));
+        }
+    }
+
+    /// The project as the picture plays it: a hidden zoom, annotation or
+    /// caption lane has nothing on it. A hidden clip lane and a muted audio
+    /// lane are left to the renderer and the mix, which ask `lane_off`.
+    pub fn played(&self) -> std::borrow::Cow<'_, Project> {
+        let hidden: Vec<&str> = [
+            ("Zoom", "zoomRegions"),
+            ("Annotation", "annotationRegions"),
+            ("Caption", "autoCaptions"),
+        ]
+        .into_iter()
+        .filter(|(label, _)| self.lane_off(label))
+        .map(|(_, key)| key)
+        .collect();
+        if hidden.is_empty() {
+            return std::borrow::Cow::Borrowed(self);
+        }
+        let mut played = self.clone();
+        for key in hidden {
+            played.set(key, json!([]));
+        }
+        std::borrow::Cow::Owned(played)
     }
 
     pub fn add(&mut self, key: &str, mut region: Value) -> Result<String> {

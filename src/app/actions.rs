@@ -28,6 +28,13 @@ impl App {
             let data = subtake_native::presets::load(path)?;
             return self.edit(ui, |p| subtake_native::presets::apply(p, &data));
         }
+        // A lane header's press: the lane hidden, or muted, or back on.
+        if let Some(label) = action.strip_prefix("toggle-lane-") {
+            return self.edit(ui, |p| {
+                p.toggle_lane(label);
+                Ok(())
+            });
+        }
         if let Some(index) = action.strip_prefix("library-open-") {
             let path = self
                 .library

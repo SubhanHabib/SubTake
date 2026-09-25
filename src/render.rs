@@ -361,6 +361,9 @@ impl Scene {
     }
 
     pub fn render(&mut self, document: &Project, source_time: f64) -> Result<Vec<u8>> {
+        // A lane turned off from the timeline's header draws nothing.
+        let played = document.played();
+        let document = &*played;
         let font_key = document.editor.get("nativeFonts").unwrap_or(&Value::Null);
         if &self.font_key != font_key {
             let mut provider = sk::textlayout::TypefaceFontProvider::new();
@@ -546,8 +549,11 @@ impl Scene {
         // each drawn in from the frame so only the contact reaches the sides.
         // One intensity scales all three; `shadowColor` tints them, so a
         // shadow on a coloured wallpaper darkens it rather than greying it.
+        // A hidden clip lane takes the recording off its wallpaper: its
+        // shadow, the take itself, its edge and the cursor over it.
+        let shows_clip = !document.lane_off("Clip");
         let shadow = document.number("shadowIntensity", 0.3).clamp(0., 1.) as f32;
-        if shadow > 0. {
+        if shows_clip && shadow > 0. {
             let [r, g, b, _] = crate::project::parse_color(document.text("shadowColor", "#000000"));
             // (down, blur sigma, drawn in, alpha at full intensity), in
             // 1920-wide pixels.
@@ -575,35 +581,37 @@ impl Scene {
         }
         canvas.save();
         canvas.clip_path(&squircle(frame, radius), None, true);
-        let frame_image = image(
-            self.source.frame(source_time)?,
-            self.source_width,
-            self.source_height,
-        )?;
-        let source_rect = Rect::from_xywh(
-            n(&crop, "x", 0.) as f32 * self.source_width as f32,
-            n(&crop, "y", 0.) as f32 * self.source_height as f32,
-            cw * self.source_width as f32,
-            ch * self.source_height as f32,
-        );
-        canvas.draw_image_rect(
-            &frame_image,
-            Some((&source_rect, sk::canvas::SrcRectConstraint::Strict)),
-            frame,
-            &Paint::default(),
-        );
-        // A hairline just inside the frame's edge, so a recording the colour
-        // of its wallpaper still ends somewhere. The stroke is centred on the
-        // clip, which keeps the inner half of it.
-        let edge = color(document.text("frameEdgeColor", "transparent"));
-        if edge.a() > 0 {
-            let mut pen = paint(edge);
-            pen.set_style(sk::PaintStyle::Stroke)
-                .set_stroke_width(3. * unit);
-            canvas.draw_path(&squircle(frame, radius), &pen);
-        }
-        if document.flag("showCursor", true) {
-            self.draw_cursor(canvas, document, source_time * 1000., frame, &crop)?;
+        if shows_clip {
+            let frame_image = image(
+                self.source.frame(source_time)?,
+                self.source_width,
+                self.source_height,
+            )?;
+            let source_rect = Rect::from_xywh(
+                n(&crop, "x", 0.) as f32 * self.source_width as f32,
+                n(&crop, "y", 0.) as f32 * self.source_height as f32,
+                cw * self.source_width as f32,
+                ch * self.source_height as f32,
+            );
+            canvas.draw_image_rect(
+                &frame_image,
+                Some((&source_rect, sk::canvas::SrcRectConstraint::Strict)),
+                frame,
+                &Paint::default(),
+            );
+            // A hairline just inside the frame's edge, so a recording the colour
+            // of its wallpaper still ends somewhere. The stroke is centred on the
+            // clip, which keeps the inner half of it.
+            let edge = color(document.text("frameEdgeColor", "transparent"));
+            if edge.a() > 0 {
+                let mut pen = paint(edge);
+                pen.set_style(sk::PaintStyle::Stroke)
+                    .set_stroke_width(3. * unit);
+                canvas.draw_path(&squircle(frame, radius), &pen);
+            }
+            if document.flag("showCursor", true) {
+                self.draw_cursor(canvas, document, source_time * 1000., frame, &crop)?;
+            }
         }
         canvas.restore();
         canvas.restore();

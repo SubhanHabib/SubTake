@@ -72,13 +72,15 @@ impl Preview {
                         drawing.set("webcam", json!({"enabled":false}));
                     }
                     let pixels = scene.render(&drawing, request.time)?;
+                    // A hidden lane's regions are not on the picture to point at.
+                    let played = request.project.played();
                     let bounds = scene.edit_bounds(
-                        &request.project,
+                        &played,
                         request.time,
                         request.selected.as_ref(),
                         &request.panel,
                     );
-                    let shown = scene.annotation_bounds(&request.project, request.time);
+                    let shown = scene.annotation_bounds(&played, request.time);
                     Ok((pixels, bounds, shown))
                 })();
                 post(move |app, ui| {
@@ -222,6 +224,19 @@ impl App {
                         .unwrap_or(true)
                 })
                 .unwrap_or(true),
+        );
+        ui.set_lanes_off(
+            self.history
+                .as_ref()
+                .map(|h| {
+                    h.project
+                        .regions(subtake_native::project::LANES_OFF)
+                        .iter()
+                        .filter_map(Value::as_str)
+                        .map(String::from)
+                        .collect()
+                })
+                .unwrap_or_default(),
         );
         ui.set_motion_choice(
             self.history

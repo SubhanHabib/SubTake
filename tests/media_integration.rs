@@ -186,6 +186,65 @@ fn spotlight_step_and_pixelate_annotations_render() {
 }
 
 #[test]
+fn hidden_lanes_leave_the_picture() {
+    let dir = tempfile::tempdir().unwrap();
+    let source = dir.path().join("source.mp4");
+    fixture(&source);
+    let info = media::probe(&source).unwrap();
+    let mut scene = subtake_native::render::Scene::new(source.clone(), info, 128, 96).unwrap();
+    let mut p = Project::new(&source);
+    p.set("wallpaper", serde_json::json!("#204060"));
+    p.set("shadowIntensity", serde_json::json!(0));
+    p.set("annotationRegions", serde_json::json!([
+        {"id":"step","type":"step","startMs":0,"endMs":1000,"textContent":"","position":{"x":60,"y":60},"size":{"width":30,"height":30},"figureData":{"color":"#ff0000"}}
+    ]));
+    let at =
+        |rgba: &[u8], x: usize, y: usize| rgba[(y * 128 + x) * 4..(y * 128 + x) * 4 + 3].to_vec();
+    let shown = scene.render(&p, 0.1).unwrap();
+    p.toggle_lane("Annotation");
+    let no_annotations = scene.render(&p, 0.1).unwrap();
+    assert_ne!(at(&shown, 96, 72), at(&no_annotations, 96, 72));
+    // With the clip lane hidden too, only the wallpaper is left.
+    p.toggle_lane("Clip");
+    let wallpaper = scene.render(&p, 0.1).unwrap();
+    assert_eq!(at(&wallpaper, 64, 48), [0x20, 0x40, 0x60]);
+    assert_ne!(at(&no_annotations, 64, 48), [0x20, 0x40, 0x60]);
+}
+
+#[test]
+fn muted_audio_lane_mixes_silence() {
+    let dir = tempfile::tempdir().unwrap();
+    let source = dir.path().join("source.mp4");
+    fixture(&source);
+    let voice = dir.path().join("voice.wav");
+    let made = Command::new(media::binary("ffmpeg").unwrap())
+        .args(["-v", "error", "-y", "-f", "lavfi", "-i", "sine=duration=1"])
+        .arg(&voice)
+        .status()
+        .unwrap();
+    assert!(made.success());
+    let info = media::probe(&source).unwrap();
+    let mut p = Project::new(&source);
+    p.set(
+        "audioRegions",
+        serde_json::json!([{"id":"v","startMs":0,"endMs":1000,"audioPath":voice}]),
+    );
+    let spans = subtake_native::timeline::spans(&p, info.duration);
+    let graph = |p: &Project| {
+        let command = export::audio_command(p, &source, &info, &spans).unwrap();
+        let args: Vec<_> = command
+            .get_args()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect();
+        let at = args.iter().position(|a| a == "-filter_complex").unwrap();
+        args[at + 1].clone()
+    };
+    assert!(graph(&p).contains("amix=inputs=2"));
+    p.toggle_lane("Audio");
+    assert!(graph(&p).contains("amix=inputs=1"));
+}
+
+#[test]
 #[ignore = "requires a real audio output device; sends silence only"]
 fn silent_output_device_clock_and_cancel() {
     use std::{

@@ -1153,6 +1153,7 @@ impl RootView {
             }
         }
         let labels: Vec<String> = window.get_track_labels().iter().collect();
+        let lanes_off = window.get_lanes_off();
         // The lanes drawn: every row with something on it, in order. A row
         // with nothing on it is not drawn at all, header included; adding a
         // region of its kind brings it back. Where each drawn lane starts
@@ -1196,7 +1197,7 @@ impl RootView {
             let height = lane_height(&labels[region.row as usize]);
             let take = region.is_take();
             // An off lane's regions show at 40%, and still select and edit.
-            let lane_off = self.lanes_off.contains(&labels[region.row as usize]);
+            let lane_off = lanes_off.contains(&labels[region.row as usize]);
             let (mut start, mut end) = (region.start, region.end);
             if let Some(Gesture::Region {
                 region: dragged,
@@ -1742,18 +1743,12 @@ impl RootView {
                 if !first {
                     return div().h(px(lane_height(&label)));
                 }
-                let off = self.lanes_off.contains(&label);
-                let toggled = label.clone();
+                let off = lanes_off.contains(&label);
                 lane_header(
                     &label,
                     off,
                     theme,
-                    cx.listener(move |s, _: &ClickEvent, _, cx| {
-                        if !s.lanes_off.remove(&toggled) {
-                            s.lanes_off.insert(toggled.clone());
-                        }
-                        cx.notify();
-                    }),
+                    self.command(&format!("toggle-lane-{label}")),
                 )
             })
             .collect();

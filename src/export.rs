@@ -211,7 +211,9 @@ pub fn audio_command(
     )];
     let mut labels = vec!["[silence]".to_owned()];
     let mut tracks = vec![];
-    for key in ["system", "mic"] {
+    // A muted audio lane mixes to the silence alone.
+    let muted = p.lane_off("Audio");
+    for key in ["system", "mic"].into_iter().filter(|_| !muted) {
         let path = ["m4a", "wav", "webm"]
             .iter()
             .map(|ext| source.with_extension(format!("{key}.{ext}")))
@@ -222,7 +224,7 @@ pub fn audio_command(
             inputs += 1;
         }
     }
-    if !tracks.iter().any(|(_, _, key)| key == "system") {
+    if !muted && !tracks.iter().any(|(_, _, key)| key == "system") {
         for track in 0..info.audio_tracks {
             tracks.push((
                 0,
@@ -269,7 +271,12 @@ pub fn audio_command(
             labels.push(format!("[{label}]"));
         }
     }
-    for (j, a) in p.regions("audioRegions").iter().enumerate() {
+    let extra = if muted {
+        &[][..]
+    } else {
+        p.regions("audioRegions")
+    };
+    for (j, a) in extra.iter().enumerate() {
         let path = crate::project::local_path(
             a["audioPath"]
                 .as_str()

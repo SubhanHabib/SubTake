@@ -135,6 +135,9 @@ struct Properties {
     time_label: String,
     regions: ModelRc<Region>,
     track_labels: ModelRc<String>,
+    /// The lanes turned off from their headers, by label, as the project
+    /// saves them.
+    lanes_off: Vec<String>,
     selected_id: String,
     fields: ModelRc<Field>,
     settings_fields: ModelRc<Field>,
@@ -234,6 +237,7 @@ impl Default for Properties {
                 "Audio".into(),
                 "Caption".into(),
             ])),
+            lanes_off: vec![],
             selected_id: String::new(),
             fields: ModelRc::default(),
             settings_fields: ModelRc::default(),
@@ -990,6 +994,18 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.track_labels != value {
             props.track_labels = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_lanes_off(&self) -> Vec<String> {
+        self.0.props.borrow().lanes_off.clone()
+    }
+
+    pub fn set_lanes_off(&self, value: Vec<String>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.lanes_off != value {
+            props.lanes_off = value;
             self.window().invalidate();
         }
     }

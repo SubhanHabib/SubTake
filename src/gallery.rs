@@ -245,6 +245,8 @@ pub fn run() -> Result<()> {
             labels.push("Audio".into());
             editor.set_track_labels(ModelRc::new(VecModel::from(labels)));
         }
+        // The captions hidden and the sound muted, from their headers.
+        Ok("lanes-off") => editor.set_lanes_off(vec!["Caption".into(), "Audio".into()]),
         // The Cursor panel, and with the cursor hidden.
         Ok("cursor") => editor.set_panel("Cursor".into()),
         // The Camera panel, and with the overlay off.
@@ -562,6 +564,18 @@ impl Gallery {
             "show-project" => {
                 self.editor.set_has_video(true);
                 self.push_fields();
+            }
+            // The gallery holds no project, so the header's press turns the
+            // lane off on the editor alone.
+            key if key.starts_with("toggle-lane-") => {
+                let label = &key["toggle-lane-".len()..];
+                let mut lanes = self.editor.get_lanes_off();
+                if lanes.iter().any(|l| l == label) {
+                    lanes.retain(|l| l != label);
+                } else {
+                    lanes.push(label.into());
+                }
+                self.editor.set_lanes_off(lanes);
             }
             key if key.starts_with("look-") => {
                 self.editor.set_look_choice(key["look-".len()..].into())

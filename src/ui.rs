@@ -8,7 +8,7 @@ use base64::Engine;
 use gpui::{prelude::*, *};
 use std::{
     cell::Cell,
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     rc::Rc,
     sync::{Arc, OnceLock},
     time::Instant,
@@ -283,10 +283,6 @@ pub struct RootView {
     /// `SUBTAKE_GALLERY_GESTURE=move`, `trim` or `scrub`. Taken on the first
     /// frame that has the regions to hold.
     gallery_gesture: Option<String>,
-    /// The lanes turned off from their headers, by label: the audio lane
-    /// muted, any other hidden. Not wired: the preview and the export still
-    /// show a hidden lane and play a muted one, and nothing is saved.
-    lanes_off: HashSet<String>,
     menu: Option<String>,
     /// The command menu last open, and its way out, so a dismissed menu
     /// fades where it was.
@@ -392,13 +388,6 @@ impl RootView {
             pinch: None,
             gesture: None,
             gallery_gesture: std::env::var("SUBTAKE_GALLERY_GESTURE").ok(),
-            // `SUBTAKE_GALLERY_SCREEN=lanes-off` has captions hidden and
-            // the sound muted, since the gallery cannot click.
-            lanes_off: if std::env::var("SUBTAKE_GALLERY_SCREEN").as_deref() == Ok("lanes-off") {
-                ["Caption", "Audio"].map(String::from).into()
-            } else {
-                HashSet::new()
-            },
             menu: None,
             menu_last: String::new(),
             menu_leave: subtake_ui::Leave::default(),
