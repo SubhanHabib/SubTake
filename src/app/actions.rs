@@ -825,6 +825,15 @@ impl App {
                             };
                             ui.set_camera_names(names("cameras"));
                             ui.set_microphone_names(names("microphones"));
+                            // Beside each name, how it connects; the system
+                            // default first, which is no device of its own.
+                            let mut kinds = vec![SharedString::default()];
+                            if let Some(list) = devices["microphones"].as_array() {
+                                kinds.extend(list.iter().map(|v| {
+                                    SharedString::from(v["transport"].as_str().unwrap_or(""))
+                                }));
+                            }
+                            ui.set_microphone_kinds(ModelRc::new(VecModel::from(kinds)));
                             app.devices = devices;
                         }
                         Err(e) => ui.set_status(format!("Devices: {e:#}")),

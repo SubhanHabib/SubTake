@@ -153,6 +153,9 @@ struct Properties {
     recorder_settings: std::collections::BTreeMap<String, String>,
     camera_names: ModelRc<String>,
     microphone_names: ModelRc<String>,
+    /// How each of `microphone_names` connects — "Built-in", "USB",
+    /// "Bluetooth" — or empty where macOS does not say.
+    microphone_kinds: ModelRc<String>,
     source_index: i32,
     camera_index: i32,
     microphone_index: i32,
@@ -255,6 +258,7 @@ impl Default for Properties {
             recorder_settings: crate::preferences::Preferences::default().recorder_settings(),
             camera_names: ModelRc::default(),
             microphone_names: ModelRc::default(),
+            microphone_kinds: ModelRc::default(),
             source_index: 0,
             camera_index: 0,
             microphone_index: 0,
@@ -1181,6 +1185,18 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.microphone_names != value {
             props.microphone_names = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_microphone_kinds(&self) -> ModelRc<String> {
+        self.0.props.borrow().microphone_kinds.clone()
+    }
+
+    pub fn set_microphone_kinds(&self, value: ModelRc<String>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.microphone_kinds != value {
+            props.microphone_kinds = value;
             self.window().invalidate();
         }
     }

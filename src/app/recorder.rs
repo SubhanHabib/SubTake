@@ -83,6 +83,7 @@ impl App {
         options.set_camera_names(ui.get_camera_names());
         options.set_camera_index(ui.get_camera_index());
         options.set_microphone_names(ui.get_microphone_names());
+        options.set_microphone_kinds(ui.get_microphone_kinds());
         options.set_microphone_index(ui.get_microphone_index());
         options.set_camera(ui.get_capture_camera());
         options.set_microphone(ui.get_capture_mic());

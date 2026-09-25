@@ -15,6 +15,24 @@ func still(_ filter: SCContentFilter, _ frame: CGRect) async -> String? {
     guard let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config) else { return nil }
     return NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.8])?.base64EncodedString()
 }
+/// How a device connects, in the words the Microphone card shows under its
+/// name; empty where Core Audio's transport code is not one of these.
+func transportName(_ code: Int32) -> String {
+    let chars = withUnsafeBytes(of: UInt32(bitPattern: code).bigEndian) { String(decoding: $0, as: UTF8.self) }
+    switch chars {
+    case "bltn": return "Built-in"
+    case "usb ": return "USB"
+    case "blue", "blea": return "Bluetooth"
+    case "thun": return "Thunderbolt"
+    case "hdmi", "dprt": return "Display"
+    case "airp": return "AirPlay"
+    case "virt": return "Virtual"
+    case "grup": return "Aggregate"
+    case "ccwl", "ccwd": return "Continuity"
+    default: return ""
+    }
+}
+
 let command = CommandLine.arguments.dropFirst().first ?? "sources"
 if command == "sources" || command == "sources-passive" {
     // Opening the overlay must never request access. Only an explicit source
@@ -115,7 +133,7 @@ if command == "sources" || command == "sources-passive" {
     RunLoop.main.run()
 } else if command == "devices" {
     let cameras=AVCaptureDevice.devices(for: .video).map { ["id":$0.uniqueID,"name":$0.localizedName] }
-    let microphones=AVCaptureDevice.devices(for: .audio).map { ["id":$0.uniqueID,"name":$0.localizedName] }
+    let microphones=AVCaptureDevice.devices(for: .audio).map { ["id":$0.uniqueID,"name":$0.localizedName,"transport":transportName($0.transportType)] }
     FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject:["cameras":cameras,"microphones":microphones]))
 } else if command == "permission-status" {
     let value: [String: Any] = ["screen": CGPreflightScreenCaptureAccess(), "microphone": AVCaptureDevice.authorizationStatus(for: .audio).rawValue, "camera": AVCaptureDevice.authorizationStatus(for: .video).rawValue]

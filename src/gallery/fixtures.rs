@@ -157,6 +157,7 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
     ui.set_source_names(ModelRc::new(VecModel::from(source_names())));
     ui.set_camera_names(ModelRc::new(VecModel::from(camera_names())));
     ui.set_microphone_names(ModelRc::new(VecModel::from(microphone_names())));
+    ui.set_microphone_kinds(ModelRc::new(VecModel::from(microphone_kinds())));
     ui.set_source_index(1);
     ui.set_camera_index(0);
     ui.set_microphone_index(0);
@@ -212,6 +213,7 @@ pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOpt
         set_index(1, 0, 0);
         set_flag(true, true, false);
     }
+    options.set_microphone_kinds(ModelRc::new(VecModel::from(microphone_kinds())));
     // The Source card's pictures and the camera card's picture: stand-ins
     // for the stills the platform layer does not take yet.
     options.set_capture_sources(ModelRc::new(VecModel::from(
@@ -320,6 +322,14 @@ pub(super) fn microphone_names() -> Vec<String> {
     .into_iter()
     .map(String::from)
     .collect()
+}
+
+/// How each of `microphone_names` connects.
+pub(super) fn microphone_kinds() -> Vec<String> {
+    ["Built-in", "Display", "USB"]
+        .into_iter()
+        .map(String::from)
+        .collect()
 }
 
 pub(super) fn fixture_region(
