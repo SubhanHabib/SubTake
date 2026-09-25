@@ -303,16 +303,59 @@ impl RootView {
         // Sparkle "Zoom" first and moves Scene onto the aspect pod, but draws
         // neither the Zoom inspector nor the aspect pod's way into Scene, so
         // the Sparkle keeps opening Scene until both are.
-        for (label, name, glyph) in [
+        let tools = [
             ("Scene", "Frame", "Sparkle-regular"),
             ("Cursor", "Cursor", "Cursor-regular"),
             ("Camera", "Webcam", "Camera-regular"),
             ("Captions", "Captions", "ClosedCaptioning-regular"),
             ("Add", "Add", "PlusSquare-regular"),
             ("Audio", "Audio", "SpeakerHigh-regular"),
-        ] {
-            panels = panels.child(self.rail_panel_button(e, label, name, glyph));
+        ];
+        // The active tool's accent and the hover wash glide between tools
+        // rather than switching on in place, as the Settings sidebar's do.
+        let panel = e.get_panel();
+        let hover = |name: &str| {
+            let id = ElementId::from(SharedString::from(format!("rail-{name}")));
+            subtake_ui::hover_progress(&subtake_ui::motion::tween_key(&id, "hover"))
+        };
+        let active = subtake_ui::glide(tools.iter().enumerate().map(|(index, (_, name, _))| {
+            let id = ElementId::from(("rail-tool", index));
+            subtake_ui::state_fade(
+                &subtake_ui::motion::tween_key(&id, "active"),
+                panel == *name,
+            )
+        }));
+        let hovered = subtake_ui::glide(tools.iter().map(|(_, name, _)| hover(name)));
+        // Over the active tool the accent deepens, as a filled button's does.
+        let deepen = tools
+            .iter()
+            .find(|(_, name, _)| panel == *name)
+            .map_or(0., |(_, name, _)| hover(name));
+        let size = Theme::control_height();
+        let disc = |fill: Hsla| div().size(px(size)).rounded_full().bg(fill);
+        let mark = |glide, disc: Div| {
+            subtake_ui::glide_mark(glide, size + Theme::gap_small(), size)
+                .flex()
+                .justify_center()
+                .child(disc)
+        };
+        let mut tool_column = div()
+            .relative()
+            .flex()
+            .flex_col()
+            .items_center()
+            .gap(px(Theme::gap_small()))
+            .children(hovered.map(|g| mark(g, disc(theme.sunk2))))
+            .children(active.map(|g| {
+                // It carries the glow a filled button casts, being that
+                // button's fill now.
+                let fill = subtake_ui::blend(theme.accent, theme.accent_hover, deepen);
+                mark(g, disc(fill).shadow(vec![theme.action_glow(false)]))
+            }));
+        for (label, name, glyph) in tools {
+            tool_column = tool_column.child(self.rail_panel_button(e, label, name, glyph).glided());
         }
+        panels = panels.child(tool_column);
         // A hairline before Settings, which is not a tool, as the pod is
         // drawn. The shortcut reference is the Help menu's.
         let panels = panels

@@ -139,7 +139,7 @@ impl RootView {
         label: &str,
         name: &str,
         glyph: &str,
-    ) -> AnyElement {
+    ) -> Button {
         let e = editor.clone();
         let target = name.to_owned();
         // A command name (it has a dash) runs rather than opening a panel.
@@ -171,7 +171,6 @@ impl RootView {
                 }
             },
         )
-        .into_any_element()
     }
 
     pub(super) fn panel_button(&self, editor: &EditorWindow, label: &str, name: &str) -> Button {

@@ -102,6 +102,8 @@ pub struct Button {
     toggled: Option<bool>,
     enabled: bool,
     stretch: bool,
+    /// Its plate is a glide mark under it, not its own.
+    glided: bool,
     handler: Option<Box<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
 }
 
@@ -124,6 +126,7 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         toggled: None,
         enabled: true,
         stretch: false,
+        glided: false,
         handler: None,
     }
 }
@@ -283,6 +286,14 @@ impl Button {
         self
     }
 
+    /// Leave the plate — the fill that marks it active, the hover wash and
+    /// the glow — to a [`crate::glide_mark`] gliding under a row of these;
+    /// the control keeps only its glyph's ink.
+    pub fn glided(mut self) -> Self {
+        self.glided = true;
+        self
+    }
+
     pub fn stretch(mut self) -> Self {
         self.stretch = true;
         self
@@ -423,7 +434,11 @@ impl RenderOnce for Button {
         let rest = motion::blend(fill_rest, accent, fill);
         let hover = motion::blend(fill_hover, accent_hover, fill);
         let hover_key = motion::tween_key(&self.id, "hover");
-        let background = motion::hover_blend(&hover_key, rest, hover);
+        let background = if self.glided {
+            transparent_black()
+        } else {
+            motion::hover_blend(&hover_key, rest, hover)
+        };
         // Not drawn by the design: idle icon-only and ghost controls are at
         // `text`, as a timeline lane header's glyph is, not the handoff's
         // `muted`, which read as already disabled over glass. Only an off
@@ -502,7 +517,7 @@ impl RenderOnce for Button {
         // it is `ink` — a glow would make the quietest control in the player
         // bar look like the loudest.
         let mut shadows = Vec::new();
-        if self.enabled && filled {
+        if self.enabled && filled && !self.glided {
             match self.variant {
                 ButtonVariant::Transport => {}
                 ButtonVariant::Record => shadows.push(theme.record_glow()),
