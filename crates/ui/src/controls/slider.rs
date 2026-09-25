@@ -31,6 +31,12 @@ pub struct Slider {
     pub steps: Vec<SharedString>,
     /// Off, the row dims to the disabled opacity and takes no input.
     pub enabled: bool,
+    /// The row's height: 44, unless it sits among smaller controls.
+    pub height: f32,
+    /// On a recess of its own — the Microphone card's meter block — the
+    /// track is that recess's `sunk` and the level is `sunk2`, since
+    /// `slider_fill` is drawn for a track on glass.
+    pub recessed: bool,
     bounds: Rc<Cell<Bounds<Pixels>>>,
     dragging: bool,
     change: Box<dyn Fn(f32, bool, &mut Window, &mut App)>,
@@ -75,6 +81,8 @@ impl Slider {
             unit: SharedString::default(),
             steps: Vec::new(),
             enabled: true,
+            height: Theme::control_height_large(),
+            recessed: false,
             bounds: Rc::new(Cell::new(Bounds::default())),
             dragging: false,
             change: Box::new(change),
@@ -135,13 +143,18 @@ impl Render for Slider {
         let scrub = div()
             .id("scrub")
             .relative()
-            .h(px(Theme::control_height_large()))
+            .h(px(self.height))
             .w_full()
             .rounded_full()
             // Track `sunk`, one step up to `sunk2` under the pointer. The row
             // is its own hit target across its whole width, so the track is
-            // the only thing that can say it is live.
-            .bg(motion::hover_blend(&hover_key, theme.sunk, theme.sunk2))
+            // the only thing that can say it is live. On a recess `sunk2` is
+            // the level, so there the thumb alone says it.
+            .bg(if self.recessed {
+                theme.sunk
+            } else {
+                motion::hover_blend(&hover_key, theme.sunk, theme.sunk2)
+            })
             .overflow_hidden()
             .when(enabled, |el| {
                 el.tab_index(0)
@@ -200,7 +213,11 @@ impl Render for Slider {
                                 .left_0()
                                 .w(relative(1. / fraction))
                                 .rounded_full()
-                                .bg(theme.slider_fill),
+                                .bg(if self.recessed {
+                                    theme.sunk2
+                                } else {
+                                    theme.slider_fill
+                                }),
                         ),
                 )
             })
