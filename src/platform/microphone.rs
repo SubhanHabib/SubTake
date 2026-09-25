@@ -3,7 +3,10 @@
 #[cfg(target_os = "macos")]
 use std::{
     ffi::{CString, c_char},
-    sync::Mutex,
+    sync::{
+        Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 
 #[cfg(target_os = "macos")]
@@ -12,6 +15,7 @@ unsafe extern "C" {
     fn subtake_mic_meter_stop();
     fn subtake_mic_test_start(gain: f32, phase: extern "C" fn(i32));
     fn subtake_mic_test_stop();
+    fn subtake_mic_request_access(answer: extern "C" fn(bool));
 }
 
 /// The microphone being metered: its unique id, empty for the system default.
@@ -22,7 +26,7 @@ static METERING: Mutex<Option<String>> = Mutex::new(None);
 /// metering for `None`. `level` receives the peak in dBFS about ten times a
 /// second on a capture thread. Asking for what is already running does
 /// nothing, so this can follow every redraw of the card. Without microphone
-/// access nothing is metered, and nothing asks for access.
+/// access nothing is metered; `request_microphone_access` asks for it.
 #[cfg(target_os = "macos")]
 pub fn meter_microphone(device: Option<&str>, level: extern "C" fn(f32)) {
     let Ok(mut metering) = METERING.lock() else {
@@ -51,10 +55,28 @@ pub fn meter_microphone(device: Option<&str>, level: extern "C" fn(f32)) {
     }
 }
 
+/// Whether the system has been asked for the microphone this run.
+#[cfg(target_os = "macos")]
+static ASKED: AtomicBool = AtomicBool::new(false);
+
+/// Asks the system for the microphone, the first time in a run only;
+/// `answer` then receives whether it may be used, on a system thread.
+/// Already answered, the system does not ask again and `answer` receives
+/// that.
+#[cfg(target_os = "macos")]
+pub fn request_microphone_access(answer: extern "C" fn(bool)) {
+    if !ASKED.swap(true, Ordering::SeqCst) {
+        unsafe { subtake_mic_request_access(answer) }
+    }
+}
+
 /// Not wired: only macOS meters the microphone, so elsewhere the card's meter
 /// reads as a dash.
 #[cfg(not(target_os = "macos"))]
 pub fn meter_microphone(_device: Option<&str>, _level: extern "C" fn(f32)) {}
+
+#[cfg(not(target_os = "macos"))]
+pub fn request_microphone_access(_answer: extern "C" fn(bool)) {}
 
 /// The Microphone card's Test: three seconds from the microphone being
 /// metered, played back at `gain`, the Input level's amplitude. `phase`

@@ -40,7 +40,8 @@ var meter: MicMeter?
 
 /// Meters the microphone with `device`'s unique id, or the system default for
 /// an empty or null one, replacing any meter already running. Returns false,
-/// and meters nothing, without microphone access: the card never asks for it.
+/// and meters nothing, without microphone access, which the card opening
+/// asks for (`subtake_mic_request_access`).
 @_cdecl("subtake_mic_meter_start")
 public func micMeterStart(_ device: UnsafePointer<CChar>?, _ callback: LevelCallback?) -> Bool {
     guard let callback, AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else { return false }
@@ -69,5 +70,22 @@ public func micMeterStop() {
         micTestCancel()
         meter?.session.stopRunning()
         meter = nil
+    }
+}
+
+/// Receives whether the microphone may be used, on a system thread.
+public typealias MicAccessCallback = @convention(c) (Bool) -> Void
+
+/// Asks the system for the microphone, once: the card opening with the
+/// microphone on is the moment to, as the meter is what it is there to
+/// show. `callback` receives the answer on a system thread; with an answer
+/// already given it is not asked again, and receives that.
+@_cdecl("subtake_mic_request_access")
+public func micRequestAccess(_ callback: MicAccessCallback?) {
+    guard let callback else { return }
+    switch AVCaptureDevice.authorizationStatus(for: .audio) {
+    case .notDetermined: AVCaptureDevice.requestAccess(for: .audio) { callback($0) }
+    case .authorized: callback(true)
+    default: callback(false)
     }
 }

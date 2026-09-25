@@ -139,6 +139,11 @@ impl App {
                     .unwrap_or_default()
             });
         platform::meter_microphone(device, mic_level);
+        // The first time, the card opening is what asks for the microphone,
+        // as for the camera; its answer syncs the card again.
+        if device.is_some() {
+            platform::request_microphone_access(microphone_answer);
+        }
         if device.is_none()
             && let Some(options) = &self.launcher_options
         {
@@ -773,6 +778,12 @@ extern "C" fn camera_frame(rows: *const u8, width: i32, height: i32, stride: i32
 /// The system's answer on the camera: the card syncs again, streaming, or
 /// showing that access is off.
 extern "C" fn camera_answer(_granted: bool) {
+    post(|app, ui| app.sync_launcher_options(ui));
+}
+
+/// The system's answer on the microphone: the card again, metering now if
+/// it was allowed.
+extern "C" fn microphone_answer(_granted: bool) {
     post(|app, ui| app.sync_launcher_options(ui));
 }
 
