@@ -151,12 +151,13 @@ impl Theme {
     /// texture to take hold of rather than a target to hit.
     pub const RECORDER_HANDLE: f32 = 28.0;
     /// The unified titlebar, and what it keeps clear at each end: the traffic
-    /// lights sit at {14,15} and the first control clears them, while the
-    /// right end is a hair tighter than a float's inset because the buttons
-    /// there are already round.
+    /// lights sit at {14,15} and the first control clears them. Not drawn by
+    /// the design: the right end keeps the buttons as far from the window's
+    /// side as the titlebar's centring keeps them from its top, so they sit
+    /// square in the corner rather than 10 down and 20 in.
     pub const TITLEBAR_HEIGHT: f32 = 64.0;
     pub const TITLEBAR_TRAFFIC_LIGHTS: f32 = 92.0;
-    pub const TITLEBAR_PADDING: f32 = 20.0;
+    pub const TITLEBAR_PADDING: f32 = (Self::TITLEBAR_HEIGHT - Self::CONTROL_HEIGHT_LARGE) / 2.0;
     /// The document pill in the middle of the titlebar. Shorter than a
     /// control, because it is a label on a plate rather than something to
     /// press.
