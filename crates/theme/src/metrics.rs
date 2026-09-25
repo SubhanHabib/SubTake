@@ -569,6 +569,12 @@ impl Theme {
     pub const RECENT_WIDTH: f32 = 760.0;
     pub const RECENT_CARD_PADDING: f32 = 10.0;
     pub const RECENT_THUMB_HEIGHT: f32 = 96.0;
+    /// The Projects view: the whole library as Recent cards, this many to a
+    /// row across this width, under a heading row whose search runs this
+    /// wide.
+    pub const LIBRARY_WIDTH: f32 = 1000.0;
+    pub const LIBRARY_COLUMNS: f32 = 4.0;
+    pub const LIBRARY_SEARCH_WIDTH: f32 = 240.0;
 
     // ---- recorder states --------------------------------------------------
 

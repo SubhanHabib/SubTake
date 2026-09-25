@@ -38,6 +38,7 @@ mod editor;
 mod empty;
 mod export;
 mod inspector;
+mod library;
 mod menus;
 mod options;
 mod presets;
@@ -297,6 +298,7 @@ pub struct RootView {
     /// goes back to the top whenever the list under it changes.
     menu_highlight: usize,
     menu_scroll: ScrollHandle,
+    library_scroll: ScrollHandle,
     /// Set when the palette opens so the next render hands it the keyboard.
     menu_focus: bool,
     preview_pan: Point<Pixels>,
@@ -396,6 +398,7 @@ impl RootView {
             menu_filter: String::new(),
             menu_highlight: 0,
             menu_scroll: ScrollHandle::new(),
+            library_scroll: ScrollHandle::new(),
             menu_focus: false,
             preview_pan: point(px(0.), px(0.)),
             preview_context: None,

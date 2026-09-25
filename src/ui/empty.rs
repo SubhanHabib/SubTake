@@ -52,15 +52,34 @@ impl RootView {
                     .w_full()
                     .max_w(px(Theme::recent_width()))
                     .gap(px(Theme::gap_large()))
-                    .child(caps_label("Recent", theme))
+                    .child(
+                        row()
+                            .w_full()
+                            .justify_between()
+                            .child(caps_label("Recent", theme))
+                            .child(self.all_projects(e)),
+                    )
                     .child(cards),
             );
         }
         column.into_any_element()
     }
 
+    /// The way from the Recent row to the Projects view: the whole library,
+    /// on the stage.
+    fn all_projects(&self, e: &EditorWindow) -> Button {
+        let editor = e.clone();
+        button("all-projects", "All projects", self.theme)
+            .ghost()
+            .small()
+            .on_click(move |_, _, _| {
+                editor.set_panel("Recent".into());
+                editor.defer_panel("Recent".into());
+            })
+    }
+
     /// One recent project: its thumbnail, title, and length and age.
-    fn recent_card(&self, recent: Recent, enabled: bool) -> AnyElement {
+    pub(super) fn recent_card(&self, recent: Recent, enabled: bool) -> AnyElement {
         let theme = self.theme;
         // Not drawn by the design: a project without a thumbnail. The card
         // keeps its shape with the film glyph on `sunk`, so a row of mixed

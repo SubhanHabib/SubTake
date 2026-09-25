@@ -13,7 +13,16 @@ impl App {
         Ok(())
     }
 
-    /// The empty state's Recent cards: the three newest library entries.
+    /// `reload_library` for the Projects view, which shows every entry and so
+    /// asks for every entry's still.
+    pub(super) fn browse_library(&mut self) -> Result<()> {
+        self.reload_library()?;
+        self.request_stills(self.library.clone());
+        Ok(())
+    }
+
+    /// The library as cards, newest first: the empty state's Recent row
+    /// draws the first three and the Projects view all of them.
     ///
     /// Not drawn by the design: the handoff's cards carry a running time,
     /// and the library holds none without opening each file, so a card says
@@ -22,7 +31,6 @@ impl App {
     pub(super) fn recents(&self) -> Vec<Recent> {
         self.library
             .iter()
-            .take(3)
             .enumerate()
             .map(|(index, path)| {
                 let kind = match path.extension().and_then(|e| e.to_str()) {
@@ -78,7 +86,7 @@ impl App {
                 };
                 post(move |app, ui| {
                     app.stills.insert(path, Some(image));
-                    if app.history.is_none() {
+                    if app.history.is_none() || ui.get_panel() == "Recent" {
                         ui.set_recents(ModelRc::new(VecModel::from(app.recents())));
                     }
                 });
@@ -108,6 +116,10 @@ impl App {
 
     pub(super) fn load(&mut self, ui: &EditorWindow, path: PathBuf) -> Result<()> {
         self.stop(ui);
+        // Opened from the Projects view, the take comes up in the editor.
+        if ui.get_panel() == "Recent" {
+            ui.set_panel("Frame".into());
+        }
         let project = if matches!(
             path.extension().and_then(|s| s.to_str()),
             Some("recordly" | "openscreen" | "json")

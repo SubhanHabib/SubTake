@@ -948,7 +948,7 @@ impl App {
 
         if key == "library.query" {
             self.library_query = value.into();
-            self.reload_library()?;
+            self.browse_library()?;
             self.refresh(ui);
             return Ok(());
         }

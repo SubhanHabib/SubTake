@@ -488,8 +488,10 @@ impl App {
                 .collect::<Vec<_>>(),
         )));
         ui.set_default_preset(self.preferences.default_preset.clone().unwrap_or_default());
-        if self.history.is_none() {
+        if self.history.is_none() || ui.get_panel() == "Recent" {
             ui.set_recents(ModelRc::new(VecModel::from(self.recents())));
+        }
+        if self.history.is_none() {
             ui.set_dirty(false);
             ui.set_document_title("Untitled".into());
             ui.set_duration(0.);

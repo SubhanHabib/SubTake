@@ -598,7 +598,6 @@ impl RootView {
         let name = e.get_panel();
         let shown = match name.as_str() {
             "Frame" => "Scene",
-            "Recent" => "Projects",
             "Wallpapers" => "Background",
             _ => &name,
         };
@@ -666,19 +665,6 @@ impl RootView {
                     }
                 },
             ));
-        }
-        if name == "Recent" {
-            content = content
-                .child(
-                    self.action(
-                        "storyboard",
-                        "Create video · spike",
-                        "storyboard-spike",
-                        true,
-                    )
-                    .primary(),
-                )
-                .child(self.action("import", "Import video or project", "open", true));
         }
         if name == "Wallpapers" {
             let mut wallpapers = row().flex_wrap();

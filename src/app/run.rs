@@ -152,7 +152,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
             ui.set_panel(panel.clone());
             if panel == "Recent" {
                 app.recoveries = subtake_native::recovery::list().unwrap_or_default();
-                let result = app.reload_library();
+                let result = app.browse_library();
                 report(ui, result);
             }
             app.refresh(ui);

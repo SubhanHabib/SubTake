@@ -88,12 +88,12 @@ impl App {
                 {
                     self.preferences.library_directory = Some(folder);
                     self.preferences.save()?;
-                    self.reload_library()?;
+                    self.browse_library()?;
                     self.refresh(ui);
                 }
             }
             "refresh-library" => {
-                self.reload_library()?;
+                self.browse_library()?;
                 self.refresh(ui);
             }
 
@@ -403,7 +403,7 @@ impl App {
             "projects" => {
                 ui.set_panel("Recent".into());
                 self.recoveries = subtake_native::recovery::list().unwrap_or_default();
-                self.reload_library()?;
+                self.browse_library()?;
                 self.refresh(ui);
                 self.show_editor(ui)?;
             }

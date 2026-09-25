@@ -392,9 +392,13 @@ impl RootView {
         let aspect_pod = self.aspect_pod(e, window, cx);
         // The empty state has no tools to pod and no scene to inspect. The
         // inspector still opens over it for the panels that stand on their
-        // own — Settings from the menu, Projects when a recovery is waiting.
-        let inspector =
-            (e.get_has_video() || e.get_panel() != "Frame").then(|| self.inspector(e, window, cx));
+        // own, as Settings from the menu. Projects is not one of them: it
+        // takes the stage itself (`library_stage`), with nothing over it.
+        let browsing = e.get_panel() == "Recent";
+        let editing = e.get_has_video() && !browsing;
+        let aspect_pod = aspect_pod.filter(|_| !browsing);
+        let inspector = (editing || (!browsing && e.get_panel() != "Frame"))
+            .then(|| self.inspector(e, window, cx));
         let mut root = div()
             .flex()
             .flex_col()
@@ -415,10 +419,10 @@ impl RootView {
                     .min_h_0()
                     .child(preview)
                     .children(aspect_pod)
-                    .children(e.get_has_video().then_some(rail))
+                    .children(editing.then_some(rail))
                     .children(inspector),
             );
-        if e.get_has_video() {
+        if editing {
             root = root.child(self.timeline(e, window, cx));
         } else if let Some(status) = self.status_strip(e, window) {
             root = root.child(div().px(px(Theme::gap_large())).child(status));

@@ -235,6 +235,9 @@ impl RootView {
         let theme = self.theme;
         self.advance_preview_zoom(e, window);
         self.sync_preview_context(e);
+        if e.get_panel() == "Recent" {
+            return (self.library_stage(e, window, cx), None);
+        }
         if !e.get_has_video() {
             return (self.empty_stage(e), None);
         }

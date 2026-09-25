@@ -334,8 +334,25 @@ arrives, or when it cannot be made, the card draws a film glyph on `sunk`. The
 library holds no running time without opening each file, so the meta line
 says what kind of file it is and how old it is. The inspector still opens over the empty state for
 the panels that stand on their own — Settings (⌘, or the app menu, since there
-is no rail to reach the gear on) and Projects when a recovery is waiting — and
-carries a close control there.
+is no rail to reach the gear on) — and carries a close control there.
+
+## Projects
+
+Not drawn by the design, which stops at the three Recent cards. All projects,
+a ghost button at the end of the RECENT label's row, opens the Projects view:
+the whole library on the stage, not in the inspector. It takes the stage over
+the empty state or an open take alike (the recorder's More → Projects opens it
+too), with no pods, inspector or timeline over it, and opening a card brings
+that take up in the editor.
+
+A heading row, 1000 wide like the grid under it: a back caret, "Projects" in
+Space Grotesk 19, then a 240 search field, the project folder (its name, with
+the folder glyph; a press chooses another), Refresh and Open…. Under it, an
+UNSAVED RECOVERY label and one small button per recovery when any are waiting
+(the reason the view opens at launch after a crash), then an "N IN THE
+LIBRARY" label and the library as Recent cards, four to a row, scrolling with
+faded edges. The scroll region spans the stage so its clip never cuts the
+cards' shadows. With nothing to show it says so in the empty state's voice.
 
 ## Presets
 

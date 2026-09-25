@@ -101,6 +101,37 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
                 [0x8a, 0x2f, 0x6a],
                 [0x7f, 0xd3, 0xe0],
             ),
+            // The rest of the library, which only the Projects view shows.
+            (
+                "Adclear pitch cut",
+                "2:14 · last week",
+                [0x2c, 0x4f, 0x9e],
+                [0xf0, 0xb8, 0x6a],
+            ),
+            (
+                "Settings dialog pass",
+                "0:52 · 2 weeks ago",
+                [0x5a, 0x5a, 0x66],
+                [0xd8, 0xd0, 0xc4],
+            ),
+            (
+                "Keyboard shortcuts tour",
+                "1:10 · 3 weeks ago",
+                [0x7a, 0x3a, 0x2a],
+                [0xe8, 0xc8, 0x8a],
+            ),
+            (
+                "Export presets",
+                "0:44 · last month",
+                [0x1f, 0x5e, 0x6e],
+                [0xb8, 0xe0, 0xc8],
+            ),
+            (
+                "Timeline lanes",
+                "4:20 · last month",
+                [0x4a, 0x2a, 0x6e],
+                [0xe0, 0x9a, 0xb8],
+            ),
         ]
         .into_iter()
         .enumerate()
@@ -804,15 +835,19 @@ pub(super) fn fixture_fields(fixture: &Gallery, panel: &str) -> Vec<Field> {
             text("recording.directory", "Save to", "~/Movies/SubTake"),
             action("show-launcher", "Open recorder"),
         ],
-        "Recent" => vec![
-            section("Recent projects"),
-            action("recent.0", "Onboarding walkthrough — today"),
-            action("recent.1", "Release notes 2.4 — yesterday"),
-            action("recent.2", "Bug repro for Adclear — 3 days ago"),
-            action("recent.3", "Keyboard shortcuts tour — last week"),
-            section("Library"),
-            text("library.query", "Search", ""),
-        ],
+        // The Projects view reads its folder, search and recoveries from
+        // these, as it does from the app's.
+        "Recent" => [
+            action("choose-library", "~/Movies/SubTake"),
+            text("library.query", "Search projects and recordings", ""),
+            action("refresh-library", "Refresh"),
+        ]
+        .into_iter()
+        .chain(
+            (v("gallery.recovery", "false") == "true")
+                .then(|| action("recovery-0", "Recover Onboarding walkthrough.mp4")),
+        )
+        .collect(),
         _ => vec![
             section(panel),
             action("noop", "This panel has no gallery fixtures yet"),

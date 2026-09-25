@@ -22,7 +22,8 @@
 //! `=selection` opens Selection on a zoom region, `=selection-empty` with
 //! nothing selected (clicking any region opens it too), `=selection-a1` to
 //! `-a4` on an annotation, `=stage-hover` with an annotation's outline under
-//! the pointer, `=add-empty` the Add panel with no video; `=cursor` and
+//! the pointer, `=add-empty` the Add panel with no video; `=projects` the
+//! Projects view, `=projects-recovery` with a recovery waiting; `=cursor` and
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
 //! opens that recorder card (`=card-sources-busy` with its controls off);
@@ -176,6 +177,18 @@ pub fn run() -> Result<()> {
         Ok("add-empty") => {
             editor.set_has_video(false);
             editor.set_panel("Add".into());
+        }
+        // The Projects view over the empty state, `=projects-recovery` with
+        // an unsaved recovery waiting, as at a launch after a crash.
+        Ok(screen) if screen.starts_with("projects") => {
+            if screen == "projects-recovery" {
+                gallery
+                    .borrow_mut()
+                    .values
+                    .push(("gallery.recovery".into(), "true".into()));
+            }
+            editor.set_has_video(false);
+            editor.set_panel("Recent".into());
         }
         Ok("presets") => editor.set_dialog("presets".into()),
         // The Presets dialog on its Saved tab, the second preset open.
