@@ -24,7 +24,7 @@ mod typography;
 pub mod unused;
 
 pub use controls::*;
-pub use fonts::{families_available, register as register_fonts};
+pub use fonts::{families_available, medium_faces, register as register_fonts};
 pub use frost::{
     BAR_BLUR, FADE_BAND, MENU_BLUR, PANEL_BLUR, POD_BLUR, edge, fade_edges, frosted, layered,
     pill_edge,

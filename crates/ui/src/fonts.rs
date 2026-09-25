@@ -37,6 +37,12 @@ const SPACE_GROTESK: [&[u8]; 1] = [include_bytes!(
     "../../../assets/fonts/SpaceGrotesk-Medium.ttf"
 )];
 
+/// Geist and Geist Mono at 500, the faces the area overlay's chips and
+/// buttons are drawn in natively.
+pub fn medium_faces() -> (&'static [u8], &'static [u8]) {
+    (GEIST[2], GEIST_MONO[1])
+}
+
 /// Register the bundled faces. Safe to call more than once; gpui's text system
 /// treats a repeat registration of the same face as a no-op.
 pub fn register(cx: &App) {
