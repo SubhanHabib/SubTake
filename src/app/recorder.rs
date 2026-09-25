@@ -331,16 +331,29 @@ impl App {
         ui: &EditorWindow,
         panel: &str,
     ) -> Result<()> {
+        if self.launcher.is_none() {
+            return Ok(());
+        }
+        // The bar has set its own panel by the time it says so, so the card
+        // is what tells whether that card was already open.
+        let opening = |name: &str| {
+            panel == name
+                && self
+                    .launcher_options
+                    .as_ref()
+                    .is_none_or(|options| options.get_panel() != name)
+        };
+        let opening_sources = opening("sources");
+        // A take recorded or a file saved into the folder since the library
+        // was last read is in the More card's Recent row as it opens.
+        if opening("more")
+            && let Err(error) = self.reload_library()
+        {
+            eprintln!("Read the library: {error:#}");
+        }
         let Some(launcher) = &self.launcher else {
             return Ok(());
         };
-        // The bar has set its own panel by the time it says so, so the card
-        // is what tells whether Source was already open.
-        let opening_sources = panel == "sources"
-            && self
-                .launcher_options
-                .as_ref()
-                .is_none_or(|options| options.get_panel() != "sources");
         launcher.set_panel(panel.into());
         self.sync_launcher(ui);
         let Some(options) = &self.launcher_options else {
