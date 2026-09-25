@@ -676,6 +676,10 @@ final class AreaWindow: NSWindow {
         hasShadow = false
         isReleasedWhenClosed = false
         acceptsMouseMovedEvents = true
+        // Set, not left at its default, so the parts left clear, the area
+        // and what is offered, take the pointer rather than passing it
+        // through to the window under them.
+        ignoresMouseEvents = false
         appearance = NSAppearance(named: overlay.palette.dark ? .darkAqua : .aqua)
         contentView = overlayView
     }
