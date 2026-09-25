@@ -80,11 +80,9 @@ impl RootView {
             );
         }
         // Custom starts where the overlay already is, so choosing it does not
-        // move anything.
-        //
-        // Not wired: the handoff hands a custom position to dragging the
-        // overlay on the stage, and the stage has no such drag yet; it is
-        // set by the two position rows under More.
+        // move anything. Dragging the overlay on the stage chooses it too and
+        // places the overlay from there, as do the two position rows under
+        // More.
         let custom = preset == "custom";
         let editor = e.clone();
         let current = CORNERS.iter().find(|(c, ..)| *c == preset).copied();
