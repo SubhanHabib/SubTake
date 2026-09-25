@@ -30,6 +30,10 @@ pub struct Dropdown {
     /// that sits at the bottom of what it belongs to. It still flips below
     /// when above will not fit.
     pub opens_up: bool,
+    /// The chip shape, for a dropdown set on a picture rather than on
+    /// chrome: 36 tall on `frost`, its glyph at the card size and its label
+    /// in medium — the Camera card's device chip.
+    pub chip: bool,
     open: bool,
     leave: motion::Leave,
     highlighted: usize,
@@ -72,6 +76,7 @@ impl Dropdown {
             caption: None,
             compact: false,
             opens_up: false,
+            chip: false,
             open: false,
             leave: motion::Leave::default(),
             highlighted: selected,
@@ -101,7 +106,8 @@ impl Render for Dropdown {
         let trigger_key = format!("{menu_key}-trigger");
         let theme = self.theme;
         let open = self.open;
-        let row = self.glyph.is_some() || self.caption.is_some();
+        let chip = self.chip;
+        let row = !chip && (self.glyph.is_some() || self.caption.is_some());
         // Focus lives on the wrapper, which also holds the menu, so the ring
         // is drawn on the trigger by hand: gpui's `focus_visible` only styles
         // the element that owns the focus handle.
@@ -159,34 +165,56 @@ impl Render for Dropdown {
                     .flex()
                     .items_center()
                     .justify_between()
-                    .gap(px(if row {
+                    .gap(px(if chip {
+                        Theme::gap()
+                    } else if row {
                         Theme::icon_gap_row()
                     } else {
                         Theme::gap()
                     }))
-                    .h(px(if row {
+                    .h(px(if chip {
+                        Theme::device_chip_height()
+                    } else if row {
                         Theme::control_height_large()
                     } else if self.compact {
                         Theme::control_height_small()
                     } else {
                         Theme::control_height()
                     }))
-                    .px(px(if row {
-                        Theme::control_padding_large()
-                    } else if self.compact {
-                        Theme::control_padding_small()
-                    } else {
-                        Theme::control_padding()
-                    }))
+                    .map(|el| {
+                        if chip {
+                            el.pl(px(Theme::device_chip_padding()))
+                                .pr(px(Theme::control_padding_small()))
+                        } else {
+                            el.px(px(if row {
+                                Theme::control_padding_large()
+                            } else if self.compact {
+                                Theme::control_padding_small()
+                            } else {
+                                Theme::control_padding()
+                            }))
+                        }
+                    })
                     .rounded_full()
                     // `sunk`, one step up to `sunk2` under the pointer, as
                     // every tinted control's hover goes; open holds it there.
-                    .bg(motion::hover_blend(
-                        &trigger_key,
-                        if open { theme.sunk2 } else { theme.sunk },
-                        theme.sunk2,
-                    ))
-                    .text_size(px(Theme::font_control()))
+                    // A chip keeps its `frost` under the pointer: it sits on
+                    // a live picture, where a step to `sunk2` would read as
+                    // the picture changing.
+                    .bg(if chip {
+                        theme.frost
+                    } else {
+                        motion::hover_blend(
+                            &trigger_key,
+                            if open { theme.sunk2 } else { theme.sunk },
+                            theme.sunk2,
+                        )
+                    })
+                    .text_size(px(if chip {
+                        Theme::font_body()
+                    } else {
+                        Theme::font_control()
+                    }))
                     .font_weight(if row {
                         FontWeight::NORMAL
                     } else {
@@ -207,7 +235,17 @@ impl Render for Dropdown {
                     .children(
                         self.glyph
                             .as_ref()
-                            .map(|g| icon_sized(g, Theme::icon_size_medium(), theme.text)),
+                            .map(|g| {
+                                icon_sized(
+                                    g,
+                                    if chip {
+                                        Theme::icon_size_card()
+                                    } else {
+                                        Theme::icon_size_medium()
+                                    },
+                                    theme.text,
+                                )
+                            }),
                     )
                     .map(|el| match &self.caption {
                         Some(caption) => el

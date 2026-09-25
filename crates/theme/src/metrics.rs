@@ -310,11 +310,6 @@ impl Theme {
     /// Under a preset's frame in its preview. Its strength is the look's.
     pub const PRESET_SHADOW_Y: f32 = 2.0;
     pub const PRESET_SHADOW_BLUR: f32 = 6.0;
-    /// The camera swatch on the recorder's preview: its ring, and the
-    /// shadow under it.
-    pub const CAMERA_SWATCH_RING: f32 = 2.0;
-    pub const CAMERA_SHADOW_Y: f32 = 6.0;
-    pub const CAMERA_SHADOW_BLUR: f32 = 14.0;
 
     // ---- fixed shapes ----------------------------------------------------
 
@@ -788,9 +783,36 @@ impl Theme {
     /// the right.
     pub const MIC_TEST_DOT: f32 = 8.0;
     pub const MIC_TEST_GAP: f32 = 7.0;
-    /// The camera card's live picture and the shape swatch set in it.
-    pub const CAMERA_PREVIEW_HEIGHT: f32 = 132.0;
-    pub const CAMERA_SWATCH: f32 = 44.0;
+    /// The Camera card's live picture: 16:10 at the card's width, with its
+    /// chips 10 in from its edges and a 28 glyph when the camera is off.
+    pub const CAMERA_PREVIEW_ASPECT: f32 = 16.0 / 10.0;
+    pub const CAMERA_CHIP_INSET: f32 = 10.0;
+    pub const CAMERA_OFF_ICON: f32 = 28.0;
+    /// The Live chip: 24 tall, 10 in, a 6 `rec` dot 6 before its word.
+    pub const LIVE_CHIP_HEIGHT: f32 = 24.0;
+    pub const LIVE_CHIP_PADDING: f32 = 10.0;
+    pub const LIVE_DOT: f32 = 6.0;
+    pub const LIVE_CHIP_GAP: f32 = 6.0;
+    /// The device chip: 36 tall, 10 in at its left and 12 at its right.
+    pub const DEVICE_CHIP_HEIGHT: f32 = 36.0;
+    pub const DEVICE_CHIP_PADDING: f32 = 10.0;
+    /// Under the picture: Position in a 132 column, Shape and Size in the
+    /// rest, 12 apart.
+    pub const CAMERA_POSITION_WIDTH: f32 = 132.0;
+    pub const CAMERA_CONTROLS_GAP: f32 = 12.0;
+    /// Position: a recess at least 84 tall at radius 16, a 22 ring in each
+    /// corner 10 in, and the chosen corner a 26 disc 8 in.
+    pub const CAMERA_POSITION_MIN_HEIGHT: f32 = 84.0;
+    pub const CAMERA_POSITION_RADIUS: f32 = 16.0;
+    pub const CORNER_TARGET: f32 = 22.0;
+    pub const CORNER_TARGET_INSET: f32 = 10.0;
+    pub const CORNER_SELECTED: f32 = 26.0;
+    pub const CORNER_SELECTED_INSET: f32 = 8.0;
+    /// Shape's glyphs: 14 square, outlined at `SELECTED_WIDTH`, at radius 4
+    /// for rounded and 1 for square.
+    pub const SHAPE_GLYPH: f32 = 14.0;
+    pub const SHAPE_GLYPH_ROUNDED: f32 = 4.0;
+    pub const SHAPE_GLYPH_SQUARE: f32 = 1.0;
     /// The parts the recorder cards are built from. A section label: 18
     /// tall, 6 in from the card's edge — the inset a helper line takes too,
     /// 2 under what it follows.

@@ -149,10 +149,6 @@ pub struct Theme {
     pub shadow_segment: Hsla,
     /// Under a toggle's thumb.
     pub shadow_thumb: Hsla,
-    /// Under the camera swatch on the recorder's preview.
-    pub shadow_camera: Hsla,
-    /// The camera swatch's ring.
-    pub camera_ring: Hsla,
 }
 
 impl Theme {
@@ -311,24 +307,6 @@ impl Theme {
             gpui::hsla(0., 0., 0., strength),
             (Self::preset_shadow_y(), Self::preset_shadow_blur()),
         )
-    }
-
-    /// The camera swatch on the recorder's preview: a ring, and the shadow
-    /// that lifts it off the picture.
-    pub fn camera_swatch_shadow(&self) -> Vec<gpui::BoxShadow> {
-        vec![
-            gpui::BoxShadow {
-                color: self.camera_ring,
-                offset: gpui::point(gpui::px(0.), gpui::px(0.)),
-                blur_radius: gpui::px(0.),
-                spread_radius: gpui::px(Self::camera_swatch_ring()),
-                inset: false,
-            },
-            drop_shadow(
-                self.shadow_camera,
-                (Self::camera_shadow_y(), Self::camera_shadow_blur()),
-            ),
-        ]
     }
 
     /// A raised control, hovered: its own tone one step up the fill scale.
