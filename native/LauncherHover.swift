@@ -58,6 +58,11 @@ public func watchLauncherHover(_ pointer: UnsafeMutableRawPointer?, _ callback: 
     callback(window.frame.contains(NSEvent.mouseLocation))
 }
 
+/// The centre the bar was last resized about, and the frame that left it
+/// with, so shrinking to the pill and growing back returns it to the point
+/// it started from rather than drifting by the window server's rounding.
+private var launcherCentre: (x: CGFloat, frame: NSRect)?
+
 /// Makes the recorder bar's window `width` points wide about its centre,
 /// so the bar grows and shrinks in place wherever it was dragged.
 @_cdecl("subtake_set_launcher_width")
@@ -67,7 +72,10 @@ public func setLauncherWidth(_ pointer: UnsafeMutableRawPointer?, _ width: Doubl
     var frame = window.frame
     let width = CGFloat(width)
     guard abs(frame.width - width) >= 0.5 else { return }
-    frame.origin.x += (frame.width - width) / 2
+    // Dragged since, the bar is resized about where it is now.
+    let centre = launcherCentre.flatMap { $0.frame == frame ? $0.x : nil } ?? frame.midX
+    frame.origin.x = centre - width / 2
     frame.size.width = width
     window.setFrame(frame, display: true)
+    launcherCentre = (centre, window.frame)
 }
