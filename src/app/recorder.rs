@@ -60,7 +60,11 @@ impl App {
                     report(ui, self.preferences.save());
                 }
             }
-            _ => {}
+            key => {
+                if self.preferences.set_recorder_setting(key, value) {
+                    report(ui, self.preferences.save());
+                }
+            }
         }
     }
 
@@ -86,6 +90,7 @@ impl App {
         options.set_busy(ui.get_busy());
         options.set_has_project(self.history.is_some());
         options.set_countdown(self.preferences.countdown_seconds as i32);
+        options.set_recorder_settings(self.preferences.recorder_settings());
         options.set_directory(
             self.recording_directory()
                 .map(|p| p.display().to_string())
@@ -140,6 +145,7 @@ impl App {
             ui.get_busy() && (ui.get_sources_loading() || self.capture_started.is_none()),
         );
         launcher.set_countdown(self.preferences.countdown_seconds as i32);
+        launcher.set_recorder_settings(self.preferences.recorder_settings());
         launcher.set_counting(self.counting as i32);
         launcher.set_stopping(self.stopping);
         if let Some(overlay) = &self.countdown_overlay {

@@ -148,6 +148,9 @@ struct Properties {
     camera_preview: Image,
     options_width: f32,
     options_height: f32,
+    /// The recorder's settings beyond source and devices, by key
+    /// (`preferences::RECORDER_DEFAULTS`).
+    recorder_settings: std::collections::BTreeMap<String, String>,
     camera_names: ModelRc<String>,
     microphone_names: ModelRc<String>,
     source_index: i32,
@@ -249,6 +252,7 @@ impl Default for Properties {
             camera_preview: Image::default(),
             options_width: subtake_theme::Theme::recorder_card_width(),
             options_height: 264.,
+            recorder_settings: crate::preferences::Preferences::default().recorder_settings(),
             camera_names: ModelRc::default(),
             microphone_names: ModelRc::default(),
             source_index: 0,
@@ -333,6 +337,37 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.options_width != value {
             props.options_width = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_recorder_setting(&self, key: &str) -> String {
+        self.0
+            .props
+            .borrow()
+            .recorder_settings
+            .get(key)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// A recorder setting that is on or off.
+    pub fn get_recorder_flag(&self, key: &str) -> bool {
+        self.get_recorder_setting(key) == "true"
+    }
+
+    pub fn set_recorder_settings(&self, value: std::collections::BTreeMap<String, String>) {
+        let mut props = self.0.props.borrow_mut();
+        if props.recorder_settings != value {
+            props.recorder_settings = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn set_recorder_setting(&self, key: &str, value: &str) {
+        let mut props = self.0.props.borrow_mut();
+        if props.recorder_settings.get(key).map(String::as_str) != Some(value) {
+            props.recorder_settings.insert(key.to_owned(), value.to_owned());
             self.window().invalidate();
         }
     }

@@ -23,7 +23,26 @@ pub struct Preferences {
     pub inspector_width: Option<f32>,
     /// The saved preset, by name, a newly opened video starts from.
     pub default_preset: Option<String>,
+    /// What the recorder's cards set beyond the source and devices, by the
+    /// key a card sends it under (`RECORDER_DEFAULTS`). Only what has been
+    /// changed is kept.
+    pub recorder: std::collections::BTreeMap<String, String>,
 }
+
+/// Each recorder setting and what it is until changed.
+pub const RECORDER_DEFAULTS: &[(&str, &str)] = &[
+    ("hide-desktop-icons", "false"),
+    ("show-recorder", "false"),
+    ("area-aspect", "free"),
+    ("count-on-screen", "true"),
+    ("tick-sound", "false"),
+    ("camera-corner", "bottom-right"),
+    ("camera-shape", "circle"),
+    ("camera-size", "m"),
+    ("resolution", "native"),
+    ("frame-rate", "60"),
+    ("hide-bar", "false"),
+];
 
 impl Default for Preferences {
     fn default() -> Self {
@@ -48,6 +67,7 @@ impl Default for Preferences {
             lane_height: None,
             inspector_width: None,
             default_preset: None,
+            recorder: Default::default(),
         }
     }
 }
@@ -99,6 +119,33 @@ impl Preferences {
         temp.persist(dir.join("preferences.json"))
             .map_err(|e| e.error)?;
         Ok(())
+    }
+
+    /// A recorder setting, or its default; empty for a key there is none of.
+    pub fn recorder_setting(&self, key: &str) -> &str {
+        self.recorder.get(key).map(String::as_str).unwrap_or_else(|| {
+            RECORDER_DEFAULTS
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map_or("", |(_, v)| v)
+        })
+    }
+
+    /// Sets a recorder setting, if it is one. Returns whether it was.
+    pub fn set_recorder_setting(&mut self, key: &str, value: &str) -> bool {
+        if !RECORDER_DEFAULTS.iter().any(|(k, _)| *k == key) {
+            return false;
+        }
+        self.recorder.insert(key.to_owned(), value.to_owned());
+        true
+    }
+
+    /// Every recorder setting, defaults filled in.
+    pub fn recorder_settings(&self) -> std::collections::BTreeMap<String, String> {
+        RECORDER_DEFAULTS
+            .iter()
+            .map(|(k, _)| ((*k).to_owned(), self.recorder_setting(k).to_owned()))
+            .collect()
     }
 
     pub fn opened(&mut self, path: PathBuf) {

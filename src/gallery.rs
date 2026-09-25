@@ -814,6 +814,13 @@ impl Gallery {
                 self.launcher.set_directory(value.into());
                 self.options.set_directory(value.into());
             }
+            key if subtake_native::preferences::RECORDER_DEFAULTS
+                .iter()
+                .any(|(k, _)| *k == key) =>
+            {
+                self.launcher.set_recorder_setting(key, value);
+                self.options.set_recorder_setting(key, value);
+            }
             _ => self
                 .launcher
                 .set_status(format!("Gallery: option {key} = {value}")),
