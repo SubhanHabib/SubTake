@@ -53,8 +53,15 @@ Each section's **Tune** button opens a dock listing every metric its
 components read (padding, gaps, heights, radii, type and icon sizes), each
 with a slider, nudges and a reset. A change is live in every window, the
 editor's included, since a metric is one value app-wide, and a derived metric
-follows the ones it is built from. **Copy changes** puts the tuned values on
-the clipboard as `metrics.rs` lines; nothing is saved otherwise.
+follows the ones it is built from.
+
+Once anything is tuned, a **Changes** column opens at the dock's right, one row
+per change: the old and new value (a colour row shows both swatches and the new
+hex), a copy button for that one `metrics.rs` or `palette.rs` line, and a
+reset. **Copy all** puts every change on the clipboard, **Reset all** drops
+them, and **Original / Tuned** flips every window between the shipped values and
+the tuned ones without losing either. Clicking a colour row picks it in the
+Colours view.
 
 The dock's **Colours** view does the same for the palette on show: every colour
 token as a chip, and the chosen one on hue, saturation, lightness and alpha
@@ -62,10 +69,21 @@ sliders and a field that takes any CSS colour. It lists the whole palette rather
 than the section's tokens, since colour reads are not recorded. The copy carries
 tuned colours as `palette.rs` lines.
 
+The dock's **Themes** row keeps whole sets of changes to switch between. **Save
+as…** writes what is tuned now to a `.subtaketheme` file, **Import…** loads one
+from anywhere (and copies it in), and each saved theme is a chip that loads it
+in place of what is tuned; the chip matching what is tuned now is lit. They live
+in `~/Library/Application Support/com.SubTake.SubTake-Native/tuned-themes`. A
+theme file is plain text, one `light.name=#hex`, `dark.name=#hex` or
+`METRIC=value` per line, `#` for comments — the same entries
+`SUBTAKE_GALLERY_TUNED` takes.
+
 `SUBTAKE_GALLERY_COMPONENTS=buttons+tune` opens with the dock up (`+colours` in
 its Colours view), and
 `SUBTAKE_GALLERY_TUNED=GAP=12,RADIUS_MENU=8,dark.accent=#ff7a3d` starts with
-those values tuned.
+those values tuned. `SUBTAKE_HOVER_PIN=play,btn-Transport` holds a hover on
+for any control whose hover key contains one of the words, so a hover state
+shows in a screenshot.
 
 ## Real-app walkthrough
 
