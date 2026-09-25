@@ -14,7 +14,8 @@
 //! ⌘⇧E swaps the editor for the empty state ("Nothing open yet") and back;
 //! the titlebar's Presets button, or ⌘⇧P, opens the Presets dialog.
 //! `SUBTAKE_GALLERY_SCREEN=empty` or `=presets` starts on either,
-//! `=presets-saved` on the dialog's Saved tab; `=settings` opens the
+//! `=presets-saved` on the dialog's Saved tab, `=presets-cycle` with that
+//! tab's list emptied and refilled on a timer; `=settings` opens the
 //! Settings dialog, `=settings-Shortcuts` on one section; `=export`,
 //! `=export-gif` or `=export-frame` opens the Export panel, whose button runs
 //! a fake eight-second export in the titlebar pill; `=export-progress`,
@@ -114,6 +115,19 @@ fn cycle_status(editor: EditorWindow, on: bool) {
     });
 }
 
+fn cycle_presets(editor: EditorWindow, names: Vec<String>, parts: Vec<String>, on: bool) {
+    let (shown_names, shown_parts) = if on {
+        (names.clone(), parts.clone())
+    } else {
+        (vec![], vec![])
+    };
+    editor.set_saved_presets(ModelRc::new(VecModel::from(shown_names)));
+    editor.set_saved_preset_parts(ModelRc::new(VecModel::from(shown_parts)));
+    Timer::single_shot(Duration::from_millis(1500), move || {
+        cycle_presets(editor, names, parts, !on)
+    });
+}
+
 /// The recorder cards in turn, one step each `CARD_CYCLE_MS`: opened, swapped
 /// twice, closed, opened again and closed — every way a card fades.
 fn cycle_cards(gallery: Weak<RefCell<Gallery>>, step: usize) {
@@ -195,6 +209,14 @@ pub fn run() -> Result<()> {
         Ok("presets-saved") => {
             editor.set_selected_preset("Launch keynote".into());
             editor.set_dialog("presets".into());
+        }
+        // The Saved tab with its list emptied and refilled on a timer, for
+        // the dialog easing between the two heights.
+        Ok("presets-cycle") => {
+            editor.set_dialog("presets".into());
+            let names: Vec<String> = editor.get_saved_presets().iter().collect();
+            let parts: Vec<String> = editor.get_saved_preset_parts().iter().collect();
+            cycle_presets(editor.clone(), names, parts, false);
         }
         // The Settings dialog, `=settings-Shortcuts` on that section.
         Ok(screen) if screen.starts_with("settings") => {

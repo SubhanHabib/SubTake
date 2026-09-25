@@ -654,6 +654,12 @@ setting and land in place when it is on.
 - The Presets dialog fades in rising 12 and fades back out
   (`DIALOG_*`); its frost eases with it, since opacity does not reach a
   backdrop blur.
+- A surface whose content changes size while it is open eases to its new
+  height over `RESIZE_MS` (200) rather than snapping: the Presets dialog as
+  its tab or saved list changes, the command palette as its filter narrows
+  the list, a dropdown whose choices change. It opens at its size; only
+  changes from there move. `SUBTAKE_GALLERY_SCREEN=presets-cycle` empties
+  and refills the Saved list on a timer.
 - Dropdowns and the command menu drop 4 as they open and fade out over
   `MENU_OUT_MS` when dismissed. Their entrance settles on a quint, not the
   ease-out every other move uses, so a menu is there the moment it is asked

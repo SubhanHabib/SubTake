@@ -381,7 +381,11 @@ impl RootView {
                     // shows; the ring's own width either side keeps it off
                     // the chip and the first row.
                     .child(div().py(px(Theme::focus_width())).child(search))
-                    .child(fade_edges(list).tracking(&self.menu_scroll))
+                    .child(
+                        self.menu_fit
+                            .opening(self.menu_leave.opens)
+                            .wrap(fade_edges(list).tracking(&self.menu_scroll), window),
+                    )
                     .child(footer),
             ),
         ))

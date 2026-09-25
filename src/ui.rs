@@ -298,6 +298,8 @@ pub struct RootView {
     /// goes back to the top whenever the list under it changes.
     menu_highlight: usize,
     menu_scroll: ScrollHandle,
+    /// The palette's list easing to its height as the filter narrows it.
+    menu_fit: subtake_ui::FitHeight,
     library_scroll: ScrollHandle,
     /// Set when the palette opens so the next render hands it the keyboard.
     menu_focus: bool,
@@ -311,6 +313,9 @@ pub struct RootView {
     /// The Presets dialog's fade in and out, as `inspector_slide`. It starts
     /// closed rather than `None`, so the first opening plays too.
     presets_slide: Option<(bool, f32, Instant)>,
+    /// The Presets dialog easing to its height as its tab or selection
+    /// changes what it holds.
+    presets_fit: subtake_ui::FitHeight,
     /// The Settings dialog's fade, as `presets_slide`.
     settings_slide: Option<(bool, f32, Instant)>,
     /// When the microphone meter last clipped, so its top bars can hold red
@@ -398,6 +403,7 @@ impl RootView {
             menu_filter: String::new(),
             menu_highlight: 0,
             menu_scroll: ScrollHandle::new(),
+            menu_fit: subtake_ui::FitHeight::default(),
             library_scroll: ScrollHandle::new(),
             menu_focus: false,
             preview_pan: point(px(0.), px(0.)),
@@ -406,6 +412,7 @@ impl RootView {
             preview_zoom_move: None,
             presets: None,
             presets_slide: Some((false, 0., Instant::now())),
+            presets_fit: subtake_ui::FitHeight::default(),
             settings_slide: Some((false, 0., Instant::now())),
             mic_clipped: None,
             export_dismiss: None,

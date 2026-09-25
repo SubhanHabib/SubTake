@@ -34,6 +34,8 @@ pub struct Dropdown {
     leave: motion::Leave,
     highlighted: usize,
     scroll: ScrollHandle,
+    /// The menu easing to its height when its choices change while open.
+    fit: crate::FitHeight,
     bounds: Rc<Cell<Bounds<Pixels>>>,
     change: Box<dyn Fn(usize, &mut Window, &mut App)>,
 }
@@ -74,6 +76,7 @@ impl Dropdown {
             leave: motion::Leave::default(),
             highlighted: selected,
             scroll: ScrollHandle::new(),
+            fit: crate::FitHeight::default(),
             bounds: Rc::new(Cell::new(Bounds::default())),
             change: Box::new(change),
         }
@@ -261,6 +264,21 @@ impl Render for Dropdown {
             let max_height = Theme::menu_max_height()
                 .min(f32::from(viewport.height) - Theme::gap() * 2.0 - Theme::control_height())
                 .max(Theme::control_height());
+            let list = fade_edges(
+                menu_list("dropdown-choices", max_height)
+                    .track_scroll(&self.scroll)
+                    .children(self.items.iter().enumerate().map(|(i, label)| {
+                        menu_row(
+                            ("choice", i),
+                            label.clone(),
+                            i == self.selected,
+                            i == self.highlighted,
+                            theme,
+                            cx.listener(move |this, _, w, cx| this.choose(i, w, cx)),
+                        )
+                    })),
+            )
+            .tracking(&self.scroll);
             root = root.child(
                 deferred(
                     anchored()
@@ -311,27 +329,7 @@ impl Render for Dropdown {
                                     // fits keeps the surface's own padding
                                     // above its first row and below its last,
                                     // the same as at its sides.
-                                    .child(
-                                        fade_edges(
-                                            menu_list("dropdown-choices", max_height)
-                                                .track_scroll(&self.scroll)
-                                                .children(self.items.iter().enumerate().map(
-                                                    |(i, label)| {
-                                                        menu_row(
-                                                            ("choice", i),
-                                                            label.clone(),
-                                                            i == self.selected,
-                                                            i == self.highlighted,
-                                                            theme,
-                                                            cx.listener(move |this, _, w, cx| {
-                                                                this.choose(i, w, cx)
-                                                            }),
-                                                        )
-                                                    },
-                                                )),
-                                        )
-                                        .tracking(&self.scroll),
-                                    ),
+                                    .child(self.fit.opening(self.leave.opens).wrap(list, window)),
                             ),
                         )),
                 )

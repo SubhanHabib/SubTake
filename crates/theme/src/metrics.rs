@@ -896,6 +896,10 @@ pub const PANEL_DRILL_SHIFT: f32 = 24.0;
 pub const CARD_IN_MS: u64 = 140;
 pub const CARD_OUT_MS: u64 = 100;
 pub const CARD_SWAP_MS: u64 = 120;
+/// A dialog, palette or menu whose content changes size (a tab, a filter,
+/// an error line) eases to its new height over this long rather than
+/// snapping to it.
+pub const RESIZE_MS: u64 = 200;
 /// The recorder bar's controls fade in over this long when it changes what
 /// it is — ready, counting, recording, writing the file. The bar itself
 /// keeps its size and place.

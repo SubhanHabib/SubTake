@@ -38,14 +38,18 @@ impl RootView {
             self.presets = None;
             return None;
         }
+        if self.presets.is_none() {
+            self.presets_fit.reset();
+        }
         let draft = self
             .presets
             .get_or_insert_with(|| PresetsDraft {
                 look: e.get_look_choice(),
                 motion: e.get_motion_choice(),
-                // The gallery's `=presets-saved` opens on Saved.
+                // The gallery's `=presets-saved` and `=presets-cycle` open on Saved.
                 tab: usize::from(
-                    std::env::var("SUBTAKE_GALLERY_SCREEN").is_ok_and(|s| s == "presets-saved"),
+                    std::env::var("SUBTAKE_GALLERY_SCREEN")
+                        .is_ok_and(|s| s == "presets-saved" || s == "presets-cycle"),
                 ),
             })
             .clone();
@@ -183,7 +187,7 @@ impl RootView {
             .id("presets-dialog")
             .w(px(Theme::dialog_width()))
             .p(px(Theme::dialog_padding()))
-            .child(card);
+            .child(self.presets_fit.wrap(card, window));
         Some(dialog_frame("presets-scrim", e, open, shown, card))
     }
 }
