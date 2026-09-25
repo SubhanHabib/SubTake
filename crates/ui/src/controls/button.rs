@@ -390,7 +390,7 @@ impl RenderOnce for Button {
         ) || tool_active;
         let marked = self.selected && !self.icon_only;
         let (fill_rest, fill_hover) = match self.variant {
-            ButtonVariant::Transport => (theme.ink, theme.ink),
+            ButtonVariant::Transport => (theme.ink, ink_step(theme, INK_HOVER)),
             ButtonVariant::Record => (theme.rec, theme.rec),
             // Palette churn: `--danger` at 10% resting, which is a fill the
             // handoff's "no fill until hover" line would forbid. That line is
@@ -428,7 +428,7 @@ impl RenderOnce for Button {
         let fill = motion::state_fade(&motion::tween_key(&self.id, "fill"), filled);
         let (accent, accent_hover, on_plate) = match self.variant {
             ButtonVariant::Record => (theme.rec, theme.rec, theme.thumb()),
-            ButtonVariant::Transport => (theme.ink, theme.ink, theme.on_ink),
+            ButtonVariant::Transport => (theme.ink, ink_step(theme, INK_HOVER), theme.on_ink),
             _ => (theme.accent, theme.accent_hover, theme.on_accent),
         };
         let rest = motion::blend(fill_rest, accent, fill);
@@ -613,7 +613,14 @@ impl RenderOnce for Button {
         if self.enabled {
             // GPUI synthesizes ClickEvent::Keyboard for Enter/Space on focused divs.
             let ring = focus_ring(theme);
-            let press = theme.press;
+            // A filled ink plate keeps its plate under the finger, a step
+            // further along than its hover: the `press` wash in its place
+            // left a pale ring round a white glyph, which read as the
+            // control dropping out rather than going down.
+            let press = match self.variant {
+                ButtonVariant::Transport => ink_step(theme, INK_PRESS),
+                _ => theme.press,
+            };
             el = el
                 .cursor_pointer()
                 .tab_index(0)
@@ -644,6 +651,16 @@ impl RenderOnce for Button {
         // glow and a focused control's ring drew under the card they sit on.
         layered(el)
     }
+}
+
+/// Not drawn by the design, which gives the transport no hover or press:
+/// `ink` stepped toward `on_ink`, lighter on light and darker on dark, so it
+/// answers the pointer the way every other plate does.
+const INK_HOVER: f32 = 0.14;
+const INK_PRESS: f32 = 0.26;
+
+fn ink_step(theme: Theme, t: f32) -> Hsla {
+    motion::blend(theme.ink, theme.on_ink, t)
 }
 
 // ---------------------------------------------------------------------------
