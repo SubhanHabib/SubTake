@@ -360,8 +360,10 @@ final class AreaOverlay {
         guides = []
         switch phase {
         case .pressing:
-            // A click takes what is offered.
+            // A click takes what is offered, found again for where it
+            // landed: a press outside an area drawn is picked from here.
             phase = .picking
+            pick()
             if let offering {
                 selection = offering.rect
                 phase = .adjusting
