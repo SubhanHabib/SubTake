@@ -446,6 +446,40 @@ pub fn timeline_artwork(source: &Path, info: &MediaInfo) -> Result<(PathBuf, Opt
     Ok((thumbs, waveform))
 }
 
+/// How wide a library card's still is decoded, twice the card's drawn width
+/// so it stays sharp on a Retina display.
+pub const STILL_WIDTH: u32 = 480;
+
+/// A still for a library card: one frame a quarter of the way into the take,
+/// cached beside the timeline artwork. A project reads its source video.
+pub fn library_still(path: &Path) -> Result<PathBuf> {
+    let source = if matches!(
+        path.extension().and_then(|e| e.to_str()),
+        Some("recordly" | "openscreen")
+    ) {
+        let mut project = crate::project::Project::load(path)?;
+        project.resolve_assets(path);
+        project.source_path(Some(path))
+    } else {
+        path.to_owned()
+    };
+    let (directory, name) = cache_entry(&source)?;
+    let still = directory.join(format!("{name}-still.png"));
+    if !still.exists() {
+        let info = probe(&source)?;
+        let height = (STILL_WIDTH as f64 * info.height as f64 / info.width.max(1) as f64)
+            .round()
+            .max(2.) as u32;
+        let pixels = Decoder::new(source, STILL_WIDTH, height).frame(info.duration / 4.)?;
+        let frame = image::RgbaImage::from_raw(STILL_WIDTH, height, pixels)
+            .context("Invalid still pixels")?;
+        let mut temp = tempfile::NamedTempFile::new_in(&directory)?;
+        frame.write_to(&mut temp, image::ImageFormat::Png)?;
+        temp.persist(&still).map_err(|e| e.error)?;
+    }
+    Ok(still)
+}
+
 /// The timeline cache and the name a take's artwork goes under there, from
 /// its path, size and last change.
 fn cache_entry(source: &Path) -> Result<(PathBuf, String)> {

@@ -9,15 +9,16 @@ impl App {
             &self.preferences.recent_projects,
             &self.library_query,
         )?;
+        self.request_stills(self.library.iter().take(3).cloned().collect());
         Ok(())
     }
 
     /// The empty state's Recent cards: the three newest library entries.
     ///
-    /// Not drawn by the design: the handoff's cards carry a thumbnail and a
-    /// running time, and the library holds neither without opening each
-    /// file, so a card says what kind of file it is and how old it is, and
-    /// the card draws its own placeholder for the picture.
+    /// Not drawn by the design: the handoff's cards carry a running time,
+    /// and the library holds none without opening each file, so a card says
+    /// what kind of file it is and how old it is. Its still comes from
+    /// `request_stills`, and until then the card draws its own placeholder.
     pub(super) fn recents(&self) -> Vec<Recent> {
         self.library
             .iter()
@@ -45,10 +46,44 @@ impl App {
                         .flatten()
                         .collect::<Vec<_>>()
                         .join(" · "),
-                    ..Default::default()
+                    thumbnail: self.stills.get(path).cloned().flatten().unwrap_or_default(),
                 }
             })
             .collect()
+    }
+
+    /// Makes the still of each of `paths` not yet asked for, one worker for
+    /// them all, and redraws the Recent cards as each arrives.
+    pub(super) fn request_stills(&mut self, paths: Vec<PathBuf>) {
+        let paths: Vec<_> = paths
+            .into_iter()
+            .filter(|path| !self.stills.contains_key(path))
+            .collect();
+        if paths.is_empty() {
+            return;
+        }
+        for path in &paths {
+            self.stills.insert(path.clone(), None);
+        }
+        std::thread::spawn(move || {
+            for path in paths {
+                let image = media::library_still(&path)
+                    .and_then(|still| ui_runtime::Image::load_from_path(&still));
+                let image = match image {
+                    Ok(image) => image,
+                    Err(error) => {
+                        eprintln!("Library still for {}: {error:#}", path.display());
+                        continue;
+                    }
+                };
+                post(move |app, ui| {
+                    app.stills.insert(path, Some(image));
+                    if app.history.is_none() {
+                        ui.set_recents(ModelRc::new(VecModel::from(app.recents())));
+                    }
+                });
+            }
+        });
     }
 
     pub(super) fn schedule_recovery(&self) {
