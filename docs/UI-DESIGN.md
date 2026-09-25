@@ -578,34 +578,78 @@ a plate that fills its window reads as an outline.
 
 ### Option cards
 
-Each bar control opens a 320 card 14 above the bar, centred over the control
-that opened it and kept inside the bar and the screen: a `Recorder / name`
-chip and a close control, then the card's rows, then a muted helper line.
+Each bar control opens its card 14 above the bar, centred over the control
+that opened it and kept inside the screen: a 40 header with the card's name
+and what it is set to (the summary), then the card's rows, then a muted
+helper line. Source is 380 wide, Microphone and Camera 340, Countdown 320
+and More 360.
 
-- **Capture source** — Displays as two picture tiles (the chosen one ringed in
-  accent inside and out), Windows as 34 rows with a 30×20 picture, and Refresh.
-- **Audio** — the microphone select, Record microphone, a 12-bar level meter
-  with its peak in dB (the top two bars turn red for a second on a clip), and
-  Record system audio.
-- **Camera** — Webcam overlay, the camera select, and a 132 preview with the
-  overlay's shape in its corner.
-- **Countdown delay** — four 44 rows; the chosen one is sunk, ringed, checked.
-- **More** — Open, Projects, Back to editor, then the recordings folder.
+- **Source** — three tabs, opening on the chosen source's. Display: the
+  displays as 16:10 pictures, the chosen one ringed and checked, then Hide
+  desktop icons and Show recorder in capture. Window: a search, then the
+  windows two across. Area: the area drawn, over its display's picture
+  dimmed around it with its outline, corner dots and size; the Aspect lock;
+  and Draw area on screen, which opens the area overlay (below).
+- **Microphone** — Record microphone, the device, a level meter, the Input
+  level (a gain at capture, not the device's own volume), Test, and Record
+  system audio.
+- **Camera** — the live picture, mirrored; the camera; its corner, shape and
+  size in the recording.
+- **Countdown** — four tiles for the delay, and the tick.
+- **More** — the recent projects, Open and All projects, then the
+  recording's resolution, frame rate and folder, Hide bar while recording
+  and the record shortcut.
+
+A permission the system refuses turns the card into its notice with Open
+Settings; no device found, or the chosen one unplugged, reads in the
+summary and the card.
 
 The card measures its own height and the window follows, so a card never
 clips and never leaves empty glass. Its window glass is masked at
 `RADIUS_PANEL`.
 
-Not drawn by the design: the "Create video · spike" row in More, the empty
-Sources state, the camera card with no camera, and the Refreshing… pill.
-Not wired yet: source pictures, the microphone level and the camera preview —
-outside the gallery they show a glyph, "— dB" and the camera glyph.
+Palette churn: the chips over the camera picture and the area's size chip
+keep the `frost` tint without the handoff's 16 backdrop blur.
 
-Palette churn: the Preview chip on the camera picture keeps its tint but not
-the handoff's 18 backdrop blur.
+#### Area overlay
+
+Draw area on screen hides the card and the bar and dims every display under
+`rgba(10,12,20,.48)`. Dragging draws an area; once drawn it is moved by
+dragging it and resized by its 10 corner and 8 × 8 side handles, ⇧ keeping
+the ratio (a square when Aspect is Free) and the arrows nudging it (⇧ by
+10). The size sits in a frosted chip 10 under it, and Cancel and Use area
+under that; Return or a double-click uses it, Esc cancels. Either way the
+bar and the Source card come back, the area chosen if one was used.
+
+Not drawn by the design: pressing without dragging takes what the pointer
+is over. As it moves the overlay offers the element under it — the page in
+a browser without its toolbar, a pane, the window, the display — ↑ and ↓
+or a scroll widening and narrowing the offer, its name beside the size in
+the chip, and a hint along the top says so. The offers come from the
+window list, Accessibility when SubTake is already trusted (it never asks),
+and the long edges in a still of each display. While drawing, moving or
+resizing, a side near one of those edges is drawn onto it and the edge is
+shown; ⌘ draws freely.
+
+The area is a source of its own, listed after the displays and windows and
+kept across launches: its display's stream, cropped to it, fitting the
+area rather than the display under the chosen resolution. The handoff's
+"Area · not set" summary and disabled Record are never reached, since the
+area only becomes the source once one is drawn.
 
 `SUBTAKE_GALLERY_SCREEN=card-sources` (or `card-audio`, `card-camera`,
-`card-countdown`, `card-more`) opens the gallery with that card up.
+`card-countdown`, `card-more`) opens the gallery with that card up;
+`card-sources-window` and `card-sources-area` on those tabs,
+`card-sources-area-set` with an area drawn and chosen, and
+`card-more` with `SUBTAKE_GALLERY_OPEN=resolution` with the resolution menu
+down. `-denied` (`card-audio-denied`), `-none`, `-unplugged`,
+`card-audio-listening`, `card-audio-playing` and `card-camera-starting`
+hold those states. `area-overlay` opens the overlay with an area drawn,
+`area-overlay-picking` with none and the pointer's offer, and
+`area-overlay-locked` held to 16:9. `rec-working`, `rec-hidden` and
+`rec-hidden-cycle` show the bar waiting on something it can cancel, and
+hidden to its clock while recording, still and with the pointer coming and
+going.
 
 ## Gestures
 
