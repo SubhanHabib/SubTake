@@ -824,6 +824,11 @@ final class FrostPlate: NSView {
     init(palette: AreaPalette) {
         self.palette = palette
         super.init(frame: .zero)
+        // Layers throughout, or the words would draw into the window under
+        // the effect's layer rather than over it.
+        wantsLayer = true
+        content.wantsLayer = true
+        content.layerContentsRedrawPolicy = .onSetNeedsDisplay
         effect.material = .hudWindow
         effect.blendingMode = .behindWindow
         effect.state = .active
@@ -864,12 +869,18 @@ final class PlateContent: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
-private func colour(_ values: UnsafePointer<Double>, _ index: Int) -> NSColor {
-    NSColor(srgbRed: values[index * 4], green: values[index * 4 + 1], blue: values[index * 4 + 2], alpha: values[index * 4 + 3])
+private func colour(_ values: ArraySlice<Double>, _ index: Int) -> NSColor {
+    let at = values.startIndex + index * 4
+    return NSColor(srgbRed: values[at], green: values[at + 1], blue: values[at + 2], alpha: values[at + 3])
 }
 
-private func face(_ bytes: UnsafePointer<UInt8>?, _ length: Int) -> CGFont? {
-    guard let bytes, length > 0, let provider = CGDataProvider(data: Data(bytes: bytes, count: length) as CFData) else { return nil }
+private func bytes(_ bytes: UnsafePointer<UInt8>?, _ length: Int) -> Data? {
+    guard let bytes, length > 0 else { return nil }
+    return Data(bytes: bytes, count: length)
+}
+
+private func face(_ data: Data?) -> CGFont? {
+    guard let data, let provider = CGDataProvider(data: data as CFData) else { return nil }
     return CGFont(provider)
 }
 
@@ -881,7 +892,8 @@ private var faces: (CGFont?, CGFont?)?
 /// `appearance` is 1 for light, 2 for dark, and 0 to follow the system's.
 /// `aspect` is the card's Aspect as width over height, 0 for Free. A `seed`
 /// of any width opens with that area drawn, in the callback's terms. The
-/// callback runs once, on the main thread.
+/// callback runs once, on the main thread. What the pointers hold is
+/// copied before this returns; the overlay opens on the main thread after.
 @_cdecl("subtake_draw_area")
 public func drawArea(
     _ aspect: Double,
@@ -893,12 +905,15 @@ public func drawArea(
     _ callback: AreaCallback?
 ) {
     guard let callback, let colours else { return }
+    let values = Array(UnsafeBufferPointer(start: colours, count: 9 * 4 * 2))
+    let sans = bytes(sans, sansLength)
+    let mono = bytes(mono, monoLength)
     DispatchQueue.main.async {
         guard AreaOverlay.shown == nil else { return }
-        if faces == nil { faces = (face(sans, sansLength), face(mono, monoLength)) }
+        if faces == nil { faces = (face(sans), face(mono)) }
         let dark = appearance == 2
             || (appearance == 0 && NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
-        let colours = dark ? colours + 9 * 4 : colours
+        let colours = dark ? values[(9 * 4)...] : values[..<(9 * 4)]
         let palette = AreaPalette(
             accent: colour(colours, 0), accentHover: colour(colours, 1), onAccent: colour(colours, 2),
             sunk: colour(colours, 3), sunkHover: colour(colours, 4), text: colour(colours, 5),
