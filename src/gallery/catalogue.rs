@@ -313,32 +313,9 @@ impl Catalogue {
             })
             .flatten();
         let tuning = jump.filter(|_| tune_wanted);
-        for pair in std::env::var("SUBTAKE_GALLERY_TUNED")
-            .unwrap_or_default()
-            .split(',')
-        {
-            let Some((name, value)) = pair.split_once('=') else {
-                if !pair.is_empty() {
-                    eprintln!("SUBTAKE_GALLERY_TUNED: no metric to tune in {pair:?}");
-                }
-                continue;
-            };
-            let (name, value) = (name.trim(), value.trim());
-            let colour = name.split_once('.').and_then(|(palette, name)| {
-                let appearance = match palette {
-                    "light" => Appearance::Light,
-                    "dark" => Appearance::Dark,
-                    _ => return None,
-                };
-                Some((appearance, tune::colour(name)?, tune::parse_colour(value)?))
-            });
-            if let Some((appearance, colour, value)) = colour {
-                tune::set_colour(appearance, colour.name, value);
-            } else if let Some((metric, value)) = tune::metric(name).zip(value.parse::<f32>().ok())
-            {
-                tune::set(metric.name, value);
-            } else {
-                eprintln!("SUBTAKE_GALLERY_TUNED: no metric or colour to tune in {pair:?}");
+        if let Ok(tuned) = std::env::var("SUBTAKE_GALLERY_TUNED") {
+            for entry in tune::load_text(&tuned) {
+                eprintln!("SUBTAKE_GALLERY_TUNED: no metric or colour to tune in {entry:?}");
             }
         }
         // The editor drew before tuning was on.

@@ -222,8 +222,14 @@ fn every_colour_token_is_tunable_and_prints_back_as_it_was_written() {
     }
 }
 
+/// The tuning overrides are process-wide; tests that set them take turns.
+static TUNING: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[test]
 fn a_change_lists_what_it_was_and_the_line_to_paste_and_can_be_set_aside() {
+    let _tuning = TUNING
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     // Tuning is never enabled here, so these overrides reach no theme the
     // other tests build.
     let from = Theme::dark().card;
@@ -255,4 +261,28 @@ fn a_change_lists_what_it_was_and_the_line_to_paste_and_can_be_set_aside() {
     assert!(!tune::showing_original());
     tune::reset_all();
     assert!(tune::changes().is_empty());
+}
+
+#[test]
+fn a_tuned_theme_saves_as_text_and_loads_back_in_place_of_what_was_tuned() {
+    let _tuning = TUNING
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    tune::reset_all();
+    tune::set("GAP", 30.);
+    let unread = tune::load_text(
+        "# a theme\nlight.accent=#ff6a00, dark.card=#22222980\nGAP_SMALL=5\nnot.a=#fff\nGAP_SMALL",
+    );
+    assert_eq!(unread, ["not.a=#fff", "GAP_SMALL"]);
+    // What was tuned before is gone, not merged.
+    assert!(tune::metric("GAP").is_some_and(|gap| !gap.overridden()));
+    assert_eq!(
+        tune::as_text(),
+        "light.accent=#ff6a00\ndark.card=#22222980\nGAP_SMALL=5\n"
+    );
+    let saved = tune::as_text();
+    tune::reset_all();
+    assert!(tune::load_text(&saved).is_empty());
+    assert_eq!(tune::as_text(), saved);
+    tune::reset_all();
 }

@@ -341,6 +341,69 @@ pub fn as_rust() -> String {
     out
 }
 
+/// Every override as a theme file writes it: `light.accent=#ff6a00`,
+/// `dark.card=#22222980` and `GAP_SMALL=5`, one to a line.
+pub fn as_text() -> String {
+    let mut out = String::new();
+    for change in changes() {
+        let line = match change.value {
+            ChangeValue::Colour { appearance, to, .. } => {
+                let palette = if appearance.is_dark() {
+                    "dark"
+                } else {
+                    "light"
+                };
+                format!("{palette}.{}={}", change.name, hex(to))
+            }
+            ChangeValue::Size { to, .. } => format!("{}={to}", change.name),
+        };
+        out.push_str(&line);
+        out.push('\n');
+    }
+    out
+}
+
+/// Replace every override with those `text` lists, as `as_text` writes
+/// them; commas separate entries as well as lines, and `#` starts a comment
+/// line. Returns each entry it could not read, leaving the rest applied.
+pub fn load_text(text: &str) -> Vec<String> {
+    let mut unread = Vec::new();
+    let mut sizes = HashMap::new();
+    let mut colours = HashMap::new();
+    for entry in text
+        .lines()
+        .filter(|line| !line.trim_start().starts_with('#'))
+        .flat_map(|line| line.split(','))
+        .map(str::trim)
+        .filter(|entry| !entry.is_empty())
+    {
+        let Some((name, value)) = entry.split_once('=') else {
+            unread.push(entry.to_owned());
+            continue;
+        };
+        let (name, value) = (name.trim(), value.trim());
+        let colour = name.split_once('.').and_then(|(palette, name)| {
+            let dark = match palette {
+                "light" => false,
+                "dark" => true,
+                _ => return None,
+            };
+            Some((dark, colour(name)?.name, parse_colour(value)?))
+        });
+        if let Some((dark, name, value)) = colour {
+            colours.insert((dark, name), value);
+        } else if let Some((metric, value)) = metric(name).zip(value.parse::<f32>().ok()) {
+            sizes.insert(metric.name, value);
+        } else {
+            unread.push(entry.to_owned());
+        }
+    }
+    *overrides() = sizes;
+    *tints() = colours;
+    changed_now();
+    unread
+}
+
 /// A generated reader's body.
 #[inline]
 pub(crate) fn read(name: &'static str, default: f32, formula: impl FnOnce() -> f32) -> f32 {
