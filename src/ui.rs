@@ -332,6 +332,10 @@ pub struct RootView {
     /// and when the newest came in.
     mic_history: std::collections::VecDeque<f32>,
     mic_sampled: Option<Instant>,
+    /// The frame last drawn of each picture replaced many times a second,
+    /// by its slot, so the one that replaces it can take it out of the
+    /// sprite atlas, which keeps every image it is handed until then.
+    streamed: HashMap<&'static str, Arc<RenderImage>>,
     /// A finished export's auto-dismiss, held from when its pill first
     /// shows until it goes; stopped, not dropped, once hovered.
     export_dismiss: Option<crate::ui_runtime::Timer>,
@@ -454,6 +458,7 @@ impl RootView {
             mic_clipped: None,
             mic_history: std::collections::VecDeque::new(),
             mic_sampled: None,
+            streamed: HashMap::new(),
             export_dismiss: None,
             export_done: None,
             inspector_scroll: HashMap::new(),
@@ -512,6 +517,25 @@ impl RootView {
             label.to_owned()
         } else {
             translated
+        }
+    }
+
+    /// Draws `frame` in `slot`, a picture replaced many times a second — the
+    /// stage's, as it plays — and drops the frame it replaces from the
+    /// sprite atlas. Left there, a minute's playback would hold a texture
+    /// tile for every frame.
+    fn stream(&mut self, slot: &'static str, frame: crate::ui_runtime::Image, window: &mut Window) {
+        let frame = frame.0;
+        let previous = match &frame {
+            Some(frame) => self.streamed.insert(slot, frame.clone()),
+            None => self.streamed.remove(slot),
+        };
+        if let Some(previous) = previous
+            && frame
+                .as_ref()
+                .is_none_or(|frame| !Arc::ptr_eq(frame, &previous))
+        {
+            window.drop_image(previous).ok();
         }
     }
 
@@ -618,6 +642,9 @@ impl Render for RootView {
                 saturation,
                 self.theme.ground,
             );
+        }
+        if let Surface::Editor(e) = &surface {
+            self.stream("preview", e.get_preview(), window);
         }
         let content = match &surface {
             Surface::Editor(e) => self.editor(e, window, cx),
