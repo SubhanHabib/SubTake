@@ -145,10 +145,11 @@ impl RootView {
     /// `SUBTAKE_GALLERY_OPEN=menu-Add` opens that menu's palette once, as a
     /// click on its trigger would: the gallery's unfocused windows take no
     /// clicks. It waits for a frame that has measured the trigger, which the
-    /// palette opens against.
+    /// palette opens against, unless there is no video and so no trigger.
+    /// `menu-Add:sp` opens it filtered by "sp".
     fn gallery_open_menu(&mut self, window: &mut Window) {
         static OPENED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-        let Some(name) = std::env::var("SUBTAKE_GALLERY_OPEN")
+        let Some(open) = std::env::var("SUBTAKE_GALLERY_OPEN")
             .ok()
             .and_then(|open| open.strip_prefix("menu-").map(str::to_owned))
         else {
@@ -157,12 +158,15 @@ impl RootView {
         if OPENED.load(std::sync::atomic::Ordering::Relaxed) {
             return;
         }
-        if self.menu_anchor.get().size.width <= px(0.) {
+        let has_video = matches!(&self.surface, Surface::Editor(e) if e.get_has_video());
+        if has_video && self.menu_anchor.get().size.width <= px(0.) {
             window.request_animation_frame();
             return;
         }
         OPENED.store(true, std::sync::atomic::Ordering::Relaxed);
+        let (name, filter) = open.split_once(':').unwrap_or((&open, ""));
         self.menu = Some(name.into());
+        self.menu_filter = filter.into();
         self.menu_focus = true;
     }
 
@@ -189,6 +193,10 @@ impl RootView {
             window.request_animation_frame();
         }
         let name = self.menu_last.clone();
+        // Add has a popup of its own; see `add_popup.rs`.
+        if name == "Add" {
+            return self.add_popup(leave, window, cx);
+        }
         let theme = self.theme;
         let filter = self.menu_filter.to_lowercase();
         let matches: Vec<_> = Self::menu_commands(&name)

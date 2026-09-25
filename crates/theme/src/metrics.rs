@@ -640,6 +640,42 @@ impl Theme {
     pub const ADD_TILE_HEIGHT: f32 = 68.0;
     pub const ADD_TILE_COLUMNS: f32 = 2.0;
 
+    // ---- add popup ---------------------------------------------------------
+
+    /// The Add popup: a filter field over a list beside a preview card, the
+    /// card a fixed height so moving through the list never resizes it.
+    pub const ADD_POPUP_WIDTH: f32 = 472.0;
+    pub const ADD_POPUP_PADDING: f32 = Self::GAP;
+    pub const ADD_POPUP_GAP: f32 = Self::MENU_PADDING;
+    pub const ADD_POPUP_BODY_HEIGHT: f32 = 360.0;
+    pub const ADD_POPUP_LIST_WIDTH: f32 = 236.0;
+    /// A list row: taller than a menu item, since it carries a glyph and a
+    /// key cap.
+    pub const ADD_POPUP_ROW_HEIGHT: f32 = Self::CONTROL_HEIGHT_SMALL;
+    pub const ADD_POPUP_ROW_RADIUS: f32 = Self::RADIUS_LANE;
+    /// A group's caption: more air above it than below, so it belongs to
+    /// the rows under it.
+    pub const ADD_POPUP_GROUP_TOP: f32 = 10.0;
+    pub const ADD_POPUP_GROUP_BOTTOM: f32 = Self::GAP_SMALL;
+    pub const ADD_POPUP_CARD_PADDING: f32 = 10.0;
+    pub const ADD_POPUP_CARD_GAP: f32 = 10.0;
+    pub const ADD_POPUP_CARD_RADIUS: f32 = Self::RADIUS_INNER;
+    pub const ADD_POPUP_PICTURE_RADIUS: f32 = 7.0;
+    /// The strip of the lane the kind lands on, a stretch of it either side
+    /// of the playhead, with the playhead standing past its edges.
+    pub const ADD_POPUP_STRIP_HEIGHT: f32 = 12.0;
+    pub const ADD_POPUP_STRIP_INSET: f32 = 2.0;
+    pub const ADD_POPUP_STRIP_BLOCK_RADIUS: f32 = 4.0;
+    pub const ADD_POPUP_PLAYHEAD_WIDTH: f32 = 1.5;
+    pub const ADD_POPUP_PLAYHEAD_OVERHANG: f32 = 3.0;
+    /// A marker on the strip: a tick, not a block.
+    pub const ADD_POPUP_MARKER_WIDTH: f32 = 2.0;
+    /// The marks drawn over the picture: a highlight's and a zoom's ring,
+    /// and the step's disc.
+    pub const ADD_POPUP_MARK_RING: f32 = 1.5;
+    pub const ADD_POPUP_MARK_RADIUS: f32 = 5.0;
+    pub const ADD_POPUP_STEP_SIZE: f32 = 16.0;
+
     // ---- camera panel ------------------------------------------------------
 
     /// A position tile: 60 tall at radius 20, 8 apart, two across.

@@ -135,6 +135,10 @@ pub struct TextInput {
     committed: String,
     blur_observer: Option<gpui::Subscription>,
     scroll_offset: Pixels,
+    /// Drawn without its own recess, padding or ring, for a field that sits
+    /// inside a shell of the caller's (the Add popup's, which leads with a
+    /// glyph and ends in a key cap).
+    bare: bool,
 }
 
 impl TextInput {
@@ -175,6 +179,15 @@ impl TextInput {
         self.placeholder = placeholder.into();
     }
 
+    pub fn set_bare(&mut self, bare: bool) {
+        self.bare = bare;
+    }
+
+    /// Whether the field holds the keyboard, for a shell drawing its ring.
+    pub fn is_focused(&self, window: &Window) -> bool {
+        self.focus_handle.is_focused(window)
+    }
+
     pub fn text(&self) -> &str {
         &self.content
     }
@@ -210,6 +223,7 @@ impl TextInput {
             is_selecting: false,
             blur_observer: None,
             scroll_offset: px(0.),
+            bare: false,
         }
     }
 
@@ -949,8 +963,10 @@ impl Render for TextInput {
         let hover_key = format!("input-{:?}-hover", cx.entity_id());
         let theme = self.theme;
         let focused = self.focus_handle.is_focused(window);
+        let bare = self.bare;
         div()
             .flex()
+            .when(bare, |el| el.flex_1().min_w_0())
             .id("text-input")
             .on_hover(crate::motion::hover_listener(hover_key.clone()))
             .key_context("SubTakeInput")
@@ -996,19 +1012,22 @@ impl Render for TextInput {
                 div()
                     .h(px(Theme::control_height()))
                     .w_full()
-                    .px(px(Theme::input_padding()))
                     .flex()
                     .items_center()
-                    .bg(crate::motion::hover_blend(
-                        &hover_key,
-                        theme.sunk,
-                        theme.sunk2,
-                    ))
-                    .rounded_full()
-                    // A field shows its focus however it got it, not only
-                    // from the keyboard: the caret alone is a 2px line, and
-                    // a clicked field is where the typing is about to go.
-                    .when(focused, |el| el.shadow(vec![crate::focus_ring(theme)]))
+                    .when(!bare, |el| {
+                        el.px(px(Theme::input_padding()))
+                            .bg(crate::motion::hover_blend(
+                                &hover_key,
+                                theme.sunk,
+                                theme.sunk2,
+                            ))
+                            .rounded_full()
+                            // A field shows its focus however it got it, not
+                            // only from the keyboard: the caret alone is a 2px
+                            // line, and a clicked field is where the typing is
+                            // about to go.
+                            .when(focused, |el| el.shadow(vec![crate::focus_ring(theme)]))
+                    })
                     .overflow_hidden()
                     .child(TextElement { input: cx.entity() }),
             )

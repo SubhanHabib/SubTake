@@ -42,7 +42,8 @@
 //! audio and camera off, so its bar shows them struck through.
 //! `SUBTAKE_GALLERY_OPEN=aspect` opens the inspector dropdown with that id
 //! (the aspect pod's menu), as a click on its trigger would; `=menu-Add`
-//! (or `-File`, `-Edit`, `-Help`) opens that command palette.
+//! (or `-File`, `-Edit`, `-Help`) opens that command palette, the Add one
+//! as the Add popup, and `=menu-Add:sp` with "sp" typed in its field.
 //! A second window, "SubTake components" (`gallery/catalogue.rs`), lays out
 //! every primitive in every state on one scrolling page with its own Light /
 //! Dark switch; `SUBTAKE_GALLERY_COMPONENTS=off` leaves it closed and

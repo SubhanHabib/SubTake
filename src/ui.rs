@@ -31,6 +31,7 @@ use subtake_ui::{
 };
 
 mod add;
+mod add_popup;
 mod camera;
 mod cursor;
 mod editor;

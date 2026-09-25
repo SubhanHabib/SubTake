@@ -7,9 +7,11 @@
 //! unbuilt until somebody re-reads a spec that has already proved easy to
 //! misread, they are built here, to the numbers the cards give, and parked.
 //!
-//! Nothing outside this module calls them. `unused` is public so the compiler
-//! does not warn about that, and so a gallery can render them to check they
-//! still look right.
+//! Nothing outside this module calls them, but for `key_cap`, which the Add
+//! popup (`src/ui/add_popup.rs`) borrows while it is compared with the Add
+//! panel; it moves out of here if the popup stays. `unused` is public so the
+//! compiler does not warn about that, and so a gallery can render them to
+//! check they still look right.
 //!
 //! Their measurements are module-local consts rather than `Theme` tokens, on
 //! purpose: a token in `crates/theme` is part of the interface's vocabulary,

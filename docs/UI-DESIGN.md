@@ -398,6 +398,27 @@ gallery on the panel, where Export runs a fake eight-second export;
 `export-progress`, `export-done` and `export-failed` hold the pill in one
 state.
 
+## The Add popup
+
+Kept beside the Add panel for now, so the two can be compared; the Add
+button opens the popup. A 472-wide frosted card over the button (above it
+when there is no room below): a 44 field, "Add at" the playhead's time, that
+filters as it is typed, its match in the accent and semibold; the kinds in
+three captioned groups, Timeline, Picture and Sound and words, each row's
+shortcut key cap at its end while nothing is typed; and beside them a card for
+the highlighted kind — the picture with it on, the lane it lands on with the
+regions already there ±8 s and the new one at the playhead, what it is for,
+the time and lane in Geist Mono, and "Add zoom ↵". ↑↓ move, Return adds, Esc
+closes; the footer says so beside the section switcher. With no video the
+list is dimmed and the card offers Open….
+
+Not drawn by the design: the picture is the take's frame at the playhead, not
+a stand-in; a trim is drawn as the accent at half strength rather than
+hatched; adding closes the popup, so the footer never says what was added.
+
+`SUBTAKE_GALLERY_OPEN=menu-Add` opens the gallery on it, `menu-Add:sp` with
+"sp" typed; `SUBTAKE_GALLERY_SCREEN=empty` with it shows the no-video state.
+
 ## Selection
 
 The region the timeline has selected, named by its kind — a tint swatch the
