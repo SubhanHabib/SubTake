@@ -247,8 +247,16 @@ final class AreaOverlay {
 
     // MARK: Events
 
+    /// Where `event` happened, on the desktop: not where the pointer is by
+    /// the time it is handled, which a press handled late, after the parts
+    /// of a window are found, has left.
+    func location(_ event: NSEvent) -> NSPoint {
+        guard let window = event.window else { return NSEvent.mouseLocation }
+        return window.convertPoint(toScreen: event.locationInWindow)
+    }
+
     func mouseDown(_ event: NSEvent) {
-        pointer = NSEvent.mouseLocation
+        pointer = location(event)
         if case .adjusting = phase, let selection {
             if let button = button(at: pointer) {
                 hovered = button
@@ -276,7 +284,7 @@ final class AreaOverlay {
     }
 
     func mouseDragged(_ event: NSEvent) {
-        pointer = NSEvent.mouseLocation
+        pointer = location(event)
         drag(event.modifierFlags)
     }
 
@@ -356,7 +364,7 @@ final class AreaOverlay {
     }
 
     func mouseUp(_ event: NSEvent) {
-        pointer = NSEvent.mouseLocation
+        pointer = location(event)
         guides = []
         switch phase {
         case .pressing:
