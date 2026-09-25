@@ -1860,30 +1860,51 @@ impl Catalogue {
             eprintln!("Tuned themes: could not make {}: {error}", folder.display());
             return;
         }
-        let Some(path) = rfd::FileDialog::new()
+        let dialog = rfd::FileDialog::new()
             .set_directory(&folder)
             .add_filter("Tuned theme", &[THEME_EXTENSION])
-            .set_file_name(format!("Theme {}.{THEME_EXTENSION}", self.themes.len() + 1))
-            .save_file()
-        else {
-            return;
-        };
-        let text = format!("# SubTake tuned theme\n{}", tune::as_text());
-        if let Err(error) = std::fs::write(&path, text) {
-            eprintln!("Tuned themes: could not write {}: {error}", path.display());
-        }
-        self.themes = saved_themes();
-        cx.notify();
+            .set_file_name(format!("Theme {}.{THEME_EXTENSION}", self.themes.len() + 1));
+        Self::after_dialog(
+            cx,
+            move || dialog.save_file(),
+            |s, path, cx| {
+                let text = format!("# SubTake tuned theme\n{}", tune::as_text());
+                if let Err(error) = std::fs::write(&path, text) {
+                    eprintln!("Tuned themes: could not write {}: {error}", path.display());
+                }
+                s.themes = saved_themes();
+                cx.notify();
+            },
+        );
+    }
+
+    /// Run a native file dialog, then `then` with the path it chose.
+    ///
+    /// Not from inside the click: a dialog runs a modal loop, and in the
+    /// click's handler the app is already borrowed, so the first frame or
+    /// timer to fire under the dialog panicked on borrowing it again. A task
+    /// runs the dialog between updates instead, as the editor's own pump
+    /// runs its commands.
+    fn after_dialog(
+        cx: &mut Context<Self>,
+        dialog: impl FnOnce() -> Option<PathBuf> + 'static,
+        then: impl FnOnce(&mut Self, PathBuf, &mut Context<Self>) + 'static,
+    ) {
+        cx.spawn(async move |this, cx| {
+            if let Some(path) = dialog() {
+                this.update(cx, |s, cx| then(s, path, cx)).ok();
+            }
+        })
+        .detach();
     }
 
     /// Load a theme from anywhere, keeping a copy among the saved ones.
     fn import_theme(&mut self, cx: &mut Context<Self>) {
-        let Some(path) = rfd::FileDialog::new()
-            .add_filter("Tuned theme", &[THEME_EXTENSION, "txt"])
-            .pick_file()
-        else {
-            return;
-        };
+        let dialog = rfd::FileDialog::new().add_filter("Tuned theme", &[THEME_EXTENSION, "txt"]);
+        Self::after_dialog(cx, move || dialog.pick_file(), Self::import_from);
+    }
+
+    fn import_from(&mut self, path: PathBuf, cx: &mut Context<Self>) {
         if let Some(folder) = themes_folder()
             && path.parent() != Some(folder.as_path())
             && let Some(name) = path.file_stem()
