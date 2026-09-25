@@ -531,9 +531,18 @@ final class AreaOverlay {
         case .picking, .pressing:
             offered.count > 1 ? "Click to use what is highlighted, or drag to draw   ↑ ↓ wider or narrower   ⌘ draws freely" : "Drag to draw an area   ⌘ draws freely"
         default:
-            "Drag the area to move it   ⇧ keeps the ratio   ⌘ draws freely"
+            "Drag the area to move it   \(aspect.map { "Held to \(Self.ratio($0))" } ?? "⇧ keeps the ratio")   ⌘ draws freely"
         }
         return NSAttributedString(string: words, attributes: [.font: palette.sans(AreaMetrics.hintFont), .foregroundColor: palette.text])
+    }
+
+    /// An aspect as the card names it, 16:9 for 1.777….
+    static func ratio(_ aspect: CGFloat) -> String {
+        for height in 1...AreaMetrics.ratioTerms {
+            let width = (aspect * CGFloat(height)).rounded()
+            if abs(width / CGFloat(height) - aspect) < AreaMetrics.ratioSlack { return "\(Int(width)):\(height)" }
+        }
+        return String(format: "%.2f:1", aspect)
     }
 
     func buttonText(_ button: Button) -> NSAttributedString {
@@ -620,6 +629,9 @@ enum AreaMetrics {
     /// nudge the area.
     static let handleReach: CGFloat = 8
     static let nudgeFar: CGFloat = 10
+    /// The largest side, and how near, a ratio is named by in the hint.
+    static let ratioTerms = 32
+    static let ratioSlack: CGFloat = 0.005
 }
 
 /// The app's palette for the overlay's chips and buttons, sent by the
