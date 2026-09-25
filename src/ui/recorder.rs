@@ -150,10 +150,13 @@ impl RootView {
                 let slot = ["sources", "audio", "camera", "countdown", "more"]
                     .iter()
                     .position(|id| *id == panel);
-                let anchor = slot
+                // A closing card stays over its control while it fades.
+                let Some(anchor) = slot
                     .and_then(|i| bounds.get(i + 1))
                     .map(|b| f32::from(b.center().x))
-                    .unwrap_or(-1.);
+                else {
+                    return;
+                };
                 if OPTIONS_ANCHOR.replace(anchor) != anchor {
                     crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
                         crate::platform::set_launcher_options_anchor(anchor)
