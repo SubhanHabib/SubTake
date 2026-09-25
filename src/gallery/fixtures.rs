@@ -81,68 +81,7 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
         .collect::<Vec<_>>(),
     )));
     // The empty state's cards, as the handoff draws them (⌘⇧E shows it).
-    ui.set_recents(ModelRc::new(VecModel::from(
-        [
-            (
-                "Onboarding walkthrough",
-                "1:42 · yesterday",
-                [0xe8, 0x9a, 0x5c],
-                [0x3b, 0x2a, 0x6b],
-            ),
-            (
-                "Bug repro · timeline",
-                "0:38 · Tuesday",
-                [0x1a, 0x6b, 0x4a],
-                [0x9a, 0xc8, 0xe0],
-            ),
-            (
-                "Release notes demo",
-                "3:05 · last week",
-                [0x8a, 0x2f, 0x6a],
-                [0x7f, 0xd3, 0xe0],
-            ),
-            // The rest of the library, which only the Projects view shows.
-            (
-                "Adclear pitch cut",
-                "2:14 · last week",
-                [0x2c, 0x4f, 0x9e],
-                [0xf0, 0xb8, 0x6a],
-            ),
-            (
-                "Settings dialog pass",
-                "0:52 · 2 weeks ago",
-                [0x5a, 0x5a, 0x66],
-                [0xd8, 0xd0, 0xc4],
-            ),
-            (
-                "Keyboard shortcuts tour",
-                "1:10 · 3 weeks ago",
-                [0x7a, 0x3a, 0x2a],
-                [0xe8, 0xc8, 0x8a],
-            ),
-            (
-                "Export presets",
-                "0:44 · last month",
-                [0x1f, 0x5e, 0x6e],
-                [0xb8, 0xe0, 0xc8],
-            ),
-            (
-                "Timeline lanes",
-                "4:20 · last month",
-                [0x4a, 0x2a, 0x6e],
-                [0xe0, 0x9a, 0xb8],
-            ),
-        ]
-        .into_iter()
-        .enumerate()
-        .map(|(i, (title, meta, a, b))| Recent {
-            key: format!("library-open-{i}"),
-            title: title.into(),
-            meta: meta.into(),
-            thumbnail: gradient(480, 192, a, b, Style::Preview),
-        })
-        .collect::<Vec<_>>(),
-    )));
+    ui.set_recents(ModelRc::new(VecModel::from(library())));
     ui.set_saved_presets(ModelRc::new(VecModel::from(vec![
         "Client demo".to_owned(),
         "Launch keynote".to_owned(),
@@ -164,6 +103,71 @@ pub(super) fn seed_editor(ui: &EditorWindow) {
     ui.set_capture_camera(true);
     ui.set_capture_mic(true);
     ui.set_capture_system(false);
+}
+
+/// The library the empty state, the Projects view and the More card's
+/// Recent row draw, newest first.
+fn library() -> Vec<Recent> {
+    [
+        (
+            "Onboarding walkthrough",
+            "1:42 · yesterday",
+            [0xe8, 0x9a, 0x5c],
+            [0x3b, 0x2a, 0x6b],
+        ),
+        (
+            "Bug repro · timeline",
+            "0:38 · Tuesday",
+            [0x1a, 0x6b, 0x4a],
+            [0x9a, 0xc8, 0xe0],
+        ),
+        (
+            "Release notes demo",
+            "3:05 · last week",
+            [0x8a, 0x2f, 0x6a],
+            [0x7f, 0xd3, 0xe0],
+        ),
+        // The rest of the library, which only the Projects view shows.
+        (
+            "Adclear pitch cut",
+            "2:14 · last week",
+            [0x2c, 0x4f, 0x9e],
+            [0xf0, 0xb8, 0x6a],
+        ),
+        (
+            "Settings dialog pass",
+            "0:52 · 2 weeks ago",
+            [0x5a, 0x5a, 0x66],
+            [0xd8, 0xd0, 0xc4],
+        ),
+        (
+            "Keyboard shortcuts tour",
+            "1:10 · 3 weeks ago",
+            [0x7a, 0x3a, 0x2a],
+            [0xe8, 0xc8, 0x8a],
+        ),
+        (
+            "Export presets",
+            "0:44 · last month",
+            [0x1f, 0x5e, 0x6e],
+            [0xb8, 0xe0, 0xc8],
+        ),
+        (
+            "Timeline lanes",
+            "4:20 · last month",
+            [0x4a, 0x2a, 0x6e],
+            [0xe0, 0x9a, 0xb8],
+        ),
+    ]
+    .into_iter()
+    .enumerate()
+    .map(|(i, (title, meta, a, b))| Recent {
+        key: format!("library-open-{i}"),
+        title: title.into(),
+        meta: meta.into(),
+        thumbnail: gradient(480, 192, a, b, Style::Preview),
+    })
+    .collect()
 }
 
 pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOptions) {
