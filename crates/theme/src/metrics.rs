@@ -1117,6 +1117,11 @@ pub const BAR_SWAP_MS: u64 = 180;
 /// A paused capture's clock digits sit at this opacity: the count is held,
 /// not running.
 pub const PAUSED_CLOCK_OPACITY: f32 = 0.6;
+/// "Hide bar while recording": the bar easing to its recording pill and
+/// back, and how long it stays whole once the pointer has left it. Not
+/// drawn by the design, which says only that the bar shrinks to the pill.
+pub const BAR_HIDE_MS: u64 = 240;
+pub const BAR_HIDE_LINGER_MS: u32 = 900;
 /// The Presets dialog fades in and rises the distance below into place over
 /// the first time, and sinks back out over the second as it closes.
 pub const DIALOG_IN_MS: u64 = 200;

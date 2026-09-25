@@ -148,6 +148,9 @@ struct Properties {
     /// The Microphone card's Test: the seconds of listening left, 3 to 1;
     /// -1 while the clip plays back; 0 at rest.
     mic_test: i32,
+    /// The pointer is over the recorder bar, or left it less than
+    /// `BAR_HIDE_LINGER_MS` ago.
+    bar_hovered: bool,
     camera_preview: Image,
     options_width: f32,
     options_height: f32,
@@ -273,6 +276,7 @@ impl Default for Properties {
             capture_sources: ModelRc::default(),
             mic_level: f32::NEG_INFINITY,
             mic_test: 0,
+            bar_hovered: false,
             camera_preview: Image::default(),
             options_width: subtake_theme::Theme::recorder_card_width(),
             options_height: 264.,
@@ -1178,6 +1182,18 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.mic_test != value {
             props.mic_test = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_bar_hovered(&self) -> bool {
+        self.0.props.borrow().bar_hovered
+    }
+
+    pub fn set_bar_hovered(&self, value: bool) {
+        let mut props = self.0.props.borrow_mut();
+        if props.bar_hovered != value {
+            props.bar_hovered = value;
             self.window().invalidate();
         }
     }

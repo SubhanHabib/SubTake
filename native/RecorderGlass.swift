@@ -31,6 +31,11 @@ final class RecorderGlass: NSVisualEffectView {
     var plateBottom: CGFloat = 0
     var plateAlpha: CGFloat = 1
 
+    /// How much of `anchor`'s width, about its centre, the plate fills; 0
+    /// for all of it. The recorder bar eases to its recording pill inside
+    /// its window before the window is made the pill's size.
+    var plateWidth: CGFloat = 0
+
     /// The frame of the GPUI view the material sits under.
     var anchor: NSRect = .zero
 
@@ -68,12 +73,23 @@ final class RecorderGlass: NSVisualEffectView {
             frame.origin.y += flipped ? frame.height - plateHeight - plateBottom : plateBottom
             frame.size.height = plateHeight
         }
+        let narrow = plateWidth > 0 && plateWidth < frame.width
+        if narrow {
+            frame.origin.x += (frame.width - plateWidth) / 2
+            frame.size.width = plateWidth
+        }
 
         // A partial plate keeps its height and its bottom edge while the window
-        // resizes around it; a full one fills the window.
-        autoresizingMask = partial
+        // resizes around it; a full one fills the window. A narrow one keeps
+        // its width, centred.
+        var mask: NSView.AutoresizingMask = partial
             ? [.width, flipped ? .minYMargin : .maxYMargin]
             : [.width, .height]
+        if narrow {
+            mask.remove(.width)
+            mask.formUnion([.minXMargin, .maxXMargin])
+        }
+        autoresizingMask = mask
 
         // Core Animation would otherwise ease each move over a quarter second
         // and hold it until the run loop comes round, while GPUI's frames go
@@ -204,6 +220,19 @@ public func setRecorderGlassFade(_ pointer: UnsafeMutableRawPointer?, _ bottom: 
     else { return }
     plate.plateBottom = CGFloat(bottom)
     plate.plateAlpha = CGFloat(alpha)
+    plate.anchor = view.frame
+    plate.place()
+}
+
+/// Narrows the plate to `width` points about the window's centre; 0 fills
+/// the window's width again (`plateWidth`).
+@_cdecl("subtake_set_recorder_glass_width")
+public func setRecorderGlassWidth(_ pointer: UnsafeMutableRawPointer?, _ width: Double) {
+    assert(Thread.isMainThread, "Recorder material must run on the UI thread")
+    guard let view = borrowedView(pointer), let plate = glass(for: view, key: glassKey),
+          plate.plateWidth != CGFloat(width)
+    else { return }
+    plate.plateWidth = CGFloat(width)
     plate.anchor = view.frame
     plate.place()
 }

@@ -531,3 +531,69 @@ unsafe extern "C" {
         alpha: f64,
     );
 }
+
+/// Narrow a recorder window's material to `width` points about its centre,
+/// for the bar easing to its recording pill inside its window; 0 fills the
+/// window's width again.
+pub fn set_recorder_glass_width(window: &crate::ui_runtime::Window, width: f32) {
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(view) = native_view(window) {
+            unsafe {
+                subtake_set_recorder_glass_width(view, width as f64);
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, width);
+}
+
+/// Make the recorder bar's window `width` points wide about its centre.
+/// AppKit reports the resize synchronously, so the same borrow rule as
+/// `set_launcher_options_anchor` applies.
+pub fn set_launcher_width(window: &crate::ui_runtime::Window, width: f32) {
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(view) = native_view(window) {
+            unsafe {
+                subtake_set_launcher_width(view, width as f64);
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, width);
+}
+
+/// Tell `hover` whether the pointer is over the recorder bar, whichever app
+/// is active: at once when it arrives, `linger_ms` late when it leaves, and
+/// once as the watch starts. Watching already, it does nothing.
+pub fn watch_launcher_hover(
+    window: &crate::ui_runtime::Window,
+    hover: extern "C" fn(bool),
+    linger_ms: u32,
+) {
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(view) = native_view(window) {
+            unsafe {
+                subtake_watch_launcher_hover(view, hover, linger_ms);
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (window, hover, linger_ms);
+}
+
+#[cfg(target_os = "macos")]
+unsafe extern "C" {
+    fn subtake_set_recorder_glass_width(view: *mut std::ffi::c_void, width: f64);
+    fn subtake_set_launcher_width(view: *mut std::ffi::c_void, width: f64);
+    fn subtake_watch_launcher_hover(
+        view: *mut std::ffi::c_void,
+        hover: extern "C" fn(bool),
+        linger_ms: u32,
+    );
+}

@@ -133,8 +133,6 @@ impl RootView {
                         ))
                         .subtitle_mono()
                         .trailing(folder),
-                    // Not wired: the setting is kept, but the bar stays whole
-                    // while recording.
                     CardRow::new("hide-bar", "Hide bar while recording").trailing(hide_bar),
                 ],
                 theme,

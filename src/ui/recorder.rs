@@ -7,6 +7,9 @@ thread_local! {
     /// The anchor last handed to the options window, so the bar only moves
     /// the card when its control has actually moved.
     static OPTIONS_ANCHOR: Cell<f32> = const { Cell::new(-1.) };
+    /// The width last asked of the bar's window, so it is resized only when
+    /// that changes.
+    static LAUNCHER_WIDTH: Cell<f32> = const { Cell::new(-1.) };
 }
 
 impl RootView {
@@ -78,8 +81,17 @@ impl RootView {
             .into_any_element()
     }
 
-    pub(super) fn launcher(&self, state: &RecordingLauncher) -> AnyElement {
+    pub(super) fn launcher(
+        &mut self,
+        state: &RecordingLauncher,
+        window: &mut Window,
+    ) -> AnyElement {
         let theme = self.theme;
+        let full = Theme::recorder_width();
+        let width = self.bar_width(state, window);
+        // "Hide bar while recording" leaves the clock alone on the bar while
+        // it runs, until the pointer comes back to it.
+        let pill = width.1 < full;
         // The bar IS the window's plate — the window itself is transparent and
         // borderless, and the native material under it is masked to this
         // plate's shape (`update_recorder_glass`), so the plate is only the
@@ -88,19 +100,28 @@ impl RootView {
         //
         // It is one row of `RECORDER_CONTROL` controls in every phase, so
         // the bar keeps its size when it turns from one job to the next.
+        //
+        // Its row is laid out at the width it is easing to and centred on
+        // the plate, so a bar growing from its pill uncovers its controls
+        // from the middle out rather than squeezing them.
         let plate = panel_variant(theme, UiSurface::Overlay)
-            .size_full()
-            .min_w_0()
+            .flex_none()
+            .h_full()
+            .w(px(width.0))
+            .items_center()
             .overflow_hidden();
         // The controls sit on their own row inside the plate, so when the bar
         // turns from one job to the next its controls can fade in while the
         // plate stays still.
         let mut bar = row()
-            .size_full()
-            .min_w_0()
+            .flex_none()
+            .h_full()
+            .w(px(width.1))
             .p(px(Theme::recorder_padding()))
             .gap(px(Theme::recorder_gap()));
-        let phase = if state.get_recording() {
+        let phase = if pill {
+            "pill"
+        } else if state.get_recording() {
             "recording"
         } else if state.get_counting() > 0 {
             "counting"
@@ -110,17 +131,30 @@ impl RootView {
             "ready"
         };
         let swap = |bar: Div| {
-            plate
+            row()
+                .size_full()
+                .justify_center()
                 .child(
-                    bar.with_animation(
-                        SharedString::from(format!("bar-{phase}")),
-                        Animation::new(std::time::Duration::from_millis(BAR_SWAP_MS))
-                            .with_easing(|t| subtake_ui::motion::EASE_OUT.eval(t)),
-                        |bar, t| bar.opacity(t),
+                    plate.child(
+                        bar.with_animation(
+                            SharedString::from(format!("bar-{phase}")),
+                            Animation::new(std::time::Duration::from_millis(BAR_SWAP_MS))
+                                .with_easing(|t| subtake_ui::motion::EASE_OUT.eval(t)),
+                            |bar, t| bar.opacity(t),
+                        ),
                     ),
                 )
                 .into_any_element()
         };
+        if pill {
+            // The pill is picked up and moved as the grip would be.
+            return swap(
+                bar.justify_center()
+                    .cursor(CursorStyle::ClosedHand)
+                    .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move())
+                    .child(self.measured_clock(state)),
+            );
+        }
         // The grip is drawn on the idle and capturing bars only: while the
         // count runs or the file is written the bar is a message, and a
         // message is not something to pick up and move.
@@ -285,14 +319,11 @@ impl RootView {
         swap(bar)
     }
 
-    /// Recording and paused. The Record button's place becomes the clock —
-    /// red while capture runs, `sunk` while it is held — and the controls
-    /// after it keep one position across both, so Stop never moves under
-    /// the pointer. Only Pause trades places with Resume.
-    fn capture_controls(&self, bar: Div, state: &RecordingLauncher) -> Div {
+    /// The clock: the pulsing dot and the time on `rec` while the capture
+    /// runs; on `sunk`, dimmed, with PAUSED while it is held.
+    fn clock(&self, state: &RecordingLauncher) -> Div {
         let theme = self.theme;
         let paused = state.get_paused();
-        let enabled = !state.get_busy();
         let dot = div()
             .flex_none()
             .size(px(Theme::record_dot()))
@@ -342,9 +373,89 @@ impl RootView {
         } else {
             clock
         };
-        let clock = clock
+        clock
             .bg(subtake_ui::motion::blend(theme.rec, theme.sunk, held))
-            .text_color(subtake_ui::motion::blend(white(), theme.text, held));
+            .text_color(subtake_ui::motion::blend(white(), theme.text, held))
+    }
+
+    /// The clock, its width kept for the pill "Hide bar while recording"
+    /// draws round it.
+    fn measured_clock(&self, state: &RecordingLauncher) -> Div {
+        let measured = self.bar_pill.clone();
+        div()
+            .flex()
+            .flex_none()
+            .child(self.clock(state))
+            .on_children_prepainted(move |bounds, window, _| {
+                if let Some(clock) = bounds.first() {
+                    let width = f32::from(clock.size.width);
+                    if measured.replace(width) != width {
+                        window.request_animation_frame();
+                    }
+                }
+            })
+    }
+
+    /// Where the bar's plate stands as it eases between its whole width and
+    /// its recording pill's, and the width it is easing to. The window keeps
+    /// the wider of the two while the plate moves, and the frosted material
+    /// follows the plate; once the plate is there, the window takes its
+    /// size about its centre.
+    fn bar_width(&mut self, state: &RecordingLauncher, window: &mut Window) -> (f32, f32) {
+        let full = Theme::recorder_width();
+        let measured = self.bar_pill.get();
+        let hidden = state.get_recording()
+            && !state.get_stopping()
+            && state.get_recorder_flag("hide-bar")
+            && !state.get_bar_hovered()
+            && measured > 0.;
+        let target = if hidden {
+            measured + 2. * Theme::recorder_padding()
+        } else {
+            full
+        };
+        let now = Instant::now();
+        let at = |(from, to, since): (f32, f32, Instant)| {
+            subtake_ui::motion::ease_toward(from, to, since, BAR_HIDE_MS, now)
+        };
+        let moving = *self.bar_width.get_or_insert((target, target, now));
+        if moving.1 != target {
+            self.bar_width = Some((at(moving), target, now));
+        }
+        let moving = self.bar_width.unwrap_or((target, target, now));
+        let drawn = at(moving);
+        if drawn != target {
+            window.request_animation_frame();
+        }
+        let wanted = if drawn == target {
+            target
+        } else {
+            moving.0.max(target)
+        };
+        if LAUNCHER_WIDTH.replace(wanted) != wanted {
+            let launcher = state.window().clone();
+            crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
+                crate::platform::set_launcher_width(&launcher, wanted)
+            });
+        }
+        let room = f32::from(window.viewport_size().width);
+        let drawn = drawn.min(room);
+        crate::platform::set_recorder_glass_width(
+            state.window(),
+            if drawn < room - 0.5 { drawn } else { 0. },
+        );
+        (drawn, target)
+    }
+
+    /// Recording and paused. The Record button's place becomes the clock —
+    /// red while capture runs, `sunk` while it is held — and the controls
+    /// after it keep one position across both, so Stop never moves under
+    /// the pointer. Only Pause trades places with Resume.
+    fn capture_controls(&self, bar: Div, state: &RecordingLauncher) -> Div {
+        let theme = self.theme;
+        let paused = state.get_paused();
+        let enabled = !state.get_busy();
+        let clock = self.measured_clock(state);
         // Not drawn by the design: Resume's hover, a white lift over `rec`.
         let resume_hover = subtake_ui::motion::tween_key(&"pause".into(), "hover");
         let pause = if paused {

@@ -9,11 +9,15 @@ use super::*;
 pub(super) fn position_launcher_when_ready(attempt: u8) {
     Timer::single_shot(Duration::from_millis(20), move || {
         with_app(|app, _| {
-            if let Some(launcher) = &app.launcher
-                && platform::position_launcher(launcher.window()).is_err()
-                && attempt < 9
-            {
-                position_launcher_when_ready(attempt + 1);
+            let Some(launcher) = &app.launcher else {
+                return;
+            };
+            if platform::position_launcher(launcher.window()).is_err() {
+                if attempt < 9 {
+                    position_launcher_when_ready(attempt + 1);
+                }
+            } else {
+                watch_bar_hover(launcher);
             }
         });
     });
@@ -418,6 +422,7 @@ impl App {
         // Configure immediately when possible; the bounded retry handles a
         // cold launch before GPUI has exposed the backing NSView.
         let _ = platform::configure_recording_hud(launcher.window(), true);
+        watch_bar_hover(launcher);
         if first_show {
             position_launcher_when_ready(0);
         }
@@ -606,6 +611,24 @@ extern "C" fn mic_level(level: f32) {
         {
             let gain = input_gain(app.preferences.recorder_setting("input-level"));
             options.set_mic_level(level + 20. * gain.log10());
+        }
+    });
+}
+
+/// Follows the pointer over the bar, for "Hide bar while recording" to
+/// bring the whole bar back while it is there.
+fn watch_bar_hover(launcher: &RecordingLauncher) {
+    platform::watch_launcher_hover(
+        launcher.window(),
+        bar_hover,
+        subtake_theme::BAR_HIDE_LINGER_MS,
+    );
+}
+
+extern "C" fn bar_hover(over: bool) {
+    post(move |app, _| {
+        if let Some(launcher) = &app.launcher {
+            launcher.set_bar_hovered(over);
         }
     });
 }

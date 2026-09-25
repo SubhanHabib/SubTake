@@ -42,7 +42,8 @@
 //! folding it, and `SUBTAKE_GALLERY_HEIGHT` sets the height the same way
 //! (for a panel too long for 880); `=rec-counting`, `=rec-recording`, `=rec-paused`,
 //! `=rec-stopping` or `=rec-working` shows the bar mid-capture (counting also
-//! covers the screen);
+//! covers the screen), `=rec-hidden` with "Hide bar while recording" on and
+//! `=rec-hidden-cycle` with the pointer coming and going over it;
 //! `=status-cycle` swaps the title pill's status chip to a running job and back on a timer;
 //! `=card-cycle` opens, swaps and closes the recorder cards on a timer, for their fades;
 //! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
@@ -150,6 +151,16 @@ fn cycle_sources(options: RecordingOptions, sources: Vec<CaptureSource>, on: boo
 
 /// The recorder cards in turn, one step each `CARD_CYCLE_MS`: opened, swapped
 /// twice, closed, opened again and closed — every way a card fades.
+/// Brings the pointer onto the bar and away again, as the native watch
+/// would report it.
+fn cycle_bar_hover(launcher: RecordingLauncher, over: bool) {
+    const BAR_HOVER_CYCLE_MS: u64 = 1600;
+    Timer::single_shot(Duration::from_millis(BAR_HOVER_CYCLE_MS), move || {
+        launcher.set_bar_hovered(over);
+        cycle_bar_hover(launcher, !over);
+    });
+}
+
 fn cycle_cards(gallery: Weak<RefCell<Gallery>>, step: usize) {
     const STEPS: [&str; 6] = ["sources", "more", "audio", "", "countdown", ""];
     const CARD_CYCLE_MS: u64 = 900;
@@ -481,7 +492,8 @@ pub fn run() -> Result<()> {
                 g.position_options();
             });
         }
-        // The bar mid-capture: `rec-counting`, `rec-recording`, `rec-paused`
+        // The bar mid-capture: `rec-counting`, `rec-recording`, `rec-paused`,
+        // `rec-hidden` or `rec-hidden-cycle` (Hide bar while recording on),
         // or `rec-stopping`, or `rec-working` waiting on something it can
         // cancel.
         Ok(screen) if screen.starts_with("rec-") => {
@@ -509,6 +521,18 @@ pub fn run() -> Result<()> {
                     _ => {
                         start_capture(l, &g.playback, 42);
                         l.set_paused(state == "paused");
+                        // "Hide bar while recording" on, the pointer away:
+                        // the clock alone. `-cycle` brings the pointer back
+                        // and takes it away on a timer, for the ease.
+                        if state.starts_with("hidden") {
+                            let mut settings = subtake_native::preferences::Preferences::default()
+                                .recorder_settings();
+                            settings.insert("hide-bar".into(), "true".into());
+                            l.set_recorder_settings(settings);
+                        }
+                        if state == "hidden-cycle" {
+                            cycle_bar_hover(l.clone(), true);
+                        }
                     }
                 }
             });

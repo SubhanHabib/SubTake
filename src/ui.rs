@@ -14,7 +14,7 @@ use std::{
     time::Instant,
 };
 use subtake_theme::{
-    BAR_SWAP_MS, CARD_SETTLE_FRAMES, CARD_SWAP_MS, DIALOG_IN_MS, DIALOG_OUT_MS, DIALOG_RISE,
+    BAR_HIDE_MS, BAR_SWAP_MS, CARD_SETTLE_FRAMES, CARD_SWAP_MS, DIALOG_IN_MS, DIALOG_OUT_MS, DIALOG_RISE,
     EXPORT_DONE_GLOW_MS, EXPORT_DONE_TICK_MS, FONT_SANS, INSPECTOR_COLLAPSE_WIDTH,
     INSPECTOR_SLIDE_MS, PANEL_DRILL_MS, PANEL_DRILL_SHIFT, PANEL_ENTER_MS, PANEL_ENTER_RISE,
     PANEL_WIDTH, PANEL_WIDTH_MAX, PANEL_WIDTH_MIN, PAUSED_CLOCK_OPACITY, PILL_MORPH_MS,
@@ -332,6 +332,12 @@ pub struct RootView {
     /// and when the newest came in.
     mic_history: std::collections::VecDeque<f32>,
     mic_sampled: Option<Instant>,
+    /// The recorder bar's plate easing between its whole width and its
+    /// recording pill's: from, to and since when.
+    bar_width: Option<(f32, f32, Instant)>,
+    /// The recording clock's width as last laid out, which the pill is
+    /// drawn round; 0 until a capture's clock has been drawn.
+    bar_pill: Rc<Cell<f32>>,
     /// The frame last drawn of each picture replaced many times a second,
     /// by its slot, so the one that replaces it can take it out of the
     /// sprite atlas, which keeps every image it is handed until then.
@@ -458,6 +464,8 @@ impl RootView {
             mic_clipped: None,
             mic_history: std::collections::VecDeque::new(),
             mic_sampled: None,
+            bar_width: None,
+            bar_pill: Rc::new(Cell::new(0.)),
             streamed: HashMap::new(),
             export_dismiss: None,
             export_done: None,
@@ -650,7 +658,7 @@ impl Render for RootView {
         }
         let content = match &surface {
             Surface::Editor(e) => self.editor(e, window, cx),
-            Surface::Launcher(s) => self.launcher(s),
+            Surface::Launcher(s) => self.launcher(s, window),
             Surface::Options(s) => self.options(s, window, cx),
             Surface::Countdown(s) => self.countdown_overlay(s),
         };
