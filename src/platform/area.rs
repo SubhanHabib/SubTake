@@ -13,8 +13,27 @@ pub struct AreaSeed {
 }
 
 /// One palette's colours for the overlay, each RGBA from 0 to 1: accent,
-/// its hover, on accent, sunk, its hover, text, muted, frost and line.
-pub type AreaColours = [[f64; 4]; 9];
+/// its hover, on accent, sunk, its hover, text, muted, frost and line —
+/// the cards' own, so its chips and buttons are theirs.
+#[cfg(target_os = "macos")]
+fn colours(theme: &subtake_theme::Theme) -> [[f64; 4]; 9] {
+    [
+        theme.accent,
+        theme.accent_hover,
+        theme.on_accent,
+        theme.sunk,
+        // Controls lift to `sunk2` under the pointer.
+        theme.sunk2,
+        theme.text,
+        theme.muted,
+        theme.frost,
+        theme.line,
+    ]
+    .map(|colour| {
+        let colour = colour.to_rgb();
+        [colour.r, colour.g, colour.b, colour.a].map(f64::from)
+    })
+}
 
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
@@ -37,22 +56,19 @@ unsafe extern "C" {
 }
 
 /// Opens the overlay over every display for an area to be drawn, held to
-/// `aspect` (width over height) unless it is `None`. It is drawn in the
-/// `light` or the `dark` palette as `appearance` says — `"light"`, `"dark"`
-/// or the system's. `drawn` runs once, on the main thread, with the area
-/// or a cancel.
-pub fn draw_area(
-    aspect: Option<f32>,
-    appearance: &str,
-    [light, dark]: [&AreaColours; 2],
-    seed: Option<AreaSeed>,
-    drawn: AreaDrawn,
-) {
+/// `aspect` (width over height) unless it is `None`, in the light or the
+/// dark palette as `appearance` says — `"light"`, `"dark"` or the
+/// system's. `drawn` runs once, on the main thread, with the area or a
+/// cancel.
+pub fn draw_area(aspect: Option<f32>, appearance: &str, seed: Option<AreaSeed>, drawn: AreaDrawn) {
     #[cfg(target_os = "macos")]
     {
         let (sans, mono) = subtake_ui::medium_faces();
         let seed = seed.unwrap_or_default();
-        let colours = [*light, *dark];
+        let colours = [
+            colours(&subtake_theme::Theme::light()),
+            colours(&subtake_theme::Theme::dark()),
+        ];
         let appearance = match appearance {
             "light" => 1,
             "dark" => 2,
@@ -78,7 +94,7 @@ pub fn draw_area(
     }
     #[cfg(not(target_os = "macos"))]
     {
-        let _ = (aspect, appearance, light, dark, seed);
+        let _ = (aspect, appearance, seed);
         drawn(0, 0.0, 0.0, 0.0, 0.0);
     }
 }

@@ -442,10 +442,6 @@ impl App {
                 platform::draw_area(
                     recorder::area_aspect(self.preferences.recorder_setting("area-aspect")),
                     self.preferences.appearance.as_str(),
-                    [
-                        &recorder::area_colours(&subtake_theme::Theme::light()),
-                        &recorder::area_colours(&subtake_theme::Theme::dark()),
-                    ],
                     None,
                     recorder::area_drawn,
                 );

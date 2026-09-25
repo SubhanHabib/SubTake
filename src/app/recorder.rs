@@ -736,27 +736,6 @@ pub(super) fn area_aspect(setting: &str) -> Option<f32> {
     (width > 0. && height > 0.).then(|| width / height)
 }
 
-/// A palette as the area overlay takes it, for its chips and buttons to be
-/// the cards' own.
-pub(super) fn area_colours(theme: &subtake_theme::Theme) -> platform::AreaColours {
-    [
-        theme.accent,
-        theme.accent_hover,
-        theme.on_accent,
-        theme.sunk,
-        // Controls lift to `sunk2` under the pointer.
-        theme.sunk2,
-        theme.text,
-        theme.muted,
-        theme.frost,
-        theme.line,
-    ]
-    .map(|colour| {
-        let colour = colour.to_rgb();
-        [colour.r, colour.g, colour.b, colour.a].map(f64::from)
-    })
-}
-
 /// The Microphone card's Input level, a percentage, as the amplitude the
 /// recording is scaled by: its square, so the slider's travel follows the
 /// ear rather than the waveform, 100% leaving the microphone as it comes.

@@ -21,7 +21,7 @@ mod tick;
 mod windows;
 
 pub use access::{Access, has_access, open_access_settings};
-pub use area::{AreaColours, AreaDrawn, AreaSeed, draw_area};
+pub use area::{AreaDrawn, AreaSeed, draw_area};
 pub use camera::{CameraFrame, CameraPreview, preview_camera, request_camera_access};
 use companion::*;
 pub use devices::watch_devices;
