@@ -43,6 +43,9 @@ impl RootView {
             .w(px(Theme::settings_sidebar_width()))
             .gap(px(Theme::gap_small()))
             .p(px(Theme::gap_large()))
+            // The plate's overflow clip is square, so the sidebar rounds its
+            // own outer corners to the plate's, or its fill pokes past them.
+            .rounded_l(px(UiSurface::Content.radius()))
             .bg(theme.sunk);
         for (name, glyph) in SECTIONS {
             let editor = e.clone();
