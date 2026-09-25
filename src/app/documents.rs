@@ -24,10 +24,11 @@ impl App {
     /// The library as cards, newest first: the empty state's Recent row
     /// draws the first three and the Projects view all of them.
     ///
-    /// Not drawn by the design: the handoff's cards carry a running time,
-    /// and the library holds none without opening each file, so a card says
-    /// what kind of file it is and how old it is. Its still comes from
-    /// `request_stills`, and until then the card draws its own placeholder.
+    /// A card reads the take's running time and how old it is, as the
+    /// handoff's "1:24 · 2m ago". The running time comes with the still from
+    /// `request_stills`; until then, or when the file cannot be read, the
+    /// card says what kind of file it is instead, and draws its own
+    /// placeholder for the picture.
     pub(super) fn recents(&self) -> Vec<Recent> {
         self.library
             .iter()
@@ -42,6 +43,11 @@ impl App {
                     .and_then(|m| m.modified())
                     .ok()
                     .map(relative_age);
+                let still = self.stills.get(path).cloned().flatten();
+                let length = match &still {
+                    Some((_, duration)) => running_time(*duration),
+                    None => kind.to_owned(),
+                };
                 Recent {
                     key: format!("library-open-{index}"),
                     title: path
@@ -49,12 +55,12 @@ impl App {
                         .unwrap_or_default()
                         .to_string_lossy()
                         .into(),
-                    meta: [Some(kind.to_owned()), age]
+                    meta: [Some(length), age]
                         .into_iter()
                         .flatten()
                         .collect::<Vec<_>>()
                         .join(" · "),
-                    thumbnail: self.stills.get(path).cloned().flatten().unwrap_or_default(),
+                    thumbnail: still.map(|(image, _)| image).unwrap_or_default(),
                 }
             })
             .collect()
@@ -89,17 +95,19 @@ impl App {
         }
         std::thread::spawn(move || {
             for path in paths {
-                let image = media::library_still(&path)
-                    .and_then(|still| ui_runtime::Image::load_from_path(&still));
-                let image = match image {
-                    Ok(image) => image,
+                let card = media::library_still(&path).and_then(|still| {
+                    ui_runtime::Image::load_from_path(&still.still)
+                        .map(|image| (image, still.duration))
+                });
+                let card = match card {
+                    Ok(card) => card,
                     Err(error) => {
                         eprintln!("Library still for {}: {error:#}", path.display());
                         continue;
                     }
                 };
                 post(move |app, ui| {
-                    app.stills.insert(path, Some(image));
+                    app.stills.insert(path, Some(card));
                     if app.history.is_none() || ui.get_panel() == "Recent" {
                         ui.set_recents(ModelRc::new(VecModel::from(app.recents())));
                     }
@@ -402,18 +410,35 @@ pub(super) fn id_to_null(mut value: Value) -> Value {
     value
 }
 
-/// How long ago a file was touched, in the words a person would use.
+/// How long ago a file was touched, short enough to share a Recent tile's
+/// mono line with its running time: "2m ago", "3h ago", "4d ago".
 fn relative_age(modified: std::time::SystemTime) -> String {
-    let days = modified
-        .elapsed()
-        .map(|d| d.as_secs() / 86_400)
-        .unwrap_or(0);
-    match days {
-        0 => "today".into(),
-        1 => "yesterday".into(),
-        2..=6 => format!("{days} days ago"),
-        7..=13 => "last week".into(),
-        14..=59 => format!("{} weeks ago", days / 7),
-        _ => format!("{} months ago", days / 30),
+    const MINUTE: u64 = 60;
+    const HOUR: u64 = 60 * MINUTE;
+    const DAY: u64 = 24 * HOUR;
+    const WEEK: u64 = 7 * DAY;
+    const MONTH: u64 = 30 * DAY;
+    let seconds = modified.elapsed().map(|d| d.as_secs()).unwrap_or(0);
+    match seconds {
+        s if s < MINUTE => "just now".into(),
+        s if s < HOUR => format!("{}m ago", s / MINUTE),
+        s if s < DAY => format!("{}h ago", s / HOUR),
+        s if s < WEEK => format!("{}d ago", s / DAY),
+        s if s < 2 * MONTH => format!("{}w ago", s / WEEK),
+        s => format!("{}mo ago", s / MONTH),
     }
 }
+
+/// A take's length as a clock reads it: "1:24", or "1:02:03" past an hour.
+fn running_time(seconds: f64) -> String {
+    let total = seconds.round().max(0.) as u64;
+    let (hours, minutes, seconds) = (total / 3_600, total / 60 % 60, total % 60);
+    if hours > 0 {
+        format!("{hours}:{minutes:02}:{seconds:02}")
+    } else {
+        format!("{minutes}:{seconds:02}")
+    }
+}
+
+#[cfg(test)]
+mod tests;

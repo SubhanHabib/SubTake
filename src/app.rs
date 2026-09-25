@@ -99,9 +99,10 @@ pub struct App {
     presets: Vec<PathBuf>,
     library: Vec<PathBuf>,
     library_query: String,
-    /// Each library entry's card still once asked for (`media::library_still`):
-    /// `None` while it is being made or when it cannot be.
-    stills: std::collections::HashMap<PathBuf, Option<ui_runtime::Image>>,
+    /// Each library entry's card still and running time once asked for
+    /// (`media::library_still`): `None` while it is being made or when it
+    /// cannot be.
+    stills: std::collections::HashMap<PathBuf, Option<(ui_runtime::Image, f64)>>,
     fresh_recording: Option<PathBuf>,
     preview: Preview,
     epoch: u64,

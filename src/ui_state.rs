@@ -48,7 +48,8 @@ pub struct Recent {
     /// The action that opens it.
     pub key: String,
     pub title: String,
-    /// One mono line under the title: its kind and when it last changed.
+    /// One mono line under the title: its running time, or its kind until
+    /// that is known, and when it last changed.
     pub meta: String,
     /// A still from it, when one is to hand. Empty draws a placeholder.
     pub thumbnail: Image,

@@ -450,9 +450,17 @@ pub fn timeline_artwork(source: &Path, info: &MediaInfo) -> Result<(PathBuf, Opt
 /// so it stays sharp on a Retina display.
 pub const STILL_WIDTH: u32 = 480;
 
+/// A library card's picture and running time.
+pub struct LibraryStill {
+    pub still: PathBuf,
+    /// In seconds.
+    pub duration: f64,
+}
+
 /// A still for a library card: one frame a quarter of the way into the take,
-/// cached beside the timeline artwork. A project reads its source video.
-pub fn library_still(path: &Path) -> Result<PathBuf> {
+/// cached beside the timeline artwork with the take's running time. A
+/// project reads its source video.
+pub fn library_still(path: &Path) -> Result<LibraryStill> {
     let source = if matches!(
         path.extension().and_then(|e| e.to_str()),
         Some("recordly" | "openscreen")
@@ -465,8 +473,17 @@ pub fn library_still(path: &Path) -> Result<PathBuf> {
     };
     let (directory, name) = cache_entry(&source)?;
     let still = directory.join(format!("{name}-still.png"));
+    let length = directory.join(format!("{name}-duration.txt"));
+    let cached = std::fs::read_to_string(&length)
+        .ok()
+        .and_then(|text| text.trim().parse::<f64>().ok());
+    if still.exists()
+        && let Some(duration) = cached
+    {
+        return Ok(LibraryStill { still, duration });
+    }
+    let info = probe(&source)?;
     if !still.exists() {
-        let info = probe(&source)?;
         let height = (STILL_WIDTH as f64 * info.height as f64 / info.width.max(1) as f64)
             .round()
             .max(2.) as u32;
@@ -477,7 +494,11 @@ pub fn library_still(path: &Path) -> Result<PathBuf> {
         frame.write_to(&mut temp, image::ImageFormat::Png)?;
         temp.persist(&still).map_err(|e| e.error)?;
     }
-    Ok(still)
+    std::fs::write(&length, info.duration.to_string())?;
+    Ok(LibraryStill {
+        still,
+        duration: info.duration,
+    })
 }
 
 /// The timeline cache and the name a take's artwork goes under there, from
