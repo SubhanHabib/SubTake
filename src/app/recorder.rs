@@ -621,6 +621,9 @@ impl App {
             {
                 ui.set_source_index(index as i32);
             }
+            // The card's picture of the display is from as it opened; the
+            // area is drawn over the screen as it is now.
+            self.refresh_sources_quietly(ui);
         }
         report(ui, self.show_launcher(ui));
         report(ui, self.set_launcher_options_panel(ui, "sources"));
