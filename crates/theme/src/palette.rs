@@ -70,6 +70,8 @@ impl Theme {
             // in the palette's own cool greys.
             shadow_far: css("hsla(234, 33%, 12%, 0.18)"),
             shadow_near: css("hsla(234, 33%, 12%, 0.08)"),
+            shadow_plane_far: css("hsla(234, 33%, 12%, 0.18)"),
+            shadow_plane_near: css("hsla(234, 33%, 12%, 0.08)"),
             shadow_picture: css("hsla(234, 33%, 12%, 0.18)"),
             shadow_segment: css("hsla(234, 33%, 12%, 0.12)"),
             shadow_thumb: css("hsla(0, 0%, 0%, 0.3)"),
@@ -133,6 +135,8 @@ impl Theme {
             // Black, and deeper than light's: less contrast to lift with.
             shadow_far: css("hsla(0, 0%, 0%, 0.5)"),
             shadow_near: css("hsla(0, 0%, 0%, 0.3)"),
+            shadow_plane_far: css("hsla(0, 0%, 0%, 0.5)"),
+            shadow_plane_near: css("hsla(0, 0%, 0%, 0.3)"),
             shadow_picture: css("hsla(0, 0%, 0%, 0.45)"),
             // The pill and the thumb keep light's shadow on dark.
             shadow_segment: css("hsla(234, 33%, 12%, 0.12)"),

@@ -194,7 +194,7 @@ impl RootView {
             // `sunk` on the window's own ground.
             let edge = || {
                 let mut edge = vec![subtake_ui::hairline(theme.line, Theme::hairline_width())];
-                edge.extend(theme.panel_shadow());
+                edge.extend(theme.plane_shadow());
                 edge
             };
             let (piece, height) = match export {

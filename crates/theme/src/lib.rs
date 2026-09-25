@@ -124,10 +124,18 @@ pub struct Theme {
     // Colour and strength; how far each falls is in `metrics.rs`. A glow is
     // not here: it takes the colour of what glows, at an opacity kept with
     // its size.
-    /// The wide layer under every float, glass and card alike.
+    /// The wide layer under a dialog, a menu or a dropdown.
     pub shadow_far: Hsla,
-    /// The tight layer under every float, and a raised control's lift.
+    /// The tight layer under a dialog, a menu or a dropdown, and a raised
+    /// control's lift.
     pub shadow_near: Hsla,
+    /// The wide layer under the window's own planes: the console, the
+    /// inspector, the tool rail and the stage's pods. Not drawn by the design:
+    /// kept apart from `shadow_far` so the planes tune as one without moving a
+    /// menu's or a dialog's shadow.
+    pub shadow_plane_far: Hsla,
+    /// The tight layer under the window's own planes.
+    pub shadow_plane_near: Hsla,
     /// The picture's shadow on the stage.
     pub shadow_picture: Hsla,
     /// Under a segmented control's active pill.
@@ -165,8 +173,8 @@ impl Theme {
         self.accent_soft
     }
 
-    /// The shadow under anything that floats: the console, the inspector, a
-    /// dialog, a pod, a menu. Two layers — a wide soft one that lifts the
+    /// The shadow under anything that floats and is not one of the window's
+    /// own planes (see `plane_shadow`): a dialog, a menu, a dropdown. Two layers — a wide soft one that lifts the
     /// surface off the desktop and a tight one that seats its edge — and both
     /// go deeper on dark, where there is less contrast to do the lifting.
     pub fn panel_shadow(&self) -> Vec<gpui::BoxShadow> {
@@ -189,6 +197,34 @@ impl Theme {
         vec![
             drop_shadow(self.shadow_far, far),
             drop_shadow(self.shadow_near, near),
+        ]
+    }
+
+    /// The shadow under the window's own planes — the console, the
+    /// inspector, the tool rail, the stage's pods and the titlebar's pills.
+    /// It starts as `panel_shadow`'s two layers, but has its own tokens so the
+    /// planes can be tuned as one without touching a menu, a dropdown or a
+    /// dialog.
+    pub fn plane_shadow(&self) -> Vec<gpui::BoxShadow> {
+        let (far, near) = match self.appearance {
+            Appearance::Light => (
+                (Self::plane_shadow_far_y(), Self::plane_shadow_far_blur()),
+                (Self::plane_shadow_near_y(), Self::plane_shadow_near_blur()),
+            ),
+            Appearance::Dark => (
+                (
+                    Self::plane_shadow_far_y_dark(),
+                    Self::plane_shadow_far_blur_dark(),
+                ),
+                (
+                    Self::plane_shadow_near_y(),
+                    Self::plane_shadow_near_blur_dark(),
+                ),
+            ),
+        };
+        vec![
+            drop_shadow(self.shadow_plane_far, far),
+            drop_shadow(self.shadow_plane_near, near),
         ]
     }
 

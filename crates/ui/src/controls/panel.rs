@@ -93,8 +93,12 @@ pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
             radius,
             vec![hairline(theme.line, Theme::hairline_width())],
         ));
-        if variant != Surface::Overlay {
-            el = el.shadow(theme.panel_shadow());
+        // The window's own planes take a shadow of their own, so tuning it
+        // leaves a menu's and a dialog's alone.
+        match variant {
+            Surface::Panel | Surface::Pod => el = el.shadow(theme.plane_shadow()),
+            Surface::Content | Surface::Popup => el = el.shadow(theme.panel_shadow()),
+            Surface::Card | Surface::Overlay => {}
         }
     }
     el

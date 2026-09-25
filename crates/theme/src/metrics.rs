@@ -269,6 +269,16 @@ impl Theme {
     pub const PANEL_SHADOW_NEAR_Y: f32 = 2.0;
     pub const PANEL_SHADOW_NEAR_BLUR: f32 = 6.0;
     pub const PANEL_SHADOW_NEAR_BLUR_DARK: f32 = 8.0;
+    /// The same two layers under the window's own planes — the console, the
+    /// inspector, the tool rail, the stage's pods. Not drawn by the design:
+    /// they start at the panel values, apart so the planes tune on their own.
+    pub const PLANE_SHADOW_FAR_Y: f32 = 24.0;
+    pub const PLANE_SHADOW_FAR_BLUR: f32 = 60.0;
+    pub const PLANE_SHADOW_FAR_Y_DARK: f32 = 28.0;
+    pub const PLANE_SHADOW_FAR_BLUR_DARK: f32 = 70.0;
+    pub const PLANE_SHADOW_NEAR_Y: f32 = 2.0;
+    pub const PLANE_SHADOW_NEAR_BLUR: f32 = 6.0;
+    pub const PLANE_SHADOW_NEAR_BLUR_DARK: f32 = 8.0;
     /// The picture's shadow on the stage, short enough to fade out inside
     /// the stage's margin.
     pub const PICTURE_SHADOW_Y: f32 = 6.0;
