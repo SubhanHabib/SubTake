@@ -129,6 +129,8 @@ impl RootView {
                 column()
                     .flex_1()
                     .min_w_0()
+                    // Set close, so the two lines sit inside the plate's 40.
+                    .line_height(relative(Theme::message_leading()))
                     // Not carried: the title's −0.01em tracking. gpui at the
                     // pinned revision has no letter-spacing.
                     .child(title(face.title, Theme::font_card_title()).text_ellipsis())
