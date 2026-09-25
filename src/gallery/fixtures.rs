@@ -249,6 +249,7 @@ pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOpt
                     name,
                     detail,
                     thumbnail: gradient(240, 132, a, b, Style::Preview),
+                    area: None,
                 }
             })
             .collect::<Vec<_>>(),

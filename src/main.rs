@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use std::{path::PathBuf, sync::atomic::AtomicBool};
 use subtake_native::ui_state::{
-    AppTray, CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
-    RecordingOptions, Region, Wallpaper,
+    AppTray, CaptureArea, CaptureSource, EditorWindow, Field, Recent, RecordingCountdown,
+    RecordingLauncher, RecordingOptions, Region, Wallpaper,
 };
 use subtake_native::{
     export::{self, ExportSettings},

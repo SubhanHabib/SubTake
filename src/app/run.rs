@@ -78,6 +78,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
         |event: global_hotkey::GlobalHotKeyEvent| {
             if event.state == global_hotkey::HotKeyState::Pressed {
                 post(move |app, ui| {
+                    if app.drawing_area {
+                        return;
+                    }
                     let action = app
                         .hotkey_ids
                         .iter()

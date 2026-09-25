@@ -54,16 +54,31 @@ pub struct Recent {
     pub thumbnail: Image,
 }
 
-/// A display or window the recorder can capture, as its Source card draws it.
+/// A display, window or area the recorder can capture, as its Source card
+/// draws it.
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct CaptureSource {
-    /// `"display"` or `"window"`: the card lists them in two groups.
+    /// `"display"`, `"window"` or `"area"`: the card lists each on its tab.
     pub kind: String,
     pub name: String,
-    /// A display's resolution; empty for a window.
+    /// A display's or an area's size; empty for a window.
     pub detail: String,
-    /// A still of it, when one is to hand. Empty draws a placeholder.
+    /// A still of it, when one is to hand — an area's is its display's.
+    /// Empty draws a placeholder.
     pub thumbnail: Image,
+    /// Where an area sits; `None` for a display or a window.
+    pub area: Option<CaptureArea>,
+}
+
+/// An area drawn on a display.
+#[derive(Clone, Default, Debug, PartialEq)]
+pub struct CaptureArea {
+    /// The display it is on, as the Source card names displays.
+    pub display: String,
+    /// That display's width over its height.
+    pub aspect: f32,
+    /// Its left, top, width and height, as shares of the display's.
+    pub share: [f32; 4],
 }
 
 #[derive(Clone, Default, Debug, PartialEq)]

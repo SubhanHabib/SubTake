@@ -180,6 +180,9 @@ impl RootView {
                 .and_then(|i| state.get_capture_sources().iter().nth(i))
                 .map(|source| {
                     let (name, detail) = source::caption(&source);
+                    if let Some(area) = &source.area {
+                        return format!("{name} · {detail} on {}", area.display);
+                    }
                     [name, detail]
                         .into_iter()
                         .filter(|s| !s.is_empty())

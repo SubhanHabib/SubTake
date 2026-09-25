@@ -6,6 +6,9 @@ use super::*;
 use subtake_theme::FONT_MONO;
 use subtake_ui::{edge, fade_edges, pill_edge, segmented};
 
+#[cfg(test)]
+mod tests;
+
 /// The Window tab's search field, by the name `RootView::input` keeps it
 /// under.
 pub(super) const SOURCE_SEARCH: &str = "source-search";
@@ -18,6 +21,7 @@ const TABS: [(&str, &str); 3] = [
 ];
 const DISPLAY: usize = 0;
 const WINDOW: usize = 1;
+const AREA: usize = 2;
 
 /// Area's aspect locks, as they are kept and as they read.
 const ASPECTS: [(&str, &str); 5] = [
@@ -64,6 +68,7 @@ impl RootView {
             self.source_tab
                 .unwrap_or_else(|| match chosen.and_then(|index| sources.get(index)) {
                     Some(source) if source.kind == "window" => WINDOW,
+                    Some(source) if source.kind == "area" => AREA,
                     _ => DISPLAY,
                 });
         let view = cx.entity().downgrade();
@@ -135,7 +140,14 @@ impl RootView {
                 window,
                 cx,
             ),
-            _ => body.extend(area_tab(state, &listed("display"), chosen, theme)),
+            _ => body.extend(area_tab(
+                state,
+                &sources,
+                chosen,
+                enabled,
+                self.command("draw-area"),
+                theme,
+            )),
         }
         body
     }
@@ -365,36 +377,7 @@ fn source_tile(
     // that is mostly the accent's blue. Each is a layer of its own so the
     // accent lands on top.
     let picture = if chosen {
-        picture
-            .child(edge(
-                radius,
-                vec![hairline(
-                    white().opacity(Theme::source_halo_alpha()),
-                    Theme::source_halo_width(),
-                )],
-            ))
-            .child(edge(
-                radius,
-                vec![hairline(theme.accent, Theme::selected_width())],
-            ))
-            .child(
-                div()
-                    .absolute()
-                    .top(px(Theme::source_check_inset()))
-                    .right(px(Theme::source_check_inset()))
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .size(px(Theme::source_check()))
-                    .rounded_full()
-                    .bg(theme.accent)
-                    .shadow(vec![theme.source_check_shadow()])
-                    .child(icon_sized(
-                        "Check-regular",
-                        Theme::source_check_glyph(),
-                        theme.on_accent,
-                    )),
-            )
+        chosen_marks(picture, radius, theme)
     } else {
         picture
     };
@@ -445,25 +428,195 @@ fn source_tile(
     })
 }
 
-/// Area: the display the area is drawn on, the aspect to hold it to, and
-/// the button that starts drawing it.
+/// A source's picture marked chosen: the accent over a pale halo, which
+/// reads as picked on any picture, even one that is mostly the accent's
+/// blue, and the check in its corner. Each is a layer of its own so the
+/// accent lands on top.
+fn chosen_marks<E: ParentElement>(picture: E, radius: f32, theme: Theme) -> E {
+    picture
+        .child(edge(
+            radius,
+            vec![hairline(
+                white().opacity(Theme::source_halo_alpha()),
+                Theme::source_halo_width(),
+            )],
+        ))
+        .child(edge(
+            radius,
+            vec![hairline(theme.accent, Theme::selected_width())],
+        ))
+        .child(
+            div()
+                .absolute()
+                .top(px(Theme::source_check_inset()))
+                .right(px(Theme::source_check_inset()))
+                .flex()
+                .items_center()
+                .justify_center()
+                .size(px(Theme::source_check()))
+                .rounded_full()
+                .bg(theme.accent)
+                .shadow(vec![theme.source_check_shadow()])
+                .child(icon_sized(
+                    "Check-regular",
+                    Theme::source_check_glyph(),
+                    theme.on_accent,
+                )),
+        )
+}
+
+/// Where an area sits on a picture of its display drawn to cover a box
+/// `preview` wide over tall, as shares of that box: left, top, width,
+/// height. `share` is the area's own on the display, which is `aspect`
+/// wide over tall; covering crops the display's longer way equally at both
+/// ends, so an area running into the crop is cut where the picture is.
+pub(super) fn on_preview(share: [f32; 4], aspect: f32, preview: f32) -> [f32; 4] {
+    let [left, top, width, height] = share;
+    // The share of the display the box shows, across and down.
+    let (across, down) = if aspect > preview {
+        (preview / aspect, 1.)
+    } else {
+        (1., aspect / preview)
+    };
+    let span = |from: f32, length: f32, shown: f32| {
+        let crop = (1. - shown) / 2.;
+        let start = ((from - crop) / shown).clamp(0., 1.);
+        let end = ((from + length - crop) / shown).clamp(0., 1.);
+        (start, end - start)
+    };
+    let (x, w) = span(left, width, across);
+    let (y, h) = span(top, height, down);
+    [x, y, w, h]
+}
+
+/// An area drawn over its display's picture, `rect` as `on_preview` gives
+/// it: the rest of the picture dimmed, the area's outline and corner dots,
+/// and its size in a chip at its middle.
+fn area_marks(rect: [f32; 4], size: String, theme: Theme) -> Vec<AnyElement> {
+    let [left, top, width, height] = rect;
+    let dim = theme.area_dim();
+    let radius = Theme::area_preview_radius();
+    // The dim is one quad whose edges are as wide as the picture outside
+    // the area, so it keeps the picture's corners and leaves the area
+    // clear.
+    let shade = canvas(
+        |_, _, _| {},
+        move |bounds, _, window, _| {
+            let (w, h) = (f32::from(bounds.size.width), f32::from(bounds.size.height));
+            window.paint_quad(quad(
+                bounds,
+                px(radius),
+                gpui::transparent_black(),
+                Edges {
+                    top: px(top * h),
+                    right: px((1. - left - width) * w),
+                    bottom: px((1. - top - height) * h),
+                    left: px(left * w),
+                },
+                dim,
+                BorderStyle::Solid,
+            ));
+        },
+    )
+    .absolute()
+    .inset_0();
+    let over = || {
+        div()
+            .absolute()
+            .left(relative(left))
+            .top(relative(top))
+            .w(relative(width))
+            .h(relative(height))
+    };
+    let outline = over().child(
+        div()
+            .absolute()
+            .inset(px(-Theme::area_outline_width()))
+            .rounded(px(Theme::area_outline_radius()))
+            .border(px(Theme::area_outline_width()))
+            .border_color(white()),
+    );
+    let dot = |x: f32, y: f32| {
+        div()
+            .absolute()
+            .left(relative(x))
+            .top(relative(y))
+            .child(
+                div()
+                    .absolute()
+                    .left(px(-Theme::area_dot() / 2.))
+                    .top(px(-Theme::area_dot() / 2.))
+                    .size(px(Theme::area_dot()))
+                    .rounded_full()
+                    .bg(white())
+                    .shadow(vec![theme.area_dot_shadow()]),
+            )
+            .into_any_element()
+    };
+    // Palette churn: as the Camera card's chips, the size chip keeps the
+    // `frost` tint without the handoff's blur under it.
+    let chip = over().flex().items_center().justify_center().child(
+        div()
+            .flex()
+            .items_center()
+            .flex_none()
+            .h(px(Theme::area_chip_height()))
+            .px(px(Theme::area_chip_padding()))
+            .rounded_full()
+            .bg(theme.frost)
+            .font_family(FONT_MONO)
+            .text_size(px(Theme::font_area_chip()))
+            .font_weight(FontWeight::MEDIUM)
+            .text_color(theme.text)
+            .child(size),
+    );
+    let mut marks = vec![shade.into_any_element(), outline.into_any_element()];
+    for (x, y) in [
+        (left, top),
+        (left + width, top),
+        (left, top + height),
+        (left + width, top + height),
+    ] {
+        marks.push(dot(x, y));
+    }
+    marks.push(chip.into_any_element());
+    marks
+}
+
+/// Area: the display the area is drawn on with the area over it, the
+/// aspect to hold it to, and the button that starts drawing it.
 ///
-/// Not wired: the recorder cannot capture an area yet, so nothing is ever
-/// drawn on the picture and Draw area on screen does nothing. The aspect
-/// is kept for when it can.
+/// Until one is drawn there is no area to choose, so the preview is the
+/// chosen display, or the first, undimmed; the handoff's "Area · not set"
+/// summary and disabled Record are never reached, since the source only
+/// becomes the area once there is one.
 fn area_tab(
     state: &RecordingOptions,
-    displays: &[(usize, &CaptureSource)],
+    sources: &[CaptureSource],
     chosen: Option<usize>,
+    enabled: bool,
+    draw_area: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
     theme: Theme,
 ) -> Vec<AnyElement> {
-    let display = displays
+    let area = sources
         .iter()
-        .find(|(index, _)| Some(*index) == chosen)
-        .or(displays.first())
-        .map(|(_, source)| *source);
+        .enumerate()
+        .find(|(_, source)| source.kind == "area");
+    let display = area.map(|(_, source)| source).or_else(|| {
+        let displays = || {
+            sources
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| s.kind == "display")
+        };
+        displays()
+            .find(|(index, _)| Some(*index) == chosen)
+            .or_else(|| displays().next())
+            .map(|(_, source)| source)
+    });
     let radius = Theme::area_preview_radius();
     let preview = div()
+        .id("area-preview")
         .relative()
         .w_full()
         .aspect_ratio(Theme::source_picture_aspect())
@@ -488,11 +641,38 @@ fn area_tab(
                 Theme::camera_off_icon(),
                 theme.muted,
             )),
-    }
-    .child(edge(
+    };
+    let drawn = area.and_then(|(index, source)| Some((index, source, source.area.as_ref()?)));
+    let preview = match drawn {
+        Some((_, source, area)) => preview.children(area_marks(
+            on_preview(area.share, area.aspect, Theme::source_picture_aspect()),
+            source.detail.clone(),
+            theme,
+        )),
+        None => preview,
+    };
+    let preview = preview.child(edge(
         radius,
         vec![hairline(theme.line, Theme::hairline_width())],
     ));
+    // Not drawn by the design: an area drawn earlier is chosen again by
+    // pressing its picture, as a display's is, and marked chosen as one.
+    let preview = match drawn {
+        Some((index, ..)) if enabled => {
+            let preview = if chosen == Some(index) {
+                chosen_marks(preview, radius, theme)
+            } else {
+                preview
+            };
+            let options = state.clone();
+            let hover_key =
+                subtake_ui::motion::tween_key(&ElementId::from("area-preview"), "hover");
+            subtake_ui::pressable(preview, theme, None, hover_key)
+                .on_click(move |_, _, _| options.defer_option("source".into(), index.to_string()))
+                .into_any_element()
+        }
+        _ => preview.into_any_element(),
+    };
 
     let current = state.get_recorder_setting("area-aspect");
     let options = state.clone();
@@ -538,13 +718,19 @@ fn area_tab(
             theme.line,
             Theme::hairline_width(),
         )]));
-    let draw = subtake_ui::pressable(draw, theme, Some(theme.press), hover_key);
+    let draw = if enabled {
+        subtake_ui::pressable(draw, theme, Some(theme.press), hover_key)
+            .on_click(draw_area)
+            .into_any_element()
+    } else {
+        draw.opacity(Theme::disabled_opacity()).into_any_element()
+    };
 
     vec![
-        preview.into_any_element(),
+        preview,
         section_label("Aspect", theme).into_any_element(),
         aspect.into_any_element(),
-        draw.into_any_element(),
+        draw,
         helper(
             "Drag across any display. Hold ⇧ to keep the ratio, press Esc to cancel.",
             theme,

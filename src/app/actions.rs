@@ -423,6 +423,33 @@ impl App {
                 self.sync_mic_meter(ui);
                 self.sync_camera_preview(ui);
             }
+            // The Source card's Draw area on screen: the card and the bar
+            // go, and the overlay comes up over every display.
+            "draw-area" => {
+                if self.recording.is_some() || self.counting > 0 || self.drawing_area {
+                    return Ok(());
+                }
+                self.drawing_area = true;
+                self.set_launcher_options_panel(ui, "")?;
+                if let Some(launcher) = &self.launcher {
+                    launcher.hide()?;
+                }
+                if let Some(options) = &self.launcher_options {
+                    options.hide()?;
+                }
+                self.sync_mic_meter(ui);
+                self.sync_camera_preview(ui);
+                platform::draw_area(
+                    recorder::area_aspect(self.preferences.recorder_setting("area-aspect")),
+                    self.preferences.appearance.as_str(),
+                    [
+                        &recorder::area_colours(&subtake_theme::Theme::light()),
+                        &recorder::area_colours(&subtake_theme::Theme::dark()),
+                    ],
+                    None,
+                    recorder::area_drawn,
+                );
+            }
             "drag-launcher" => {
                 if let Some(launcher) = &self.launcher {
                     launcher.window().drag_window()?;

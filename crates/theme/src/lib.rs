@@ -358,6 +358,21 @@ impl Theme {
         gpui::hsla(225. / 360., 0.25, 0.063, 0.55)
     }
 
+    /// What dims a display's picture outside an area, `rgba(10,12,20,.48)`
+    /// in both appearances: it lies over somebody's screen, as
+    /// `scrim_chip` does.
+    pub fn area_dim(&self) -> Hsla {
+        gpui::hsla(228. / 360., 1. / 3., 0.059, Self::area_dim_alpha())
+    }
+
+    /// The shadow a corner dot of an area casts on the picture under it.
+    pub fn area_dot_shadow(&self) -> gpui::BoxShadow {
+        drop_shadow(
+            gpui::hsla(0., 0., 0., Self::area_dot_shadow_alpha()),
+            (Self::area_dot_shadow_y(), Self::area_dot_shadow_blur()),
+        )
+    }
+
     /// A timeline region's fill and ink, from its lane's hue. Light regions
     /// are a clear pastel with a deep ink, dark ones a muted mid-tone with
     /// a pale ink; both put the label past 4.5:1 on its fill.

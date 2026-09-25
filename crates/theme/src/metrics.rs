@@ -829,6 +829,21 @@ impl Theme {
     pub const AREA_DRAW_ICON: f32 = 18.0;
     pub const AREA_DRAW_GAP: f32 = 9.0;
     pub const FONT_AREA_DRAW: f32 = 14.0;
+    /// The area on its display's picture: outside it dimmed at 0.48, its
+    /// edge 1.5 of white at radius 4, a 10 white dot on each corner casting
+    /// `0 1 3` at 0.4, and its size at its centre in a 24 `frost` chip, in
+    /// Geist Mono 500 at 11.
+    pub const AREA_DIM_ALPHA: f32 = 0.48;
+    pub const AREA_OUTLINE_WIDTH: f32 = 1.5;
+    pub const AREA_OUTLINE_RADIUS: f32 = 4.0;
+    pub const AREA_DOT: f32 = 10.0;
+    pub const AREA_DOT_SHADOW_Y: f32 = 1.0;
+    pub const AREA_DOT_SHADOW_BLUR: f32 = 3.0;
+    pub const AREA_DOT_SHADOW_ALPHA: f32 = 0.4;
+    pub const AREA_CHIP_HEIGHT: f32 = 24.0;
+    /// Not drawn by the design: the chip's words 10 in from its ends.
+    pub const AREA_CHIP_PADDING: f32 = 10.0;
+    pub const FONT_AREA_CHIP: f32 = 11.0;
     /// More: the recent projects three across, 10 apart, each picture at
     /// radius 12 with its two lines 6 under it; Frame rate's control 112
     /// wide; the Save to path cut in the middle past 38 characters, about

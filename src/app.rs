@@ -1,6 +1,6 @@
 use crate::{
-    AppTray, CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
-    RecordingOptions, Region, Wallpaper,
+    AppTray, CaptureArea, CaptureSource, EditorWindow, Field, Recent, RecordingCountdown,
+    RecordingLauncher, RecordingOptions, Region, Wallpaper,
 };
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
@@ -127,6 +127,9 @@ pub struct App {
     counting: u32,
     /// Capture has ended and the recording is being written out.
     stopping: bool,
+    /// The Source card's area overlay is up: the bar and the card are
+    /// hidden under it and the global shortcuts wait until it closes.
+    drawing_area: bool,
     pause_started: Option<std::time::Instant>,
     paused_total: Duration,
     recording_watch: Timer,
@@ -195,6 +198,7 @@ impl App {
             capture_started: None,
             counting: 0,
             stopping: false,
+            drawing_area: false,
             pause_started: None,
             paused_total: Duration::ZERO,
             recording_watch: Timer::default(),

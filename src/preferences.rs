@@ -34,6 +34,10 @@ pub const RECORDER_DEFAULTS: &[(&str, &str)] = &[
     ("hide-desktop-icons", "false"),
     ("show-recorder", "false"),
     ("area-aspect", "free"),
+    // The area last drawn: its display's id, then its left, top, width and
+    // height in points from that display's top-left corner. Empty before
+    // one is drawn.
+    ("area", ""),
     ("count-on-screen", "true"),
     ("tick-sound", "false"),
     ("camera-corner", "bottom-right"),

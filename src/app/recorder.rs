@@ -478,28 +478,7 @@ impl App {
                         .sources
                         .get(ui.get_source_index().max(0) as usize)
                         .cloned();
-                    let index = sources
-                        .iter()
-                        .position(|source| {
-                            selected.as_ref().is_some_and(|old| {
-                                old["nativeId"] == source["nativeId"]
-                                    && old["kind"] == source["kind"]
-                            })
-                        })
-                        .unwrap_or(0);
-                    ui.set_source_names(ModelRc::new(VecModel::from(
-                        sources
-                            .iter()
-                            .map(|source| {
-                                SharedString::from(source["name"].as_str().unwrap_or("Source"))
-                            })
-                            .collect::<Vec<_>>(),
-                    )));
-                    ui.set_capture_sources(ModelRc::new(VecModel::from(
-                        sources.iter().map(capture_source).collect::<Vec<_>>(),
-                    )));
-                    ui.set_source_index(index as i32);
-                    self.sources = sources;
+                    self.set_sources(ui, sources, selected.as_ref());
                     if self.sources.is_empty() {
                         "No sources found. Allow SubTake in System Settings → Privacy & Security → Screen & System Audio Recording, then refresh.".to_owned()
                     } else {
@@ -513,6 +492,61 @@ impl App {
         };
         ui.set_recording_hint(message.clone());
         ui.set_status(message);
+    }
+
+    /// Lists `sources` on the Source card, the saved area after them, and
+    /// keeps `selected` chosen if it is still there, else the first.
+    pub(super) fn set_sources(
+        &mut self,
+        ui: &EditorWindow,
+        mut sources: Vec<Value>,
+        selected: Option<&Value>,
+    ) {
+        sources.retain(|source| source["kind"] != "area");
+        if let Some(area) = area_source(&sources, self.preferences.recorder_setting("area")) {
+            sources.push(area);
+        }
+        let index = sources
+            .iter()
+            .position(|source| {
+                selected.is_some_and(|old| {
+                    old["nativeId"] == source["nativeId"] && old["kind"] == source["kind"]
+                })
+            })
+            .unwrap_or(0);
+        ui.set_source_names(ModelRc::new(VecModel::from(
+            sources
+                .iter()
+                .map(|source| SharedString::from(source["name"].as_str().unwrap_or("Source")))
+                .collect::<Vec<_>>(),
+        )));
+        ui.set_capture_sources(ModelRc::new(VecModel::from(
+            sources.iter().map(capture_source).collect::<Vec<_>>(),
+        )));
+        ui.set_source_index(index as i32);
+        self.sources = sources;
+    }
+
+    /// The area overlay closing: an area drawn is kept and chosen, and
+    /// either way the bar comes back with the Source card open, as it was
+    /// when Draw area on screen was pressed.
+    pub(super) fn finish_area(&mut self, ui: &EditorWindow, setting: Option<String>) {
+        self.drawing_area = false;
+        if let Some(setting) = setting {
+            if self.preferences.set_recorder_setting("area", &setting) {
+                report(ui, self.preferences.save());
+            }
+            self.set_sources(ui, self.sources.clone(), None);
+            if let Some(index) = self
+                .sources
+                .iter()
+                .position(|source| source["kind"] == "area")
+            {
+                ui.set_source_index(index as i32);
+            }
+        }
+        report(ui, self.show_launcher(ui));
+        report(ui, self.set_launcher_options_panel(ui, "sources"));
     }
 
     pub(super) fn register_hotkeys(&mut self) -> Result<()> {
@@ -687,6 +721,42 @@ pub(super) extern "C" fn mic_test(phase: i32) {
     });
 }
 
+/// The area overlay closing, with the area drawn or, at a width of 0, none.
+pub(super) extern "C" fn area_drawn(display: u32, left: f64, top: f64, width: f64, height: f64) {
+    let setting =
+        (width > 0.).then(|| format!("{display} {left:.0} {top:.0} {width:.0} {height:.0}"));
+    post(move |app, ui| app.finish_area(ui, setting));
+}
+
+/// The Source card's Aspect as the width over the height the overlay holds
+/// an area to; `None` for Free.
+pub(super) fn area_aspect(setting: &str) -> Option<f32> {
+    let (width, height) = setting.split_once(':')?;
+    let (width, height) = (width.parse::<f32>().ok()?, height.parse::<f32>().ok()?);
+    (width > 0. && height > 0.).then(|| width / height)
+}
+
+/// A palette as the area overlay takes it, for its chips and buttons to be
+/// the cards' own.
+pub(super) fn area_colours(theme: &subtake_theme::Theme) -> platform::AreaColours {
+    [
+        theme.accent,
+        theme.accent_hover,
+        theme.on_accent,
+        theme.sunk,
+        // Controls lift to `sunk2` under the pointer.
+        theme.sunk2,
+        theme.text,
+        theme.muted,
+        theme.frost,
+        theme.line,
+    ]
+    .map(|colour| {
+        let colour = colour.to_rgb();
+        [colour.r, colour.g, colour.b, colour.a].map(f64::from)
+    })
+}
+
 /// The Microphone card's Input level, a percentage, as the amplitude the
 /// recording is scaled by: its square, so the slider's travel follows the
 /// ear rather than the waveform, 100% leaving the microphone as it comes.
@@ -696,6 +766,61 @@ pub(super) extern "C" fn mic_test(phase: i32) {
 /// level is a gain at capture everywhere.
 pub(super) fn input_gain(level: &str) -> f32 {
     (level.parse::<f32>().unwrap_or(100.).clamp(0., 100.) / 100.).powi(2)
+}
+
+/// The area saved from the Source card as a source to record: the display
+/// it was drawn on, cropped to it. `setting` is the display's id, then the
+/// area's left, top, width and height in points from the display's
+/// top-left corner; `None` when nothing is saved, or its display is not
+/// among `sources`.
+///
+/// Its `x`, `y`, `width` and `height` are the area's own on the desktop,
+/// as a window's are, so the countdown and the cursor's telemetry follow
+/// it; `areaX` and the rest are what the capture helper crops to.
+pub(super) fn area_source(sources: &[Value], setting: &str) -> Option<Value> {
+    let mut fields = setting.split_whitespace();
+    let display = fields.next()?;
+    let [left, top, width, height]: [f64; 4] = fields
+        .map(str::parse)
+        .collect::<Result<Vec<_>, _>>()
+        .ok()?
+        .try_into()
+        .ok()?;
+    let source = sources.iter().find(|source| {
+        source["kind"] == "display"
+            && match &source["nativeId"] {
+                Value::String(id) => id == display,
+                id => id.to_string() == display,
+            }
+    })?;
+    let number = |key: &str| source[key].as_f64().unwrap_or_default();
+    let (bounds_width, bounds_height) = (number("width"), number("height"));
+    let left = left.clamp(0., bounds_width);
+    let top = top.clamp(0., bounds_height);
+    let width = width.min(bounds_width - left).round();
+    let height = height.min(bounds_height - top).round();
+    if width < 2. || height < 2. {
+        return None;
+    }
+    let name = source["name"].as_str().unwrap_or("Display");
+    let display_name = name.split_once(" · ").map_or(name, |(name, _)| name);
+    Some(json!({
+        "kind": "area",
+        "nativeId": source["nativeId"],
+        "name": format!("Area · {width:.0} × {height:.0}"),
+        "display": display_name,
+        "areaX": left,
+        "areaY": top,
+        "areaWidth": width,
+        "areaHeight": height,
+        "x": number("x") + left,
+        "y": number("y") + top,
+        "width": width,
+        "height": height,
+        "displayWidth": bounds_width,
+        "displayHeight": bounds_height,
+        "thumbnail": source["thumbnail"],
+    }))
 }
 
 /// What the Source card draws for one platform source. The platform names a
@@ -712,7 +837,31 @@ fn capture_source(source: &Value) -> CaptureSource {
         name: name.into(),
         detail,
         thumbnail: source_still(source),
+        area: capture_area(source),
     }
+}
+
+/// Where an area source sits on its display, for the Source card's Area
+/// tab to draw it over the display's still.
+fn capture_area(source: &Value) -> Option<CaptureArea> {
+    if source["kind"] != "area" {
+        return None;
+    }
+    let number = |key: &str| source[key].as_f64().unwrap_or_default() as f32;
+    let (width, height) = (number("displayWidth"), number("displayHeight"));
+    if width <= 0. || height <= 0. {
+        return None;
+    }
+    Some(CaptureArea {
+        display: source["display"].as_str().unwrap_or("Display").into(),
+        aspect: width / height,
+        share: [
+            number("areaX") / width,
+            number("areaY") / height,
+            number("areaWidth") / width,
+            number("areaHeight") / height,
+        ],
+    })
 }
 
 /// The platform's still of a source, sent as base64 JPEG, or the placeholder
