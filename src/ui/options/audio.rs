@@ -88,12 +88,7 @@ impl RootView {
     }
 
     /// The meter on its recess, with the input level and Test under it.
-    fn meter_block(
-        &mut self,
-        state: &RecordingOptions,
-        on: bool,
-        cx: &mut Context<Self>,
-    ) -> Div {
+    fn meter_block(&mut self, state: &RecordingOptions, on: bool, cx: &mut Context<Self>) -> Div {
         let theme = self.theme;
         let radius = Theme::card_group_radius();
         let options = state.clone();
@@ -180,7 +175,11 @@ impl RootView {
             .h(px(Theme::meter_height()))
             .gap(px(Theme::meter_gap()))
             .children((0..bars).map(|i| {
-                let then = self.mic_history.get(i).copied().unwrap_or(f32::NEG_INFINITY);
+                let then = self
+                    .mic_history
+                    .get(i)
+                    .copied()
+                    .unwrap_or(f32::NEG_INFINITY);
                 div()
                     .flex_1()
                     .h(px(Theme::meter_bar_min() + reach(then) * room))

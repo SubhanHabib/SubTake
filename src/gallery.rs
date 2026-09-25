@@ -1109,9 +1109,10 @@ fn tick_meter(options: RecordingOptions, step: u32) {
             f32::NEG_INFINITY
         });
     }
-    Timer::single_shot(Duration::from_millis(subtake_theme::METER_SAMPLE_MS), move || {
-        tick_meter(options, step + 1)
-    });
+    Timer::single_shot(
+        Duration::from_millis(subtake_theme::METER_SAMPLE_MS),
+        move || tick_meter(options, step + 1),
+    );
 }
 
 fn follow_playhead(editor: &EditorWindow, time: f32) {

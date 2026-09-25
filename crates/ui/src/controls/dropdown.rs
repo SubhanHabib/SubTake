@@ -232,21 +232,17 @@ impl Render for Dropdown {
                             .active(|s| s.opacity(Theme::pressed_opacity()))
                             .on_hover(motion::hover_listener(trigger_key))
                     })
-                    .children(
-                        self.glyph
-                            .as_ref()
-                            .map(|g| {
-                                icon_sized(
-                                    g,
-                                    if chip {
-                                        Theme::icon_size_card()
-                                    } else {
-                                        Theme::icon_size_medium()
-                                    },
-                                    theme.text,
-                                )
-                            }),
-                    )
+                    .children(self.glyph.as_ref().map(|g| {
+                        icon_sized(
+                            g,
+                            if chip {
+                                Theme::icon_size_card()
+                            } else {
+                                Theme::icon_size_medium()
+                            },
+                            theme.text,
+                        )
+                    }))
                     .map(|el| match &self.caption {
                         Some(caption) => el
                             .child(

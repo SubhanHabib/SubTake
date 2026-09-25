@@ -20,7 +20,13 @@ pub(super) fn section_label(text: &str, theme: Theme) -> Div {
         .text_size(px(Theme::font_small()))
         .font_weight(FontWeight::MEDIUM)
         .text_color(theme.muted)
-        .child(div().flex_1().min_w_0().text_ellipsis().child(text.to_uppercase()))
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .text_ellipsis()
+                .child(text.to_uppercase()),
+        )
 }
 
 /// One row of a [`group`]: a title, perhaps a subtitle under it, perhaps a

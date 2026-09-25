@@ -155,8 +155,8 @@ impl App {
             let shown = overlay.window().is_visible();
             // "Count on screen" off leaves the count to the bar's Record
             // button alone.
-            let wanted = self.counting > 0
-                && self.preferences.recorder_setting("count-on-screen") == "true";
+            let wanted =
+                self.counting > 0 && self.preferences.recorder_setting("count-on-screen") == "true";
             if wanted && !shown {
                 let _ = overlay.show();
             } else if !wanted && shown {

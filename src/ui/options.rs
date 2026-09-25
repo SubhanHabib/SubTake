@@ -91,18 +91,26 @@ impl RootView {
             "audio" => {
                 let options = state.clone();
                 Some(
-                    switch("mic-toggle", state.get_microphone(), !busy, theme, move |v, _, _| {
-                        options.defer_option("microphone".into(), v.to_string())
-                    })
+                    switch(
+                        "mic-toggle",
+                        state.get_microphone(),
+                        !busy,
+                        theme,
+                        move |v, _, _| options.defer_option("microphone".into(), v.to_string()),
+                    )
                     .into_any_element(),
                 )
             }
             "camera" => {
                 let options = state.clone();
                 Some(
-                    switch("camera-toggle", state.get_camera(), !busy, theme, move |v, _, _| {
-                        options.defer_option("camera".into(), v.to_string())
-                    })
+                    switch(
+                        "camera-toggle",
+                        state.get_camera(),
+                        !busy,
+                        theme,
+                        move |v, _, _| options.defer_option("camera".into(), v.to_string()),
+                    )
                     .into_any_element(),
                 )
             }
@@ -124,7 +132,11 @@ impl RootView {
                     .size(px(Theme::card_header_plate()))
                     .rounded_full()
                     .bg(theme.sunk)
-                    .child(icon_sized(face.glyph, Theme::card_header_icon(), theme.text)),
+                    .child(icon_sized(
+                        face.glyph,
+                        Theme::card_header_icon(),
+                        theme.text,
+                    )),
             )
             .child(
                 div()
@@ -207,15 +219,19 @@ impl RootView {
                     .rounded_full()
                     .bg(theme.sunk)
                     .child(
-                        icon_sized("ArrowClockwise-regular", Theme::icon_size_card(), theme.text)
-                            .with_animation(
-                                "refresh-spin",
-                                Animation::new(std::time::Duration::from_millis(
-                                    subtake_theme::REFRESH_SPIN_MS,
-                                ))
-                                .repeat(),
-                                |svg, t| svg.with_transformation(Transformation::rotate(percentage(t))),
-                            ),
+                        icon_sized(
+                            "ArrowClockwise-regular",
+                            Theme::icon_size_card(),
+                            theme.text,
+                        )
+                        .with_animation(
+                            "refresh-spin",
+                            Animation::new(std::time::Duration::from_millis(
+                                subtake_theme::REFRESH_SPIN_MS,
+                            ))
+                            .repeat(),
+                            |svg, t| svg.with_transformation(Transformation::rotate(percentage(t))),
+                        ),
                     ),
             )
             .into_any_element()
@@ -325,7 +341,8 @@ impl RootView {
             let fits = |height: f32| (height - natural).abs() < 0.5;
             let fitted = fits(self.card_measured.get())
                 && fits(f32::from(window.viewport_size().height) - rise)
-                && (f32::from(window.viewport_size().width) - CardFace::of(&self.card_last.0).width)
+                && (f32::from(window.viewport_size().width)
+                    - CardFace::of(&self.card_last.0).width)
                     .abs()
                     < 0.5;
             if fitted && frames >= CARD_SETTLE_FRAMES {
@@ -477,7 +494,11 @@ fn studio_button(
             .pl(px(Theme::gap_block()))
             .pr(px(Theme::control_padding_small()))
             .rounded_full()
-            .bg(subtake_ui::motion::hover_blend(&hover_key, theme.sunk, theme.sunk2))
+            .bg(subtake_ui::motion::hover_blend(
+                &hover_key,
+                theme.sunk,
+                theme.sunk2,
+            ))
             .font_weight(FontWeight::MEDIUM)
             .map(|s| subtake_ui::pressable(s, theme, Some(theme.press), hover_key))
             .on_click(open)

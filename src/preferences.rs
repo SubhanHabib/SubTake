@@ -124,12 +124,15 @@ impl Preferences {
 
     /// A recorder setting, or its default; empty for a key there is none of.
     pub fn recorder_setting(&self, key: &str) -> &str {
-        self.recorder.get(key).map(String::as_str).unwrap_or_else(|| {
-            RECORDER_DEFAULTS
-                .iter()
-                .find(|(k, _)| *k == key)
-                .map_or("", |(_, v)| v)
-        })
+        self.recorder
+            .get(key)
+            .map(String::as_str)
+            .unwrap_or_else(|| {
+                RECORDER_DEFAULTS
+                    .iter()
+                    .find(|(k, _)| *k == key)
+                    .map_or("", |(_, v)| v)
+            })
     }
 
     /// Sets a recorder setting, if it is one. Returns whether it was.

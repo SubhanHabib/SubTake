@@ -99,7 +99,12 @@ fn countdown_tile(value: i32, state: &RecordingOptions, theme: Theme) -> impl In
         .h(px(Theme::countdown_tile_height()))
         .rounded(px(radius))
         .map(|s| {
-            subtake_ui::pressable(s, theme, (!chosen).then_some(theme.press), hover_key.clone())
+            subtake_ui::pressable(
+                s,
+                theme,
+                (!chosen).then_some(theme.press),
+                hover_key.clone(),
+            )
         })
         .on_click(move |_, _, _| options.defer_option("countdown".into(), value.to_string()))
         .child(face);
@@ -108,10 +113,14 @@ fn countdown_tile(value: i32, state: &RecordingOptions, theme: Theme) -> impl In
             .shadow(vec![theme.segment_shadow()])
             .child(selection_ring(Some(radius), theme))
     } else {
-        tile.bg(subtake_ui::motion::hover_blend(&hover_key, theme.sunk, theme.sunk2))
-            .child(subtake_ui::edge(
-                radius,
-                vec![hairline(theme.line, Theme::hairline_width())],
-            ))
+        tile.bg(subtake_ui::motion::hover_blend(
+            &hover_key,
+            theme.sunk,
+            theme.sunk2,
+        ))
+        .child(subtake_ui::edge(
+            radius,
+            vec![hairline(theme.line, Theme::hairline_width())],
+        ))
     }
 }

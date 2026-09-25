@@ -97,11 +97,15 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
         .overflow_hidden()
         .bg(theme.sunk);
     let plate = match (on, image.0) {
-        (false, _) => plate.flex().items_center().justify_center().child(icon_sized(
-            "VideoCameraSlash-regular",
-            Theme::camera_off_icon(),
-            theme.muted,
-        )),
+        (false, _) => plate
+            .flex()
+            .items_center()
+            .justify_center()
+            .child(icon_sized(
+                "VideoCameraSlash-regular",
+                Theme::camera_off_icon(),
+                theme.muted,
+            )),
         (true, Some(image)) => plate.child(
             img(image)
                 .absolute()
@@ -114,13 +118,20 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
         // so outside the gallery the picture shows the camera's glyph where
         // the handoff draws the feed, and never the spinner it draws while
         // a camera starts.
-        (true, None) => plate.flex().items_center().justify_center().child(icon_sized(
-            "VideoCamera-regular",
-            Theme::camera_off_icon(),
-            theme.muted,
-        )),
+        (true, None) => plate
+            .flex()
+            .items_center()
+            .justify_center()
+            .child(icon_sized(
+                "VideoCamera-regular",
+                Theme::camera_off_icon(),
+                theme.muted,
+            )),
     };
-    let plate = plate.child(edge(radius, vec![hairline(theme.line, Theme::hairline_width())]));
+    let plate = plate.child(edge(
+        radius,
+        vec![hairline(theme.line, Theme::hairline_width())],
+    ));
     if !on {
         return plate;
     }
@@ -140,7 +151,12 @@ fn camera_preview(image: crate::ui_runtime::Image, on: bool, theme: Theme) -> Di
             .text_size(px(Theme::font_small()))
             .font_weight(FontWeight::MEDIUM)
             .text_color(theme.text)
-            .child(div().size(px(Theme::live_dot())).rounded_full().bg(theme.rec))
+            .child(
+                div()
+                    .size(px(Theme::live_dot()))
+                    .rounded_full()
+                    .bg(theme.rec),
+            )
             .child("Live"),
     )
 }
@@ -182,7 +198,11 @@ fn camera_controls(state: &RecordingOptions, enabled: bool, theme: Theme) -> Div
     row()
         .items_stretch()
         .gap(px(Theme::camera_controls_gap()))
-        .opacity(if enabled { 1. } else { Theme::disabled_opacity() })
+        .opacity(if enabled {
+            1.
+        } else {
+            Theme::disabled_opacity()
+        })
         .child(
             div()
                 .flex()
@@ -251,19 +271,33 @@ fn corner_target(
         .size(px(size))
         .rounded_full()
         .border(px(Theme::selected_width()))
-        .map(|s| if top { s.top(px(inset)) } else { s.bottom(px(inset)) })
-        .map(|s| if left { s.left(px(inset)) } else { s.right(px(inset)) });
+        .map(|s| {
+            if top {
+                s.top(px(inset))
+            } else {
+                s.bottom(px(inset))
+            }
+        })
+        .map(|s| {
+            if left {
+                s.left(px(inset))
+            } else {
+                s.right(px(inset))
+            }
+        });
     let target = if chosen {
         target
             .border_color(theme.accent)
             .bg(theme.seg_active)
             .shadow(vec![theme.segment_shadow()])
     } else {
-        target.border_color(theme.switch_off).bg(subtake_ui::motion::hover_blend(
-            &hover_key,
-            theme.hover.opacity(0.),
-            theme.hover,
-        ))
+        target
+            .border_color(theme.switch_off)
+            .bg(subtake_ui::motion::hover_blend(
+                &hover_key,
+                theme.hover.opacity(0.),
+                theme.hover,
+            ))
     };
     if !enabled || chosen {
         return target;

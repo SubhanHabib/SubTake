@@ -371,7 +371,9 @@ impl UiHandle {
     pub fn set_recorder_setting(&self, key: &str, value: &str) {
         let mut props = self.0.props.borrow_mut();
         if props.recorder_settings.get(key).map(String::as_str) != Some(value) {
-            props.recorder_settings.insert(key.to_owned(), value.to_owned());
+            props
+                .recorder_settings
+                .insert(key.to_owned(), value.to_owned());
             self.window().invalidate();
         }
     }
