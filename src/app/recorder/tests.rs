@@ -63,3 +63,13 @@ fn recorder_webcam_takes_the_camera_cards_choices() {
     );
     assert_eq!(settings["roundness"], 0.);
 }
+
+#[test]
+fn input_gain_follows_the_level_squared() {
+    assert_eq!(input_gain("100"), 1.);
+    assert_eq!(input_gain("50"), 0.25);
+    assert_eq!(input_gain("0"), 0.);
+    // Past 100 the level holds there; unreadable, it is full.
+    assert_eq!(input_gain("140"), 1.);
+    assert_eq!(input_gain(""), 1.);
+}
