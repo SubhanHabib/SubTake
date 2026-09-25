@@ -28,6 +28,10 @@
 //! open (`+colours` for its Colours view).
 //! `SUBTAKE_GALLERY_TUNED=GAP=12,RADIUS_MENU=8,dark.accent=#ff6a00` starts
 //! with those metrics and colours tuned.
+//!
+//! Not drawn by the design: a gallery tool. The dock's Themes row keeps
+//! whole sets of overrides as text files in the preferences folder's
+//! `tuned-themes`, to save, import and switch between.
 
 use gpui::{prelude::*, *};
 use std::{collections::HashMap, path::PathBuf};
@@ -167,6 +171,16 @@ pub struct Catalogue {
     colour_field: Entity<TextInput>,
     /// [`tune::generation`] when `theme` was last built.
     generation: u64,
+    /// The theme files in `tuned-themes`, read when the dock opens and
+    /// after each save or import.
+    themes: Vec<SavedTheme>,
+}
+
+struct SavedTheme {
+    name: String,
+    path: PathBuf,
+    /// Its overrides, to tell the one on show.
+    entries: Vec<String>,
 }
 
 impl Catalogue {
@@ -360,6 +374,7 @@ impl Catalogue {
             // `theme` was built before the presets were applied; the first
             // frame rebuilds it.
             generation: u64::MAX,
+            themes: saved_themes(),
         }
     }
 
@@ -1755,7 +1770,7 @@ impl Catalogue {
             self.metric_groups(list, groups, theme).into_any_element()
         };
         let changes = tune::changes();
-        dock.child(
+        dock.child(self.theme_row(cx, theme)).child(
             div()
                 .flex_1()
                 .min_h_0()
@@ -1789,6 +1804,119 @@ impl Catalogue {
                         .children(rows),
                 )
         }))
+    }
+
+    /// The saved themes, the one on show marked, with saving the current
+    /// overrides as another and importing one from elsewhere.
+    fn theme_row(&self, cx: &mut Context<Self>, theme: Theme) -> Div {
+        let current = theme_entries(&tune::as_text());
+        let chips = self.themes.iter().enumerate().map(|(index, saved)| {
+            let path = saved.path.clone();
+            ui::button(
+                SharedString::from(format!("tune-theme-{index}")),
+                saved.name.clone(),
+                theme,
+            )
+            .compact()
+            .selected(tune::changed() > 0 && saved.entries == current)
+            .on_click(cx.listener(move |s, _, _, cx| s.load_theme(&path, cx)))
+        });
+        div()
+            .flex()
+            .flex_wrap()
+            .items_center()
+            .gap(px(Theme::gap_small()))
+            .px(px(Theme::inset()))
+            .pb(px(Theme::inset()))
+            .child(ui::caps_label("Themes", theme))
+            .when(self.themes.is_empty(), |row| {
+                row.child(
+                    div()
+                        .text_size(px(Theme::font_secondary()))
+                        .text_color(theme.muted)
+                        .child("None saved yet."),
+                )
+            })
+            .children(chips)
+            .child(div().flex_1())
+            .child(
+                ui::button("tune-theme-save", "Save as…", theme)
+                    .compact()
+                    .enabled(tune::changed() > 0)
+                    .on_click(cx.listener(|s, _, _, cx| s.save_theme(cx))),
+            )
+            .child(
+                ui::button("tune-theme-import", "Import…", theme)
+                    .compact()
+                    .on_click(cx.listener(|s, _, _, cx| s.import_theme(cx))),
+            )
+    }
+
+    fn save_theme(&mut self, cx: &mut Context<Self>) {
+        let Some(folder) = themes_folder() else {
+            return;
+        };
+        if let Err(error) = std::fs::create_dir_all(&folder) {
+            eprintln!("Tuned themes: could not make {}: {error}", folder.display());
+            return;
+        }
+        let Some(path) = rfd::FileDialog::new()
+            .set_directory(&folder)
+            .add_filter("Tuned theme", &[THEME_EXTENSION])
+            .set_file_name(format!("Theme {}.{THEME_EXTENSION}", self.themes.len() + 1))
+            .save_file()
+        else {
+            return;
+        };
+        let text = format!("# SubTake tuned theme\n{}", tune::as_text());
+        if let Err(error) = std::fs::write(&path, text) {
+            eprintln!("Tuned themes: could not write {}: {error}", path.display());
+        }
+        self.themes = saved_themes();
+        cx.notify();
+    }
+
+    /// Load a theme from anywhere, keeping a copy among the saved ones.
+    fn import_theme(&mut self, cx: &mut Context<Self>) {
+        let Some(path) = rfd::FileDialog::new()
+            .add_filter("Tuned theme", &[THEME_EXTENSION, "txt"])
+            .pick_file()
+        else {
+            return;
+        };
+        if let Some(folder) = themes_folder()
+            && path.parent() != Some(folder.as_path())
+            && let Some(name) = path.file_stem()
+        {
+            let copy = folder.join(name).with_extension(THEME_EXTENSION);
+            let copied = std::fs::create_dir_all(&folder).and_then(|()| {
+                if copy.exists() {
+                    Ok(())
+                } else {
+                    std::fs::copy(&path, &copy).map(drop)
+                }
+            });
+            if let Err(error) = copied {
+                eprintln!("Tuned themes: could not keep {}: {error}", copy.display());
+            }
+        }
+        self.load_theme(&path, cx);
+        self.themes = saved_themes();
+    }
+
+    fn load_theme(&mut self, path: &std::path::Path, cx: &mut Context<Self>) {
+        match std::fs::read_to_string(path) {
+            Ok(text) => {
+                for entry in tune::load_text(&text) {
+                    eprintln!(
+                        "{}: no metric or colour to tune in {entry:?}",
+                        path.display()
+                    );
+                }
+            }
+            Err(error) => eprintln!("Tuned themes: could not read {}: {error}", path.display()),
+        }
+        cx.refresh_windows();
     }
 
     /// Everything tuned so far, newest palette and metric alike, each with
@@ -2532,4 +2660,47 @@ impl Render for Catalogue {
                     .children(dock),
             )
     }
+}
+
+const THEME_EXTENSION: &str = "subtaketheme";
+
+fn themes_folder() -> Option<PathBuf> {
+    subtake_native::preferences::Preferences::directory()
+        .ok()
+        .map(|directory| directory.join("tuned-themes"))
+}
+
+/// Every theme file in `tuned-themes`, by name.
+fn saved_themes() -> Vec<SavedTheme> {
+    let Some(entries) = themes_folder().and_then(|folder| std::fs::read_dir(folder).ok()) else {
+        return Vec::new();
+    };
+    let mut themes: Vec<SavedTheme> = entries
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().is_some_and(|e| e == THEME_EXTENSION))
+        .filter_map(|path| {
+            let entries = theme_entries(&std::fs::read_to_string(&path).ok()?);
+            Some(SavedTheme {
+                name: path.file_stem()?.to_string_lossy().into_owned(),
+                path,
+                entries,
+            })
+        })
+        .collect();
+    themes.sort_by(|a, b| a.name.cmp(&b.name));
+    themes
+}
+
+/// A theme file's entries in a set order, however the file lists them.
+fn theme_entries(text: &str) -> Vec<String> {
+    let mut entries: Vec<String> = text
+        .lines()
+        .filter(|line| !line.trim_start().starts_with('#'))
+        .flat_map(|line| line.split(','))
+        .map(|entry| entry.split_whitespace().collect())
+        .filter(|entry: &String| !entry.is_empty())
+        .collect();
+    entries.sort();
+    entries
 }
