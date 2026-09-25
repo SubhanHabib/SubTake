@@ -761,17 +761,33 @@ impl Theme {
     pub const WINDOW_THUMB_WIDTH: f32 = 30.0;
     pub const WINDOW_THUMB_HEIGHT: f32 = 20.0;
     pub const WINDOW_THUMB_RADIUS: f32 = 5.0;
-    /// The microphone meter: twelve bars of a fixed silhouette, lit from the
-    /// left as the level rises.
-    pub const METER_HEIGHT: f32 = 26.0;
-    pub const METER_BAR_WIDTH: f32 = 3.0;
+    /// The microphone meter: thirty bars spread across a 32 row, 3 apart,
+    /// each as tall as the level was when it came in — the newest at the
+    /// left — and lit from the left as far as the level now reaches. Lit
+    /// bars are `text` at 0.9, the rest at 0.18, and the readout sits 48
+    /// wide at the right.
+    pub const METER_HEIGHT: f32 = 32.0;
+    pub const METER_BAR_COUNT: usize = 30;
     pub const METER_BAR_RADIUS: f32 = 2.0;
+    pub const METER_BAR_MIN: f32 = 4.0;
     pub const METER_GAP: f32 = 3.0;
-    pub const METER_BARS: [f32; 12] = [8., 14., 20., 11., 17., 7., 13., 9., 16., 6., 12., 8.];
+    pub const METER_LIT_ALPHA: f32 = 0.9;
+    pub const METER_UNLIT_ALPHA: f32 = 0.18;
+    pub const METER_READOUT_WIDTH: f32 = 48.0;
     /// The quietest level the meter lights a bar for, in dBFS.
     pub const METER_FLOOR_DB: f32 = -60.0;
-    /// At or above this the top two bars turn `rec`, and hold for a second.
-    pub const METER_CLIP_DB: f32 = -1.0;
+    /// Above this the lit bars turn `rec`, and hold for `METER_CLIP_HOLD_MS`.
+    pub const METER_CLIP_DB: f32 = -3.0;
+    /// The recess the meter and its controls sit on: 14 in, 12 at the foot,
+    /// 12 between the meter and the controls and 8 between the controls.
+    pub const METER_BLOCK_PADDING: f32 = 14.0;
+    pub const METER_BLOCK_PADDING_BOTTOM: f32 = 12.0;
+    pub const METER_BLOCK_GAP: f32 = 12.0;
+    pub const METER_CONTROLS_GAP: f32 = 8.0;
+    /// Test: an 8 `rec` dot 7 before its word, 12 in at the left and 16 at
+    /// the right.
+    pub const MIC_TEST_DOT: f32 = 8.0;
+    pub const MIC_TEST_GAP: f32 = 7.0;
     /// The camera card's live picture and the shape swatch set in it.
     pub const CAMERA_PREVIEW_HEIGHT: f32 = 132.0;
     pub const CAMERA_SWATCH: f32 = 44.0;
@@ -972,6 +988,10 @@ pub const CARD_SWAP_MS: u64 = 60;
 pub const CARD_BLUR_GRACE_MS: u64 = 250;
 /// Source's refresh arrow turns once over this long.
 pub const REFRESH_SPIN_MS: u64 = 500;
+/// How long the microphone meter stays `rec` after the level passes
+/// `METER_CLIP_DB`, and how often it takes a new bar: 30 a second.
+pub const METER_CLIP_HOLD_MS: u64 = 600;
+pub const METER_SAMPLE_MS: u64 = 33;
 /// A card sets off only once it has been drawn this many frames at its
 /// window's new size, since those first frames reach the screen late and
 /// its frost, which is the window server's, would come in without it.

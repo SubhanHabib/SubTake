@@ -41,6 +41,7 @@ pub const RECORDER_DEFAULTS: &[(&str, &str)] = &[
     ("camera-size", "m"),
     ("resolution", "native"),
     ("frame-rate", "60"),
+    ("input-level", "100"),
     ("hide-bar", "false"),
 ];
 

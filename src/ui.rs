@@ -320,9 +320,13 @@ pub struct RootView {
     presets_fit: subtake_ui::FitHeight,
     /// The Settings dialog's fade, as `presets_slide`.
     settings_slide: Option<(bool, f32, Instant)>,
-    /// When the microphone meter last clipped, so its top bars can hold red
-    /// for a second after the peak has passed.
+    /// When the microphone meter last clipped, so its lit bars can hold
+    /// `rec` after the peak has passed.
     mic_clipped: Option<Instant>,
+    /// The meter's recent levels, newest first, one a `METER_SAMPLE_MS`,
+    /// and when the newest came in.
+    mic_history: std::collections::VecDeque<f32>,
+    mic_sampled: Option<Instant>,
     /// A finished export's auto-dismiss, held from when its pill first
     /// shows until it goes; stopped, not dropped, once hovered.
     export_dismiss: Option<crate::ui_runtime::Timer>,
@@ -433,6 +437,8 @@ impl RootView {
             presets_fit: subtake_ui::FitHeight::default(),
             settings_slide: Some((false, 0., Instant::now())),
             mic_clipped: None,
+            mic_history: std::collections::VecDeque::new(),
+            mic_sampled: None,
             export_dismiss: None,
             export_done: None,
             inspector_scroll: HashMap::new(),

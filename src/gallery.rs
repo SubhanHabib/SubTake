@@ -1101,15 +1101,15 @@ fn tick_export(editor: EditorWindow, started: std::time::Instant) {
 /// −18 dB, with an occasional peak hard enough to clip.
 fn tick_meter(options: RecordingOptions, step: u32) {
     if options.get_panel() == "audio" {
-        let wobble = ((step as f32 * 0.9).sin() + (step as f32 * 0.37).sin()) * 5.;
-        let level = if step % 70 == 69 { 0. } else { -18. + wobble };
+        let wobble = ((step as f32 * 0.33).sin() + (step as f32 * 0.13).sin()) * 7.;
+        let level = if step % 190 == 189 { 0. } else { -20. + wobble };
         options.set_mic_level(if options.get_microphone() {
             level
         } else {
             f32::NEG_INFINITY
         });
     }
-    Timer::single_shot(Duration::from_millis(90), move || {
+    Timer::single_shot(Duration::from_millis(subtake_theme::METER_SAMPLE_MS), move || {
         tick_meter(options, step + 1)
     });
 }

@@ -33,6 +33,7 @@ pub(super) struct CardRow {
     trailing: Option<AnyElement>,
     selected: bool,
     click: Option<Click>,
+    height: Option<f32>,
 }
 
 impl CardRow {
@@ -45,6 +46,7 @@ impl CardRow {
             trailing: None,
             selected: false,
             click: None,
+            height: None,
         }
     }
 
@@ -60,6 +62,13 @@ impl CardRow {
 
     pub(super) fn trailing(mut self, el: impl IntoElement) -> Self {
         self.trailing = Some(el.into_any_element());
+        self
+    }
+
+    /// A height other than the one its lines give it: 48 alone, 52 with
+    /// a subtitle.
+    pub(super) fn height(mut self, height: f32) -> Self {
+        self.height = Some(height);
         self
     }
 
@@ -80,11 +89,11 @@ impl CardRow {
     }
 
     fn build(self, theme: Theme) -> Stateful<Div> {
-        let height = if self.subtitle.is_some() {
+        let height = self.height.unwrap_or(if self.subtitle.is_some() {
             Theme::card_row_height_tall()
         } else {
             Theme::card_row_height()
-        };
+        });
         let hover_key = subtake_ui::motion::tween_key(&self.id, "hover");
         let mut el = div()
             .id(self.id)
