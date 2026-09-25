@@ -505,5 +505,43 @@ fn source_still(source: &Value) -> ui_runtime::Image {
     ))
 }
 
+/// The Camera card's corner, shape and size as the project's `webcam`
+/// settings for footage `width` × `height`.
+///
+/// Size is a share of the output's width (S, M and L at 16, 22 and 30%);
+/// the model keeps the overlay's side as a share of the frame's shorter
+/// side, so it is scaled across. Shape is `roundness`, as the editor's
+/// Camera panel sets it (`src/ui/camera.rs`), and a corner is the
+/// `positionX`/`positionY` a custom position would give.
+pub(super) fn recorder_webcam(
+    settings: &mut Value,
+    preferences: &subtake_native::preferences::Preferences,
+    (width, height): (u32, u32),
+) {
+    let (x, y) = match preferences.recorder_setting("camera-corner") {
+        "top-left" => (0., 0.),
+        "top-right" => (1., 0.),
+        "bottom-left" => (0., 1.),
+        _ => (1., 1.),
+    };
+    let roundness = match preferences.recorder_setting("camera-shape") {
+        "square" => 0.,
+        "rounded" => 25.,
+        _ => 100.,
+    };
+    let share = match preferences.recorder_setting("camera-size") {
+        "s" => 16.,
+        "l" => 30.,
+        _ => 22.,
+    };
+    let side = f64::from(width) / f64::from(width.min(height).max(1));
+    let side = (share * side * 10.).round() / 10.;
+    settings["positionX"] = json!(x);
+    settings["positionY"] = json!(y);
+    settings["roundness"] = json!(roundness);
+    settings["width"] = json!(side);
+    settings["height"] = json!(side);
+}
+
 #[cfg(test)]
 mod tests;

@@ -190,6 +190,14 @@ impl App {
                                     project.editor.get("webcam").cloned().unwrap_or(json!({}));
                                 settings["enabled"] = json!(true);
                                 settings["sourcePath"] = json!(webcam);
+                                // Where the Camera card put it, over the
+                                // default preset: the card is this
+                                // recording's own choice.
+                                recorder::recorder_webcam(
+                                    &mut settings,
+                                    &app.preferences,
+                                    (info.width, info.height),
+                                );
                                 project.set("webcam", settings);
                             }
                         }
