@@ -36,6 +36,15 @@ so an edge appearing or changing width would move the element and everything
 around it. This is the single rule most likely to be broken by a well-meaning
 change.
 
+Two drop shadows lift a float, each a wide layer and a tight one, and both go
+deeper on dark. The window's own planes — the console, the inspector, the tool
+pod, the aspect pod and the titlebar's pills — take `plane_shadow()`
+(`shadow_plane_far` / `shadow_plane_near`, `PLANE_SHADOW_*`); a dialog, a menu
+or a dropdown takes `panel_shadow()` (`shadow_far` / `shadow_near`,
+`PANEL_SHADOW_*`). `Surface::Panel` and `Surface::Pod` pick the first,
+`Content` and `Popup` the second. Not drawn by the design: the split is so the
+planes tune as one without moving a menu's shadow; the two start equal.
+
 One blue accent marks exactly four things: the playhead, the selected region or
 row, the active tool, and the primary action. A control that is none of those is
 grey, which is what lets the four read at all. Selection on a control is an
@@ -75,7 +84,10 @@ other difference follows from it.
 A titlebar with no fill of its own — traffic lights, the document on a pill
 centred on the window, and Record / Presets / Export at the right as 44
 round icon-only controls, each named by its tooltip: Record and Presets on
-`sunk` plates, Export on the accent. Not drawn by the design: the handoff
+`sunk` plates, Export on the accent. Not drawn by the design: they sit 10 in
+from the window's right, the same as their 10 from its top
+(`TITLEBAR_PADDING` is derived from the titlebar and control heights), so they
+sit square in the corner. Not drawn by the design: the handoff
 gives Record and Export their captions. While the document has a status — a
 running job, an error, "Gallery mode" in the gallery — it is a chip at the end
 of the title pill: 26 tall, `sunk2`, the small size in `muted`, 12 after the
