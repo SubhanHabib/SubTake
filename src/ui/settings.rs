@@ -41,31 +41,24 @@ impl RootView {
             .find(|(name, _)| *name == section)
             .map_or("General", |(name, _)| *name);
 
-        // Two pills under the rows, each gliding up and down rather than
+        // Two marks under the rows, each gliding up and down rather than
         // switching on in place: the open section's, and a fainter one for
-        // the row under the pointer. Each row runs a 0..1 tween; weighting
-        // the row indices by them puts a pill between rows while it moves,
-        // as the segmented control places its thumb.
-        let (mut selected_at, mut hovered_at, mut hovered) = (0., 0., 0.);
-        for (index, (name, _)) in SECTIONS.iter().enumerate() {
-            let at = index as f32;
-            let key = subtake_ui::motion::tween_key(
-                &ElementId::from(("settings-section", index)),
-                "open",
-            );
-            selected_at += at * subtake_ui::state_fade(&key, *name == section);
-            let hover = subtake_ui::hover_progress(&section_hover_key(name));
-            hovered_at += at * hover;
-            hovered += hover;
-        }
+        // the row under the pointer.
+        let opened = subtake_ui::glide(SECTIONS.iter().enumerate().map(|(index, (name, _))| {
+            let id = ElementId::from(("settings-section", index));
+            subtake_ui::state_fade(
+                &subtake_ui::motion::tween_key(&id, "open"),
+                *name == section,
+            )
+        }));
+        let hovered = subtake_ui::glide(
+            SECTIONS
+                .iter()
+                .map(|(name, _)| subtake_ui::hover_progress(&section_hover_key(name))),
+        );
         let pitch = Theme::control_height() + Theme::gap_small();
-        let pill = |at: f32, fill: Hsla| {
-            div()
-                .absolute()
-                .left_0()
-                .right_0()
-                .top(px(at * pitch))
-                .h(px(Theme::control_height()))
+        let mark = |glide, fill| {
+            subtake_ui::glide_mark(glide, pitch, Theme::control_height())
                 .rounded(px(Theme::radius_row()))
                 .bg(fill)
         };
@@ -73,14 +66,9 @@ impl RootView {
             .relative()
             .flex()
             .flex_col()
-            .gap(px(Theme::gap_small()));
-        if hovered > 0. {
-            rows = rows.child(pill(
-                hovered_at / hovered,
-                theme.sunk2.opacity(HOVER_WASH * hovered.min(1.)),
-            ));
-        }
-        rows = rows.child(pill(selected_at, theme.sunk2));
+            .gap(px(Theme::gap_small()))
+            .children(hovered.map(|g| mark(g, theme.sunk2.opacity(HOVER_WASH))))
+            .children(opened.map(|g| mark(g, theme.sunk2)));
         for (name, glyph) in SECTIONS {
             let editor = e.clone();
             rows = rows.child(
