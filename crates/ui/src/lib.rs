@@ -33,6 +33,6 @@ pub use icon::{icon, icon_sized};
 pub use layout::{column, measure, row};
 pub use motion::{
     HOVER_FADE_MS, Leave, MENU_IN_MS, MENU_OUT_MS, blend, fade_in, hover_blend, hover_listener,
-    menu_in, menu_in_above, state_fade, tick_hover_fades, tween_key,
+    hover_progress, menu_in, menu_in_above, state_fade, tick_hover_fades, tween_key,
 };
 pub use typography::{heading, mono, mono_small, panel_title, title};

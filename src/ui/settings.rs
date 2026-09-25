@@ -9,6 +9,9 @@ use super::presets::dialog_frame;
 use super::*;
 use subtake_ui::icon_sized;
 
+/// How much of the open section's fill the hover pill takes.
+const HOVER_WASH: f32 = 0.5;
+
 /// The sections, each with its sidebar glyph.
 const SECTIONS: [(&str, &str); 5] = [
     ("General", "Gear-regular"),
@@ -38,22 +41,62 @@ impl RootView {
             .find(|(name, _)| *name == section)
             .map_or("General", |(name, _)| *name);
 
-        let mut sidebar = column()
-            .flex_none()
-            .w(px(Theme::settings_sidebar_width()))
-            .gap(px(Theme::gap_small()))
-            .p(px(Theme::gap_large()))
-            // The plate's overflow clip is square, so the sidebar rounds its
-            // own outer corners to the plate's, or its fill pokes past them.
-            .rounded_l(px(UiSurface::Content.radius()))
-            .bg(theme.sunk);
+        // Two pills under the rows, each gliding up and down rather than
+        // switching on in place: the open section's, and a fainter one for
+        // the row under the pointer. Each row runs a 0..1 tween; weighting
+        // the row indices by them puts a pill between rows while it moves,
+        // as the segmented control places its thumb.
+        let (mut selected_at, mut hovered_at, mut hovered) = (0., 0., 0.);
+        for (index, (name, _)) in SECTIONS.iter().enumerate() {
+            let at = index as f32;
+            let key = subtake_ui::motion::tween_key(
+                &ElementId::from(("settings-section", index)),
+                "open",
+            );
+            selected_at += at * subtake_ui::state_fade(&key, *name == section);
+            let hover = subtake_ui::hover_progress(&section_hover_key(name));
+            hovered_at += at * hover;
+            hovered += hover;
+        }
+        let pitch = Theme::control_height() + Theme::gap_small();
+        let pill = |at: f32, fill: Hsla| {
+            div()
+                .absolute()
+                .left_0()
+                .right_0()
+                .top(px(at * pitch))
+                .h(px(Theme::control_height()))
+                .rounded(px(Theme::radius_row()))
+                .bg(fill)
+        };
+        let mut rows = div()
+            .relative()
+            .flex()
+            .flex_col()
+            .gap(px(Theme::gap_small()));
+        if hovered > 0. {
+            rows = rows.child(pill(
+                hovered_at / hovered,
+                theme.sunk2.opacity(HOVER_WASH * hovered.min(1.)),
+            ));
+        }
+        rows = rows.child(pill(selected_at, theme.sunk2));
         for (name, glyph) in SECTIONS {
             let editor = e.clone();
-            sidebar = sidebar.child(
+            rows = rows.child(
                 section_row(name, glyph, name == section, theme)
                     .on_click(move |_, _, _| editor.set_settings_section(name.into())),
             );
         }
+        let sidebar = column()
+            .flex_none()
+            .w(px(Theme::settings_sidebar_width()))
+            .p(px(Theme::gap_large()))
+            // The plate's overflow clip is square, so the sidebar rounds its
+            // own outer corners to the plate's, or its fill pokes past them.
+            .rounded_l(px(UiSurface::Content.radius()))
+            .bg(theme.sunk)
+            .child(rows);
 
         let editor = e.clone();
         let heading = row()
@@ -232,26 +275,34 @@ impl RootView {
     }
 }
 
-/// A section in the sidebar: its glyph and name, filled when it is open.
+/// A section in the sidebar: its glyph and name, inked up when it is open
+/// or hovered. Its fill is one of the pills sliding under the rows.
 fn section_row(name: &'static str, glyph: &str, selected: bool, theme: Theme) -> Stateful<Div> {
-    let id = ElementId::from(SharedString::from(format!("settings-{name}")));
-    let hover_key = subtake_ui::motion::tween_key(&id, "hover");
-    let ink = if selected { theme.text } else { theme.muted };
+    let hover_key = section_hover_key(name);
+    let ink = if selected {
+        theme.text
+    } else {
+        subtake_ui::hover_blend(&hover_key, theme.muted, theme.text)
+    };
     div()
-        .id(id)
+        .id(ElementId::from(SharedString::from(format!(
+            "settings-{name}"
+        ))))
         .flex()
         .items_center()
         .gap(px(Theme::gap()))
         .h(px(Theme::control_height()))
         .px(px(Theme::control_padding_small()))
-        .rounded(px(Theme::radius_row()))
-        .bg(if selected {
-            theme.sunk2
-        } else {
-            subtake_ui::motion::hover_blend(&hover_key, theme.sunk2.opacity(0.), theme.sunk2)
-        })
+        .cursor_pointer()
         .text_color(ink)
         .when(selected, |row| row.font_weight(FontWeight::MEDIUM))
+        .on_hover(subtake_ui::hover_listener(hover_key))
         .child(icon_sized(glyph, Theme::icon_size(), ink))
         .child(name)
+}
+
+/// The hover tween a section's row drives and the hover pill follows.
+fn section_hover_key(name: &str) -> String {
+    let id = ElementId::from(SharedString::from(format!("settings-{name}")));
+    subtake_ui::motion::tween_key(&id, "hover")
 }

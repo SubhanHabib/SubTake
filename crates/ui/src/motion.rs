@@ -386,6 +386,13 @@ pub fn state_fade(key: &str, on: bool) -> f32 {
     })
 }
 
+/// Hover progress (0..1) for `key` this frame, for a control that moves
+/// something with its hover rather than tinting — a highlight that glides
+/// to the hovered row. Pair with a [`hover_listener`] of the same key.
+pub fn hover_progress(key: &str) -> f32 {
+    hover_t(key)
+}
+
 /// Interpolate two colours at `t`, premultiplied so a fade out of a
 /// zero-alpha wash keeps its hue instead of dipping through transparent black.
 pub fn blend(from: Hsla, to: Hsla, t: f32) -> Hsla {
