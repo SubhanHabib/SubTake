@@ -571,7 +571,10 @@ impl RootView {
             .py(px(Theme::focus_width()))
             .child(search.clone());
 
-        let mut list = menu_list("add-popup-list", body)
+        // Scrolled to its end, the last row stands the popup's gap off the
+        // rule the list is cut at, as the card's foot does.
+        let mut list = menu_list("add-popup-list", body + Theme::add_popup_gap())
+            .pb(px(Theme::add_popup_gap()))
             .w(px(Theme::add_popup_list_width()))
             .flex_none()
             .track_scroll(&self.menu_scroll)
@@ -631,7 +634,7 @@ impl RootView {
         let card = column()
             .flex_1()
             .min_w_0()
-            .h_full()
+            .h(px(body))
             .p(px(Theme::add_popup_card_padding()))
             .gap(px(Theme::add_popup_card_gap()))
             .rounded(px(Theme::add_popup_card_radius()))
@@ -731,15 +734,24 @@ impl RootView {
                     }))
                     .child(field)
                     .child(
+                        // The list runs on through the gap to the rule and is
+                        // cut there, not faded: the rule is its edge. The
+                        // card keeps the body's height, the gap under it.
                         row()
                             .items_start()
                             .gap(px(Theme::gap()))
-                            .h(px(body))
+                            .h(px(body + Theme::add_popup_gap()))
+                            .mb(px(-Theme::add_popup_gap()))
                             .child(
                                 div()
                                     .relative()
                                     .flex_none()
-                                    .child(fade_edges(list).tracking(&self.menu_scroll))
+                                    .h_full()
+                                    .child(
+                                        fade_edges(list.h_full())
+                                            .bottom(false)
+                                            .tracking(&self.menu_scroll),
+                                    )
                                     // With nothing open the rows are only a
                                     // picture of what could be added: no
                                     // hover, no press.

@@ -426,7 +426,8 @@ covering the button): the palette's field, led by + and ended by an esc cap,
 "Add at" the playhead's time, that filters as it is typed, its match in the
 accent and semibold; the kinds as glyph-led command rows in three menu
 sections, Timeline, Picture and Sound and words, each row's shortcut key cap
-at its end while nothing is typed; and beside them a card for the highlighted
+at its end while nothing is typed, the list scrolling down to the footer's
+rule and cut hard there, not faded; and beside them a card for the highlighted
 kind — the picture with it on, the lane it lands on with the time in Geist
 Mono and a strip of the regions already there ±8 s with the new one at the
 playhead, what it is for, and "Add zoom ↵" at its foot, level with the
