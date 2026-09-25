@@ -27,9 +27,8 @@ pub fn switch(
     let on = motion::state_fade(&motion::tween_key(&id, "switch"), checked);
     let click_id = id.clone();
     let ring = focus_ring(t);
-    // Hover lays a wash over the track rather than swapping its fill: the
-    // off track is already `sunk2`, the top of the fill scale, so there is
-    // no firmer tone to move to. On the mid-grey `switch_on` track the wash
+    // Hover lays a wash over the track rather than swapping its fill, so
+    // off and on keep the one tone each. On the mid-grey `switch_on` track the wash
     // is a lift of the thumb's white, which shows against it in both
     // appearances.
     let hover_key = motion::tween_key(&id, "hover");
@@ -41,7 +40,7 @@ pub fn switch(
         .w(px(Theme::toggle_width()))
         .h(px(Theme::toggle_height()))
         .rounded_full()
-        .bg(motion::blend(t.sunk2, t.switch_on, on))
+        .bg(motion::blend(t.switch_off, t.switch_on, on))
         .opacity(if enabled {
             1.
         } else {

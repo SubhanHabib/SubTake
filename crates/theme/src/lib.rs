@@ -77,6 +77,13 @@ pub struct Theme {
     /// A toggle's track while it is on. A mid-grey, not `ink` and not the
     /// accent: on and off are the plate and the thumb's side.
     pub switch_on: Hsla,
+    /// A toggle's track while it is off. Light `sunk2` is nearly white and
+    /// the track vanished on recorder glass, so off is a faint grey of its
+    /// own.
+    pub switch_off: Hsla,
+    /// A chip laid over a picture — the camera preview's, an area's size —
+    /// always with a blur under it.
+    pub frost: Hsla,
 
     // ---- state washes ----
     /// Hover overlay laid over a switch's track. Every other control and
@@ -356,7 +363,7 @@ impl Theme {
     }
 
     /// A toggle's thumb, on or off, and the scrubber's dots. White in both
-    /// appearances — the review specifies `#ffffff` on the `sunk2` and
+    /// appearances — the review specifies `#ffffff` on the `switch_off` and
     /// `switch_on` tracks in both, so this is not a palette entry.
     pub fn thumb(&self) -> Hsla {
         gpui::hsla(0., 0., 1., 1.)

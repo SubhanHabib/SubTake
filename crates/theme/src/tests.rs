@@ -129,6 +129,8 @@ fn the_accent_is_the_only_hue_in_the_interface() {
             ("slider_fill", t.slider_fill),
             ("plate", t.plate),
             ("switch_on", t.switch_on),
+            ("switch_off", t.switch_off),
+            ("frost", t.frost),
             ("raise", t.raise),
             ("text", t.text),
             ("muted", t.muted),
@@ -212,7 +214,7 @@ fn every_colour_token_is_tunable_and_prints_back_as_it_was_written() {
     // The catalogue's colour table is generated from `struct Theme`; a field
     // the generator missed could not be tuned, and a hex that did not parse
     // back to itself would paste a different colour into `palette.rs`.
-    assert_eq!(tune::colours().len(), 37);
+    assert_eq!(tune::colours().len(), 39);
     for appearance in [Appearance::Light, Appearance::Dark] {
         for colour in tune::colours() {
             let written = tune::hex(colour.default(appearance));

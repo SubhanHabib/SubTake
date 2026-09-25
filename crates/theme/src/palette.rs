@@ -39,6 +39,8 @@ impl Theme {
             slider_fill: css("#14141a0f"),
             plate: css("#ffffff8c"),
             switch_on: css("#5b5d65"),
+            switch_off: css("#14141a21"),
+            frost: css("#ffffffb8"),
 
             hover: css("#14141a0d"),
             press: css("#14141a1a"),
@@ -107,6 +109,8 @@ impl Theme {
             slider_fill: css("#ffffff12"),
             plate: css("#ffffff1f"),
             switch_on: css("#6e707a"),
+            switch_off: css("#ffffff24"),
+            frost: css("#282830b2"),
 
             hover: css("#ffffff12"),
             press: css("#ffffff1f"),
