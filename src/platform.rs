@@ -15,6 +15,7 @@ mod companion;
 mod devices;
 mod microphone;
 mod recording;
+mod tick;
 mod windows;
 
 pub use access::{Access, has_access, open_access_settings};
@@ -22,6 +23,7 @@ use companion::*;
 pub use devices::watch_devices;
 pub use microphone::meter_microphone;
 pub use recording::Recording;
+pub use tick::countdown_tick;
 pub use windows::*;
 
 pub fn helper(name: &str) -> Result<PathBuf> {

@@ -934,6 +934,10 @@ impl App {
                     for remaining in (1..=countdown).rev() {
                         post(move |app, ui| {
                             app.counting = remaining;
+                            // The Countdown card's Tick sound.
+                            if app.preferences.recorder_setting("tick-sound") == "true" {
+                                platform::countdown_tick();
+                            }
                             ui.set_status(format!("Recording starts in {remaining}…"))
                         });
                         for _ in 0..20 {

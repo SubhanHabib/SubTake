@@ -34,8 +34,6 @@ impl RootView {
                 CardRow::new("count-on-screen", "Count on screen")
                     .subtitle("Big numbers on the display")
                     .trailing(setting("count-on-screen")),
-                // Not wired: the setting is kept, but nothing plays a tick
-                // yet.
                 CardRow::new("tick-sound", "Tick sound")
                     .subtitle("A soft click each second")
                     .trailing(setting("tick-sound")),
