@@ -33,7 +33,7 @@
 //! `=card-audio-unplugged` or `=card-camera-unplugged` just after the chosen
 //! one is taken away, `=card-audio-listening` and `=card-audio-playing`
 //! with its Test running, `=card-camera-starting` before the camera's
-//! first frame,
+//! first frame, `=card-camera-custom` once it has been dragged in the editor,
 //! `=card-sources-window` and `=card-sources-area` on those tabs,
 //! `=card-sources-area-set` with an area drawn and chosen,
 //! `=card-sources-cycle` with its list emptied and refilled on a timer);
@@ -389,7 +389,8 @@ pub fn run() -> Result<()> {
         // finds no microphone or camera; `-unplugged`
         // (`card-audio-unplugged`) has just lost the one chosen;
         // `card-audio-listening` and `card-audio-playing` hold the Test;
-        // `card-camera-starting` waits on the camera's first frame.
+        // `card-camera-starting` waits on the camera's first frame, and
+        // `card-camera-custom` has the camera dragged in the editor.
         // The Capture source card with its list emptied and refilled on a
         // timer, for the card easing between the two heights.
         Ok("card-sources-cycle") => {
@@ -434,6 +435,9 @@ pub fn run() -> Result<()> {
             // The Camera card before its first frame, the camera starting.
             let starting = panel.ends_with("-starting");
             let panel = panel.trim_end_matches("-starting");
+            // The Camera card once the camera has been dragged in the editor.
+            let custom = panel.ends_with("-custom");
+            let panel = panel.trim_end_matches("-custom");
             // An area drawn on the Studio Display, and chosen.
             let area_set = panel.ends_with("-set");
             let panel = panel.trim_end_matches("-set");
@@ -489,6 +493,12 @@ pub fn run() -> Result<()> {
                         surface.set_camera_names(default());
                         surface.set_microphone_index(0);
                         surface.set_camera_index(0);
+                    }
+                }
+                if custom {
+                    for surface in [&*g.launcher, &*g.options] {
+                        surface.set_recorder_setting("camera-corner", "custom");
+                        surface.set_recorder_setting("camera-position", "0.4 0.3");
                     }
                 }
                 if window_chosen {

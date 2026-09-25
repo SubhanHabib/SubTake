@@ -40,7 +40,11 @@ pub const RECORDER_DEFAULTS: &[(&str, &str)] = &[
     ("area", ""),
     ("count-on-screen", "true"),
     ("tick-sound", "false"),
+    // A corner, or `custom` once the camera has been dragged on the stage
+    // in the editor, to `camera-position`: the project's positionX and
+    // positionY, 0–1 across the room the overlay can move in.
     ("camera-corner", "bottom-right"),
+    ("camera-position", ""),
     ("camera-shape", "circle"),
     ("camera-size", "m"),
     ("resolution", "native"),

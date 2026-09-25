@@ -197,6 +197,11 @@ impl RootView {
             "audio" if !microphone_usable(state) => "None found".into(),
             "camera" if !camera_usable(state) => "None found".into(),
             "audio" => pick(state.get_microphone_names(), state.get_microphone_index()),
+            // The handoff's summary once the camera has been dragged in the
+            // editor; the device is still named on the picture.
+            "camera" if state.get_recorder_setting("camera-corner") == "custom" => {
+                "Custom position".into()
+            }
             "camera" => pick(state.get_camera_names(), state.get_camera_index()),
             "countdown" => match state.get_countdown() {
                 0 => "Starts immediately".into(),

@@ -245,11 +245,9 @@ fn camera_controls(state: &RecordingOptions, enabled: bool, theme: Theme) -> Div
 }
 
 /// One corner of Position: a ring, or the chosen corner raised on
-/// `seg_active` inside the accent.
-///
-/// Not wired: the handoff clears the choice and reads "Custom position"
-/// once the camera is dragged in the editor. The editor does not tell the
-/// recorder where the camera went, so a corner is always chosen.
+/// `seg_active` inside the accent. None is chosen once the camera has been
+/// dragged on the stage in the editor, which the summary reads as Custom
+/// position; a corner pressed takes it back there.
 fn corner_target(
     key: &'static str,
     top: bool,

@@ -229,12 +229,16 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                     let w=960.;let h=(w/aspect).round().clamp(100.,1920.);let unit=w/1920.;
                     let x=ui.get_edit_x() as f64;let y=ui.get_edit_y() as f64;
                     let bw=ui.get_edit_width() as f64;let bh=ui.get_edit_height() as f64;
+                    let mut placed=None;
                     s.edit(ui,|p| {
                         let mut wc=p.editor.get("webcam").cloned().unwrap_or(json!({}));
                         if resize {wc["width"]=json!((n(&wc,"width",40.)+dx*w/(w.min(h)*scale)*100.).clamp(5.,100.));wc["height"]=json!((n(&wc,"height",40.)+dy*h/(w.min(h)*scale)*100.).clamp(5.,100.));}
-                        else {let margin=n(&wc,"margin",24.)*unit;wc["positionPreset"]=json!("custom");wc["positionX"]=json!(((x+dx-margin/w)/(1.-bw-2.*margin/w).max(0.001)).clamp(0.,1.));wc["positionY"]=json!(((y+dy-margin/h)/(1.-bh-2.*margin/h).max(0.001)).clamp(0.,1.));}
+                        else {let margin=n(&wc,"margin",24.)*unit;wc["positionPreset"]=json!("custom");wc["positionX"]=json!(((x+dx-margin/w)/(1.-bw-2.*margin/w).max(0.001)).clamp(0.,1.));wc["positionY"]=json!(((y+dy-margin/h)/(1.-bh-2.*margin/h).max(0.001)).clamp(0.,1.));placed=Some((n(&wc,"positionX",1.),n(&wc,"positionY",1.)));}
                         p.set("webcam",wc);Ok(())
-                    })
+                    })?;
+                    // The recorder's Camera card follows the camera dragged here.
+                    if let Some(placed)=placed {s.camera_placed(ui,placed);}
+                    Ok(())
                 } else {
                     let (kind,id)=s.selected.clone().context("Select an annotation")?;
                     ensure!(kind=="annotationRegions","Select an annotation");

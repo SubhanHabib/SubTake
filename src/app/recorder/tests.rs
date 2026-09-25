@@ -65,6 +65,42 @@ fn recorder_webcam_takes_the_camera_cards_choices() {
 }
 
 #[test]
+fn recorder_webcam_puts_a_custom_camera_where_it_was_dragged() {
+    let mut preferences = subtake_native::preferences::Preferences::default();
+    let mut settings = serde_json::json!({});
+    let at = |settings: &Value| {
+        (
+            settings["positionX"].as_f64(),
+            settings["positionY"].as_f64(),
+        )
+    };
+    preferences
+        .recorder
+        .insert("camera-corner".into(), "custom".into());
+    preferences
+        .recorder
+        .insert("camera-position".into(), "0.25 0.6".into());
+    recorder_webcam(&mut settings, &preferences, (1920, 1080));
+    assert_eq!(at(&settings), (Some(0.25), Some(0.6)));
+
+    // Past the room it can move in, it is held at its edge.
+    preferences
+        .recorder
+        .insert("camera-position".into(), "-2 1.5".into());
+    recorder_webcam(&mut settings, &preferences, (1920, 1080));
+    assert_eq!(at(&settings), (Some(0.), Some(1.)));
+
+    // Unreadable, or never dragged, it goes to the default corner.
+    for position in ["", "0.5", "left top", "NaN 0.5"] {
+        preferences
+            .recorder
+            .insert("camera-position".into(), position.into());
+        recorder_webcam(&mut settings, &preferences, (1920, 1080));
+        assert_eq!(at(&settings), (Some(1.), Some(1.)), "{position:?}");
+    }
+}
+
+#[test]
 fn input_gain_follows_the_level_squared() {
     assert_eq!(input_gain("100"), 1.);
     assert_eq!(input_gain("50"), 0.25);

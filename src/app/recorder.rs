@@ -527,6 +527,23 @@ impl App {
         self.sources = sources;
     }
 
+    /// The camera dragged on the stage in the editor, to `positionX` and
+    /// `positionY`: the Camera card lets go of its corner and reads Custom
+    /// position, and the next recording puts the camera there.
+    pub(super) fn camera_placed(&mut self, ui: &EditorWindow, (x, y): (f64, f64)) {
+        let placed = format!("{x} {y}");
+        if self
+            .preferences
+            .set_recorder_setting("camera-corner", "custom")
+            && self
+                .preferences
+                .set_recorder_setting("camera-position", &placed)
+        {
+            report(ui, self.preferences.save());
+        }
+        self.sync_launcher_options(ui);
+    }
+
     /// The area overlay closing: an area drawn is kept and chosen, and
     /// either way the bar comes back with the Source card open, as it was
     /// when Draw area on screen was pressed.
@@ -873,7 +890,8 @@ fn source_still(source: &Value) -> ui_runtime::Image {
 /// the model keeps the overlay's side as a share of the frame's shorter
 /// side, so it is scaled across. Shape is `roundness`, as the editor's
 /// Camera panel sets it (`src/ui/camera.rs`), and a corner is the
-/// `positionX`/`positionY` a custom position would give.
+/// `positionX`/`positionY` a custom position would give; `custom` is the
+/// spot the camera was last dragged to in the editor.
 pub(super) fn recorder_webcam(
     settings: &mut Value,
     preferences: &subtake_native::preferences::Preferences,
@@ -883,6 +901,7 @@ pub(super) fn recorder_webcam(
         "top-left" => (0., 0.),
         "top-right" => (1., 0.),
         "bottom-left" => (0., 1.),
+        "custom" => camera_position(preferences.recorder_setting("camera-position")),
         _ => (1., 1.),
     };
     let roundness = match preferences.recorder_setting("camera-shape") {
@@ -902,6 +921,18 @@ pub(super) fn recorder_webcam(
     settings["roundness"] = json!(roundness);
     settings["width"] = json!(side);
     settings["height"] = json!(side);
+}
+
+/// `camera-position` as the `positionX` and `positionY` it was saved from;
+/// the bottom-right corner when it is not one.
+fn camera_position(setting: &str) -> (f64, f64) {
+    let mut values = setting
+        .split_whitespace()
+        .map(|value| value.parse::<f64>().ok().filter(|v| v.is_finite()));
+    match (values.next().flatten(), values.next().flatten()) {
+        (Some(x), Some(y)) => (x.clamp(0., 1.), y.clamp(0., 1.)),
+        _ => (1., 1.),
+    }
 }
 
 #[cfg(test)]
