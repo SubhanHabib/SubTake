@@ -54,6 +54,9 @@ pub struct Theme {
     pub glass: Hsla,
     /// Anything that floats and holds text: dialog, selected row.
     pub card: Hsla,
+    /// A dialog's plate: `card`, but on dark it stands over the stage's
+    /// bright picture and needs a fill of its own.
+    pub dialog: Hsla,
     /// A recess inside one of the above: lanes, sliders, segmented backings.
     pub sunk: Hsla,
     /// A recess, hovered or in its filled portion.

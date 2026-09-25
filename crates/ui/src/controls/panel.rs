@@ -60,7 +60,8 @@ impl Surface {
 pub fn panel_variant(theme: Theme, variant: Surface) -> Div {
     let radius = variant.radius();
     let background = match variant {
-        Surface::Popup | Surface::Content => theme.card,
+        Surface::Popup => theme.card,
+        Surface::Content => theme.dialog,
         Surface::Card => theme.sunk,
         Surface::Panel | Surface::Pod | Surface::Overlay => theme.glass,
     };
