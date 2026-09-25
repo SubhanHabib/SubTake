@@ -91,19 +91,22 @@ impl RootView {
             row()
                 .gap(px(Theme::gap_large()))
                 .child(
+                    icon_button(
+                        "presets-import",
+                        "FolderOpen-regular",
+                        "Import preset…",
+                        theme,
+                    )
+                    .dialog()
+                    .on_click(self.command("import-preset")),
+                )
+                .child(
                     button("presets-new", "Save current", theme)
                         .glyph("Plus-regular")
                         .dialog()
                         .stretch()
                         .enabled(enabled)
                         .on_click(self.command("new-preset")),
-                )
-                .child(
-                    button("presets-import", "Import…", theme)
-                        .glyph("FolderOpen-regular")
-                        .dialog()
-                        .stretch()
-                        .on_click(self.command("import-preset")),
                 )
                 .child(
                     button("presets-apply", "Apply", theme)
@@ -187,15 +190,13 @@ impl RootView {
                             .on_click(self.command(&format!("update-preset-{index}"))),
                     )
                     .child(
-                        button("preset-duplicate", "Duplicate", theme)
-                            .glyph("Stack-regular")
-                            .stretch()
+                        icon_button("preset-duplicate", "Stack-regular", "Duplicate", theme)
+                            .ghost()
                             .on_click(self.command(&format!("duplicate-preset-{index}"))),
                     )
                     .child(
-                        button("preset-share", "Export…", theme)
-                            .glyph("Export-regular")
-                            .stretch()
+                        icon_button("preset-share", "Export-regular", "Export…", theme)
+                            .ghost()
                             .on_click(self.command(&format!("share-preset-{index}"))),
                     )
                     .child(
