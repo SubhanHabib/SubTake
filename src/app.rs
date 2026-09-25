@@ -130,6 +130,9 @@ pub struct App {
     /// The Source card's area overlay is up: the bar and the card are
     /// hidden under it and the global shortcuts wait until it closes.
     drawing_area: bool,
+    /// The sources are being listed again behind the Source card
+    /// (`refresh_sources_quietly`).
+    refreshing_sources: bool,
     pause_started: Option<std::time::Instant>,
     paused_total: Duration,
     recording_watch: Timer,
@@ -199,6 +202,7 @@ impl App {
             counting: 0,
             stopping: false,
             drawing_area: false,
+            refreshing_sources: false,
             pause_started: None,
             paused_total: Duration::ZERO,
             recording_watch: Timer::default(),

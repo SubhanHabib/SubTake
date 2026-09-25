@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import CoreGraphics
 
@@ -23,7 +24,7 @@ public func requestScreenAccess() {
     _ = CGRequestScreenCaptureAccess()
 }
 
-/// Told when a microphone or camera is plugged in or taken away.
+/// Told when a microphone, camera or display is plugged in or taken away.
 public typealias DevicesChanged = @convention(c) () -> Void
 
 /// The observers and the discovery session that keep device changes coming.
@@ -48,4 +49,30 @@ public func devicesWatch(_ callback: DevicesChanged?) {
         NotificationCenter.default.addObserver(forName: $0, object: nil, queue: .main) { _ in callback() }
     }
     deviceWatch = (session, observers)
+}
+
+/// The observer and the pending call that keep display changes coming.
+private var displayWatch: (NSObjectProtocol, DispatchWorkItem?)?
+
+/// Calls `callback` on the main thread once a display has been plugged in,
+/// taken away, or has changed its size or place, from now on. A change
+/// arrives as several notifications while the displays settle, so they are
+/// gathered into one call a second after the last. Watching again replaces
+/// the watch.
+@_cdecl("subtake_displays_watch")
+public func displaysWatch(_ callback: DevicesChanged?) {
+    guard let callback else { return }
+    if let (observer, pending) = displayWatch {
+        NotificationCenter.default.removeObserver(observer)
+        pending?.cancel()
+    }
+    let observer = NotificationCenter.default.addObserver(
+        forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+    ) { _ in
+        displayWatch?.1?.cancel()
+        let call = DispatchWorkItem { callback() }
+        displayWatch?.1 = call
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: call)
+    }
+    displayWatch = (observer, nil)
 }

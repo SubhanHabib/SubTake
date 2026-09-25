@@ -329,6 +329,13 @@ impl App {
         let Some(launcher) = &self.launcher else {
             return Ok(());
         };
+        // The bar has set its own panel by the time it says so, so the card
+        // is what tells whether Source was already open.
+        let opening_sources = panel == "sources"
+            && self
+                .launcher_options
+                .as_ref()
+                .is_none_or(|options| options.get_panel() != "sources");
         launcher.set_panel(panel.into());
         self.sync_launcher(ui);
         let Some(options) = &self.launcher_options else {
@@ -352,7 +359,42 @@ impl App {
         // display's rate; hiding hands it back. A new window takes focus as
         // it opens.
         options.window().make_key();
+        // The handoff's pictures are fresh each time the Source card opens.
+        if opening_sources {
+            self.refresh_sources_quietly(ui);
+        }
         Ok(())
+    }
+
+    /// Lists the displays and windows again without the bar or the card
+    /// waiting on it: as the Source card opens, for fresh pictures, and as
+    /// displays come and go, so one taken away leaves the list and the
+    /// choice falls to the first. A list that cannot be had keeps the one
+    /// there, and one that lands while a refresh of the card's own, the
+    /// countdown or a recording runs is dropped.
+    pub(super) fn refresh_sources_quietly(&mut self, ui: &EditorWindow) {
+        if self.refreshing_sources || ui.get_busy() || ui.get_recording() {
+            return;
+        }
+        self.refreshing_sources = true;
+        std::thread::spawn(|| {
+            let result = platform::sources_cancellable(&AtomicBool::new(false), false);
+            post(move |app, ui| {
+                app.refreshing_sources = false;
+                let Ok(sources) = result else {
+                    return;
+                };
+                if sources.is_empty() || ui.get_busy() || ui.get_recording() {
+                    return;
+                }
+                let selected = app
+                    .sources
+                    .get(ui.get_source_index().max(0) as usize)
+                    .cloned();
+                app.set_sources(ui, sources, selected.as_ref());
+                app.sync_launcher_options(ui);
+            });
+        });
     }
 
     pub(super) fn recording_directory(&self) -> Result<PathBuf> {
@@ -649,6 +691,11 @@ const DEVICE_NOTICE: Duration = Duration::from_secs(4);
 /// A microphone or camera plugged in or taken away: the lists again.
 pub(super) extern "C" fn devices_changed() {
     post(|app, ui| report(ui, app.action(ui, "devices")));
+}
+
+/// A display plugged in, taken away or rearranged: the sources again.
+pub(super) extern "C" fn displays_changed() {
+    post(|app, ui| app.refresh_sources_quietly(ui));
 }
 
 /// The microphone meter's level, from its capture thread, as it records:
