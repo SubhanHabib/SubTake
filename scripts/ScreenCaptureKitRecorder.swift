@@ -21,6 +21,17 @@ struct CaptureConfig: Codable {
 	let microphoneLabel: String?
 	let microphoneOutputPath: String?
 	let excludedProcessIds: [Int32]?
+	/// The More card's Resolution: the most lines the video keeps, the
+	/// width following. Nil records at the source's own size.
+	let maxHeight: Int?
+}
+
+/// Fits a size under `maxHeight` lines, keeping its aspect and both sides
+/// even, as the encoder wants them; a size already under it is kept.
+func fitted(width: Int, height: Int, maxHeight: Int?) -> (Int, Int) {
+	guard let maxHeight, maxHeight > 0, height > maxHeight else { return (width, height) }
+	let scaled = Double(width) * Double(maxHeight) / Double(height)
+	return (max(2, Int(scaled.rounded())) & ~1, max(2, maxHeight) & ~1)
 }
 
 let targetCaptureFPS = 60
@@ -167,8 +178,11 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 				height: captureRect.height / display.frame.height
 			)
 			windowCropDisplayId = display.displayID
-			outputWidth = max(2, Int(captureRect.width) * scaleFactor) & ~1
-			outputHeight = max(2, Int(captureRect.height) * scaleFactor) & ~1
+			(outputWidth, outputHeight) = fitted(
+				width: max(2, Int(captureRect.width) * scaleFactor) & ~1,
+				height: max(2, Int(captureRect.height) * scaleFactor) & ~1,
+				maxHeight: config.maxHeight
+			)
 			streamConfig.width = max(2, Int(display.frame.width) * scaleFactor)
 			streamConfig.height = max(2, Int(display.frame.height) * scaleFactor)
 			streamConfig.pixelFormat = kCVPixelFormatType_32BGRA
@@ -188,8 +202,11 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 			)
 			let displayBounds = CGDisplayBounds(display.displayID)
 			let scaleFactor = ScreenCaptureRecorder.scaleFactor(for: display.displayID)
-			outputWidth = max(2, Int(displayBounds.width) * scaleFactor)
-			outputHeight = max(2, Int(displayBounds.height) * scaleFactor)
+			(outputWidth, outputHeight) = fitted(
+				width: max(2, Int(displayBounds.width) * scaleFactor),
+				height: max(2, Int(displayBounds.height) * scaleFactor),
+				maxHeight: config.maxHeight
+			)
 			streamConfig.width = outputWidth
 			streamConfig.height = outputHeight
 		}

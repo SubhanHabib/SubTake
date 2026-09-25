@@ -897,6 +897,13 @@ impl App {
                     .recorder_setting("frame-rate")
                     .parse::<u32>()
                     .map_or(Value::Null, Value::from);
+                // The More card's Resolution: the most lines the video
+                // keeps; Native, or a source already under it, keeps its own.
+                source["maxHeight"] = self
+                    .preferences
+                    .recorder_setting("resolution")
+                    .parse::<u32>()
+                    .map_or(Value::Null, Value::from);
                 // A microphone or camera the system has refused, or that
                 // the platform found none of, reads as off on the bar and
                 // its card, so it records as off too.

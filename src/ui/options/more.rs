@@ -164,10 +164,8 @@ impl RootView {
 
     /// Resolution: the value and a caret at the row's end, opening the
     /// sizes no larger than the source. A display knows its height; a
-    /// window does not, so it is offered every size.
-    ///
-    /// Not wired: the setting is kept, but a recording is made at the
-    /// source's own size.
+    /// window does not, so it is offered every size, and one smaller than
+    /// the size chosen records at its own.
     fn resolution_menu(&mut self, state: &RecordingOptions, cx: &mut Context<Self>) -> AnyElement {
         let native = native_height(state);
         let choices: Vec<_> = RESOLUTIONS
