@@ -76,6 +76,9 @@ impl Theme {
     pub const ICON_SIZE_CARET: f32 = 12.0;
     /// In a 34px control: a resize grip, a menu item's tick, a checkbox.
     pub const ICON_SIZE_SMALL: f32 = 14.0;
+    /// On a recorder card's 34 controls — an icon button, a segment, the
+    /// search field — a step over the 34 control's own 14.
+    pub const ICON_SIZE_CARD: f32 = 15.0;
     /// In a 40px control — the default a glyph takes.
     pub const ICON_SIZE: f32 = 16.0;
     /// In a 44px control: a primary button, the titlebar.
@@ -722,10 +725,30 @@ impl Theme {
 
     // ---- recorder option cards ---------------------------------------------
 
-    /// Each bar control's card, a window of its own floating over the bar.
-    pub const RECORDER_CARD_WIDTH: f32 = 320.0;
+    /// Each bar control's card, a window of its own floating over the bar,
+    /// as wide as what it holds asks: Source's three pictures across, the
+    /// Countdown's four tiles. `RECORDER_CARD_WIDTH` is the window's width
+    /// before any card has opened.
+    pub const RECORDER_CARD_WIDTH: f32 = Self::RECORDER_CARD_WIDTH_COUNTDOWN;
+    pub const RECORDER_CARD_WIDTH_SOURCE: f32 = 380.0;
+    pub const RECORDER_CARD_WIDTH_MICROPHONE: f32 = 340.0;
+    pub const RECORDER_CARD_WIDTH_CAMERA: f32 = 340.0;
+    pub const RECORDER_CARD_WIDTH_COUNTDOWN: f32 = 320.0;
+    pub const RECORDER_CARD_WIDTH_MORE: f32 = 360.0;
     /// How far above the bar a card floats.
     pub const RECORDER_CARD_OFFSET: f32 = 14.0;
+    /// A card's padding and the space between its blocks.
+    pub const RECORDER_CARD_PADDING: f32 = 14.0;
+    pub const RECORDER_CARD_GAP: f32 = 14.0;
+    /// The header every card opens with: a 40 row, 2 in at the top and
+    /// sides, its 40 plate holding the card's glyph at 18, 12 to the title
+    /// at 16 and the summary under it.
+    pub const CARD_HEADER_HEIGHT: f32 = 40.0;
+    pub const CARD_HEADER_INSET: f32 = 2.0;
+    pub const CARD_HEADER_GAP: f32 = 12.0;
+    pub const CARD_HEADER_PLATE: f32 = 40.0;
+    pub const CARD_HEADER_ICON: f32 = 18.0;
+    pub const FONT_CARD_TITLE: f32 = 16.0;
     /// The rows of a short list — windows, countdown choices, More's items
     /// — sit this close, so the list reads as one object.
     pub const LIST_GAP: f32 = 2.0;
@@ -904,6 +927,12 @@ pub const PANEL_DRILL_SHIFT: f32 = 24.0;
 /// `MENU_OUT_MS`). Replaced by another, it fades out over this long first,
 /// and its window moves and resizes while there is nothing to see.
 pub const CARD_SWAP_MS: u64 = 60;
+/// How long a recorder card stays open after its window loses focus, so a
+/// click on the bar that swaps or closes it lands before the card closes
+/// itself as clicked away from.
+pub const CARD_BLUR_GRACE_MS: u64 = 250;
+/// Source's refresh arrow turns once over this long.
+pub const REFRESH_SPIN_MS: u64 = 500;
 /// A card sets off only once it has been drawn this many frames at its
 /// window's new size, since those first frames reach the screen late and
 /// its frost, which is the window server's, would come in without it.

@@ -51,19 +51,6 @@ impl RootView {
         if sources.is_empty() {
             body.push(helper(state.get_status(), theme).into_any_element());
         }
-        body.push(if state.get_sources_loading() {
-            refreshing(theme).into_any_element()
-        } else {
-            self.action(
-                "refresh",
-                "Refresh displays and windows",
-                "sources",
-                enabled,
-            )
-            .glyph("ArrowClockwise-regular")
-            .standard()
-            .into_any_element()
-        });
         body.push(
             helper("Area selection starts after you press Record.", theme).into_any_element(),
         );
@@ -233,21 +220,4 @@ fn thumbnail(
                 theme.muted,
             )),
     }
-}
-
-/// Not drawn by the design: the Refresh button while a refresh runs — the
-/// same plate and geometry, its arrow turning and its caption saying so.
-fn refreshing(theme: Theme) -> Div {
-    row()
-        .justify_center()
-        .gap(px(Theme::icon_gap()))
-        .h(px(Theme::control_height()))
-        .rounded_full()
-        .bg(theme.sunk)
-        .child(icon("ArrowClockwise-regular", theme.text).with_animation(
-            "refresh-spin",
-            Animation::new(std::time::Duration::from_secs(1)).repeat(),
-            |svg, t| svg.with_transformation(Transformation::rotate(percentage(t))),
-        ))
-        .child("Refreshing…")
 }

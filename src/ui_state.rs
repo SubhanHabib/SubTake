@@ -146,6 +146,7 @@ struct Properties {
     capture_sources: ModelRc<CaptureSource>,
     mic_level: f32,
     camera_preview: Image,
+    options_width: f32,
     options_height: f32,
     camera_names: ModelRc<String>,
     microphone_names: ModelRc<String>,
@@ -246,6 +247,7 @@ impl Default for Properties {
             capture_sources: ModelRc::default(),
             mic_level: f32::NEG_INFINITY,
             camera_preview: Image::default(),
+            options_width: subtake_theme::Theme::recorder_card_width(),
             options_height: 264.,
             camera_names: ModelRc::default(),
             microphone_names: ModelRc::default(),
@@ -319,11 +321,20 @@ impl UiHandle {
         (self.get_duration() / self.get_timeline_zoom().max(1.)).max(0.001)
     }
 
-    /// The options window is as wide as a card, and as tall as the open card
-    /// measures itself (`set_options_height`): cards differ in height, and
-    /// a list of windows differs with what is open on the Mac.
+    /// The options window is as wide as the card it holds
+    /// (`set_options_width`), and as tall as that card measures itself
+    /// (`set_options_height`): cards differ in both, and a list of windows
+    /// differs with what is open on the Mac.
     pub fn get_options_width(&self) -> f32 {
-        subtake_theme::Theme::recorder_card_width()
+        self.0.props.borrow().options_width
+    }
+
+    pub fn set_options_width(&self, value: f32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.options_width != value {
+            props.options_width = value;
+            self.window().invalidate();
+        }
     }
 
     pub fn get_options_height(&self) -> f32 {

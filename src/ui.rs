@@ -359,6 +359,9 @@ pub struct RootView {
     /// The card drawn, which a closing or replaced card keeps showing as it
     /// fades out, and the window's `opens` it was opened under.
     card_last: (String, u32),
+    /// Whether the card's window had focus when last drawn, so it closes
+    /// once clicked away from (`card_blur`).
+    card_active: Rc<Cell<bool>>,
     /// The console's status line growing in and folding away, as
     /// `inspector_slide`; what it last said, busy or not and how far along,
     /// which it keeps showing while it folds; and its own height, which the
@@ -443,6 +446,7 @@ impl RootView {
             card_resize: None,
             card_floor: Rc::new(Cell::new(0.)),
             card_last: (String::new(), 0),
+            card_active: Rc::new(Cell::new(false)),
             status_slide: None,
             status_kept: (SharedString::default(), false, 0.),
             status_bounds: Rc::new(Cell::new(Bounds::default())),
@@ -635,6 +639,16 @@ impl Render for RootView {
                     } else {
                         window.focus_next(cx);
                     }
+                    cx.stop_propagation();
+                    return;
+                }
+                // Esc closes a recorder card from anywhere in it, its
+                // search field included.
+                if event.keystroke.key == "escape"
+                    && let Surface::Options(o) = &s.surface
+                    && !o.get_panel().is_empty()
+                {
+                    o.defer_panel("".into());
                     cx.stop_propagation();
                     return;
                 }

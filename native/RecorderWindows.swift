@@ -97,6 +97,9 @@ private var optionsAnchor: CGFloat = -1
 /// card's resting place.
 private let optionsRise: CGFloat = 4
 
+/// The least room a card keeps from the side of the screen it is on.
+private let optionsScreenMargin: CGFloat = 12
+
 private func optionsOrigin(for size: NSSize, above launcher: NSWindow) -> NSPoint {
     let bar = launcher.frame
     let screen = (launcher.screen ?? NSScreen.main)?.visibleFrame ?? .zero
@@ -114,7 +117,8 @@ private func optionsOrigin(for size: NSSize, above launcher: NSWindow) -> NSPoin
         x = bar.minX + optionsAnchor - size.width / 2
         x = max(bar.minX, min(x, bar.maxX - size.width))
     }
-    x = max(screen.minX, min(x, screen.maxX - size.width))
+    // Near a screen's edge it keeps 12 clear of it instead.
+    x = max(screen.minX + optionsScreenMargin, min(x, screen.maxX - optionsScreenMargin - size.width))
 
     return NSPoint(x: x, y: y)
 }

@@ -21,20 +21,10 @@ impl RootView {
             move |i, _, _| options.defer_option("microphone-device".into(), i.to_string()),
         );
         microphone.update(cx, |d, _| d.glyph = Some("Microphone-regular".into()));
-        let mic = state.clone();
         let system = state.clone();
         vec![
             caps_label("Microphone", theme).into_any_element(),
             microphone.into_any_element(),
-            toggle(
-                "mic-toggle",
-                "Record microphone",
-                on,
-                !busy,
-                theme,
-                move |v, _, _| mic.defer_option("microphone".into(), v.to_string()),
-            )
-            .into_any_element(),
             self.level_meter(state.get_mic_level(), on)
                 .into_any_element(),
             caps_label("System", theme)

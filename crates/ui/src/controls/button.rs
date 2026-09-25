@@ -104,6 +104,9 @@ pub struct Button {
     stretch: bool,
     /// Its plate is a glide mark under it, not its own.
     glided: bool,
+    /// A `line` hairline inside its edge, as a recorder card's controls
+    /// carry against the recess they sit on.
+    edged: bool,
     handler: Option<Box<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
 }
 
@@ -127,6 +130,7 @@ pub fn button(id: impl Into<ElementId>, label: impl Into<SharedString>, theme: T
         enabled: true,
         stretch: false,
         glided: false,
+        edged: false,
         handler: None,
     }
 }
@@ -291,6 +295,12 @@ impl Button {
     /// the control keeps only its glyph's ink.
     pub fn glided(mut self) -> Self {
         self.glided = true;
+        self
+    }
+
+    /// A `line` hairline inside the control's edge.
+    pub fn edged(mut self) -> Self {
+        self.edged = true;
         self
     }
 
@@ -507,6 +517,9 @@ impl RenderOnce for Button {
         let mut edges = Vec::new();
         if self.variant == ButtonVariant::Raised {
             edges.push(hairline(theme.raise_line, Theme::border_width()));
+        }
+        if self.edged {
+            edges.push(hairline(theme.line, Theme::hairline_width()));
         }
         // The mark a selected control carries: an inset edge, so gaining or
         // losing it cannot change what the control measures.

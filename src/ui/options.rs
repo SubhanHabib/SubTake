@@ -23,30 +23,13 @@ impl RootView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.theme;
+        self.card_blur(state, window);
         // Closing or replaced, the card keeps what it last showed while it
         // fades out.
-        let (height, opacity, rise) = self.card_fade(state, window);
+        let (height, opacity, rise) = self.card_fade(state, window, cx);
         let name = self.card_last.0.clone();
-        let title = match name.as_str() {
-            "sources" => "Capture source",
-            "audio" => "Audio",
-            "camera" => "Camera",
-            "countdown" => "Countdown delay",
-            _ => "More",
-        };
-        let close = {
-            let options = state.clone();
-            move |_: &ClickEvent, _: &mut Window, _: &mut App| options.defer_panel("".into())
-        };
-        let header = row()
-            .gap(px(Theme::icon_gap_row()))
-            .child(context_chip(theme, &["Recorder", title]).min_w_0())
-            .child(div().flex_1())
-            .child(
-                icon_button("close", "X-regular", "Close", theme)
-                    .small()
-                    .on_click(close),
-            );
+        let face = CardFace::of(&name);
+        let header = self.card_header(&face, state);
         let body = match name.as_str() {
             "sources" => self.source_card(state),
             "audio" => self.audio_card(state, cx),
@@ -55,14 +38,14 @@ impl RootView {
             _ => self.more_card(state),
         };
         let content = column()
-            .gap(px(Theme::gap_large()))
+            .gap(px(Theme::recorder_card_gap()))
             .child(header)
             .children(body);
 
-        // The card's own fill is `card`, not the bar's `glass`: it holds
-        // text. The window's material is masked to it at the panel radius.
-        // The window cannot draw a drop shadow outside itself, so the panel
-        // shadow the handoff gives is the window server's to draw.
+        // The card is the bar's own material, `glass` over the window's
+        // frost, as the handoff draws both. The window cannot draw a drop
+        // shadow outside itself, so the card shadow the handoff gives is the
+        // window server's to draw.
         //
         // The content lays out at its own height and is measured there, and
         // the card and its window take that height in one step; the card is
@@ -77,14 +60,14 @@ impl RootView {
             .opacity(opacity)
             .overflow_hidden()
             .rounded(px(Theme::radius_panel()))
-            .bg(theme.card)
+            .bg(theme.glass)
             .child(
                 div()
                     .absolute()
                     .top_0()
                     .left_0()
                     .right_0()
-                    .p(px(Theme::panel_padding()))
+                    .p(px(Theme::recorder_card_padding()))
                     .child(content)
                     .child(options_fit(
                         state.clone(),
@@ -93,6 +76,166 @@ impl RootView {
                     )),
             )
             .into_any_element()
+    }
+
+    /// The row every card opens with: its glyph on a plate, its name, what
+    /// it is set to now, and the one control the card keeps at its top
+    /// right. There is no breadcrumb and no close button: a card closes
+    /// with Esc, a click away from it, or its control on the bar again.
+    fn card_header(&self, face: &CardFace, state: &RecordingOptions) -> Div {
+        let theme = self.theme;
+        let busy = state.get_busy();
+        let slot = match face.name {
+            "sources" => Some(self.refresh_button(state).into_any_element()),
+            "audio" => {
+                let options = state.clone();
+                Some(
+                    switch("mic-toggle", state.get_microphone(), !busy, theme, move |v, _, _| {
+                        options.defer_option("microphone".into(), v.to_string())
+                    })
+                    .into_any_element(),
+                )
+            }
+            "camera" => {
+                let options = state.clone();
+                Some(
+                    switch("camera-toggle", state.get_camera(), !busy, theme, move |v, _, _| {
+                        options.defer_option("camera".into(), v.to_string())
+                    })
+                    .into_any_element(),
+                )
+            }
+            "countdown" => None,
+            _ => Some(studio_button(self.command("show-editor"), theme).into_any_element()),
+        };
+        row()
+            .flex_none()
+            .h(px(Theme::card_header_height() + Theme::card_header_inset()))
+            .pt(px(Theme::card_header_inset()))
+            .px(px(Theme::card_header_inset()))
+            .gap(px(Theme::card_header_gap()))
+            .child(
+                div()
+                    .flex()
+                    .flex_none()
+                    .items_center()
+                    .justify_center()
+                    .size(px(Theme::card_header_plate()))
+                    .rounded_full()
+                    .bg(theme.sunk)
+                    .child(icon_sized(face.glyph, Theme::card_header_icon(), theme.text)),
+            )
+            .child(
+                column()
+                    .flex_1()
+                    .min_w_0()
+                    // Not carried: the title's −0.01em tracking. gpui at the
+                    // pinned revision has no letter-spacing.
+                    .child(title(face.title, Theme::font_card_title()).text_ellipsis())
+                    .child(
+                        div()
+                            .text_size(px(Theme::font_secondary()))
+                            .text_color(theme.muted)
+                            .text_ellipsis()
+                            .child(self.card_summary(face.name, state)),
+                    ),
+            )
+            .children(slot)
+    }
+
+    /// What a card's header says it is set to, live.
+    fn card_summary(&self, name: &str, state: &RecordingOptions) -> String {
+        let pick = |names: crate::ui_runtime::ModelRc<String>, index: i32| {
+            usize::try_from(index)
+                .ok()
+                .and_then(|i| names.iter().nth(i))
+                .unwrap_or_default()
+        };
+        match name {
+            "sources" => usize::try_from(state.get_source_index())
+                .ok()
+                .and_then(|i| state.get_capture_sources().iter().nth(i))
+                .map(|source| {
+                    [source.name, source.detail]
+                        .into_iter()
+                        .filter(|s| !s.is_empty())
+                        .collect::<Vec<_>>()
+                        .join(" · ")
+                })
+                .unwrap_or_else(|| "Nothing to capture yet".into()),
+            "audio" => pick(state.get_microphone_names(), state.get_microphone_index()),
+            "camera" => pick(state.get_camera_names(), state.get_camera_index()),
+            "countdown" => match state.get_countdown() {
+                0 => "Starts immediately".into(),
+                n => format!("{n} seconds before capture"),
+            },
+            _ => "Recorder".into(),
+        }
+    }
+
+    /// Source's refresh: it lists the displays and windows again, its
+    /// arrow turning while it does.
+    fn refresh_button(&self, state: &RecordingOptions) -> AnyElement {
+        let theme = self.theme;
+        let refresh = icon_button("refresh", "ArrowClockwise-regular", "Refresh", theme)
+            .small()
+            .edged()
+            .glyph_size(Theme::icon_size_card())
+            .enabled(!state.get_busy() && !state.get_sources_loading())
+            .on_click(self.command("sources"));
+        if !state.get_sources_loading() {
+            return refresh.into_any_element();
+        }
+        // The handoff turns the arrow once, over 500ms. A refresh can run
+        // longer than that, so the arrow keeps turning at that pace until the
+        // list is back, and the button takes no second press meanwhile.
+        div()
+            .relative()
+            .child(refresh)
+            .child(
+                div()
+                    .absolute()
+                    .inset_0()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .rounded_full()
+                    .bg(theme.sunk)
+                    .child(
+                        icon_sized("ArrowClockwise-regular", Theme::icon_size_card(), theme.text)
+                            .with_animation(
+                                "refresh-spin",
+                                Animation::new(std::time::Duration::from_millis(
+                                    subtake_theme::REFRESH_SPIN_MS,
+                                ))
+                                .repeat(),
+                                |svg, t| svg.with_transformation(Transformation::rotate(percentage(t))),
+                            ),
+                    ),
+            )
+            .into_any_element()
+    }
+
+    /// A card closes when its window loses focus — a click on the desktop,
+    /// another app, the bar's handle — but only after
+    /// `CARD_BLUR_GRACE_MS`, and only if it is still the card that was
+    /// open: a click on the bar's controls closes or swaps the card itself,
+    /// and takes the focus from it on the way.
+    fn card_blur(&mut self, state: &RecordingOptions, window: &Window) {
+        let active = window.is_window_active();
+        let was = self.card_active.replace(active);
+        let panel = state.get_panel();
+        if was && !active && !panel.is_empty() {
+            let (options, focused) = (state.clone(), self.card_active.clone());
+            crate::ui_runtime::Timer::single_shot(
+                std::time::Duration::from_millis(subtake_theme::CARD_BLUR_GRACE_MS),
+                move || {
+                    if !focused.get() && options.get_panel() == panel {
+                        options.defer_panel("".into());
+                    }
+                },
+            );
+        }
     }
 
     /// Steps the card through its fade (`CardFade`) and gives the height to
@@ -107,7 +250,12 @@ impl RootView {
     /// what is behind a window at its own pace rather than at the window's
     /// alpha, and a card faded by its window showed an empty pane of frost
     /// before its rows came in and after they had gone.
-    fn card_fade(&mut self, state: &RecordingOptions, window: &mut Window) -> (f32, f32, f32) {
+    fn card_fade(
+        &mut self,
+        state: &RecordingOptions,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> (f32, f32, f32) {
         let rise = subtake_ui::motion::MENU_IN_RISE;
         let natural = state.get_options_height() - rise;
         let now = Instant::now();
@@ -143,6 +291,13 @@ impl RootView {
                     CardFade::Leaving(since, from)
                 }
                 _ => {
+                    // The window takes the new card's width while there is
+                    // nothing in it to see.
+                    let width = CardFace::of(&wanted.0).width;
+                    let options = state.clone();
+                    crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
+                        options.set_options_width(width)
+                    });
                     self.card_last = wanted;
                     CardFade::Waiting(0)
                 }
@@ -164,7 +319,10 @@ impl RootView {
         if let CardFade::Waiting(frames) = self.card_fade {
             let fits = |height: f32| (height - natural).abs() < 0.5;
             let fitted = fits(self.card_measured.get())
-                && fits(f32::from(window.viewport_size().height) - rise);
+                && fits(f32::from(window.viewport_size().height) - rise)
+                && (f32::from(window.viewport_size().width) - CardFace::of(&self.card_last.0).width)
+                    .abs()
+                    < 0.5;
             if fitted && frames >= CARD_SETTLE_FRAMES {
                 // The window shows clear (`ui_runtime::Window::show`); the
                 // card is clear too until its entrance begins.
@@ -172,6 +330,10 @@ impl RootView {
                     unsafe { crate::platform::ui_fade_launcher_options(view, 1., 0.) }
                 }
                 self.card_fade = CardFade::Shown(now);
+                // Focus goes to the card's first control, as a dialog's
+                // does; Tab then runs round the card, the one thing in its
+                // window.
+                window.defer(cx, |window, cx| window.focus_next(cx));
             } else {
                 self.card_fade = CardFade::Waiting(if fitted { frames + 1 } else { 0 });
             }
@@ -237,6 +399,94 @@ impl RootView {
         }
         height
     }
+}
+
+/// What sets one card apart from the others: the name the view knows it
+/// by, its glyph, its title and its width.
+struct CardFace {
+    name: &'static str,
+    glyph: &'static str,
+    title: &'static str,
+    width: f32,
+}
+
+impl CardFace {
+    fn of(name: &str) -> Self {
+        let (name, glyph, title, width) = match name {
+            "sources" => (
+                "sources",
+                "Monitor-regular",
+                "Capture source",
+                Theme::recorder_card_width_source(),
+            ),
+            "audio" => (
+                "audio",
+                "Microphone-regular",
+                "Microphone",
+                Theme::recorder_card_width_microphone(),
+            ),
+            "camera" => (
+                "camera",
+                "VideoCamera-regular",
+                "Camera",
+                Theme::recorder_card_width_camera(),
+            ),
+            "countdown" => (
+                "countdown",
+                "Timer-regular",
+                "Countdown",
+                Theme::recorder_card_width_countdown(),
+            ),
+            _ => (
+                "more",
+                "DotsThree-regular",
+                "SubTake",
+                Theme::recorder_card_width_more(),
+            ),
+        };
+        Self {
+            name,
+            glyph,
+            title,
+            width,
+        }
+    }
+}
+
+/// More's way back to the editor: "Studio" and an arrow out, on a 34 pill.
+fn studio_button(
+    open: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    theme: Theme,
+) -> impl IntoElement {
+    let id = ElementId::from("studio");
+    let hover_key = subtake_ui::motion::tween_key(&id, "hover");
+    layered(
+        div()
+            .id(id)
+            .relative()
+            .flex()
+            .flex_none()
+            .items_center()
+            .gap(px(Theme::icon_gap()))
+            .h(px(Theme::control_height_small()))
+            .pl(px(Theme::gap_block()))
+            .pr(px(Theme::control_padding_small()))
+            .rounded_full()
+            .bg(subtake_ui::motion::hover_blend(&hover_key, theme.sunk, theme.sunk2))
+            .font_weight(FontWeight::MEDIUM)
+            .map(|s| subtake_ui::pressable(s, theme, Some(theme.press), hover_key))
+            .on_click(open)
+            .child("Studio")
+            .child(icon_sized(
+                "ArrowUpRight-regular",
+                Theme::icon_size_small(),
+                theme.text,
+            ))
+            .child(subtake_ui::pill_edge(vec![hairline(
+                theme.line,
+                Theme::hairline_width(),
+            )])),
+    )
 }
 
 /// The muted sentence a card ends on.

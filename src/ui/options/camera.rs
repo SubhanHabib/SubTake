@@ -11,18 +11,7 @@ impl RootView {
         let theme = self.theme;
         let busy = state.get_busy();
         let on = state.get_camera();
-        let toggle_state = state.clone();
-        let mut body = vec![
-            toggle(
-                "camera-toggle",
-                "Webcam overlay",
-                on,
-                !busy,
-                theme,
-                move |v, _, _| toggle_state.defer_option("camera".into(), v.to_string()),
-            )
-            .into_any_element(),
-        ];
+        let mut body = Vec::new();
         let names: Vec<String> = state.get_camera_names().iter().collect();
         if names.is_empty() {
             // Not drawn by the design: a Mac with no camera. The plate keeps
