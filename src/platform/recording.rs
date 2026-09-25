@@ -62,6 +62,11 @@ impl Recording {
             } else {
                 config["displayId"] = source["nativeId"].clone();
             }
+            if source["kind"] == "area" {
+                for key in ["areaX", "areaY", "areaWidth", "areaHeight"] {
+                    config[key] = source[key].clone();
+                }
+            }
             let mut process = ManagedChild::spawn(
                 Command::new(helper("recordly-screencapturekit-helper")?)
                     .arg(serde_json::to_string(&config)?)

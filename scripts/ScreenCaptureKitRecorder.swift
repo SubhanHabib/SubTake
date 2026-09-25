@@ -27,6 +27,12 @@ struct CaptureConfig: Codable {
 	/// The Source card's Hide desktop icons: a display's capture leaves out
 	/// Finder's desktop, the icons on it, and keeps the wallpaper.
 	let hidesDesktopIcons: Bool?
+	/// The Source card's Area: the part of the display that is recorded, in
+	/// points from the display's top-left corner. Nil records all of it.
+	let areaX: Double?
+	let areaY: Double?
+	let areaWidth: Double?
+	let areaHeight: Double?
 }
 
 /// Fits a size under `maxHeight` lines, keeping its aspect and both sides
@@ -207,9 +213,24 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 			)
 			let displayBounds = CGDisplayBounds(display.displayID)
 			let scaleFactor = ScreenCaptureRecorder.scaleFactor(for: display.displayID)
+			var captured = CGSize(width: displayBounds.width, height: displayBounds.height)
+			if let x = config.areaX,
+			   let y = config.areaY,
+			   let width = config.areaWidth,
+			   let height = config.areaHeight {
+				let area = CGRect(x: x, y: y, width: width, height: height)
+					.intersection(CGRect(origin: .zero, size: captured))
+				guard area.width >= 2, area.height >= 2 else {
+					throw NSError(domain: "RecordlyCapture", code: 4, userInfo: [NSLocalizedDescriptionKey: "Area is off its display"])
+				}
+				// The stream crops to the area itself, so only its pixels
+				// are scaled and encoded.
+				streamConfig.sourceRect = area
+				captured = area.size
+			}
 			(outputWidth, outputHeight) = fitted(
-				width: max(2, Int(displayBounds.width) * scaleFactor),
-				height: max(2, Int(displayBounds.height) * scaleFactor),
+				width: max(2, Int(captured.width) * scaleFactor) & ~1,
+				height: max(2, Int(captured.height) * scaleFactor) & ~1,
 				maxHeight: config.maxHeight
 			)
 			streamConfig.width = outputWidth
