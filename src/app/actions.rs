@@ -900,6 +900,10 @@ impl App {
                     .and_then(|a| a.get((ui.get_microphone_index() - 1) as usize))
                     .map(|v| v["id"].clone())
                     .unwrap_or(Value::Null);
+                // The Source card's Show recorder in capture: off, the
+                // capture leaves out SubTake's own windows, the bar with them.
+                source["showsRecorder"] =
+                    Value::Bool(self.preferences.recorder_setting("show-recorder") == "true");
                 let camera = ui.get_capture_camera();
                 let mic = ui.get_capture_mic();
                 let system = ui.get_capture_system();

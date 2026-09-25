@@ -49,7 +49,14 @@ impl Recording {
             } else {
                 None
             };
-            let mut config = json!({"fps":60,"outputPath":captured,"systemAudioOutputPath":work.path().join("recording.system.m4a"),"microphoneOutputPath":work.path().join("recording.mic.m4a"),"capturesMicrophone":false,"capturesSystemAudio":system,"excludedProcessIds":[std::process::id()]});
+            // Off by default, SubTake keeps itself out of the video: the
+            // bar, its cards and the editor behind them.
+            let excluded: Vec<u32> = if source["showsRecorder"] == true {
+                Vec::new()
+            } else {
+                vec![std::process::id()]
+            };
+            let mut config = json!({"fps":60,"outputPath":captured,"systemAudioOutputPath":work.path().join("recording.system.m4a"),"microphoneOutputPath":work.path().join("recording.mic.m4a"),"capturesMicrophone":false,"capturesSystemAudio":system,"excludedProcessIds":excluded});
             if source["kind"] == "window" {
                 config["windowId"] = source["nativeId"].clone();
             } else {
