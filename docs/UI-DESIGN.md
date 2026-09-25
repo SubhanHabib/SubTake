@@ -347,8 +347,8 @@ In the app the cards are the three newest library entries. A card's picture
 is one frame a quarter of the way into the take (a project's source video),
 made in the background and cached beside the timeline artwork; until it
 arrives, or when it cannot be made, the card draws a film glyph on `sunk`. The
-library holds no running time without opening each file, so the meta line
-says what kind of file it is and how old it is. The inspector still opens over the empty state for
+take's running time is read with the picture and cached beside it, so the
+meta line reads "1:24 · 2m ago"; until then it names the kind of file. The inspector still opens over the empty state for
 the panels that stand on their own — Settings (⌘, or the app menu, since there
 is no rail to reach the gear on) — and carries a close control there.
 
