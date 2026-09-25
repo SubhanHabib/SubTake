@@ -97,6 +97,8 @@ impl Colour {
 pub type Reads = Rc<RefCell<BTreeSet<&'static str>>>;
 
 static ENABLED: AtomicBool = AtomicBool::new(false);
+/// Showing `metrics.rs` and `palette.rs` as written, overrides kept aside.
+static ORIGINAL: AtomicBool = AtomicBool::new(false);
 static OVERRIDES: LazyLock<Mutex<HashMap<&'static str, f32>>> = LazyLock::new(Default::default);
 /// Colour overrides, keyed by whether they tint the dark palette.
 static TINTS: LazyLock<Mutex<HashMap<(bool, &'static str), Hsla>>> =
@@ -125,12 +127,24 @@ pub fn enable() {
 
 pub fn set(name: &'static str, value: f32) {
     overrides().insert(name, value);
-    bump();
+    changed_now();
 }
 
 pub fn reset(name: &str) {
     overrides().remove(name);
+    changed_now();
+}
+
+/// Show the metrics and palette as the files write them — the before of a
+/// before and after — keeping every override to come back to. Any new
+/// override ends it, so what is being tuned is what is on show.
+pub fn show_original(on: bool) {
+    ORIGINAL.store(on, Ordering::Relaxed);
     bump();
+}
+
+pub fn showing_original() -> bool {
+    ORIGINAL.load(Ordering::Relaxed)
 }
 
 /// Every tunable colour, in `struct Theme` order.
@@ -144,19 +158,19 @@ pub fn colour(name: &str) -> Option<&'static Colour> {
 
 pub fn set_colour(appearance: Appearance, name: &'static str, value: Hsla) {
     tints().insert((appearance.is_dark(), name), value);
-    bump();
+    changed_now();
 }
 
 pub fn reset_colour(appearance: Appearance, name: &str) {
     tints().retain(|&(dark, key), _| dark != appearance.is_dark() || key != name);
-    bump();
+    changed_now();
 }
 
 /// Drop every override, sizes and colours alike.
 pub fn reset_all() {
     overrides().clear();
     tints().clear();
-    bump();
+    changed_now();
 }
 
 /// How many metrics and colours carry an override.
@@ -190,6 +204,9 @@ pub(crate) fn tinted(mut theme: Theme) -> Theme {
     if !ENABLED.load(Ordering::Relaxed) {
         return theme;
     }
+    if showing_original() {
+        return theme;
+    }
     let dark = theme.appearance.is_dark();
     for (&(tint_dark, name), &value) in tints().iter() {
         if tint_dark == dark
@@ -212,6 +229,12 @@ fn bump() {
     GENERATION.fetch_add(1, Ordering::Relaxed);
 }
 
+/// An override moved: back to showing the overrides, and a rebuild.
+fn changed_now() {
+    ORIGINAL.store(false, Ordering::Relaxed);
+    bump();
+}
+
 /// Run `f`, adding the name of every metric it reads to `reads`.
 pub fn record<R>(reads: &Reads, f: impl FnOnce() -> R) -> R {
     recording(Some(reads.clone()), f)
@@ -230,33 +253,90 @@ fn recording<R>(reads: Option<Reads>, f: impl FnOnce() -> R) -> R {
     result
 }
 
-/// The overrides as `metrics.rs` lines, in `metrics.rs` order, then the
-/// colours as `palette.rs` lines under the palette each belongs to.
-pub fn as_rust() -> String {
-    let overrides = overrides();
-    let mut out = String::new();
+/// One override, as the catalogue lists it: what it was, what it is now,
+/// and the line to paste over the old one.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Change {
+    pub name: &'static str,
+    /// Where `line` goes: `palette.rs, Theme::build_dark`, or `metrics.rs`.
+    pub file: &'static str,
+    pub value: ChangeValue,
+    pub line: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ChangeValue {
+    Colour {
+        appearance: Appearance,
+        from: Hsla,
+        to: Hsla,
+    },
+    Size {
+        from: f32,
+        to: f32,
+    },
+}
+
+/// Every override: the colours under the palette each tints, then the
+/// metrics, each in its file's own order.
+pub fn changes() -> Vec<Change> {
+    let mut out = Vec::new();
     let tints = tints();
-    for (dark, palette) in [(false, "build_light"), (true, "build_dark")] {
-        let lines: Vec<String> = COLOURS
-            .iter()
-            .filter_map(|colour| {
-                let value = tints.get(&(dark, colour.name))?;
-                Some(format!("{}: css(\"{}\"),\n", colour.name, hex(*value)))
-            })
-            .collect();
-        if !lines.is_empty() {
-            out.push_str(&format!("// palette.rs, Theme::{palette}\n"));
-            out.extend(lines);
+    for (appearance, file) in [
+        (Appearance::Light, "palette.rs, Theme::build_light"),
+        (Appearance::Dark, "palette.rs, Theme::build_dark"),
+    ] {
+        for colour in COLOURS {
+            let Some(&to) = tints.get(&(appearance.is_dark(), colour.name)) else {
+                continue;
+            };
+            out.push(Change {
+                name: colour.name,
+                file,
+                value: ChangeValue::Colour {
+                    appearance,
+                    from: colour.default(appearance),
+                    to,
+                },
+                line: format!("{}: css(\"{}\"),", colour.name, hex(to)),
+            });
         }
     }
+    let overrides = overrides();
     for metric in METRICS {
-        let Some(value) = overrides.get(metric.name) else {
+        let Some(&to) = overrides.get(metric.name) else {
             continue;
         };
+        let mut line = String::new();
         if metric.derived {
-            out.push_str("// Derived in metrics.rs; tuned to a fixed value.\n");
+            line.push_str("// Derived in metrics.rs; tuned to a fixed value.\n");
         }
-        out.push_str(&format!("pub const {}: f32 = {value:?};\n", metric.name));
+        line.push_str(&format!("pub const {}: f32 = {to:?};", metric.name));
+        out.push(Change {
+            name: metric.name,
+            file: "metrics.rs",
+            value: ChangeValue::Size {
+                from: metric.default,
+                to,
+            },
+            line,
+        });
+    }
+    out
+}
+
+/// Every override as lines to paste, under a comment naming the file and
+/// palette each group belongs to.
+pub fn as_rust() -> String {
+    let mut out = String::new();
+    let mut file = "";
+    for change in changes() {
+        if change.file != file {
+            file = change.file;
+            out.push_str(&format!("// {file}\n"));
+        }
+        out.push_str(&change.line);
+        out.push('\n');
     }
     out
 }
@@ -272,6 +352,9 @@ pub(crate) fn read(name: &'static str, default: f32, formula: impl FnOnce() -> f
             reads.borrow_mut().insert(name);
         }
     });
+    if showing_original() {
+        return formula();
+    }
     let pinned = overrides().get(name).copied();
     pinned.unwrap_or_else(formula)
 }

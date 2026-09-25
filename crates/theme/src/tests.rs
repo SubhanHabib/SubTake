@@ -221,3 +221,38 @@ fn every_colour_token_is_tunable_and_prints_back_as_it_was_written() {
         }
     }
 }
+
+#[test]
+fn a_change_lists_what_it_was_and_the_line_to_paste_and_can_be_set_aside() {
+    // Tuning is never enabled here, so these overrides reach no theme the
+    // other tests build.
+    let from = Theme::dark().card;
+    let to = tune::parse_colour("#22222980").expect("hex parses");
+    tune::set_colour(Appearance::Dark, "card", to);
+    tune::set("GAP_SMALL", 5.);
+    tune::show_original(true);
+    assert!(tune::showing_original());
+    let changes = tune::changes();
+    assert_eq!(changes.len(), 2);
+    assert_eq!(
+        changes[0].value,
+        tune::ChangeValue::Colour {
+            appearance: Appearance::Dark,
+            from,
+            to
+        }
+    );
+    assert_eq!(changes[0].line, "card: css(\"#22222980\"),");
+    assert_eq!(changes[1].file, "metrics.rs");
+    assert_eq!(changes[1].line, "pub const GAP_SMALL: f32 = 5.0;");
+    assert_eq!(
+        tune::as_rust(),
+        "// palette.rs, Theme::build_dark\ncard: css(\"#22222980\"),\n\
+         // metrics.rs\npub const GAP_SMALL: f32 = 5.0;\n"
+    );
+    // A new override brings the overrides back on show.
+    tune::reset("GAP_SMALL");
+    assert!(!tune::showing_original());
+    tune::reset_all();
+    assert!(tune::changes().is_empty());
+}
