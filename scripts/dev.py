@@ -13,7 +13,7 @@ import signal
 import subprocess
 import sys
 import time
-from build_env import build_environment
+from build_env import build_environment, signing_identity
 from bundle_resources import verify_ui_assets
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -154,7 +154,7 @@ def install_and_launch(resources, gallery=False):
     executable = macos / "SubTake"
     shutil.copy2(ROOT / "target/debug/subtake-native", executable)
     shutil.copy2(ROOT / "assets/branding/SubTake.icns", resources / "SubTake.icns")
-    run("codesign", "--force", "--sign", "-", APP)
+    run("codesign", "--force", "--sign", signing_identity(), APP)
     REQUEST.unlink(missing_ok=True)
     environment = dict(os.environ, SUBTAKE_RESOURCES=str(resources),
                        SUBTAKE_DEV_RESTART_FILE=str(REQUEST))

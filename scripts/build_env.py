@@ -28,6 +28,22 @@ def build_environment():
     return env
 
 
+# macOS keys a Screen Recording grant to the signature it was given to. An
+# ad-hoc signature changes with every build, so each rebuild loses the grant;
+# a certificate that stays the same keeps it.
+LOCAL_IDENTITY = "SubTake Local"
+
+
+def signing_identity():
+    """SUBTAKE_SIGN_IDENTITY, else the "SubTake Local" certificate when the
+    keychain has it, else ad-hoc."""
+    if os.environ.get("SUBTAKE_SIGN_IDENTITY"):
+        return os.environ["SUBTAKE_SIGN_IDENTITY"]
+    found = subprocess.run(["security", "find-certificate", "-c", LOCAL_IDENTITY],
+                           capture_output=True).returncode == 0
+    return LOCAL_IDENTITY if found else "-"
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit(__doc__)

@@ -1,16 +1,18 @@
 """Build a self-contained local .app; pass --release for optimized Rust code.
 
-Signing uses an ad-hoc identity by default. Developer ID signing and notarization
+Signing uses the identity scripts/build_env.py picks: SUBTAKE_SIGN_IDENTITY, the
+"SubTake Local" certificate, or ad-hoc, which loses the Screen Recording grant on
+every rebuild. Developer ID signing and notarization
 are distribution steps and are not claimed by this local build.
 """
 import argparse, os, platform, plistlib, shutil, subprocess, tempfile
 from pathlib import Path
-from build_env import build_environment
+from build_env import build_environment, signing_identity
 from bundle_resources import copy_ui_assets, verify_ui_assets
 
 parser=argparse.ArgumentParser()
 parser.add_argument("--release",action="store_true")
-parser.add_argument("--identity",default="-")
+parser.add_argument("--identity",default=signing_identity())
 args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
 repo=root/"legacy-electron"
