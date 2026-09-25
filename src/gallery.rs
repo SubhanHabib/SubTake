@@ -34,8 +34,9 @@
 //! model name (`=panel-Preferences`); `=inspector-open` slides the folded
 //! inspector in, with `SUBTAKE_GALLERY_WIDTH=1100` (any width under 1280)
 //! folding it, and `SUBTAKE_GALLERY_HEIGHT` sets the height the same way
-//! (for a panel too long for 880); `=rec-counting`, `=rec-recording`, `=rec-paused` or
-//! `=rec-stopping` shows the bar mid-capture (counting also covers the screen);
+//! (for a panel too long for 880); `=rec-counting`, `=rec-recording`, `=rec-paused`,
+//! `=rec-stopping` or `=rec-working` shows the bar mid-capture (counting also
+//! covers the screen);
 //! `=status-cycle` swaps the title pill's status chip to a running job and back on a timer;
 //! `=card-cycle` opens, swaps and closes the recorder cards on a timer, for their fades;
 //! `=tour` walks through a whole take on timers and quits (`gallery/tour.rs`).
@@ -408,7 +409,8 @@ pub fn run() -> Result<()> {
             });
         }
         // The bar mid-capture: `rec-counting`, `rec-recording`, `rec-paused`
-        // or `rec-stopping`.
+        // or `rec-stopping`, or `rec-working` waiting on something it can
+        // cancel.
         Ok(screen) if screen.starts_with("rec-") => {
             let state = screen.trim_start_matches("rec-").to_owned();
             let g = gallery.clone();
@@ -420,6 +422,11 @@ pub fn run() -> Result<()> {
                     "counting" => {
                         l.set_busy(true);
                         g.count(3);
+                    }
+                    "working" => {
+                        l.set_busy(true);
+                        l.set_cancellable(true);
+                        l.set_status("Finding displays and windows…".into());
                     }
                     "stopping" => {
                         l.set_busy(true);
