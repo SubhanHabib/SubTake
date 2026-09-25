@@ -519,9 +519,9 @@ lands (Scene); and a More section with height, the custom position, margin,
 shadow, reacting to zoom, the crop and the time offset. Palette churn: Width
 reads as a percentage of the frame's shorter side, which is what the model
 stores, not in points; and a pressed tile darkens rather than scaling to
-0.98, since gpui has no element transform. Not wired: dragging the overlay
-on the stage for Custom (the position rows under More set it), and the
-helper line about the camera being its own track — it is not a track yet.
+0.98, since gpui has no element transform. Dragging the overlay on the
+stage chooses Custom and places it there. Not wired: the helper line about
+the camera being its own track — it is not a track yet.
 
 `SUBTAKE_GALLERY_SCREEN=camera` (or `camera-off`) opens the gallery on it.
 
@@ -594,7 +594,10 @@ and More 360.
   level (a gain at capture, not the device's own volume), Test, and Record
   system audio.
 - **Camera** — the live picture, mirrored; the camera; its corner, shape and
-  size in the recording.
+  size in the recording. Dragging the camera on the stage in the editor's
+  Camera panel lets go of the corner: the summary reads Custom position and
+  the next recording puts the camera where it was dragged, until a corner
+  is pressed.
 - **Countdown** — four tiles for the delay, and the tick.
 - **More** — the recent projects, Open and All projects, then the
   recording's resolution, frame rate and folder, Hide bar while recording
@@ -643,8 +646,8 @@ area only becomes the source once one is drawn.
 `card-sources-area-set` with an area drawn and chosen, and
 `card-more` with `SUBTAKE_GALLERY_OPEN=resolution` with the resolution menu
 down. `-denied` (`card-audio-denied`), `-none`, `-unplugged`,
-`card-audio-listening`, `card-audio-playing` and `card-camera-starting`
-hold those states. `area-overlay` opens the overlay with an area drawn,
+`card-audio-listening`, `card-audio-playing`, `card-camera-starting` and
+`card-camera-custom` hold those states. `area-overlay` opens the overlay with an area drawn,
 `area-overlay-picking` with none and the pointer's offer, and
 `area-overlay-locked` held to 16:9. `rec-working`, `rec-hidden` and
 `rec-hidden-cycle` show the bar waiting on something it can cancel, and
