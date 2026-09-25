@@ -30,6 +30,7 @@ impl Theme {
             ground: css("#e6e6e9"),
             glass: css("#ffffff46"),
             card: css("#ffffff5a"),
+            dialog: css("#ffffff5a"),
             sunk: css("#ececeeb8"),
             sunk2: css("#ffffffe6"),
             raise: css("#ffffffc7"),
@@ -89,6 +90,10 @@ impl Theme {
             ground: css("#1a1a1f"),
             glass: css("#1e1e2469"),
             card: css("#22222964"),
+            // Not drawn by the design: a dialog's plate at 90%. At `card`'s
+            // 39% a white canvas behind it lit the plate to the muted
+            // text's own grey, and every secondary label vanished.
+            dialog: css("#222229e6"),
             // Recesses lighten on dark: a darkening under `card` was darker
             // than the card and the plates on it vanished.
             sunk: css("#ffffff0d"),
