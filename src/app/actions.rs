@@ -427,6 +427,22 @@ impl App {
                     launcher.window().drag_window()?;
                 }
             }
+            // The Microphone card's Test: a press starts it, and another,
+            // listening or playing, stops it.
+            "mic-test" => {
+                if self
+                    .launcher_options
+                    .as_ref()
+                    .is_some_and(|options| options.get_mic_test() != 0)
+                {
+                    platform::stop_microphone_test();
+                } else {
+                    platform::test_microphone(
+                        recorder::input_gain(self.preferences.recorder_setting("input-level")),
+                        recorder::mic_test,
+                    );
+                }
+            }
             "access-screen" => platform::open_access_settings(platform::Access::Screen)?,
             "access-microphone" => platform::open_access_settings(platform::Access::Microphone)?,
             "access-camera" => platform::open_access_settings(platform::Access::Camera)?,

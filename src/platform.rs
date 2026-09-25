@@ -21,7 +21,7 @@ mod windows;
 pub use access::{Access, has_access, open_access_settings};
 use companion::*;
 pub use devices::watch_devices;
-pub use microphone::meter_microphone;
+pub use microphone::{meter_microphone, stop_microphone_test, test_microphone};
 pub use recording::Recording;
 pub use tick::countdown_tick;
 pub use windows::*;

@@ -573,6 +573,15 @@ extern "C" fn mic_level(level: f32) {
     });
 }
 
+/// The Microphone card's Test moving on: listening, playing, over.
+pub(super) extern "C" fn mic_test(phase: i32) {
+    post(move |app, _| {
+        if let Some(options) = &app.launcher_options {
+            options.set_mic_test(phase);
+        }
+    });
+}
+
 /// The Microphone card's Input level, a percentage, as the amplitude the
 /// recording is scaled by: its square, so the slider's travel follows the
 /// ear rather than the waveform, 100% leaving the microphone as it comes.

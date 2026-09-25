@@ -139,7 +139,12 @@ impl RootView {
                 row()
                     .gap(px(Theme::meter_controls_gap()))
                     .child(div().flex_1().min_w_0().child(level))
-                    .child(test_button(on, theme)),
+                    .child(test_button(
+                        state.get_mic_test(),
+                        on && !state.get_busy(),
+                        self.command("mic-test"),
+                        theme,
+                    )),
             )
             .child(edge(
                 radius,
@@ -217,14 +222,34 @@ impl RootView {
     }
 }
 
+/// What the Test reads while it runs, each of which it is kept wide enough
+/// for, so the slider beside it holds still through the countdown.
+const TEST_LABELS: [&str; 4] = ["Listening… 3", "Listening… 2", "Listening… 1", "Playing"];
+
 /// Records three seconds and plays them back, raised on `seg_active` with
-/// the `rec` dot.
-///
-/// Not wired: the button presses, but nothing records or plays yet, so its
-/// label never counts down to "Playing".
-fn test_button(on: bool, theme: Theme) -> impl IntoElement {
+/// the `rec` dot. `phase` is the options' `mic_test`: "Listening… 3", "2",
+/// "1", then "Playing", then back to "Test"; a press in either stops it.
+fn test_button(
+    phase: i32,
+    enabled: bool,
+    press: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    theme: Theme,
+) -> impl IntoElement {
     let id = ElementId::from("mic-test");
     let hover_key = subtake_ui::motion::tween_key(&id, "hover");
+    let label = match phase {
+        0 => "Test".to_owned(),
+        seconds if seconds > 0 => format!("Listening… {seconds}"),
+        _ => "Playing".to_owned(),
+    };
+    let mut words = column().child(label);
+    if phase != 0 {
+        words = words.children(
+            TEST_LABELS
+                .iter()
+                .map(|label| div().h_0().overflow_hidden().child(*label)),
+        );
+    }
     let mut button = div()
         .id(id)
         .relative()
@@ -247,13 +272,13 @@ fn test_button(on: bool, theme: Theme) -> impl IntoElement {
                 .rounded_full()
                 .bg(theme.rec),
         )
-        .child("Test")
+        .child(words)
         .child(subtake_ui::pill_edge(vec![hairline(
             theme.line,
             Theme::hairline_width(),
         )]));
-    if on {
-        button = subtake_ui::pressable(button, theme, None, hover_key);
+    if enabled {
+        button = subtake_ui::pressable(button, theme, None, hover_key).on_click(press);
     }
     layered(button)
 }

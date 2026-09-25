@@ -145,6 +145,9 @@ struct Properties {
     source_names: ModelRc<String>,
     capture_sources: ModelRc<CaptureSource>,
     mic_level: f32,
+    /// The Microphone card's Test: the seconds of listening left, 3 to 1;
+    /// -1 while the clip plays back; 0 at rest.
+    mic_test: i32,
     camera_preview: Image,
     options_width: f32,
     options_height: f32,
@@ -269,6 +272,7 @@ impl Default for Properties {
             source_names: ModelRc::default(),
             capture_sources: ModelRc::default(),
             mic_level: f32::NEG_INFINITY,
+            mic_test: 0,
             camera_preview: Image::default(),
             options_width: subtake_theme::Theme::recorder_card_width(),
             options_height: 264.,
@@ -1162,6 +1166,18 @@ impl UiHandle {
         let mut props = self.0.props.borrow_mut();
         if props.mic_level != value {
             props.mic_level = value;
+            self.window().invalidate();
+        }
+    }
+
+    pub fn get_mic_test(&self) -> i32 {
+        self.0.props.borrow().mic_test
+    }
+
+    pub fn set_mic_test(&self, value: i32) {
+        let mut props = self.0.props.borrow_mut();
+        if props.mic_test != value {
+            props.mic_test = value;
             self.window().invalidate();
         }
     }

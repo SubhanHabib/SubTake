@@ -10,12 +10,15 @@ final class MicMeter: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
     let callback: LevelCallback
     var peak = -Float.infinity
     var sent = DispatchTime.now()
+    /// The Microphone card's Test, listening: every buffer as it comes.
+    var listener: ((CMSampleBuffer) -> Void)?
 
     init(_ callback: @escaping LevelCallback) {
         self.callback = callback
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        listener?(sampleBuffer)
         for channel in connection.audioChannels {
             peak = max(peak, channel.peakHoldLevel)
         }
@@ -30,9 +33,10 @@ final class MicMeter: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
     }
 }
 
-/// Starts, stops and every sample buffer run here, one at a time.
-private let meterQueue = DispatchQueue(label: "com.subtake.mic-meter")
-private var meter: MicMeter?
+/// Starts, stops and every sample buffer run here, one at a time, and the
+/// Test in `MicTest.swift` with them.
+let meterQueue = DispatchQueue(label: "com.subtake.mic-meter")
+var meter: MicMeter?
 
 /// Meters the microphone with `device`'s unique id, or the system default for
 /// an empty or null one, replacing any meter already running. Returns false,
@@ -51,6 +55,7 @@ public func micMeterStart(_ device: UnsafePointer<CChar>?, _ callback: LevelCall
     next.session.addInput(input)
     next.session.addOutput(output)
     meterQueue.async {
+        micTestCancel()
         meter?.session.stopRunning()
         meter = next
         next.session.startRunning()
@@ -61,6 +66,7 @@ public func micMeterStart(_ device: UnsafePointer<CChar>?, _ callback: LevelCall
 @_cdecl("subtake_mic_meter_stop")
 public func micMeterStop() {
     meterQueue.async {
+        micTestCancel()
         meter?.session.stopRunning()
         meter = nil
     }

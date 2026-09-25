@@ -31,7 +31,8 @@
 //! `=card-audio-denied` with the system refusing what it captures,
 //! `=card-audio-none` or `=card-camera-none` with no device found,
 //! `=card-audio-unplugged` or `=card-camera-unplugged` just after the chosen
-//! one is taken away,
+//! one is taken away, `=card-audio-listening` and `=card-audio-playing`
+//! with its Test running,
 //! `=card-sources-window` and `=card-sources-area` on those tabs,
 //! `=card-sources-cycle` with its list emptied and refilled on a timer);
 //! `=panel-<name>` opens any other panel by its
@@ -369,7 +370,8 @@ pub fn run() -> Result<()> {
         // its controls off; `-denied` (`card-audio-denied`) has the system
         // refuse what the card captures, and `-none` (`card-audio-none`)
         // finds no microphone or camera; `-unplugged`
-        // (`card-audio-unplugged`) has just lost the one chosen.
+        // (`card-audio-unplugged`) has just lost the one chosen;
+        // `card-audio-listening` and `card-audio-playing` hold the Test.
         // The Capture source card with its list emptied and refilled on a
         // timer, for the card easing between the two heights.
         Ok("card-sources-cycle") => {
@@ -399,6 +401,18 @@ pub fn run() -> Result<()> {
             let panel = panel.trim_end_matches("-none");
             let unplugged = panel.ends_with("-unplugged");
             let panel = panel.trim_end_matches("-unplugged");
+            // The Microphone card's Test listening, two seconds to go, or
+            // playing the clip back.
+            let test = if panel.ends_with("-listening") {
+                2
+            } else if panel.ends_with("-playing") {
+                -1
+            } else {
+                0
+            };
+            let panel = panel
+                .trim_end_matches("-listening")
+                .trim_end_matches("-playing");
             // On the Window tab, a window is the source: Code, as the
             // handoff draws it.
             let window_chosen = panel.ends_with("-window");
@@ -412,6 +426,7 @@ pub fn run() -> Result<()> {
                 let g = g.borrow();
                 show_recorder(&g.launcher, &g.options);
                 g.options.set_busy(busy);
+                g.options.set_mic_test(test);
                 for surface in [&*g.launcher, &*g.options] {
                     match panel.as_str() {
                         "sources" if denied => surface.set_screen_access(false),
