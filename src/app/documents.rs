@@ -3,9 +3,17 @@
 use super::*;
 
 impl App {
+    /// The files opened lately and those in the project folder; with no
+    /// project folder chosen, the recordings folder stands in, so every take
+    /// is in the library and All projects counts past the recent list.
     pub(super) fn reload_library(&mut self) -> Result<()> {
+        let folder = self.preferences.library_directory.clone().or_else(|| {
+            self.recording_directory()
+                .ok()
+                .filter(|directory| directory.is_dir())
+        });
         self.library = subtake_native::library::entries(
-            self.preferences.library_directory.as_deref(),
+            folder.as_deref(),
             &self.preferences.recent_projects,
             &self.library_query,
         )?;
