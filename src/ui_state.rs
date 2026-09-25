@@ -1703,6 +1703,14 @@ macro_rules! surface {
         impl $name {
             pub fn new() -> anyhow::Result<Self> {
                 let window = Window::new($kind);
+                // The bar's window is the bar, so it takes the bar's size
+                // before it first opens.
+                if $kind == ui_runtime::WindowKind::Launcher {
+                    window.set_size(ui_runtime::LogicalSize::new(
+                        subtake_theme::Theme::RECORDER_WIDTH,
+                        subtake_theme::Theme::RECORDER_HEIGHT,
+                    ));
+                }
                 let mut props = Properties::default();
                 if $kind == ui_runtime::WindowKind::Editor {
                     props.camera_names =

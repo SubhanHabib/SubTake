@@ -14,7 +14,7 @@ mod camera;
 mod countdown;
 mod more;
 mod parts;
-mod source;
+pub(super) mod source;
 
 use source::SOURCE_SEARCH;
 

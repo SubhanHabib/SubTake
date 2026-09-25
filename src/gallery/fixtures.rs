@@ -253,6 +253,8 @@ pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOpt
             })
             .collect::<Vec<_>>(),
     )));
+    // The bar's pill reads the same sources as the card.
+    launcher.set_capture_sources(options.get_capture_sources());
     options.set_camera_preview(gradient(
         640,
         264,

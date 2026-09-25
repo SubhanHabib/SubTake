@@ -86,9 +86,8 @@ impl RootView {
         // tint over that glass. An outer plate around it only drew a second,
         // square box.
         //
-        // It is one row of `RECORD_HEIGHT` controls: the handoff draws the
-        // bar as a single line of the app's largest controls, so a 40px or
-        // 44px control anywhere on it reads as a control that shrank.
+        // It is one row of `RECORDER_CONTROL` controls in every phase, so
+        // the bar keeps its size when it turns from one job to the next.
         let plate = panel_variant(theme, UiSurface::Overlay)
             .size_full()
             .min_w_0()
@@ -100,7 +99,7 @@ impl RootView {
             .size_full()
             .min_w_0()
             .p(px(Theme::recorder_padding()))
-            .gap(px(Theme::gap()));
+            .gap(px(Theme::recorder_gap()));
         let phase = if state.get_recording() {
             "recording"
         } else if state.get_counting() > 0 {
@@ -135,9 +134,13 @@ impl RootView {
                     .items_center()
                     .justify_center()
                     .w(px(Theme::recorder_handle()))
-                    .h(px(Theme::record_height()))
+                    .h(px(Theme::recorder_control()))
                     .cursor(CursorStyle::ClosedHand)
-                    .child(icon("DotsSixVertical-regular", theme.text))
+                    .child(icon_sized(
+                        "DotsSixVertical-regular",
+                        Theme::icon_size(),
+                        theme.text,
+                    ))
                     .on_mouse_down(MouseButton::Left, |_, w, _| w.start_window_move()),
             );
         }
@@ -146,10 +149,11 @@ impl RootView {
             // float over it rather than over the middle of the bar. The
             // children are the handle, then these five in this order.
             let panel = state.get_panel();
+            let open = panel.clone();
             bar = bar.on_children_prepainted(move |bounds, _, _| {
                 let slot = ["sources", "audio", "camera", "countdown", "more"]
                     .iter()
-                    .position(|id| *id == panel);
+                    .position(|id| *id == open);
                 // A closing card stays over its control while it fades.
                 let Some(anchor) = slot
                     .and_then(|i| bounds.get(i + 1))
@@ -163,100 +167,94 @@ impl RootView {
                     });
                 }
             });
-            // The source pill. The platform layer composes a display's name
-            // as "<name> · <width>×<height>"; the handoff sets the name and
-            // the resolution on two lines, so the pill splits it back apart.
-            // A window source carries no separator and takes no second line.
-            let name = state
-                .get_source_names()
-                .row_data(state.get_source_index().max(0) as usize)
-                .unwrap_or_else(|| "Choose a source".into());
-            let (name, detail) = match name.split_once(" · ") {
-                Some((name, detail)) => (name.to_owned(), Some(detail.to_owned())),
-                None => (name.to_string(), None),
-            };
-            let launcher = state.clone();
-            let mut sources = button("sources", name, theme)
-                .bar()
-                .glyph("Monitor-regular")
-                .caret()
-                .stretch()
-                .on_click(move |_, _, _| Self::toggle_panel(&launcher, "sources"));
-            if let Some(detail) = detail {
-                sources = sources.detail(detail);
-            }
-            bar = bar.child(sources);
+            bar = bar.child(self.source_pill(state, panel == "sources"));
             // Audio and camera say their state with the glyph and the plate,
             // not with an accent edge: a struck-through microphone in `muted`
             // on no plate is off, a microphone in `text` on `sunk` is on. The
             // accent has four jobs in this design and "the mic is live" is
             // not one of them.
+            let mic = state.get_microphone() || state.get_system_audio();
+            let camera = state.get_camera();
             for (id, glyph, label, on) in [
                 (
                     "audio",
-                    if state.get_microphone() || state.get_system_audio() {
+                    if mic {
                         "Microphone-regular"
                     } else {
                         "MicrophoneSlash-regular"
                     },
-                    "Audio",
-                    state.get_microphone() || state.get_system_audio(),
+                    "Microphone",
+                    mic,
                 ),
                 (
                     "camera",
-                    if state.get_camera() {
+                    if camera {
                         "VideoCamera-regular"
                     } else {
                         "VideoCameraSlash-regular"
                     },
-                    "Webcam",
-                    state.get_camera(),
+                    "Camera",
+                    camera,
                 ),
             ] {
                 let launcher = state.clone();
                 bar = bar.child(
-                    button(id, label, theme)
-                        .bar()
-                        .glyph(glyph)
-                        .icon_only()
-                        .toggled(on)
+                    self.bar_control(id, panel == id, if on { theme.sunk } else { clear(theme) })
+                        .w(px(Theme::recorder_control()))
+                        .tooltip(move |_, cx| tooltip(label, theme, cx))
+                        .child(icon_sized(
+                            glyph,
+                            Theme::icon_size_pod(),
+                            if on { theme.text } else { theme.muted },
+                        ))
                         .on_click(move |_, _, _| Self::toggle_panel(&launcher, id)),
                 );
             }
+            let countdown = state.get_countdown();
             let launcher = state.clone();
             bar = bar.child(
-                button("countdown", format!("{}s", state.get_countdown()), theme)
-                    .bar()
-                    .glyph("Timer-regular")
-                    .mono()
+                self.bar_control("countdown", panel == "countdown", theme.sunk)
+                    .w(px(Theme::recorder_countdown_width()))
+                    .gap(px(Theme::recorder_countdown_gap()))
+                    .font_weight(FontWeight::MEDIUM)
+                    .whitespace_nowrap()
+                    .child(icon_sized(
+                        "Timer-regular",
+                        Theme::icon_size_medium(),
+                        theme.text,
+                    ))
+                    .child(if countdown > 0 {
+                        format!("{countdown}s")
+                    } else {
+                        "Off".to_owned()
+                    })
                     .on_click(move |_, _, _| Self::toggle_panel(&launcher, "countdown")),
             );
             let launcher = state.clone();
             bar = bar.child(
-                button("more", "More", theme)
-                    .bar()
-                    .glyph("DotsThree-regular")
-                    .icon_only()
-                    .ghost()
+                self.bar_control("more", panel == "more", clear(theme))
+                    .w(px(Theme::recorder_control()))
+                    .tooltip(move |_, cx| tooltip("More", theme, cx))
+                    .child(icon_sized(
+                        "DotsThree-regular",
+                        Theme::recorder_more_glyph(),
+                        theme.text,
+                    ))
                     .on_click(move |_, _, _| Self::toggle_panel(&launcher, "more")),
             );
             let launcher = state.clone();
             // Red, not accent. `rec` is the only red fill in the app and this
             // is the control it exists for; a blue Record button would make
             // the one destructive-adjacent action look like Export.
-            bar = bar.child(
-                button("record", "Record", theme)
-                    .record()
-                    .on_click(move |_, _, _| {
-                        if launcher.get_source_names().row_count() == 0 {
-                            launcher.set_panel("sources".into());
-                            launcher.defer_panel("sources".into());
-                            launcher.defer_action("sources".into());
-                        } else {
-                            launcher.defer_action("start-recording".into());
-                        }
-                    }),
-            );
+            bar = bar.child(self.record_button().on_click(move |_, _, _| {
+                if launcher.get_source_names().row_count() == 0 {
+                    launcher.set_panel("sources".into());
+                    launcher.defer_panel("sources".into());
+                    launcher.defer_action("sources".into());
+                } else {
+                    launcher.defer_action("start-recording".into());
+                }
+            }));
         } else if state.get_recording() {
             bar = self.capture_controls(bar, state);
         } else if state.get_counting() > 0 {
@@ -267,7 +265,7 @@ impl RootView {
         if state.get_recording() || state.get_busy() {
             return swap(bar);
         }
-        // The bar's last control. The handoff draws a 44 close button and
+        // The bar's last control. The handoff draws a 36 close button and
         // nothing else after Record.
         //
         // What used to sit here as well: the app's own mark, and a "?" whose
@@ -275,9 +273,10 @@ impl RootView {
         // drawn — a logo on a five-control bar is a sixth thing to read, and
         // the status has the bar itself to speak in while a capture runs.
         bar = bar.child(
-            icon_button("close", "X-regular", "Hide recorder", theme)
-                .large()
-                .ghost()
+            self.bar_control("close", false, clear(theme))
+                .w(px(Theme::recorder_close_width()))
+                .tooltip(move |_, cx| tooltip("Hide recorder", theme, cx))
+                .child(icon_sized("X-regular", Theme::icon_size(), theme.text))
                 .on_click(self.command("hide-launcher")),
         );
         swap(bar)
@@ -316,7 +315,7 @@ impl RootView {
         let mut clock = row()
             .flex_none()
             .gap(px(Theme::icon_gap_record()))
-            .h(px(Theme::record_height()))
+            .h(px(Theme::recorder_control()))
             .px(px(Theme::recorder_pill_padding()))
             .rounded_full()
             .whitespace_nowrap()
@@ -352,13 +351,13 @@ impl RootView {
                 .id("pause")
                 .flex_none()
                 .gap(px(Theme::icon_gap_row()))
-                .h(px(Theme::record_height()))
+                .h(px(Theme::recorder_control()))
                 .px(px(Theme::recorder_pill_padding()))
                 .rounded_full()
                 .bg(subtake_ui::motion::hover_blend(
                     &resume_hover,
                     theme.rec,
-                    theme.rec.blend(white().opacity(0.12)),
+                    theme.rec.blend(white().opacity(Theme::rec_hover_lift())),
                 ))
                 .text_color(white())
                 .font_weight(FontWeight::MEDIUM)
@@ -480,7 +479,7 @@ impl RootView {
                 .id("cancel")
                 .flex_none()
                 .gap(px(Theme::icon_gap_row()))
-                .h(px(Theme::record_height()))
+                .h(px(Theme::recorder_control()))
                 .px(px(Theme::recorder_plate_padding()))
                 .rounded_full()
                 .bg(subtake_ui::motion::hover_blend(
@@ -520,7 +519,7 @@ impl RootView {
                 .child(
                     row()
                         .flex_none()
-                        .h(px(Theme::record_height()))
+                        .h(px(Theme::recorder_control()))
                         .px(px(Theme::recorder_plate_padding()))
                         .rounded_full()
                         .bg(theme.sunk)
@@ -541,7 +540,7 @@ impl RootView {
         }
     }
 
-    /// A 60 round control on the bar. `plate` is the `sunk` fill Pause and
+    /// A round control on the capturing bar. `plate` is the `sunk` fill Pause and
     /// Stop stand on; without it the control is bare glass until hovered.
     /// `enabled` is `None` for an indicator: the microphone and camera say
     /// what the capture holds and cannot change it, so they take the shape
@@ -569,7 +568,7 @@ impl RootView {
             .flex_none()
             .items_center()
             .justify_center()
-            .size(px(Theme::record_height()))
+            .size(px(Theme::recorder_control()))
             .rounded_full()
             .bg(subtake_ui::motion::hover_blend(&hover_key, rest, hover))
             .when(enabled == Some(true), |s| {
@@ -579,7 +578,123 @@ impl RootView {
                 s.opacity(Theme::disabled_opacity())
             })
             .tooltip(move |_, cx| tooltip(label, theme, cx))
-            .child(icon_sized(glyph, Theme::icon_size_large(), color))
+            .child(icon_sized(glyph, Theme::icon_size_pod(), color))
+    }
+
+    /// A control on the idle bar, on `rest` until the pointer finds it. The
+    /// control whose card is open stands on `sunk2` inside a `line` edge
+    /// until the card closes.
+    fn bar_control(&self, id: &'static str, open: bool, rest: Hsla) -> Stateful<Div> {
+        let theme = self.theme;
+        let hover_key = subtake_ui::motion::tween_key(&id.into(), "hover");
+        let control = row()
+            .id(id)
+            .flex_none()
+            .justify_center()
+            .h(px(Theme::recorder_control()))
+            .rounded_full()
+            .bg(if open {
+                theme.sunk2
+            } else {
+                subtake_ui::motion::hover_blend(&hover_key, rest, theme.sunk2)
+            })
+            .when(open, |s| {
+                s.shadow(vec![hairline(theme.line, Theme::hairline_width())])
+            });
+        subtake_ui::pressable(control, theme, Some(theme.press), hover_key)
+    }
+
+    /// The source pill: the source's glyph, its name over its size — or a
+    /// window's app over its title — and the caret that says it opens.
+    fn source_pill(&self, state: &RecordingLauncher, open: bool) -> Stateful<Div> {
+        let theme = self.theme;
+        let source = usize::try_from(state.get_source_index())
+            .ok()
+            .and_then(|i| state.get_capture_sources().iter().nth(i));
+        let (glyph, (name, detail)) = match &source {
+            Some(source) => (
+                match source.kind.as_str() {
+                    "window" => "AppWindow-regular",
+                    "area" => "Selection-regular",
+                    _ => "Monitor-regular",
+                },
+                super::options::source::caption(source),
+            ),
+            None => (
+                "Monitor-regular",
+                ("Choose a source".to_owned(), String::new()),
+            ),
+        };
+        let launcher = state.clone();
+        self.bar_control("sources", open, theme.sunk)
+            .w(px(Theme::recorder_source_width()))
+            .gap(px(Theme::recorder_source_gap()))
+            .pl(px(Theme::recorder_source_padding_left()))
+            .pr(px(Theme::recorder_source_padding_right()))
+            .child(icon_sized(glyph, Theme::icon_size_medium(), theme.text))
+            .child(
+                column()
+                    .flex_1()
+                    .min_w_0()
+                    .gap_0()
+                    .line_height(relative(Theme::recorder_source_leading()))
+                    .whitespace_nowrap()
+                    .child(
+                        div()
+                            .font_weight(FontWeight::MEDIUM)
+                            .text_ellipsis()
+                            .child(name),
+                    )
+                    .when(!detail.is_empty(), |s| {
+                        s.child(
+                            mono(detail)
+                                .text_size(px(Theme::font_tiny()))
+                                .text_color(theme.muted)
+                                .text_ellipsis(),
+                        )
+                    }),
+            )
+            .child(icon_sized(
+                "CaretDown-regular",
+                Theme::icon_size_caret(),
+                theme.muted,
+            ))
+            .on_click(move |_, _, _| Self::toggle_panel(&launcher, "sources"))
+    }
+
+    /// Record: a white dot and the word, on the one red fill in the app.
+    fn record_button(&self) -> Stateful<Div> {
+        let theme = self.theme;
+        // Not drawn by the design: the hover, a white lift over `rec`, as
+        // Resume's.
+        let hover_key = subtake_ui::motion::tween_key(&"record".into(), "hover");
+        let control = row()
+            .id("record")
+            .flex_none()
+            .justify_center()
+            .w(px(Theme::recorder_record_width()))
+            .h(px(Theme::recorder_control()))
+            .gap(px(Theme::recorder_record_gap()))
+            .rounded_full()
+            .bg(subtake_ui::motion::hover_blend(
+                &hover_key,
+                theme.rec,
+                theme.rec.blend(white().opacity(Theme::rec_hover_lift())),
+            ))
+            .shadow(vec![theme.record_glow()])
+            .text_color(white())
+            .text_size(px(Theme::font_record()))
+            .font_weight(FontWeight::SEMIBOLD)
+            .whitespace_nowrap()
+            .child(
+                div()
+                    .flex_none()
+                    .size(px(Theme::recorder_record_dot()))
+                    .rounded_full()
+                    .bg(white()),
+            )
+            .child("Record");
+        subtake_ui::pressable(control, theme, Some(theme.press), hover_key)
     }
 
     /// A bar control that opens its panel, or closes it if it is the open one.
@@ -590,14 +705,14 @@ impl RootView {
     }
 }
 
-/// The bar's 60 round `sunk` plate: it holds the count, or the spinner.
+/// The bar's round `sunk` plate: it holds the count, or the spinner.
 fn round_plate(theme: Theme) -> Div {
     div()
         .flex()
         .flex_none()
         .items_center()
         .justify_center()
-        .size(px(Theme::record_height()))
+        .size(px(Theme::recorder_control()))
         .rounded_full()
         .bg(theme.sunk)
 }
@@ -609,7 +724,7 @@ fn message(title: impl Into<SharedString>, detail: impl Into<SharedString>, them
         .flex_1()
         .min_w_0()
         .justify_center()
-        .h(px(Theme::record_height()))
+        .h(px(Theme::recorder_control()))
         .px(px(Theme::recorder_text_inset()))
         .line_height(relative(Theme::message_leading()))
         .whitespace_nowrap()
@@ -628,6 +743,11 @@ fn message(title: impl Into<SharedString>, detail: impl Into<SharedString>, them
                     .child(detail),
             )
         })
+}
+
+/// A control's fill before the pointer finds it: none, as a fade's start.
+fn clear(theme: Theme) -> Hsla {
+    theme.sunk2.opacity(0.)
 }
 
 /// A `sunk2` ring with an accent arc turning round it once a second.

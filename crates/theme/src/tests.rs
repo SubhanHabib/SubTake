@@ -62,7 +62,6 @@ fn the_radius_ladder_leaves_its_gap() {
         Theme::RADIUS_PLATE,
         Theme::RADIUS_PANEL,
         Theme::RADIUS_POD,
-        Theme::RADIUS_BAR,
     ];
     assert!(ladder.windows(2).all(|w| w[0] < w[1]), "ladder must ascend");
     assert!(
@@ -71,6 +70,8 @@ fn the_radius_ladder_leaves_its_gap() {
             .any(|r| *r > Theme::RADIUS_INNER && *r < Theme::RADIUS_MENU),
         "the 14-to-20 gap must stay empty"
     );
+    // The bar is off the ladder: it is a pill, whatever its height.
+    assert_eq!(Theme::RADIUS_BAR * 2.0, Theme::RECORDER_HEIGHT);
 }
 
 #[test]

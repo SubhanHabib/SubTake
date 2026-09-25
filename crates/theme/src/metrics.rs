@@ -42,6 +42,10 @@ impl Theme {
     /// The smallest Geist Mono: a recent project's running time and age,
     /// the bar's source size.
     pub const FONT_TINY: f32 = 10.0;
+    /// Record's caption on the bar. Off the scale as `FONT_TINY` is: the
+    /// handoff sets it at 14, under `FONT_ACTION`, beside the 13 of the
+    /// bar's other captions.
+    pub const FONT_RECORD: f32 = 14.0;
     /// Section labels, and Geist Mono metadata.
     pub const FONT_SMALL: f32 = 11.0;
     /// Descriptions and metadata — the step below body, always `muted`.
@@ -124,8 +128,8 @@ impl Theme {
     pub const RADIUS_WINDOW: f32 = Self::RADIUS_PANEL;
     /// The tool pod.
     pub const RADIUS_POD: f32 = 30.0;
-    /// The recorder bar.
-    pub const RADIUS_BAR: f32 = 40.0;
+    /// The recorder bar: a pill, half its height.
+    pub const RADIUS_BAR: f32 = Self::RECORDER_HEIGHT / 2.0;
 
     // ---- control heights -------------------------------------------------
     //
@@ -150,12 +154,41 @@ impl Theme {
 
     /// The recorder bar. The floating window IS the bar — there is no plate
     /// around a plate — so these are the window's own figures, and the bar
-    /// is one row of `RECORD_HEIGHT` controls with its padding either side.
-    pub const RECORDER_HEIGHT: f32 = Self::RECORD_HEIGHT + Self::RECORDER_PADDING * 2.0;
-    pub const RECORDER_PADDING: f32 = 10.0;
+    /// is one row of `RECORDER_CONTROL` controls with its padding either
+    /// side. Every phase keeps the one size, so the window never jumps.
+    pub const RECORDER_HEIGHT: f32 = Self::RECORDER_CONTROL + Self::RECORDER_PADDING * 2.0;
+    pub const RECORDER_WIDTH: f32 = 554.0;
+    pub const RECORDER_PADDING: f32 = 8.0;
+    pub const RECORDER_GAP: f32 = 4.0;
+    /// Every control on the bar, Record's among them.
+    pub const RECORDER_CONTROL: f32 = Self::CONTROL_HEIGHT_LARGE;
     /// The grip at the bar's left. Narrower than a control, because it is a
     /// texture to take hold of rather than a target to hit.
-    pub const RECORDER_HANDLE: f32 = 28.0;
+    pub const RECORDER_HANDLE: f32 = 24.0;
+    /// The source pill: its width, its sides (the glyph's the wider), the
+    /// gap between its glyph, its two lines and its caret, and those two
+    /// lines' leading.
+    pub const RECORDER_SOURCE_WIDTH: f32 = 150.0;
+    pub const RECORDER_SOURCE_PADDING_LEFT: f32 = 14.0;
+    pub const RECORDER_SOURCE_PADDING_RIGHT: f32 = 12.0;
+    pub const RECORDER_SOURCE_GAP: f32 = 9.0;
+    pub const RECORDER_SOURCE_LEADING: f32 = 1.2;
+    /// The countdown pill, its glyph and its value.
+    pub const RECORDER_COUNTDOWN_WIDTH: f32 = 64.0;
+    pub const RECORDER_COUNTDOWN_GAP: f32 = 6.0;
+    /// Record on the bar: its width, the gap after its dot, and the dot.
+    pub const RECORDER_RECORD_WIDTH: f32 = 104.0;
+    pub const RECORDER_RECORD_GAP: f32 = 8.0;
+    pub const RECORDER_RECORD_DOT: f32 = 10.0;
+    /// How much white Record and Resume take under the pointer. Not drawn
+    /// by the design.
+    pub const REC_HOVER_LIFT: f32 = 0.12;
+    /// Close, narrower than a control: it ends the bar rather than being
+    /// one of its jobs.
+    pub const RECORDER_CLOSE_WIDTH: f32 = 36.0;
+    /// More's three dots, a step over the bar's other glyphs so the mark
+    /// reads at its size.
+    pub const RECORDER_MORE_GLYPH: f32 = 20.0;
     /// The unified titlebar, and what it keeps clear at each end: the traffic
     /// lights sit at {14,15} and the first control clears them. Not drawn by
     /// the design: the right end keeps the buttons as far from the window's
@@ -303,9 +336,9 @@ impl Theme {
     pub const GLOW_HERO_Y: f32 = 12.0;
     pub const GLOW_HERO_BLUR: f32 = 28.0;
     /// The glow under Record, in `rec` at the opacity below.
-    pub const RECORD_GLOW_Y: f32 = 10.0;
-    pub const RECORD_GLOW_BLUR: f32 = 26.0;
-    pub const RECORD_GLOW_OPACITY: f32 = 0.32;
+    pub const RECORD_GLOW_Y: f32 = 4.0;
+    pub const RECORD_GLOW_BLUR: f32 = 14.0;
+    pub const RECORD_GLOW_OPACITY: f32 = 0.35;
     /// A finished export's glow at its peak: its blur, which it spreads half
     /// as far as, and the accent's opacity in it.
     pub const EXPORT_GLOW: f32 = 6.0;

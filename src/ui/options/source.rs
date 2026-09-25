@@ -31,7 +31,7 @@ const ASPECTS: [(&str, &str); 5] = [
 /// A source's two lines: a display's name and resolution, or a window's
 /// app and title. The platform names a window "App — Title", and a window
 /// with no title just "App".
-pub(super) fn caption(source: &CaptureSource) -> (String, String) {
+pub(in crate::ui) fn caption(source: &CaptureSource) -> (String, String) {
     if source.kind == "window" {
         match source.name.split_once(" — ") {
             Some((app, title)) => (app.to_owned(), title.to_owned()),

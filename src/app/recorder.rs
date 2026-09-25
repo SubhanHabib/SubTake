@@ -132,6 +132,7 @@ impl App {
             return;
         };
         launcher.set_source_names(ui.get_source_names());
+        launcher.set_capture_sources(ui.get_capture_sources());
         launcher.set_appearance(self.preferences.appearance.as_str().into());
         launcher.set_source_index(ui.get_source_index());
         launcher.set_camera_names(ui.get_camera_names());

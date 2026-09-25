@@ -190,11 +190,10 @@ impl Button {
         self
     }
 
-    /// The recorder bar's height. The bar is one row of the app's largest
-    /// controls, so its pills and its round buttons stand as tall as the
-    /// Record button beside them.
+    /// The recorder bar's height: every control on the bar stands as tall
+    /// as the Record button beside it.
     pub fn bar(mut self) -> Self {
-        self.height = Some(Theme::record_height());
+        self.height = Some(Theme::recorder_control());
         self
     }
 
