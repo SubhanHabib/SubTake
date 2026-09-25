@@ -31,7 +31,7 @@ impl Theme {
             glass: css("#ffffff46"),
             card: css("#ffffff5a"),
             dialog: css("#ffffff5a"),
-            sunk: css("#ececeeb8"),
+            sunk: css("#ffffff66"),
             sunk2: css("#ffffffe6"),
             raise: css("#ffffffc7"),
             raise_line: css("#14141a14"),
@@ -84,16 +84,17 @@ impl Theme {
         Self {
             appearance: Appearance::Dark,
 
-            // Not drawn by the design: as the light shell and floats, but
-            // `glass` at 41% — at half the handoff's it read too thin on dark.
-            bg: css("#0d0d1066"),
+            // Not drawn by the design: tuned in the gallery, the shell at 64%
+            // and `glass` at 62% — at the handoff's strengths both read too
+            // thin on dark.
+            bg: css("#0d0d10a3"),
             ground: css("#1a1a1f"),
-            glass: css("#1e1e2469"),
-            card: css("#22222964"),
-            // Not drawn by the design: a dialog's plate at 90%. At `card`'s
-            // 39% a white canvas behind it lit the plate to the muted
-            // text's own grey, and every secondary label vanished.
-            dialog: css("#222229e6"),
+            glass: css("#1e1e249e"),
+            card: css("#1c1c21a8"),
+            // Not drawn by the design: a dialog's plate at 68%, above
+            // `card`'s 66%. At 39% a white canvas behind it lit the plate to
+            // the muted text's own grey, and every secondary label vanished.
+            dialog: css("#1c1c21ad"),
             // Recesses lighten on dark: a darkening under `card` was darker
             // than the card and the plates on it vanished.
             sunk: css("#ffffff0d"),
