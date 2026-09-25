@@ -56,7 +56,7 @@ impl Recording {
             } else {
                 vec![std::process::id()]
             };
-            let mut config = json!({"fps":60,"outputPath":captured,"systemAudioOutputPath":work.path().join("recording.system.m4a"),"microphoneOutputPath":work.path().join("recording.mic.m4a"),"capturesMicrophone":false,"capturesSystemAudio":system,"excludedProcessIds":excluded});
+            let mut config = json!({"fps":source["fps"].as_u64().unwrap_or(60),"outputPath":captured,"systemAudioOutputPath":work.path().join("recording.system.m4a"),"microphoneOutputPath":work.path().join("recording.mic.m4a"),"capturesMicrophone":false,"capturesSystemAudio":system,"excludedProcessIds":excluded});
             if source["kind"] == "window" {
                 config["windowId"] = source["nativeId"].clone();
             } else {

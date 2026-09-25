@@ -77,6 +77,8 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 	private var inlineAudioInput: AVAssetWriterInput?
 	private var firstInlineAudioSampleTime: CMTime?
 	private var capturesSystemAudio = false
+	/// The More card's Frame rate, 30 or 60, and 60 when none is asked for.
+	private var captureFPS = targetCaptureFPS
 	private var capturesMicrophone = false
 	private var writesSystemAudioToSeparateTrack = false
 	private var writesMicrophoneToSeparateTrack = false
@@ -106,8 +108,8 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 		}
 		writesSystemAudioToSeparateTrack = capturesSystemAudio
 		writesMicrophoneToSeparateTrack = capturesSystemAudio && capturesMicrophone
-		let requestedFPS = max(targetCaptureFPS, config.fps ?? targetCaptureFPS)
-		streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(requestedFPS))
+		captureFPS = min(max(config.fps ?? targetCaptureFPS, 1), targetCaptureFPS)
+		streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(captureFPS))
 		streamConfig.queueDepth = 6
 		streamConfig.pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
 		streamConfig.colorSpaceName = CGColorSpace.sRGB
@@ -767,7 +769,7 @@ final class ScreenCaptureRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 			return lastVideoDuration
 		}
 
-		return CMTime(value: 1, timescale: CMTimeScale(targetCaptureFPS))
+		return CMTime(value: 1, timescale: CMTimeScale(captureFPS))
 	}
 
 	private func latestInlineAudioEndTime() -> CMTime {

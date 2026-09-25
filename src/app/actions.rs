@@ -904,6 +904,12 @@ impl App {
                 // capture leaves out SubTake's own windows, the bar with them.
                 source["showsRecorder"] =
                     Value::Bool(self.preferences.recorder_setting("show-recorder") == "true");
+                // The More card's Frame rate.
+                source["fps"] = self
+                    .preferences
+                    .recorder_setting("frame-rate")
+                    .parse::<u32>()
+                    .map_or(Value::Null, Value::from);
                 let camera = ui.get_capture_camera();
                 let mic = ui.get_capture_mic();
                 let system = ui.get_capture_system();
