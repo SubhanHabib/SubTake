@@ -66,6 +66,8 @@ const CHIP_WIDTH: f32 = 160.;
 const CHIP_SWATCH: f32 = 20.;
 /// The chosen colour, large, at the head of the editor.
 const PICKED_SWATCH: f32 = 44.;
+/// The dock's list of what has been tuned, beside whichever view is open.
+const CHANGES_WIDTH: f32 = 272.;
 const SWATCH_RADIUS: f32 = 6.;
 /// The editor's sliders, in `Hsla` order, with the scale and unit each
 /// shows its 0–1 channel in.
@@ -1743,32 +1745,6 @@ impl Catalogue {
                             .text_color(theme.muted)
                             .child(note),
                     )
-                    .when(tune::changed() > 0, |header| {
-                        header
-                            .child(
-                                div()
-                                    .text_size(px(Theme::font_secondary()))
-                                    .text_color(theme.accent)
-                                    .child(format!("{} tuned", tune::changed())),
-                            )
-                            .child(
-                                ui::button("tune-copy", "Copy changes", theme)
-                                    .compact()
-                                    .on_click(|_, _, cx| {
-                                        cx.write_to_clipboard(ClipboardItem::new_string(
-                                            tune::as_rust(),
-                                        ))
-                                    }),
-                            )
-                            .child(
-                                ui::button("tune-reset", "Reset all", theme)
-                                    .compact()
-                                    .on_click(|_, _, cx| {
-                                        tune::reset_all();
-                                        cx.refresh_windows();
-                                    }),
-                            )
-                    })
                     .child(
                         div()
                             .w(px(SAMPLE_WIDTH))
@@ -1788,20 +1764,40 @@ impl Catalogue {
                             .on_click(Self::click(cx, |s| s.tuning = None)),
                     ),
             );
-        if colours {
-            return dock.child(self.colour_tuner(window, cx));
-        }
-        if groups.is_empty() {
-            return dock.child(
-                list.child(
-                    div()
-                        .text_size(px(Theme::font_secondary()))
-                        .text_color(theme.muted)
-                        .child("Nothing read yet: scroll the section into view."),
-                ),
-            );
-        }
-        dock.child(list.children(groups.into_iter().map(|(group, rows)| {
+        let body = if colours {
+            self.colour_tuner(window, cx).into_any_element()
+        } else if groups.is_empty() {
+            list.child(
+                div()
+                    .text_size(px(Theme::font_secondary()))
+                    .text_color(theme.muted)
+                    .child("Nothing read yet: scroll the section into view."),
+            )
+            .into_any_element()
+        } else {
+            self.metric_groups(list, groups, theme).into_any_element()
+        };
+        let changes = tune::changes();
+        dock.child(
+            div()
+                .flex_1()
+                .min_h_0()
+                .flex()
+                .child(div().flex_1().min_w_0().flex().flex_col().child(body))
+                .when(!changes.is_empty(), |row| {
+                    row.child(self.change_stack(cx, changes, theme))
+                }),
+        )
+    }
+
+    /// The Sizes view's metrics, under the group each belongs to.
+    fn metric_groups(
+        &self,
+        list: Stateful<Div>,
+        groups: Vec<(&str, Vec<AnyElement>)>,
+        theme: Theme,
+    ) -> Stateful<Div> {
+        list.children(groups.into_iter().map(|(group, rows)| {
             div()
                 .flex()
                 .flex_col()
@@ -1815,7 +1811,187 @@ impl Catalogue {
                         .gap_y(px(Theme::gap()))
                         .children(rows),
                 )
-        })))
+        }))
+    }
+
+    /// Everything tuned so far, newest palette and metric alike, each with
+    /// what it was, what it is, and its own line to copy — so a colour can
+    /// be taken back to `palette.rs` one at a time, not only all at once.
+    fn change_stack(
+        &self,
+        cx: &mut Context<Self>,
+        changes: Vec<tune::Change>,
+        theme: Theme,
+    ) -> Stateful<Div> {
+        let rows = changes.into_iter().map(|change| {
+            let id = |slot: &str| {
+                let palette = match change.value {
+                    tune::ChangeValue::Colour { appearance, .. } => {
+                        if appearance.is_dark() {
+                            "dark"
+                        } else {
+                            "light"
+                        }
+                    }
+                    tune::ChangeValue::Size { .. } => "size",
+                };
+                SharedString::from(format!("tune-change-{slot}-{palette}-{}", change.name))
+            };
+            let (lead, values, reset): (AnyElement, String, Box<dyn Fn(&mut App)>) =
+                match change.value {
+                    tune::ChangeValue::Colour {
+                        appearance,
+                        from,
+                        to,
+                    } => {
+                        let name = change.name;
+                        (
+                            div()
+                                .flex()
+                                .flex_none()
+                                .gap(px(Theme::hairline_width()))
+                                .child(colour_swatch(from, CHIP_SWATCH, theme))
+                                .child(colour_swatch(to, CHIP_SWATCH, theme))
+                                .into_any_element(),
+                            // The swatches show what it was; the words, what
+                            // to paste.
+                            format!(
+                                "{} · {}",
+                                if appearance.is_dark() {
+                                    "dark"
+                                } else {
+                                    "light"
+                                },
+                                tune::hex(to)
+                            ),
+                            Box::new(move |cx: &mut App| {
+                                tune::reset_colour(appearance, name);
+                                cx.refresh_windows();
+                            }),
+                        )
+                    }
+                    tune::ChangeValue::Size { from, to } => {
+                        let name = change.name;
+                        (
+                            div()
+                                .w(px(CHIP_SWATCH * 2. + Theme::hairline_width()))
+                                .flex_none()
+                                .into_any_element(),
+                            format!("{from} → {to}"),
+                            Box::new(move |cx: &mut App| {
+                                tune::reset(name);
+                                cx.refresh_windows();
+                            }),
+                        )
+                    }
+                };
+            let line = change.line.clone();
+            let pick = matches!(change.value, tune::ChangeValue::Colour { .. })
+                .then_some((change.name, change.value));
+            div()
+                .id(id("row"))
+                .flex()
+                .items_center()
+                .gap(px(Theme::gap_small()))
+                .p(px(Theme::gap_small()))
+                .rounded(px(Theme::radius_region()))
+                .hover(|row| row.bg(theme.sunk2))
+                .when_some(pick, |row, (name, value)| {
+                    // A colour opens in the editor, in its own palette.
+                    row.on_click(cx.listener(move |s, _, _, cx| {
+                        if let tune::ChangeValue::Colour { appearance, .. } = value {
+                            s.tuning_colours = true;
+                            s.picked = name;
+                            s.set_dark(appearance.is_dark(), cx);
+                        }
+                    }))
+                })
+                .child(lead)
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .flex()
+                        .flex_col()
+                        .child(
+                            div()
+                                .text_ellipsis()
+                                .overflow_hidden()
+                                .whitespace_nowrap()
+                                .text_size(px(Theme::font_secondary()))
+                                .text_color(theme.text)
+                                .child(change.name),
+                        )
+                        .child(
+                            div()
+                                .text_ellipsis()
+                                .overflow_hidden()
+                                .whitespace_nowrap()
+                                .text_size(px(Theme::font_small()))
+                                .text_color(theme.accent)
+                                .child(values),
+                        ),
+                )
+                .child(
+                    ui::icon_button(id("copy"), "Stack-regular", "Copy line", theme)
+                        .small()
+                        .ghost()
+                        .on_click(move |_, _, cx| {
+                            cx.write_to_clipboard(ClipboardItem::new_string(line.clone()))
+                        }),
+                )
+                .child(
+                    ui::icon_button(id("reset"), "ArrowCounterClockwise-regular", "Reset", theme)
+                        .small()
+                        .ghost()
+                        .on_click(move |_, _, cx| reset(cx)),
+                )
+        });
+        div()
+            .id("tune-changes")
+            .w(px(CHANGES_WIDTH))
+            .flex_none()
+            .overflow_y_scroll()
+            .flex()
+            .flex_col()
+            .gap(px(Theme::gap_small()))
+            .pr(px(Theme::inset()))
+            .pb(px(Theme::inset()))
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(px(Theme::gap_small()))
+                    .child(div().flex_1().child(ui::caps_label("Changes", theme)))
+                    .child(
+                        ui::button("tune-copy", "Copy all", theme)
+                            .compact()
+                            .on_click(|_, _, cx| {
+                                cx.write_to_clipboard(ClipboardItem::new_string(tune::as_rust()))
+                            }),
+                    )
+                    .child(
+                        ui::button("tune-reset", "Reset all", theme)
+                            .compact()
+                            .on_click(|_, _, cx| {
+                                tune::reset_all();
+                                cx.refresh_windows();
+                            }),
+                    ),
+            )
+            // Before and after: the files as written, or with every
+            // override on. Tuning anything shows it again.
+            .child(ui::segmented_control(
+                "tune-compare",
+                &["Original", "Tuned"],
+                usize::from(!tune::showing_original()),
+                theme,
+                |index, _, cx| {
+                    tune::show_original(index == 0);
+                    cx.refresh_windows();
+                },
+            ))
+            .children(rows)
     }
 
     /// The slider for one metric, made the first time it is shown and
