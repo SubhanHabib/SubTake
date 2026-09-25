@@ -271,9 +271,11 @@ enum AreaSnapping {
             let rect = candidate.rect.intersection(screen.frame).integral
             guard rect.width >= 24, rect.height >= 24 else { continue }
             if let same = offered.firstIndex(where: { same($0.rect, rect) }) {
-                // A window's own name beats what the picture calls it.
+                // A window's own name beats what the picture calls it, and
+                // its own edges the ones the picture finds a pixel inside
+                // its border.
                 if offered[same].label == "Pane" || offered[same].label == "Content" {
-                    offered[same].label = candidate.label
+                    offered[same] = AreaCandidate(rect: rect, label: candidate.label)
                 }
                 continue
             }
