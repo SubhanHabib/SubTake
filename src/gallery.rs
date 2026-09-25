@@ -35,7 +35,12 @@
 //! with its Test running, `=card-camera-starting` before the camera's
 //! first frame,
 //! `=card-sources-window` and `=card-sources-area` on those tabs,
+//! `=card-sources-area-set` with an area drawn and chosen,
 //! `=card-sources-cycle` with its list emptied and refilled on a timer);
+//! `=area-overlay` opens the Source card's full-screen area overlay over
+//! every display with an area drawn, `=area-overlay-picking` with none
+//! and what the pointer is over offered, and `=area-overlay-locked` held
+//! to 16:9 — Esc closes it and the area it would have used is printed;
 //! `=panel-<name>` opens any other panel by its
 //! model name (`=panel-Preferences`); `=inspector-open` slides the folded
 //! inspector in, with `SUBTAKE_GALLERY_WIDTH=1100` (any width under 1280)
@@ -64,7 +69,7 @@
 //! contains one of those words hovered, since the gallery's unfocused windows
 //! never receive the pointer's hover.
 use crate::{
-    CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
+    CaptureArea, CaptureSource, EditorWindow, Field, Recent, RecordingCountdown, RecordingLauncher,
     RecordingOptions, Region, Wallpaper,
 };
 use anyhow::Result;
@@ -429,6 +434,9 @@ pub fn run() -> Result<()> {
             // The Camera card before its first frame, the camera starting.
             let starting = panel.ends_with("-starting");
             let panel = panel.trim_end_matches("-starting");
+            // An area drawn on the Studio Display, and chosen.
+            let area_set = panel.ends_with("-set");
+            let panel = panel.trim_end_matches("-set");
             // On the Window tab, a window is the source: Code, as the
             // handoff draws it.
             let window_chosen = panel.ends_with("-window");
@@ -487,9 +495,34 @@ pub fn run() -> Result<()> {
                     g.options.set_source_index(3);
                     g.launcher.set_source_index(3);
                 }
+                if area_set {
+                    for surface in [&*g.launcher, &*g.options] {
+                        let mut sources: Vec<_> = surface.get_capture_sources().iter().collect();
+                        let mut names: Vec<_> = surface.get_source_names().iter().collect();
+                        sources.push(area_source(&sources[1]));
+                        names.push("Area · 1280 × 720".into());
+                        surface.set_source_index(sources.len() as i32 - 1);
+                        surface.set_capture_sources(ModelRc::new(VecModel::from(sources)));
+                        surface.set_source_names(ModelRc::new(VecModel::from(names)));
+                    }
+                }
                 g.launcher.set_panel(panel.clone().into());
                 g.options.set_panel(panel.into());
                 g.position_options();
+            });
+        }
+        // The Source card's area overlay: `area-overlay` with an area
+        // drawn, waiting on Use area; `area-overlay-picking` with none, what
+        // the pointer is over offered; `area-overlay-locked` held to 16:9.
+        Ok(screen) if screen.starts_with("area-overlay") => {
+            let seed = (screen != "area-overlay-picking").then_some(platform::AreaSeed {
+                display: 0,
+                rect: [240., 160., 1280., 720.],
+            });
+            let aspect = (screen == "area-overlay-locked").then_some(16. / 9.);
+            let appearance = gallery.borrow().appearance;
+            Timer::single_shot(Duration::from_millis(400), move || {
+                platform::draw_area(aspect, appearance, seed, area_drawn);
             });
         }
         // The bar mid-capture: `rec-counting`, `rec-recording`, `rec-paused`,
@@ -1295,4 +1328,29 @@ fn position_launcher(launcher: RecordingLauncher, attempt: u8) {
             position_launcher(launcher, attempt + 1);
         }
     });
+}
+
+/// The area overlay closing in the gallery: what it would have used.
+extern "C" fn area_drawn(display: u32, left: f64, top: f64, width: f64, height: f64) {
+    if width > 0. {
+        eprintln!("Area overlay: {width} × {height} at {left}, {top} on display {display}");
+    } else {
+        eprintln!("Area overlay: cancelled");
+    }
+}
+
+/// An area drawn on `display`'s picture: 1280 × 720 points of its
+/// 2560 × 1440, off to its left as a browser's page would be.
+fn area_source(display: &CaptureSource) -> CaptureSource {
+    CaptureSource {
+        kind: "area".into(),
+        name: "Area".into(),
+        detail: "1280 × 720".into(),
+        thumbnail: display.thumbnail.clone(),
+        area: Some(CaptureArea {
+            display: display.name.clone(),
+            aspect: 16. / 9.,
+            share: [0.125, 0.2, 0.5, 0.5],
+        }),
+    }
 }
