@@ -37,6 +37,11 @@ pub struct Slider {
     /// track is that recess's `sunk` and the level is `sunk2`, since
     /// `slider_fill` is drawn for a track on glass.
     pub recessed: bool,
+    /// The room the number is kept to, so it does not reflow while
+    /// scrubbing, and how far in the words sit from the row's ends: 70 and
+    /// 18, unless the row sits among smaller controls.
+    pub value_width: f32,
+    pub padding: f32,
     bounds: Rc<Cell<Bounds<Pixels>>>,
     dragging: bool,
     change: Box<dyn Fn(f32, bool, &mut Window, &mut App)>,
@@ -83,6 +88,8 @@ impl Slider {
             enabled: true,
             height: Theme::control_height_large(),
             recessed: false,
+            value_width: Theme::scrub_value_width(),
+            padding: Theme::control_padding_large(),
             bounds: Rc::new(Cell::new(Bounds::default())),
             dragging: false,
             change: Box::new(change),
@@ -251,7 +258,7 @@ impl Render for Slider {
                     .flex()
                     .items_center()
                     .gap(px(Theme::gap()))
-                    .px(px(Theme::control_padding_large()))
+                    .px(px(self.padding))
                     .when(!self.glyph.is_empty(), |el| {
                         el.child(icon(&self.glyph, theme.text))
                     })
@@ -271,7 +278,8 @@ impl Render for Slider {
                     .child(
                         crate::mono(display)
                             .flex_none()
-                            .w(px(Theme::scrub_value_width()))
+                            .w(px(self.value_width))
+                            .whitespace_nowrap()
                             .text_right()
                             .text_size(px(Theme::font_control()))
                             .text_color(if self.dragging {

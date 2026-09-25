@@ -876,6 +876,11 @@ impl Theme {
     pub const METER_BLOCK_PADDING_BOTTOM: f32 = 12.0;
     pub const METER_BLOCK_GAP: f32 = 12.0;
     pub const METER_CONTROLS_GAP: f32 = 8.0;
+    /// The input level's number is at most "100%", so it keeps four mono
+    /// characters rather than a scrub field's 70, and the row is 16 in, as
+    /// the handoff's 40 slider is, which leaves "Input level" whole beside
+    /// the Test while it runs.
+    pub const MIC_LEVEL_VALUE_WIDTH: f32 = 4.0 * Self::FONT_CONTROL * Self::MONO_ADVANCE;
     /// Test: an 8 `rec` dot 7 before its word, 12 in at the left and 16 at
     /// the right.
     pub const MIC_TEST_DOT: f32 = 8.0;

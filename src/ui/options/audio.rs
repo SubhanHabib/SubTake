@@ -123,6 +123,8 @@ impl RootView {
         level.update(cx, |s, _| {
             s.height = Theme::control_height();
             s.recessed = true;
+            s.value_width = Theme::mic_level_value_width();
+            s.padding = Theme::control_padding();
             s.enabled = on;
         });
         column()
@@ -242,12 +244,19 @@ fn test_button(
         seconds if seconds > 0 => format!("Listening… {seconds}"),
         _ => "Playing".to_owned(),
     };
-    let mut words = column().child(label);
+    // One line tall, so the label reads level with the dot; the labels it
+    // runs through sit clipped under it, widening the button so the slider
+    // beside it holds still through the countdown.
+    let mut words = column()
+        .h(px(Theme::font_body()))
+        .line_height(relative(1.))
+        .overflow_hidden()
+        .child(div().flex_none().child(label));
     if phase != 0 {
         words = words.children(
             TEST_LABELS
                 .iter()
-                .map(|label| div().h_0().overflow_hidden().child(*label)),
+                .map(|label| div().flex_none().child(*label)),
         );
     }
     let mut button = div()
