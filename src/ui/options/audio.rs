@@ -138,9 +138,6 @@ impl RootView {
             .child(
                 row()
                     .gap(px(Theme::meter_controls_gap()))
-                    // Not wired: the level is kept with the recorder's
-                    // settings, but nothing applies it to the input yet —
-                    // neither the OS gain nor a gain at capture.
                     .child(div().flex_1().min_w_0().child(level))
                     .child(test_button(on, theme)),
             )

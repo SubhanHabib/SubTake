@@ -558,17 +558,30 @@ pub(super) extern "C" fn devices_changed() {
     post(|app, ui| report(ui, app.action(ui, "devices")));
 }
 
-/// The microphone meter's level, from its capture thread. A level that
-/// arrives after the meter has stopped is dropped.
+/// The microphone meter's level, from its capture thread, as it records:
+/// after the Input level's gain. A level that arrives after the meter has
+/// stopped is dropped.
 extern "C" fn mic_level(level: f32) {
     post(move |app, ui| {
         if let Some(options) = &app.launcher_options
             && options.get_panel() == "audio"
             && ui.get_capture_mic()
         {
-            options.set_mic_level(level);
+            let gain = input_gain(app.preferences.recorder_setting("input-level"));
+            options.set_mic_level(level + 20. * gain.log10());
         }
     });
+}
+
+/// The Microphone card's Input level, a percentage, as the amplitude the
+/// recording is scaled by: its square, so the slider's travel follows the
+/// ear rather than the waveform, 100% leaving the microphone as it comes.
+///
+/// The handoff sets the OS input gain where the OS allows; that is the
+/// device's own volume, for every app and after SubTake quits, so the
+/// level is a gain at capture everywhere.
+pub(super) fn input_gain(level: &str) -> f32 {
+    (level.parse::<f32>().unwrap_or(100.).clamp(0., 100.) / 100.).powi(2)
 }
 
 /// What the Source card draws for one platform source. The platform names a

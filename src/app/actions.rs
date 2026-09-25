@@ -897,6 +897,10 @@ impl App {
                     .recorder_setting("frame-rate")
                     .parse::<u32>()
                     .map_or(Value::Null, Value::from);
+                // The Microphone card's Input level.
+                source["microphoneGain"] = Value::from(recorder::input_gain(
+                    self.preferences.recorder_setting("input-level"),
+                ));
                 // The Source card's Hide desktop icons, for a display.
                 source["hidesDesktopIcons"] =
                     Value::Bool(self.preferences.recorder_setting("hide-desktop-icons") == "true");

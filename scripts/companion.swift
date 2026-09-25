@@ -25,10 +25,14 @@ final class Companion: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
     var audioBuffers = 0
     let camera: Bool
     let microphone: Bool
+    /// The Microphone card's Input level, as an amplitude: 1 leaves the
+    /// microphone as it comes, 0 silences it.
+    let gain: Float
     let folder: URL
     init(config: [String: Any]) throws {
         camera = config["camera"] as? Bool ?? false
         microphone = config["microphone"] as? Bool ?? false
+        gain = min(max((config["microphoneGain"] as? NSNumber)?.floatValue ?? 1, 0), 1)
         guard let path = config["folder"] as? String else { throw NSError(domain: "SubTake", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing companion output folder"]) }
         folder = URL(fileURLWithPath: path)
         super.init()
@@ -122,6 +126,7 @@ final class Companion: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
     func captureOutput(_ output: AVCaptureOutput, didOutput sample: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let start = started, pauseTime == nil, !finishing, CMSampleBufferDataIsReady(sample) else { return }
         let isVideo = output is AVCaptureVideoDataOutput
+        let sample = !isVideo && gain < 1 ? (scaled(sample, by: gain) ?? sample) : sample
         guard let input = isVideo ? videoInput : audioInput, input.isReadyForMoreMediaData else { return }
         let offset = start + pausedDuration
         guard CMSampleBufferGetPresentationTimeStamp(sample) >= offset else { return }
@@ -138,6 +143,37 @@ final class Companion: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, A
         guard input.append(adjusted) else { fail((isVideo ? videoWriter : audioWriter)?.error?.localizedDescription ?? "Companion sample write failed") }
         if isVideo { frames += 1 } else { audioBuffers += 1 }
     }
+}
+/// A copy of a linear-PCM buffer with every sample times `gain`. Nil for a
+/// format it cannot scale, which then records as it comes.
+func scaled(_ sample: CMSampleBuffer, by gain: Float) -> CMSampleBuffer? {
+    guard let format = CMSampleBufferGetFormatDescription(sample),
+          let description = CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee,
+          description.mFormatID == kAudioFormatLinearPCM,
+          description.mFormatFlags & kAudioFormatFlagIsBigEndian == 0,
+          let source = CMSampleBufferGetDataBuffer(sample) else { return nil }
+    let length = CMBlockBufferGetDataLength(source)
+    var block: CMBlockBuffer?
+    guard CMBlockBufferCreateWithMemoryBlock(allocator: kCFAllocatorDefault, memoryBlock: nil, blockLength: length, blockAllocator: kCFAllocatorDefault, customBlockSource: nil, offsetToData: 0, dataLength: length, flags: kCMBlockBufferAssureMemoryNowFlag, blockBufferOut: &block) == noErr, let block else { return nil }
+    var data: UnsafeMutablePointer<CChar>?
+    guard CMBlockBufferGetDataPointer(block, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: nil, dataPointerOut: &data) == noErr, let data,
+          CMBlockBufferCopyDataBytes(source, atOffset: 0, dataLength: length, destination: data) == noErr else { return nil }
+    let raw = UnsafeMutableRawPointer(data)
+    func scale<T>(_ type: T.Type, _ by: (T) -> T) {
+        let samples = raw.bindMemory(to: type, capacity: length / MemoryLayout<T>.stride)
+        for index in 0..<(length / MemoryLayout<T>.stride) { samples[index] = by(samples[index]) }
+    }
+    let float = description.mFormatFlags & kAudioFormatFlagIsFloat != 0
+    switch (float, description.mBitsPerChannel) {
+    case (true, 32): scale(Float32.self) { $0 * gain }
+    case (true, 64): scale(Float64.self) { $0 * Float64(gain) }
+    case (false, 16): scale(Int16.self) { Int16(Float($0) * gain) }
+    case (false, 32): scale(Int32.self) { Int32(Double($0) * Double(gain)) }
+    default: return nil
+    }
+    var copy: CMSampleBuffer?
+    guard CMAudioSampleBufferCreateReadyWithPacketDescriptions(allocator: kCFAllocatorDefault, dataBuffer: block, formatDescription: format, sampleCount: CMSampleBufferGetNumSamples(sample), presentationTimeStamp: CMSampleBufferGetPresentationTimeStamp(sample), packetDescriptions: nil, sampleBufferOut: &copy) == noErr else { return nil }
+    return copy
 }
 let _ = NSApplication.shared
 let config = try JSONSerialization.jsonObject(with: Data(CommandLine.arguments[1].utf8)) as! [String: Any]

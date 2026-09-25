@@ -15,7 +15,7 @@ impl Companion {
         source: &Value,
         cancel: &std::sync::atomic::AtomicBool,
     ) -> Result<Self> {
-        let config = json!({"folder":folder,"microphone":microphone,"camera":camera,"cameraId":source["cameraId"],"microphoneId":source["microphoneId"]});
+        let config = json!({"folder":folder,"microphone":microphone,"camera":camera,"cameraId":source["cameraId"],"microphoneId":source["microphoneId"],"microphoneGain":source["microphoneGain"]});
         let mut process = ManagedChild::spawn(
             Command::new(helper("subtake-companion")?)
                 .arg(config.to_string())
