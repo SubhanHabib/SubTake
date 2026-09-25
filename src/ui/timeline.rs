@@ -618,7 +618,7 @@ pub(super) fn lane_stack_range(window: &Window) -> (f32, f32) {
     (Theme::lane_stack_min(), share.max(Theme::lane_stack_min()))
 }
 
-/// Where a region dragged `delta` seconds on lands. With the magnet on, the
+/// Where a region dragged `delta` seconds on lands. With `snap`, the
 /// edges being dragged, both for a move and one for a trim, catch the edges
 /// of every region that is not moving with it, the playhead and either end
 /// of the take, from `SNAP_REACH` away on the track. With none of those in
@@ -627,12 +627,13 @@ pub(super) fn lane_stack_range(window: &Window) -> (f32, f32) {
 /// by the design.
 fn snapped(
     e: &EditorWindow,
+    snap: bool,
     dragged: &Region,
     mode: i32,
     delta: f32,
     track: f32,
 ) -> (f32, Option<f32>) {
-    if !e.get_snap() {
+    if !snap {
         return (delta, None);
     }
     let moving =
@@ -834,7 +835,9 @@ impl RootView {
                 let track = f32::from(self.timeline_bounds.get().size.width).max(1.);
                 let dragged =
                     f32::from(event.position.x - origin.x) / track * e.get_timeline_visible();
-                (*delta, *guide) = snapped(e, region, *mode, dragged, track);
+                // ⌘ held drags freely, whether or not the magnet is on.
+                let snap = e.get_snap() && !event.modifiers.platform;
+                (*delta, *guide) = snapped(e, snap, region, *mode, dragged, track);
             }
             Some(Gesture::Canvas { origin, dx, dy, .. }) => {
                 let b = self.preview_bounds.get();
