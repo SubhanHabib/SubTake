@@ -16,6 +16,8 @@ mod more;
 mod parts;
 mod source;
 
+use source::SOURCE_SEARCH;
+
 impl RootView {
     pub(super) fn options(
         &mut self,
@@ -32,7 +34,7 @@ impl RootView {
         let face = CardFace::of(&name);
         let header = self.card_header(&face, state);
         let body = match name.as_str() {
-            "sources" => self.source_card(state),
+            "sources" => self.source_card(state, window, cx),
             "audio" => self.audio_card(state, cx),
             "camera" => self.camera_card(state, cx),
             "countdown" => self.countdown_card(state),
@@ -173,7 +175,8 @@ impl RootView {
                 .ok()
                 .and_then(|i| state.get_capture_sources().iter().nth(i))
                 .map(|source| {
-                    [source.name, source.detail]
+                    let (name, detail) = source::caption(&source);
+                    [name, detail]
                         .into_iter()
                         .filter(|s| !s.is_empty())
                         .collect::<Vec<_>>()
@@ -292,6 +295,14 @@ impl RootView {
         if leave.is_none() {
             if self.card_fade != CardFade::Gone {
                 self.card_fade = CardFade::Gone;
+                // The Source card opens afresh each time: on the chosen
+                // source's tab, with nothing in its search.
+                self.source_tab = None;
+                self.source_query.clear();
+                self.source_searched = false;
+                if let Some(search) = self.inputs.get(SOURCE_SEARCH) {
+                    search.update(cx, |input, _| input.reset(""));
+                }
                 let state = state.clone();
                 crate::ui_runtime::Timer::single_shot(std::time::Duration::ZERO, move || {
                     if state.get_panel().is_empty() {

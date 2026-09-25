@@ -28,6 +28,7 @@
 //! `=cursor-hidden` open Cursor with the cursor shown and hidden, `=camera`
 //! and `=camera-off` Camera with the overlay on and off; `=card-<panel>`
 //! opens that recorder card (`=card-sources-busy` with its controls off,
+//! `=card-sources-window` and `=card-sources-area` on those tabs,
 //! `=card-sources-cycle` with its list emptied and refilled on a timer);
 //! `=panel-<name>` opens any other panel by its
 //! model name (`=panel-Preferences`); `=inspector-open` slides the folded
@@ -357,8 +358,10 @@ pub fn run() -> Result<()> {
             });
         }
         // A recorder card open over the bar: `card-sources`, `card-audio`,
-        // `card-camera`, `card-countdown` or `card-more`. A `-busy` suffix
-        // (`card-sources-busy`) holds the card mid-change, its controls off.
+        // `card-camera`, `card-countdown` or `card-more`, or the Source card
+        // on its other tabs, `card-sources-window` and `card-sources-area`.
+        // A `-busy` suffix (`card-sources-busy`) holds the card mid-change,
+        // its controls off.
         // The Capture source card with its list emptied and refilled on a
         // timer, for the card easing between the two heights.
         Ok("card-sources-cycle") => {
@@ -379,12 +382,26 @@ pub fn run() -> Result<()> {
         Ok(screen) if screen.starts_with("card-") => {
             let panel = screen.trim_start_matches("card-");
             let busy = panel.ends_with("-busy");
-            let panel = panel.trim_end_matches("-busy").to_owned();
+            // `card-sources-window` and `card-sources-area` open the Source
+            // card on those tabs, which the card reads for itself.
+            let panel = panel.trim_end_matches("-busy");
+            // On the Window tab, a window is the source: Code, as the
+            // handoff draws it.
+            let window_chosen = panel.ends_with("-window");
+            let panel = panel
+                .strip_suffix("-window")
+                .or_else(|| panel.strip_suffix("-area"))
+                .unwrap_or(panel)
+                .to_owned();
             let g = gallery.clone();
             Timer::single_shot(Duration::from_millis(400), move || {
                 let g = g.borrow();
                 show_recorder(&g.launcher, &g.options);
                 g.options.set_busy(busy);
+                if window_chosen {
+                    g.options.set_source_index(3);
+                    g.launcher.set_source_index(3);
+                }
                 g.launcher.set_panel(panel.clone().into());
                 g.options.set_panel(panel.into());
                 g.position_options();

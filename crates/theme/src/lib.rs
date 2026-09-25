@@ -259,6 +259,38 @@ impl Theme {
         )
     }
 
+    /// The chosen source's check badge, off its picture.
+    pub fn source_check_shadow(&self) -> gpui::BoxShadow {
+        drop_shadow(
+            gpui::hsla(0., 0., 0., Self::source_check_shadow_alpha()),
+            (
+                Self::source_check_shadow_y(),
+                Self::source_check_shadow_blur(),
+            ),
+        )
+    }
+
+    /// A window's still, standing in its picture as a window does on the
+    /// desktop.
+    pub fn window_still_shadow(&self) -> gpui::BoxShadow {
+        drop_shadow(
+            gpui::hsla(0., 0., 0., Self::window_still_shadow_alpha()),
+            (
+                Self::window_still_shadow_y(),
+                Self::window_still_shadow_blur(),
+            ),
+        )
+    }
+
+    /// A pill resting a step above its card, as Draw area on screen does:
+    /// the segment's reach in the near shadow's tone.
+    pub fn resting_shadow(&self) -> gpui::BoxShadow {
+        drop_shadow(
+            self.shadow_near,
+            (Self::segment_shadow_y(), Self::segment_shadow_blur()),
+        )
+    }
+
     /// The shadow under a toggle's thumb, which is what separates a white
     /// thumb from the near-white off track on light.
     pub fn thumb_shadow(&self) -> gpui::BoxShadow {

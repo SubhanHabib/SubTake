@@ -225,6 +225,10 @@ pub(super) fn seed_recorder(launcher: &RecordingLauncher, options: &RecordingOpt
                 ([0x6a, 0x4f, 0xc8], [0xe0, 0x9a, 0xc8]),
                 ([0x10, 0x14, 0x24], [0x3a, 0x4a, 0x6a]),
                 ([0x8a, 0xa0, 0x4a], [0xe0, 0xd0, 0x8a]),
+                ([0x4a, 0x2c, 0x6a], [0xc8, 0x8a, 0xb0]),
+                ([0xd8, 0xdc, 0xe4], [0x8a, 0x9a, 0xb8]),
+                ([0xe8, 0xc8, 0x6a], [0xa0, 0x6a, 0x3a]),
+                ([0x3a, 0x7a, 0xc8], [0xd0, 0xe0, 0xf0]),
             ])
             .map(|(full, (a, b))| {
                 let (name, detail) = match full.split_once(" · ") {
@@ -294,8 +298,13 @@ pub(super) fn source_names() -> Vec<String> {
         "Built-in Display · 3456 × 2234",
         "Studio Display · 5120 × 2880",
         "Safari — Release notes",
-        "Terminal",
+        "Code — metrics.rs — SubTake",
         "Figma — SubTake redesign",
+        "Terminal",
+        "Slack — Design review — Adclear",
+        "Finder — Downloads",
+        "Notes — Launch checklist",
+        "Mail — Inbox",
     ]
     .into_iter()
     .map(String::from)

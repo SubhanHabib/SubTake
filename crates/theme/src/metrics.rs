@@ -749,13 +749,50 @@ impl Theme {
     pub const LIST_GAP: f32 = 2.0;
     /// A helper line's leading, relative to its size.
     pub const HELPER_LEADING: f32 = 1.5;
-    /// A display tile: its picture, then its name and resolution under it.
-    pub const SOURCE_THUMB_HEIGHT: f32 = 66.0;
-    pub const SOURCE_TILE_GAP: f32 = 6.0;
-    /// A window row's picture.
-    pub const WINDOW_THUMB_WIDTH: f32 = 30.0;
-    pub const WINDOW_THUMB_HEIGHT: f32 = 20.0;
+    /// The Source card's tabs: each glyph 7 before its word.
+    pub const SOURCE_TAB_GAP: f32 = 7.0;
+    /// A source's picture, at 16:10 across its column: displays three
+    /// across and 10 apart, windows two across, 12 between rows and 10
+    /// between columns. Its name and what it is sit 7 under it, 2 in and
+    /// 1 apart.
+    pub const SOURCE_PICTURE_ASPECT: f32 = 16.0 / 10.0;
+    pub const DISPLAY_GRID_GAP: f32 = 10.0;
+    pub const WINDOW_GRID_GAP_ROW: f32 = 12.0;
+    pub const WINDOW_GRID_GAP_COLUMN: f32 = 10.0;
+    pub const SOURCE_TILE_GAP: f32 = 7.0;
+    pub const SOURCE_CAPTION_INSET: f32 = 2.0;
+    pub const SOURCE_CAPTION_GAP: f32 = 1.0;
+    /// The chosen picture: the accent inset 1.5 over a white halo 3.5 deep
+    /// at 0.55, and a 20 accent badge 7 in from its top right holding an 11
+    /// check, casting `0 2 6` at 0.25.
+    pub const SOURCE_HALO_WIDTH: f32 = 3.5;
+    pub const SOURCE_HALO_ALPHA: f32 = 0.55;
+    pub const SOURCE_CHECK: f32 = 20.0;
+    pub const SOURCE_CHECK_INSET: f32 = 7.0;
+    pub const SOURCE_CHECK_GLYPH: f32 = 11.0;
+    pub const SOURCE_CHECK_SHADOW_Y: f32 = 2.0;
+    pub const SOURCE_CHECK_SHADOW_BLUR: f32 = 6.0;
+    pub const SOURCE_CHECK_SHADOW_ALPHA: f32 = 0.25;
+    /// The window in its picture: 12% in at the sides and 14% down, flush
+    /// with the foot, its top corners at 5 and casting `0 2 8` at 0.28.
+    pub const WINDOW_STILL_INSET_X: f32 = 0.12;
+    pub const WINDOW_STILL_INSET_TOP: f32 = 0.14;
     pub const WINDOW_THUMB_RADIUS: f32 = 5.0;
+    pub const WINDOW_STILL_SHADOW_Y: f32 = 2.0;
+    pub const WINDOW_STILL_SHADOW_BLUR: f32 = 8.0;
+    pub const WINDOW_STILL_SHADOW_ALPHA: f32 = 0.28;
+    /// The windows scroll past 318, under a 56 fade; with nothing matching
+    /// the search, the line saying so sits 32 in.
+    pub const WINDOW_GRID_MAX_HEIGHT: f32 = 318.0;
+    pub const WINDOW_GRID_FADE: f32 = 56.0;
+    pub const WINDOW_EMPTY_PADDING: f32 = 32.0;
+    /// Area: the display at 16:10 with corners of 16, and Draw area on
+    /// screen as a 52 pill, its 18 glyph 9 before its word at 14.
+    pub const AREA_PREVIEW_RADIUS: f32 = 16.0;
+    pub const AREA_DRAW_HEIGHT: f32 = 52.0;
+    pub const AREA_DRAW_ICON: f32 = 18.0;
+    pub const AREA_DRAW_GAP: f32 = 9.0;
+    pub const FONT_AREA_DRAW: f32 = 14.0;
     /// The microphone meter: thirty bars spread across a 32 row, 3 apart,
     /// each as tall as the level was when it came in — the newest at the
     /// left — and lit from the left as far as the level now reaches. Lit

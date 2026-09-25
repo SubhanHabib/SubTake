@@ -368,6 +368,14 @@ pub struct RootView {
     /// The card drawn, which a closing or replaced card keeps showing as it
     /// fades out, and the window's `opens` it was opened under.
     card_last: (String, u32),
+    /// The Source card's tab while it is open, once one has been picked;
+    /// until then it opens on the kind of source that is chosen.
+    source_tab: Option<usize>,
+    /// What the Window tab's search holds, and whether the search has been
+    /// focused since the tab last opened.
+    source_query: String,
+    source_searched: bool,
+    source_scroll: ScrollHandle,
     /// Whether the card's window had focus when last drawn, so it closes
     /// once clicked away from (`card_blur`).
     card_active: Rc<Cell<bool>>,
@@ -459,6 +467,18 @@ impl RootView {
             card_resize: None,
             card_floor: Rc::new(Cell::new(0.)),
             card_last: (String::new(), 0),
+            // The gallery's `card-sources-window` and `card-sources-area`
+            // open the card on those tabs.
+            source_tab: std::env::var("SUBTAKE_GALLERY_SCREEN")
+                .ok()
+                .and_then(|screen| match screen.as_str() {
+                    "card-sources-window" => Some(1),
+                    "card-sources-area" => Some(2),
+                    _ => None,
+                }),
+            source_query: String::new(),
+            source_searched: false,
+            source_scroll: ScrollHandle::new(),
             card_active: Rc::new(Cell::new(false)),
             status_slide: None,
             status_kept: (SharedString::default(), false, 0.),
