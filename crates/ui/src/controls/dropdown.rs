@@ -34,6 +34,11 @@ pub struct Dropdown {
     /// chrome: 36 tall on `frost`, its glyph at the card size and its label
     /// in medium — the Camera card's device chip.
     pub chip: bool,
+    /// The inline shape, for a value at the end of a card row: no plate,
+    /// the value at the body size in `muted` and the caret after it, the
+    /// trigger only as wide as the two. Its menu opens under it, flush with
+    /// its right edge — the More card's Resolution.
+    pub bare: bool,
     open: bool,
     leave: motion::Leave,
     highlighted: usize,
@@ -77,6 +82,7 @@ impl Dropdown {
             compact: false,
             opens_up: false,
             chip: false,
+            bare: false,
             open: false,
             leave: motion::Leave::default(),
             highlighted: selected,
@@ -107,6 +113,7 @@ impl Render for Dropdown {
         let theme = self.theme;
         let open = self.open;
         let chip = self.chip;
+        let bare = self.bare;
         let row = !chip && (self.glyph.is_some() || self.caption.is_some());
         // Focus lives on the wrapper, which also holds the menu, so the ring
         // is drawn on the trigger by hand: gpui's `focus_visible` only styles
@@ -124,7 +131,7 @@ impl Render for Dropdown {
             .flex_col()
             .id("dropdown")
             .relative()
-            .w_full()
+            .map(|el| if bare { el.flex_none() } else { el.w_full() })
             .min_w_0()
             .track_focus(&self.focus)
             .tab_index(0)
@@ -167,6 +174,8 @@ impl Render for Dropdown {
                     .justify_between()
                     .gap(px(if chip {
                         Theme::gap()
+                    } else if bare {
+                        Theme::icon_gap()
                     } else if row {
                         Theme::icon_gap_row()
                     } else {
@@ -174,6 +183,8 @@ impl Render for Dropdown {
                     }))
                     .h(px(if chip {
                         Theme::device_chip_height()
+                    } else if bare {
+                        Theme::control_height_small()
                     } else if row {
                         Theme::control_height_large()
                     } else if self.compact {
@@ -185,6 +196,8 @@ impl Render for Dropdown {
                         if chip {
                             el.pl(px(Theme::device_chip_padding()))
                                 .pr(px(Theme::control_padding_small()))
+                        } else if bare {
+                            el
                         } else {
                             el.px(px(if row {
                                 Theme::control_padding_large()
@@ -203,6 +216,8 @@ impl Render for Dropdown {
                     // the picture changing.
                     .bg(if chip {
                         theme.frost
+                    } else if bare {
+                        theme.sunk.opacity(0.)
                     } else {
                         motion::hover_blend(
                             &trigger_key,
@@ -210,17 +225,17 @@ impl Render for Dropdown {
                             theme.sunk2,
                         )
                     })
-                    .text_size(px(if chip {
+                    .text_size(px(if chip || bare {
                         Theme::font_body()
                     } else {
                         Theme::font_control()
                     }))
-                    .font_weight(if row {
+                    .font_weight(if row || bare {
                         FontWeight::NORMAL
                     } else {
                         FontWeight::MEDIUM
                     })
-                    .text_color(theme.text)
+                    .text_color(if bare { theme.muted } else { theme.text })
                     .when(ring, |s| s.shadow(vec![crate::focus_ring(theme)]))
                     .opacity(if self.enabled {
                         1.
@@ -321,9 +336,14 @@ impl Render for Dropdown {
                         // absolutely at its container's origin, so without this
                         // the menu would open on top of the control it belongs
                         // to instead of under it.
-                        .when(!self.opens_up, |el| {
+                        .when(!self.opens_up && !bare, |el| {
                             el.position(
                                 trigger.bottom_left() + point(px(0.), px(Theme::gap_small())),
+                            )
+                        })
+                        .when(!self.opens_up && bare, |el| {
+                            el.anchor(Anchor::TopRight).position(
+                                trigger.bottom_right() + point(px(0.), px(Theme::gap_small())),
                             )
                         })
                         .when(self.opens_up, |el| {
