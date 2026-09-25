@@ -81,13 +81,20 @@ final class AreaOverlay {
             selection = rect
             phase = .adjusting
         }
-        NSApp.activate(ignoringOtherApps: true)
+        // The gallery shows it without taking focus from the app in front,
+        // as it shows its other windows; it takes the pointer, not keys.
+        let focused = ProcessInfo.processInfo.environment["SUBTAKE_GALLERY_SCREEN"] == nil
+        if focused {
+            NSApp.activate(ignoringOtherApps: true)
+        }
         for window in windows {
             window.alphaValue = 0
             window.orderFrontRegardless()
         }
-        let front = windows.first { $0.screen == NSScreen.main } ?? windows.first
-        front?.makeKey()
+        if focused {
+            let front = windows.first { $0.screen == NSScreen.main } ?? windows.first
+            front?.makeKey()
+        }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = AreaMetrics.fade
             for window in windows { window.animator().alphaValue = 1 }
