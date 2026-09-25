@@ -416,3 +416,15 @@ fn folder_library_search_filters_sidecars_and_deduplicates_recents() {
         vec![recent]
     );
 }
+
+#[test]
+fn a_moved_region_snaps_whichever_edge_lands_nearest_an_anchor() {
+    use subtake_native::editing::snap;
+    // A 2–5 region moved 2.75 on: its start would land at 4.75, its end at
+    // 7.75. The end is nearer an anchor, 8, so it is the end that catches.
+    assert_eq!(snap(&[2., 5.], 2.75, &[5.5, 8.], 0.5), (3., Some(8.)));
+    // Out of reach of every anchor, the drag is left as it is.
+    assert_eq!(snap(&[2., 5.], 1.5, &[5.5, 8.], 0.5), (1.5, None));
+    // A trim drags one edge, and only that edge snaps.
+    assert_eq!(snap(&[5.], 2.75, &[5.5, 8.], 0.5), (3., Some(8.)));
+}

@@ -36,57 +36,25 @@ pub fn move_region(
     p.change_region(kind, id, json!({"startMs":a,"endMs":a+(b-a)/speed}))
 }
 
-pub fn snap_delta(
-    project: &Project,
-    kind: &str,
-    id: &str,
-    delta: f64,
-    mode: i32,
-    playhead: f64,
-    duration: f64,
-    threshold: f64,
-) -> f64 {
-    let Some(region) = project.regions(kind).iter().find(|r| r["id"] == id) else {
-        return delta;
-    };
-    let start = n(region, "startMs", 0.);
-    let end = start
-        + (n(region, "endMs", 0.) - start)
-            * if kind == "clipRegions" {
-                n(region, "speed", 1.)
-            } else {
-                1.
-            };
-    let mut anchors = vec![0., duration, playhead];
-    for key in [
-        "zoomRegions",
-        "trimRegions",
-        "clipRegions",
-        "speedRegions",
-        "annotationRegions",
-        "audioRegions",
-        "autoCaptions",
-        "nativeMarkers",
-    ] {
-        for r in project.regions(key) {
-            if key == kind && r["id"] == id {
-                continue;
-            }
-            anchors.push(n(r, "startMs", 0.));
-            anchors.push(source_end(key, r));
-        }
-    }
-    let target = if mode == 1 {
-        end + delta
-    } else {
-        start + delta
-    };
-    anchors
-        .into_iter()
-        .min_by(|a, b| (a - target).abs().total_cmp(&(b - target).abs()))
-        .filter(|a| (a - target).abs() < threshold)
-        .map(|a| delta + a - target)
-        .unwrap_or(delta)
+/// Where a dragged region lands with the timeline's magnet on. `edges` are
+/// the edges being dragged, where they sat before the drag: both for a move,
+/// one for a trim. Whichever lands nearest an anchor, within `reach`, lands
+/// on it. Returns the delta and the anchor caught, if one was.
+pub fn snap(edges: &[f64], delta: f64, anchors: &[f64], reach: f64) -> (f64, Option<f64>) {
+    edges
+        .iter()
+        .filter_map(|edge| {
+            let target = edge + delta;
+            anchors
+                .iter()
+                .map(|anchor| (anchor - target, *anchor))
+                .min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
+        })
+        .filter(|(shift, _)| shift.abs() < reach)
+        .min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
+        .map_or((delta, None), |(shift, anchor)| {
+            (delta + shift, Some(anchor))
+        })
 }
 
 pub fn source_end(kind: &str, region: &Value) -> f64 {

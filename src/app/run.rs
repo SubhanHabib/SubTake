@@ -197,31 +197,9 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
                 return;
             }
             let duration = app.info.as_ref().map(|i| i.duration * 1000.).unwrap_or(0.);
-            let mut snapping = match app.project() {
-                Ok(p) => p.clone(),
-                Err(_) => return,
-            };
-            if mode == 0 {
-                for (other_kind, other_id) in app.selected_keys() {
-                    if other_kind != kind.as_str() || other_id != id.as_str() {
-                        let _ = snapping.remove_region(&other_kind, &other_id);
-                    }
-                }
-            }
-            let delta = if ui.get_snap() {
-                subtake_native::editing::snap_delta(
-                    &snapping,
-                    &kind,
-                    &id,
-                    delta as f64 * 1000.,
-                    mode,
-                    app.source_time * 1000.,
-                    duration,
-                    ui.get_timeline_visible() as f64 * 5.,
-                ) / 1000.
-            } else {
-                delta as f64
-            };
+            // The timeline has already snapped it: it snaps as it drags,
+            // so the region shows where it will land.
+            let delta = delta as f64;
             let keys = if mode == 0 {
                 app.selected_keys()
             } else {

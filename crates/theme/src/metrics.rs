@@ -445,6 +445,10 @@ impl Theme {
     pub const PLAYHEAD_HANDLE_GLOW_HELD: f32 = 16.0;
     pub const PLAYHEAD_GRIP_DOT: f32 = 3.0;
     pub const PLAYHEAD_GRIP_GAP: f32 = 4.0;
+    /// The timeline's magnet: a dragged edge within 6 of another region's
+    /// edge, the playhead or either end of the take lands on it. Not drawn by
+    /// the design.
+    pub const SNAP_REACH: f32 = 6.0;
     /// The ruler's labels: at least 80 apart, each 4 in either side of its
     /// text. Between two labels, a 3 dot at every fifth of the interval, in
     /// `text` at 70% behind the playhead and `muted` at 40% ahead of it.
@@ -781,8 +785,10 @@ impl Theme {
     /// region plus its own padding, its transport row, and whatever else it
     /// is carrying at the time — so a line it only sometimes shows adds to
     /// its height instead of being taken out of the lanes.
-    pub const LANE_STACK_HEIGHT: f32 =
-        Self::LANE_STACK_TOP + Self::CLIP_LANE_HEIGHT + 2.0 * Self::LANE_GAP + 1.5 * Self::LANE_HEIGHT;
+    pub const LANE_STACK_HEIGHT: f32 = Self::LANE_STACK_TOP
+        + Self::CLIP_LANE_HEIGHT
+        + 2.0 * Self::LANE_GAP
+        + 1.5 * Self::LANE_HEIGHT;
     /// The shortest the console's top edge can drag the lane region to: the
     /// ruler and two lanes.
     pub const LANE_STACK_MIN: f32 =

@@ -262,6 +262,13 @@ waveform, which is never read; and the peaks, which are read back from
 ffmpeg's waveform picture of the take, one per column of its 1280, rather than
 decoded.
 
+With the magnet on, a region snaps as it is dragged, so it shows where it
+will land: whichever edge being dragged comes within 6 of another region's
+edge, the playhead or either end of the take lands on it. A move drags both
+edges and the nearer catches; a trim drags one. Regions moving with it, the
+rest of the selection, are not caught. Not drawn by the design, which has
+the magnet and no behaviour for it.
+
 A clip shows the recording's frames rather than its tint: tiles 88 wide and
 the lane's height, each followed by a 2 divider in black at 35%, the first and
 last rounding the clip's ends. A last tile too short to take the curve is

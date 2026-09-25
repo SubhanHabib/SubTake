@@ -607,6 +607,30 @@ pub(super) fn lane_stack_range(window: &Window) -> (f32, f32) {
     (Theme::lane_stack_min(), share.max(Theme::lane_stack_min()))
 }
 
+/// Where a region dragged `delta` seconds on lands. With the magnet on, the
+/// edges being dragged, both for a move and one for a trim, catch the edges
+/// of every region that is not moving with it, the playhead and either end
+/// of the take, from `SNAP_REACH` away on the track.
+fn snapped(e: &EditorWindow, dragged: &Region, mode: i32, delta: f32, track: f32) -> f32 {
+    if !e.get_snap() {
+        return delta;
+    }
+    let moving =
+        |r: &Region| (r.kind == dragged.kind && r.id == dragged.id) || (mode == 0 && r.selected);
+    let mut anchors = vec![0., f64::from(e.get_duration()), f64::from(e.get_playhead())];
+    for region in e.get_regions().iter().filter(|r| !moving(r)) {
+        anchors.extend([f64::from(region.start), f64::from(region.end)]);
+    }
+    let edges = match mode {
+        1 => vec![dragged.end],
+        2 => vec![dragged.start],
+        _ => vec![dragged.start, dragged.end],
+    };
+    let edges: Vec<f64> = edges.into_iter().map(f64::from).collect();
+    let reach = Theme::snap_reach() / track * e.get_timeline_visible();
+    crate::editing::snap(&edges, f64::from(delta), &anchors, f64::from(reach)).0 as f32
+}
+
 impl RootView {
     /// A strip along a float's edge that takes a drag to resize it, with a
     /// grip that shows under the pointer and while the drag runs. A double
@@ -772,10 +796,16 @@ impl RootView {
                 let last = (duration - e.get_timeline_visible()).max(0.);
                 e.set_timeline_offset((*start + moved).clamp(0., last));
             }
-            Some(Gesture::Region { origin, delta, .. }) => {
-                *delta = f32::from(event.position.x - origin.x)
-                    / f32::from(self.timeline_bounds.get().size.width).max(1.)
-                    * e.get_timeline_visible();
+            Some(Gesture::Region {
+                region,
+                origin,
+                mode,
+                delta,
+            }) => {
+                let track = f32::from(self.timeline_bounds.get().size.width).max(1.);
+                let dragged =
+                    f32::from(event.position.x - origin.x) / track * e.get_timeline_visible();
+                *delta = snapped(e, region, *mode, dragged, track);
             }
             Some(Gesture::Canvas { origin, dx, dy, .. }) => {
                 let b = self.preview_bounds.get();
@@ -869,15 +899,13 @@ impl RootView {
             if let Surface::Editor(e) = &self.surface {
                 match gesture {
                     Gesture::Seek { grab } => self.seek_at(event.position.x - px(grab)),
+                    // Where the drag last showed it, snapped as it was.
                     Gesture::Region {
                         region,
-                        origin,
                         mode,
+                        delta,
                         ..
                     } => {
-                        let delta = f32::from(event.position.x - origin.x)
-                            / f32::from(self.timeline_bounds.get().size.width).max(1.)
-                            * e.get_timeline_visible();
                         if delta.abs() > 0.00001 {
                             e.invoke_move_region(region.kind, region.id, delta, mode);
                         }
