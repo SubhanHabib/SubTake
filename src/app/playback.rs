@@ -14,9 +14,10 @@ pub(super) struct FrameRequest {
     panel: String,
     width: u32,
     height: u32,
-    /// Playing, the picture comes from the take's proxy once it has one;
-    /// paused, from the take itself, so a still is as sharp as the export.
-    playing: bool,
+    /// Playing or scrubbing, the picture comes from the take's proxy once it
+    /// has one; at rest, from the take itself, so a still is as sharp as the
+    /// export.
+    moving: bool,
     proxy: Option<PathBuf>,
 }
 
@@ -24,8 +25,59 @@ pub(super) struct FrameRequest {
 /// and the proxy it decodes from, if any.
 type SceneKey = (PathBuf, u32, u32, u64, Option<PathBuf>);
 
+/// Seeks closer together than this are one drag of the playhead.
+pub(super) const SCRUB_GAP: Duration = Duration::from_millis(150);
+/// How long a scrub rests before its still is drawn again from the take.
+const SCRUB_SETTLE: Duration = Duration::from_millis(120);
+
 pub(super) struct Preview {
     slot: Arc<(Mutex<Option<FrameRequest>>, Condvar)>,
+}
+
+/// What a scene is opened for, apart from the proxy it may decode.
+struct SceneShape {
+    path: PathBuf,
+    info: MediaInfo,
+    width: u32,
+    height: u32,
+    source_revision: u64,
+}
+
+impl SceneShape {
+    fn of(request: &FrameRequest) -> Self {
+        Self {
+            path: request.path.clone(),
+            info: request.info.clone(),
+            width: request.width,
+            height: request.height,
+            source_revision: request.source_revision,
+        }
+    }
+}
+
+/// The scene for `shape` decoding `proxy`, or the take itself without one:
+/// the one held in its slot, or a new one when that was opened for another.
+fn scene_for(
+    scenes: &mut [Option<(SceneKey, Scene)>; 2],
+    shape: SceneShape,
+    proxy: Option<PathBuf>,
+) -> Result<&mut Scene> {
+    let key: SceneKey = (
+        shape.path.clone(),
+        shape.width,
+        shape.height,
+        shape.source_revision,
+        proxy.clone(),
+    );
+    let slot = &mut scenes[proxy.is_some() as usize];
+    if slot.as_ref().is_none_or(|(held, _)| *held != key) {
+        let mut scene = Scene::new(shape.path, shape.info, shape.width, shape.height)?;
+        if let Some(proxy) = proxy {
+            scene = scene.decoding(proxy, media::PROXY_EDGE);
+        }
+        *slot = Some((key, scene));
+    }
+    Ok(&mut slot.as_mut().unwrap().1)
 }
 
 impl Preview {
@@ -47,29 +99,19 @@ impl Preview {
                     pending.take().unwrap()
                 };
                 type Shown = Vec<(String, [f32; 4])>;
+                // What the proxy's scene is opened for once this still is
+                // posted, so the first drag of the playhead does not wait on it.
+                let warm = request
+                    .proxy
+                    .clone()
+                    .filter(|_| !request.moving)
+                    .map(|proxy| {
+                        let shape = SceneShape::of(&request);
+                        (shape, proxy)
+                    });
                 let result = (|| -> Result<(Vec<u8>, Option<[f32; 5]>, Shown)> {
-                    let proxy = request.proxy.clone().filter(|_| request.playing);
-                    let key: SceneKey = (
-                        request.path.clone(),
-                        request.width,
-                        request.height,
-                        request.source_revision,
-                        proxy.clone(),
-                    );
-                    let slot = &mut scenes[proxy.is_some() as usize];
-                    if slot.as_ref().is_none_or(|(held, _)| *held != key) {
-                        let mut scene = Scene::new(
-                            request.path.clone(),
-                            request.info.clone(),
-                            request.width,
-                            request.height,
-                        )?;
-                        if let Some(proxy) = proxy {
-                            scene = scene.decoding(proxy, media::PROXY_EDGE);
-                        }
-                        *slot = Some((key, scene));
-                    }
-                    let scene = &mut slot.as_mut().unwrap().1;
+                    let proxy = request.proxy.clone().filter(|_| request.moving);
+                    let scene = scene_for(&mut scenes, SceneShape::of(&request), proxy)?;
                     let mut drawing = request.project.clone();
                     if request.panel == "Crop" {
                         drawing.set("cropRegion", json!({"x":0,"y":0,"width":1,"height":1}));
@@ -136,6 +178,11 @@ impl Preview {
                         }
                     }
                 });
+                if let Some((shape, proxy)) = warm
+                    && worker.0.lock().unwrap().is_none()
+                {
+                    let _ = scene_for(&mut scenes, shape, Some(proxy));
+                }
             }
         });
         Self { slot }
@@ -186,7 +233,7 @@ impl App {
                 panel,
                 width,
                 height,
-                playing: self.started.is_some(),
+                moving: self.started.is_some() || self.scrubbing,
                 proxy: self.proxy.clone(),
             });
         }
@@ -207,6 +254,18 @@ impl App {
     pub(super) fn seek(&mut self, ui: &EditorWindow, time: f64) {
         self.stop(ui);
         self.epoch += 1;
+        let now = std::time::Instant::now();
+        self.scrubbing = self.last_seek.is_some_and(|last| now - last < SCRUB_GAP);
+        self.last_seek = Some(now);
+        if self.scrubbing {
+            self.scrub_settle
+                .start(TimerMode::SingleShot, SCRUB_SETTLE, || {
+                    with_app(|app, _| {
+                        app.scrubbing = false;
+                        app.request();
+                    })
+                });
+        }
         self.source_time = time.clamp(0., self.info.as_ref().map(|i| i.duration).unwrap_or(0.));
         self.update_time(ui);
         self.request();

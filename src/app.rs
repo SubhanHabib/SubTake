@@ -106,6 +106,12 @@ pub struct App {
     fresh_recording: Option<PathBuf>,
     preview: Preview,
     epoch: u64,
+    /// The playhead is being dragged: seeks have come closer together than
+    /// `playback::SCRUB_GAP`, so frames come from the proxy, as playback's
+    /// do, until `scrub_settle` finds it at rest and draws from the take.
+    scrubbing: bool,
+    last_seek: Option<std::time::Instant>,
+    scrub_settle: Timer,
     source_time: f64,
     source_revision: u64,
     playback: Timer,
@@ -185,6 +191,9 @@ impl App {
             fresh_recording: None,
             preview: Preview::new(),
             epoch: 0,
+            scrubbing: false,
+            last_seek: None,
+            scrub_settle: Timer::default(),
             source_time: 0.,
             source_revision: 0,
             playback: Timer::default(),
