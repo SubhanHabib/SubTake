@@ -25,9 +25,8 @@ pub(super) struct FrameRequest {
 /// and the proxy it decodes from, if any.
 type SceneKey = (PathBuf, u32, u32, u64, Option<PathBuf>);
 
-/// Seeks closer together than this are one drag of the playhead.
-pub(super) const SCRUB_GAP: Duration = Duration::from_millis(150);
-/// How long a scrub rests before its still is drawn again from the take.
+/// How long the playhead rests after a seek before its still is drawn again
+/// from the take.
 const SCRUB_SETTLE: Duration = Duration::from_millis(120);
 
 pub(super) struct Preview {
@@ -99,15 +98,16 @@ impl Preview {
                     pending.take().unwrap()
                 };
                 type Shown = Vec<(String, [f32; 4])>;
-                // What the proxy's scene is opened for once this still is
-                // posted, so the first drag of the playhead does not wait on it.
+                // What the proxy's scene is opened and drawn at once this
+                // still is posted, so the first seek of a drag finds its
+                // decoder open and near the playhead rather than waiting on it.
                 let warm = request
                     .proxy
                     .clone()
                     .filter(|_| !request.moving)
                     .map(|proxy| {
                         let shape = SceneShape::of(&request);
-                        (shape, proxy)
+                        (shape, proxy, request.project.clone(), request.time)
                     });
                 let result = (|| -> Result<(Vec<u8>, Option<[f32; 5]>, Shown)> {
                     let proxy = request.proxy.clone().filter(|_| request.moving);
@@ -176,10 +176,11 @@ impl Preview {
                         }
                     }
                 });
-                if let Some((shape, proxy)) = warm
+                if let Some((shape, proxy, project, time)) = warm
                     && worker.0.lock().unwrap().is_none()
+                    && let Ok(scene) = scene_for(&mut scenes, shape, Some(proxy))
                 {
-                    let _ = scene_for(&mut scenes, shape, Some(proxy));
+                    let _ = scene.render(&project, time);
                 }
             }
         });
@@ -252,18 +253,16 @@ impl App {
     pub(super) fn seek(&mut self, ui: &EditorWindow, time: f64) {
         self.stop(ui);
         self.epoch += 1;
-        let now = std::time::Instant::now();
-        self.scrubbing = self.last_seek.is_some_and(|last| now - last < SCRUB_GAP);
-        self.last_seek = Some(now);
-        if self.scrubbing {
-            self.scrub_settle
-                .start(TimerMode::SingleShot, SCRUB_SETTLE, || {
-                    with_app(|app, _| {
-                        app.scrubbing = false;
-                        app.request();
-                    })
-                });
-        }
+        // Drawn from the proxy first, so the first seek of a drag answers as
+        // quickly as the rest; the take's still follows once it rests.
+        self.scrubbing = true;
+        self.scrub_settle
+            .start(TimerMode::SingleShot, SCRUB_SETTLE, || {
+                with_app(|app, _| {
+                    app.scrubbing = false;
+                    app.request();
+                })
+            });
         self.source_time = time.clamp(0., self.info.as_ref().map(|i| i.duration).unwrap_or(0.));
         self.update_time(ui);
         self.request();
