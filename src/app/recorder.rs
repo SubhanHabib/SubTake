@@ -80,8 +80,8 @@ impl App {
         };
         options.set_panel(launcher.get_panel());
         options.set_appearance(self.preferences.appearance.as_str().into());
-        // Asked again on every sync, so coming back from System Settings
-        // shows what was allowed there. Screen access that has just come on
+        // Read on every sync and asked again in the background, so coming
+        // back from System Settings shows what was allowed there. Screen access that has just come on
         // lists the sources it kept from the Source card.
         let screen = platform::has_access(platform::Access::Screen);
         if screen && !options.get_screen_access() && !ui.get_busy() {
@@ -714,6 +714,12 @@ pub(super) extern "C" fn devices_changed() {
     post(|app, ui| report(ui, app.action(ui, "devices")));
 }
 
+/// Access read again in the background has changed: the surfaces again,
+/// which `with_app` syncs after every callback.
+pub(super) extern "C" fn access_changed() {
+    post(|_, _| {});
+}
+
 /// A display plugged in, taken away or rearranged: the sources again.
 pub(super) extern "C" fn displays_changed() {
     post(|app, ui| app.refresh_sources_quietly(ui));
@@ -794,13 +800,19 @@ extern "C" fn camera_frame(rows: *const u8, width: i32, height: i32, stride: i32
 /// The system's answer on the camera: the card syncs again, streaming, or
 /// showing that access is off.
 extern "C" fn camera_answer(_granted: bool) {
-    post(|app, ui| app.sync_launcher_options(ui));
+    post(|app, ui| {
+        platform::forget_access();
+        app.sync_launcher_options(ui)
+    });
 }
 
 /// The system's answer on the microphone: the card again, metering now if
 /// it was allowed.
 extern "C" fn microphone_answer(_granted: bool) {
-    post(|app, ui| app.sync_launcher_options(ui));
+    post(|app, ui| {
+        platform::forget_access();
+        app.sync_launcher_options(ui)
+    });
 }
 
 /// The Microphone card's Test moving on: listening, playing, over.

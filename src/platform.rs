@@ -20,7 +20,7 @@ mod recording;
 mod tick;
 mod windows;
 
-pub use access::{Access, has_access, open_access_settings};
+pub use access::{Access, forget_access, has_access, open_access_settings, watch_access};
 pub use area::{AreaDrawn, AreaSeed, draw_area};
 pub use camera::{CameraFrame, CameraPreview, preview_camera, request_camera_access};
 use companion::*;

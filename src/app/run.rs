@@ -72,6 +72,7 @@ pub fn run(path: Option<PathBuf>) -> Result<()> {
     });
     platform::watch_devices(recorder::devices_changed);
     platform::watch_displays(recorder::displays_changed);
+    platform::watch_access(recorder::access_changed);
     if let Err(e) = state.borrow_mut().register_hotkeys() {
         ui.set_status(format!("Global shortcuts: {e}"));
     }

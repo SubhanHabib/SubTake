@@ -2,12 +2,9 @@ import AppKit
 import AVFoundation
 import CoreGraphics
 
-/// Whether SubTake may capture `kind` — 0 the screen, 1 the microphone, 2
-/// the camera — as far as it can tell without asking. The screen has no
-/// "not asked yet": until it is allowed it reads as off. A microphone or
-/// camera not yet asked about reads as allowed, since recording asks.
-@_cdecl("subtake_capture_access")
-public func captureAccess(_ kind: Int32) -> Bool {
+/// What the system says of `kind` now: a round trip to its privacy
+/// service, several milliseconds.
+private func askAccess(_ kind: Int32) -> Bool {
     switch kind {
     case 0:
         return CGPreflightScreenCaptureAccess()
@@ -15,6 +12,73 @@ public func captureAccess(_ kind: Int32) -> Bool {
         let status = AVCaptureDevice.authorizationStatus(for: kind == 1 ? .audio : .video)
         return status != .denied && status != .restricted
     }
+}
+
+/// Each kind's last answer and when it came, the kinds being asked again,
+/// and who is told when an answer moves. The recorder's surfaces read
+/// access after every callback, a playhead drag's seeks among them, so a
+/// read is answered from here and one older than `accessFresh` is asked
+/// again off the main thread rather than holding it.
+private var accessRead: [Int32: (Date, Bool)] = [:]
+private var accessAsking: Set<Int32> = []
+private var accessChanged: DevicesChanged?
+private let accessLock = NSLock()
+private let accessFresh: TimeInterval = 1
+
+/// Whether SubTake may capture `kind` — 0 the screen, 1 the microphone, 2
+/// the camera — as far as it can tell without asking. The screen has no
+/// "not asked yet": until it is allowed it reads as off. A microphone or
+/// camera not yet asked about reads as allowed, since recording asks.
+///
+/// Only the first read, and the first after `subtake_forget_access`, waits
+/// on the system; later ones give the last answer, which is at most a
+/// second or so behind, and `subtake_access_watch`'s callback hears when it
+/// moves.
+@_cdecl("subtake_capture_access")
+public func captureAccess(_ kind: Int32) -> Bool {
+    accessLock.lock()
+    let read = accessRead[kind]
+    let stale = read.map { Date().timeIntervalSince($0.0) > accessFresh } ?? true
+    let refresh = read != nil && stale && !accessAsking.contains(kind)
+    if refresh { accessAsking.insert(kind) }
+    accessLock.unlock()
+    guard let (_, allowed) = read else {
+        let allowed = askAccess(kind)
+        accessLock.lock()
+        accessRead[kind] = (Date(), allowed)
+        accessLock.unlock()
+        return allowed
+    }
+    if refresh {
+        DispatchQueue.global(qos: .utility).async {
+            let now = askAccess(kind)
+            accessLock.lock()
+            accessRead[kind] = (Date(), now)
+            accessAsking.remove(kind)
+            let changed = now != allowed ? accessChanged : nil
+            accessLock.unlock()
+            if let changed { DispatchQueue.main.async { changed() } }
+        }
+    }
+    return allowed
+}
+
+/// Has the next read of each kind wait on the system, as once a request
+/// has just been answered.
+@_cdecl("subtake_forget_access")
+public func forgetAccess() {
+    accessLock.lock()
+    accessRead.removeAll()
+    accessLock.unlock()
+}
+
+/// Calls `callback` on the main thread whenever a read of access asked
+/// again comes back different, from now on. Watching again replaces it.
+@_cdecl("subtake_access_watch")
+public func accessWatch(_ callback: DevicesChanged?) {
+    accessLock.lock()
+    accessChanged = callback
+    accessLock.unlock()
 }
 
 /// Asks for screen capture once, which also lists SubTake under Screen &
