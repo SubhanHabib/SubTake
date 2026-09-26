@@ -48,6 +48,8 @@ pub struct Scene {
     cursor: Vec<Value>,
     fonts: FontCollection,
     font_key: Value,
+    /// The byte order `render` hands each frame back in.
+    pixels: ColorType,
 }
 
 fn paint(color: Color) -> Paint {
@@ -265,6 +267,7 @@ impl Scene {
             cursor,
             fonts,
             font_key: Value::Null,
+            pixels: ColorType::RGBA8888,
             surface: None,
             cursor_assets: HashMap::new(),
             cursor_track: crate::motion::CursorTrack::default(),
@@ -289,6 +292,13 @@ impl Scene {
         self.source = Decoder::new(path, width, height).with_rate(self.info.fps);
         self.source_width = width;
         self.source_height = height;
+        self
+    }
+
+    /// Hands frames back in BGRA, the order the interface's images hold, so
+    /// the preview shows them as they come rather than reordering each one.
+    pub fn in_bgra(mut self) -> Self {
+        self.pixels = ColorType::BGRA8888;
         self
     }
 
@@ -774,7 +784,7 @@ impl Scene {
             surface.read_pixels(
                 &ImageInfo::new(
                     (self.width as i32, self.height as i32),
-                    ColorType::RGBA8888,
+                    self.pixels,
                     AlphaType::Unpremul,
                     None
                 ),

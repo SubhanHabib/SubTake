@@ -71,7 +71,7 @@ fn scene_for(
     );
     let slot = &mut scenes[proxy.is_some() as usize];
     if slot.as_ref().is_none_or(|(held, _)| *held != key) {
-        let mut scene = Scene::new(shape.path, shape.info, shape.width, shape.height)?;
+        let mut scene = Scene::new(shape.path, shape.info, shape.width, shape.height)?.in_bgra();
         if let Some(proxy) = proxy {
             scene = scene.decoding(proxy, media::PROXY_EDGE);
         }
@@ -164,13 +164,11 @@ impl Preview {
                                 ui.set_edit_height(h);
                                 ui.set_edit_scale(scale);
                             }
-                            let buffer =
-                                ui_runtime::SharedPixelBuffer::<ui_runtime::Rgba8Pixel>::clone_from_slice(
-                                    &pixels,
-                                    request.width,
-                                    request.height,
-                                );
-                            ui.set_preview(ui_runtime::Image::from_rgba8(buffer));
+                            ui.set_preview(ui_runtime::Image::from_bgra8(
+                                pixels,
+                                request.width,
+                                request.height,
+                            ));
                         }
                         Err(e) => {
                             app.stop(ui);

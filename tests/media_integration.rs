@@ -148,6 +148,27 @@ fn preview_edit_outline_matches_rendered_annotation() {
 }
 
 #[test]
+fn a_scene_in_bgra_hands_back_the_same_frame_reordered() {
+    let dir = tempfile::tempdir().unwrap();
+    let source = dir.path().join("source.mp4");
+    fixture(&source);
+    let mut p = Project::new(&source);
+    p.set("annotationRegions",serde_json::json!([{"id":"box","type":"text","startMs":0,"endMs":1000,"textContent":"","position":{"x":20,"y":25},"size":{"width":30,"height":25},"style":{"backgroundColor":"#ff0000","color":"#ff0000","fontSize":12}}]));
+    let info = media::probe(&source).unwrap();
+    let render = |scene: subtake_native::render::Scene| {
+        let mut scene = scene;
+        scene.render(&p, 0.1).unwrap()
+    };
+    let new = || subtake_native::render::Scene::new(source.clone(), info.clone(), 128, 96).unwrap();
+    let rgba = render(new());
+    let mut bgra = render(new().in_bgra());
+    for pixel in bgra.as_chunks_mut::<4>().0 {
+        pixel.swap(0, 2);
+    }
+    assert_eq!(bgra, rgba);
+}
+
+#[test]
 fn spotlight_step_and_pixelate_annotations_render() {
     let dir = tempfile::tempdir().unwrap();
     let source = dir.path().join("source.mp4");
