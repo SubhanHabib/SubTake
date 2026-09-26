@@ -96,7 +96,18 @@ impl Preview {
                     Ok((pixels, bounds, shown))
                 })();
                 post(move |app, ui| {
-                    if app.epoch != request.epoch {
+                    // A frame the playhead or an edit has since moved past is
+                    // still shown while the newer one is drawn, or a drag
+                    // would show nothing until it stopped: every seek makes
+                    // a new epoch. Not one of another take, panel or shape.
+                    let current = app.epoch == request.epoch;
+                    let same_scene = app.source.as_ref() == Some(&request.path)
+                        && app.source_revision == request.source_revision
+                        && ui.get_panel() == request.panel.as_str()
+                        && (request.width as f32 / request.height as f32 - ui.get_preview_aspect())
+                            .abs()
+                            < 0.01;
+                    if !current && (result.is_err() || !same_scene) {
                         return;
                     }
                     match result {
